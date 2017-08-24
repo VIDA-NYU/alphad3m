@@ -1,13 +1,18 @@
 from concurrent import futures
 import grpc
+import logging
 import time
 
 import d3m_ta2_vistrails.proto.pipeline_service_pb2 as ps_pb2
 import d3m_ta2_vistrails.proto.pipeline_service_pb2_grpc as ps_pb2_grpc
 
 
+logger = logging.getLogger(__name__)
+
+
 class ComputeService(ps_pb2_grpc.PipelineComputeServicer):
     def StartSession(self, request, context):
+        logger.info("Session started: 1")
         return ps_pb2.Response(
             context=ps_pb2.SessionContext(session_id='1'),
             status=ps_pb2.Status(code=ps_pb2.OK),
@@ -15,6 +20,7 @@ class ComputeService(ps_pb2_grpc.PipelineComputeServicer):
 
     def EndSession(self, request, context):
         assert request.session_id == '1'
+        logger.info("Session terminated: 1")
         return ps_pb2.Response(
             context=ps_pb2.SessionContext(session_id=request.session_id),
             status=ps_pb2.Status(code=ps_pb2.OK),
@@ -31,6 +37,9 @@ class ComputeService(ps_pb2_grpc.PipelineComputeServicer):
         metrics = request.metric
         target_features = request.target_features
         max_pipelines = request.max_pipelines
+
+        logger.info("Got CreatePipelines request, session=%s",
+                    sessioncontext.session_id)
 
         while True:
             yield ps_pb2.PipelineCreateResult(
@@ -55,6 +64,8 @@ class ComputeService(ps_pb2_grpc.PipelineComputeServicer):
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
+
     with futures.ThreadPoolExecutor(max_workers=10) as executor:
         server = grpc.server(executor)
         ps_pb2_grpc.add_PipelineComputeServicer_to_server(
