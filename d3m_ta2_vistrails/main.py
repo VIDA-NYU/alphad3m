@@ -11,7 +11,30 @@ import d3m_ta2_vistrails.proto.pipeline_service_pb2_grpc as ps_pb2_grpc
 logger = logging.getLogger(__name__)
 
 
-class ComputeService(ps_pb2_grpc.PipelineComputeServicer):
+class D3mTa2(object):
+    executor = None
+
+    def __init__(self, insecure_ports=None):
+        if insecure_ports is None:
+            self._insecure_ports = ['[::]:50051']
+            self.core_rpc = CoreService()
+
+    def run(self):
+        self.executor = futures.ThreadPoolExecutor(max_workers=10)
+        try:
+            server = grpc.server(self.executor)
+            ps_pb2_grpc.add_PipelineComputeServicer_to_server(
+                self.core_rpc, server)
+            for port in self._insecure_ports:
+                server.add_insecure_port(port)
+            server.start()
+            while True:
+                time.sleep(60)
+        finally:
+            self.executor.shutdown(wait=True)
+
+
+class CoreService(ps_pb2_grpc.PipelineComputeServicer):
     def StartSession(self, request, context):
         version = ps_pb2.DESCRIPTOR.GetOptions().Extensions[
             ps_pb2.protocol_version]
@@ -48,14 +71,24 @@ class ComputeService(ps_pb2_grpc.PipelineComputeServicer):
         logger.info("Got CreatePipelines request, session=%s",
                     sessioncontext.session_id)
 
-        while True:
-            yield ps_pb2.PipelineCreateResult(
+        results = [
+            (ps_pb2.SUBMITTED, 'pipeline_1', False),
+            (ps_pb2.RUNNING, 'pipeline_1', False),
+            (ps_pb2.COMPLETED, 'pipeline_1', True),
+        ]
+
+        for progress, pipeline_id, send_pipeline in results:
+            if not context.is_active():
+                logger.info("Client closed CreatePipelines stream")
+            msg = ps_pb2.PipelineCreateResult(
                 response_info=ps_pb2.Response(
                     status=ps_pb2.Status(code=ps_pb2.OK),
                 ),
-                progress_info=ps_pb2.COMPLETED,
-                pipeline_id="pipeline_1",
-                pipeline_info=ps_pb2.Pipeline(
+                progress_info=progress,
+                pipeline_id=pipeline_id,
+            )
+            if send_pipeline:
+                msg.pipeline_info.CopyFrom(ps_pb2.Pipeline(
                     predict_result_uris=['file:///out/predict1.csv'],
                     output=output,
                     scores=[
@@ -68,8 +101,8 @@ class ComputeService(ps_pb2_grpc.PipelineComputeServicer):
                             value=0.5,
                         ),
                     ],
-                ),
-            )
+                ))
+            yield msg
 
     def ExecutePipeline(self, request, context):
         raise NotImplementedError
@@ -78,11 +111,4 @@ class ComputeService(ps_pb2_grpc.PipelineComputeServicer):
 def main():
     logging.basicConfig(level=logging.INFO)
 
-    with futures.ThreadPoolExecutor(max_workers=10) as executor:
-        server = grpc.server(executor)
-        ps_pb2_grpc.add_PipelineComputeServicer_to_server(
-            ComputeService(), server)
-        server.add_insecure_port('[::]:50051')
-        server.start()
-        while True:
-            time.sleep(60)
+    D3mTa2().run()

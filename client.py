@@ -21,7 +21,7 @@ if __name__ == '__main__':
     print "Started session %r, status %s" % (context.session_id,
                                              reply.response_info.status.code)
 
-    reply = stub.CreatePipelines(ps_pb2.PipelineCreateRequest(
+    reply_stream = stub.CreatePipelines(ps_pb2.PipelineCreateRequest(
         context=context,
         train_features=[
             ps_pb2.Feature(feature_id='feature1',
@@ -44,6 +44,22 @@ if __name__ == '__main__':
         max_pipelines=10,
     ))
     print("Requested pipelines")
+    for result in reply_stream:
+        if result.response_info.status.code == ps_pb2.CANCELLED:
+            print "Pipelines creation cancelled"
+            break
+        elif result.response_info.status.code != ps_pb2.OK:
+            print "Error during pipelines creation"
+            if result.response_info.status.details:
+                print "details: %r" % result.response_info.status.details
+            break
+        progress = result.progress_info
+        pipeline_id = result.pipeline_id
+        pipeline = result.pipeline_info
+        if not result.HasField('pipeline_info'):
+            pipeline = None
+
+        print "%s %s %s" % (progress, pipeline_id, pipeline)
 
     reply = stub.EndSession(context)
     print "Ended session %r, status %s" % (context.session_id,
