@@ -15,22 +15,42 @@ class PipelineComputeStub(object):
       channel: A grpc.Channel.
     """
     self.CreatePipelines = channel.unary_stream(
-        '/compute.pipeline.PipelineCompute/CreatePipelines',
+        '/PipelineCompute/CreatePipelines',
         request_serializer=pipeline__service__pb2.PipelineCreateRequest.SerializeToString,
         response_deserializer=pipeline__service__pb2.PipelineCreateResult.FromString,
         )
     self.ExecutePipeline = channel.unary_stream(
-        '/compute.pipeline.PipelineCompute/ExecutePipeline',
+        '/PipelineCompute/ExecutePipeline',
         request_serializer=pipeline__service__pb2.PipelineExecuteRequest.SerializeToString,
         response_deserializer=pipeline__service__pb2.PipelineExecuteResult.FromString,
         )
-    self.StartSession = channel.unary_unary(
-        '/compute.pipeline.PipelineCompute/StartSession',
-        request_serializer=pipeline__service__pb2.SessionRequest.SerializeToString,
+    self.ListPipelines = channel.unary_unary(
+        '/PipelineCompute/ListPipelines',
+        request_serializer=pipeline__service__pb2.PipelineListRequest.SerializeToString,
+        response_deserializer=pipeline__service__pb2.PipelineListResult.FromString,
+        )
+    self.GetCreatePipelineResults = channel.unary_stream(
+        '/PipelineCompute/GetCreatePipelineResults',
+        request_serializer=pipeline__service__pb2.PipelineCreateResultsRequest.SerializeToString,
+        response_deserializer=pipeline__service__pb2.PipelineCreateResult.FromString,
+        )
+    self.GetExecutePipelineResults = channel.unary_stream(
+        '/PipelineCompute/GetExecutePipelineResults',
+        request_serializer=pipeline__service__pb2.PipelineExecuteResultsRequest.SerializeToString,
+        response_deserializer=pipeline__service__pb2.PipelineExecuteResult.FromString,
+        )
+    self.UpdateProblemSchema = channel.unary_unary(
+        '/PipelineCompute/UpdateProblemSchema',
+        request_serializer=pipeline__service__pb2.UpdateProblemSchemaRequest.SerializeToString,
         response_deserializer=pipeline__service__pb2.Response.FromString,
         )
+    self.StartSession = channel.unary_unary(
+        '/PipelineCompute/StartSession',
+        request_serializer=pipeline__service__pb2.SessionRequest.SerializeToString,
+        response_deserializer=pipeline__service__pb2.SessionResponse.FromString,
+        )
     self.EndSession = channel.unary_unary(
-        '/compute.pipeline.PipelineCompute/EndSession',
+        '/PipelineCompute/EndSession',
         request_serializer=pipeline__service__pb2.SessionContext.SerializeToString,
         response_deserializer=pipeline__service__pb2.Response.FromString,
         )
@@ -49,6 +69,34 @@ class PipelineComputeServicer(object):
 
   def ExecutePipeline(self, request, context):
     """Predict step - multiple results messages returned via GRPC streaming.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def ListPipelines(self, request, context):
+    """Get pipelines already present in the session.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def GetCreatePipelineResults(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def GetExecutePipelineResults(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def UpdateProblemSchema(self, request, context):
+    """Update problem schema
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -81,10 +129,30 @@ def add_PipelineComputeServicer_to_server(servicer, server):
           request_deserializer=pipeline__service__pb2.PipelineExecuteRequest.FromString,
           response_serializer=pipeline__service__pb2.PipelineExecuteResult.SerializeToString,
       ),
+      'ListPipelines': grpc.unary_unary_rpc_method_handler(
+          servicer.ListPipelines,
+          request_deserializer=pipeline__service__pb2.PipelineListRequest.FromString,
+          response_serializer=pipeline__service__pb2.PipelineListResult.SerializeToString,
+      ),
+      'GetCreatePipelineResults': grpc.unary_stream_rpc_method_handler(
+          servicer.GetCreatePipelineResults,
+          request_deserializer=pipeline__service__pb2.PipelineCreateResultsRequest.FromString,
+          response_serializer=pipeline__service__pb2.PipelineCreateResult.SerializeToString,
+      ),
+      'GetExecutePipelineResults': grpc.unary_stream_rpc_method_handler(
+          servicer.GetExecutePipelineResults,
+          request_deserializer=pipeline__service__pb2.PipelineExecuteResultsRequest.FromString,
+          response_serializer=pipeline__service__pb2.PipelineExecuteResult.SerializeToString,
+      ),
+      'UpdateProblemSchema': grpc.unary_unary_rpc_method_handler(
+          servicer.UpdateProblemSchema,
+          request_deserializer=pipeline__service__pb2.UpdateProblemSchemaRequest.FromString,
+          response_serializer=pipeline__service__pb2.Response.SerializeToString,
+      ),
       'StartSession': grpc.unary_unary_rpc_method_handler(
           servicer.StartSession,
           request_deserializer=pipeline__service__pb2.SessionRequest.FromString,
-          response_serializer=pipeline__service__pb2.Response.SerializeToString,
+          response_serializer=pipeline__service__pb2.SessionResponse.SerializeToString,
       ),
       'EndSession': grpc.unary_unary_rpc_method_handler(
           servicer.EndSession,
@@ -93,5 +161,5 @@ def add_PipelineComputeServicer_to_server(servicer, server):
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(
-      'compute.pipeline.PipelineCompute', rpc_method_handlers)
+      'PipelineCompute', rpc_method_handlers)
   server.add_generic_rpc_handlers((generic_handler,))
