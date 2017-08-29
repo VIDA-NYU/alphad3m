@@ -16,6 +16,8 @@ from vistrails.core.vistrail.controller import VistrailController
 from d3m_ta2_vistrails import __version__
 import d3m_ta2_vistrails.proto.pipeline_service_pb2 as pb_core
 import d3m_ta2_vistrails.proto.pipeline_service_pb2_grpc as pb_core_grpc
+import d3m_ta2_vistrails.proto.dataflow_service_pb2 as pb_dataflow
+import d3m_ta2_vistrails.proto.dataflow_service_pb2_grpc as pb_dataflow_grpc
 
 
 logger = logging.getLogger(__name__)
@@ -45,6 +47,7 @@ class D3mTa2(object):
         else:
             self._insecure_ports = insecure_ports
         self.core_rpc = CoreService(self)
+        self.dataflow_rpc = DataflowService(self)
         self._pipelines = set()
         self._sessions = {}
         self.executor = None
@@ -55,6 +58,8 @@ class D3mTa2(object):
             server = grpc.server(self.executor)
             pb_core_grpc.add_PipelineComputeServicer_to_server(
                 self.core_rpc, server)
+            pb_dataflow_grpc.add_DataflowServicer_to_server(
+                self.dataflow_rpc, server)
             for port in self._insecure_ports:
                 server.add_insecure_port(port)
             server.start()
@@ -209,6 +214,46 @@ class CoreService(pb_core_grpc.PipelineComputeServicer):
             ),
             progress_info=pb_core.COMPLETED,
             pipeline_id=pipeline_id,
+        )
+
+
+class DataflowService(pb_dataflow_grpc.DataflowServicer):
+    def __init__(self, app):
+        self._app = app
+
+    def DescribeDataflow(self, request, context):
+        sessioncontext = request.context
+        assert sessioncontext.session_id == '1'
+        pipeline_id = request.pipeline_id
+
+        # TODO: Build description from VisTrails workflow
+
+        return pb_dataflow.DataflowDescription(
+            pipeline_id=pipeline_id,
+            modules=[],
+            connections=[],
+        )
+
+    def GetDataflowResults(self, request, context):
+        sessioncontext = request.context
+        assert sessioncontext.session_id == '1'
+        pipeline_id = request.pipeline_id
+
+        yield pb_dataflow.ModuleResult(
+            module_id='module1',
+            status=pb_dataflow.ModuleResult.RUNNING,
+            progress=0.5,
+        )
+        yield pb_dataflow.ModuleResult(
+            module_id='module1',
+            status=pb_dataflow.ModuleResult.DONE,
+            progress=1.0,
+            outputs=[
+                pb_dataflow.ModuleOutput(
+                    output_name='result',
+                    value='42',
+                ),
+            ],
         )
 
 
