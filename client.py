@@ -44,6 +44,7 @@ if __name__ == '__main__':
         max_pipelines=10,
     ))
     print("Requested pipelines")
+    pipelines = set()
     for result in reply_stream:
         if result.response_info.status.code == ps_pb2.CANCELLED:
             print "Pipelines creation cancelled"
@@ -60,6 +61,29 @@ if __name__ == '__main__':
             pipeline = None
 
         print "%s %s %s" % (progress, pipeline_id, pipeline)
+        if progress == ps_pb2.COMPLETED:
+            pipelines.add(pipeline_id)
+
+    for pipeline_id in pipelines:
+        print "Executing pipeline %s" % pipeline_id
+        reply_stream = stub.ExecutePipeline(ps_pb2.PipelineExecuteRequest(
+            context=context,
+            pipeline_id=pipeline_id,
+        ))
+        for result in reply_stream:
+            if result.response_info.status.code == ps_pb2.CANCELLED:
+                print "Pipeline execution cancelled"
+                break
+            elif result.response_info.status.code != ps_pb2.OK:
+                print "Error during pipeline execution"
+                if result.response_info.status.details:
+                    print "details: %r" % result.response_info.status.details
+                break
+            progress = result.progress_info
+            assert result.pipeline_id == pipeline_id
+            print "%s %s" % (progress, pipeline_id)
+            if progress == ps_pb2.COMPLETED:
+                print "Pipeline execution completed"
 
     reply = stub.EndSession(context)
     print "Ended session %r, status %s" % (context.session_id,

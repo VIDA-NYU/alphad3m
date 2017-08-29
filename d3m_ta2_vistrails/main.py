@@ -196,7 +196,20 @@ class CoreService(ps_pb2_grpc.PipelineComputeServicer):
             )
 
     def ExecutePipeline(self, request, context):
-        raise NotImplementedError
+        sessioncontext = request.context
+        assert sessioncontext.session_id == '1'
+        pipeline_id = request.pipeline_id
+
+        logger.info("Got ExecutePipeline request, session=%s",
+                    sessioncontext.session_id)
+
+        yield ps_pb2.PipelineExecuteResult(
+            response_info=ps_pb2.Response(
+                status=ps_pb2.Status(code=ps_pb2.OK),
+            ),
+            progress_info=ps_pb2.COMPLETED,
+            pipeline_id=pipeline_id,
+        )
 
 
 def main():
