@@ -32,7 +32,7 @@ if __name__ == '__main__':
         task=ps_pb2.CLASSIFICATION,
         task_subtype=ps_pb2.NONE,
         task_description="Debugging task",
-        output=ps_pb2.PROBABILITY,
+        output=ps_pb2.FILE,
         metrics=[
             ps_pb2.ACCURACY,
             ps_pb2.ROC_AUC,
