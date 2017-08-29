@@ -14,8 +14,8 @@ from vistrails.core.packagemanager import get_package_manager
 from vistrails.core.vistrail.controller import VistrailController
 
 from d3m_ta2_vistrails import __version__
-import d3m_ta2_vistrails.proto.pipeline_service_pb2 as ps_pb2
-import d3m_ta2_vistrails.proto.pipeline_service_pb2_grpc as ps_pb2_grpc
+import d3m_ta2_vistrails.proto.pipeline_service_pb2 as pb_core
+import d3m_ta2_vistrails.proto.pipeline_service_pb2_grpc as pb_core_grpc
 
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class D3mTa2(object):
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
         try:
             server = grpc.server(self.executor)
-            ps_pb2_grpc.add_PipelineComputeServicer_to_server(
+            pb_core_grpc.add_PipelineComputeServicer_to_server(
                 self.core_rpc, server)
             for port in self._insecure_ports:
                 server.add_insecure_port(port)
@@ -95,12 +95,12 @@ class D3mTa2(object):
         session_pipelines.add(pipeline_id)
 
         scores = [
-            ps_pb2.Score(
-                metric=ps_pb2.ACCURACY,
+            pb_core.Score(
+                metric=pb_core.ACCURACY,
                 value=0.8,
             ),
-            ps_pb2.Score(
-                metric=ps_pb2.ROC_AUC,
+            pb_core.Score(
+                metric=pb_core.ROC_AUC,
                 value=0.5,
             ),
         ]
@@ -137,28 +137,28 @@ class D3mTa2(object):
     TEMPLATES = [_example_template]
 
 
-class CoreService(ps_pb2_grpc.PipelineComputeServicer):
+class CoreService(pb_core_grpc.PipelineComputeServicer):
     def __init__(self, app):
         self._app = app
 
     def StartSession(self, request, context):
-        version = ps_pb2.DESCRIPTOR.GetOptions().Extensions[
-            ps_pb2.protocol_version]
+        version = pb_core.DESCRIPTOR.GetOptions().Extensions[
+            pb_core.protocol_version]
         logger.info("Session started: 1 (protocol version %s)", version)
-        return ps_pb2.SessionResponse(
-            response_info=ps_pb2.Response(
-                status=ps_pb2.Status(code=ps_pb2.OK)
+        return pb_core.SessionResponse(
+            response_info=pb_core.Response(
+                status=pb_core.Status(code=pb_core.OK)
             ),
             user_agent='vistrails_ta2 %s' % __version__,
             version=version,
-            context=ps_pb2.SessionContext(session_id='1'),
+            context=pb_core.SessionContext(session_id='1'),
         )
 
     def EndSession(self, request, context):
         assert request.session_id == '1'
         logger.info("Session terminated: 1")
-        return ps_pb2.Response(
-            status=ps_pb2.Status(code=ps_pb2.OK),
+        return pb_core.Response(
+            status=pb_core.Status(code=pb_core.OK),
         )
 
     def CreatePipelines(self, request, context):
@@ -166,11 +166,11 @@ class CoreService(ps_pb2_grpc.PipelineComputeServicer):
         assert sessioncontext.session_id == '1'
         train_features = request.train_features
         task = request.task
-        assert task == ps_pb2.CLASSIFICATION
+        assert task == pb_core.CLASSIFICATION
         task_subtype = request.task_subtype
         task_description = request.task_description
         output = request.output
-        assert output == ps_pb2.FILE
+        assert output == pb_core.FILE
         metrics = request.metrics
         target_features = request.target_features
         max_pipelines = request.max_pipelines
@@ -183,14 +183,14 @@ class CoreService(ps_pb2_grpc.PipelineComputeServicer):
             if not context.is_active():
                 logger.info("Client closed CreatePipelines stream")
 
-            yield ps_pb2.PipelineCreateResult(
-                response_info=ps_pb2.Response(
-                    status=ps_pb2.Status(code=ps_pb2.OK),
+            yield pb_core.PipelineCreateResult(
+                response_info=pb_core.Response(
+                    status=pb_core.Status(code=pb_core.OK),
                 ),
-                progress_info=ps_pb2.COMPLETED,
+                progress_info=pb_core.COMPLETED,
                 pipeline_id=pipeline_id,
-                pipeline_info=ps_pb2.Pipeline(
-                    output=ps_pb2.FILE,
+                pipeline_info=pb_core.Pipeline(
+                    output=pb_core.FILE,
                     scores=scores,
                 ),
             )
@@ -203,11 +203,11 @@ class CoreService(ps_pb2_grpc.PipelineComputeServicer):
         logger.info("Got ExecutePipeline request, session=%s",
                     sessioncontext.session_id)
 
-        yield ps_pb2.PipelineExecuteResult(
-            response_info=ps_pb2.Response(
-                status=ps_pb2.Status(code=ps_pb2.OK),
+        yield pb_core.PipelineExecuteResult(
+            response_info=pb_core.Response(
+                status=pb_core.Status(code=pb_core.OK),
             ),
-            progress_info=ps_pb2.COMPLETED,
+            progress_info=pb_core.COMPLETED,
             pipeline_id=pipeline_id,
         )
 
