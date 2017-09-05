@@ -68,6 +68,17 @@ class D3mTa2(object):
         finally:
             self.executor.shutdown(wait=True)
 
+    def new_session(self):
+        session = '%d' % len(self._sessions)
+        self._sessions[session] = {}
+        return session
+
+    def finish_session(self, session):
+        self._sessions.pop(session)
+
+    def has_session(self, session):
+        return session in self._sessions
+
     def build_pipelines(self, session):
         for template in self.TEMPLATES:
             yield self.build_pipeline_from_template(session, template)
@@ -93,11 +104,7 @@ class D3mTa2(object):
 
         # Add it to the database
         self._pipelines.add(pipeline_id)
-        try:
-            session_pipelines = self._sessions[session]
-        except KeyError:
-            session_pipelines = self._sessions[session] = set()
-        session_pipelines.add(pipeline_id)
+        self._sessions[session].add(pipeline_id)
 
         scores = [
             pb_core.Score(
@@ -149,26 +156,28 @@ class CoreService(pb_core_grpc.PipelineComputeServicer):
     def StartSession(self, request, context):
         version = pb_core.DESCRIPTOR.GetOptions().Extensions[
             pb_core.protocol_version]
-        logger.info("Session started: 1 (protocol version %s)", version)
+        session_id = self._app.new_session()
+        logger.info("Session started: %s (protocol version %s)",
+                    session_id, version)
         return pb_core.SessionResponse(
             response_info=pb_core.Response(
                 status=pb_core.Status(code=pb_core.OK)
             ),
             user_agent='vistrails_ta2 %s' % __version__,
             version=version,
-            context=pb_core.SessionContext(session_id='1'),
+            context=pb_core.SessionContext(session_id=session_id),
         )
 
     def EndSession(self, request, context):
-        assert request.session_id == '1'
-        logger.info("Session terminated: 1")
+        self._app.finish_session(request.session_id)
+        logger.info("Session terminated: %s", request.session_id)
         return pb_core.Response(
             status=pb_core.Status(code=pb_core.OK),
         )
 
     def CreatePipelines(self, request, context):
         sessioncontext = request.context
-        assert sessioncontext.session_id == '1'
+        assert self._app.has_session(sessioncontext.session_id)
         train_features = request.train_features
         task = request.task
         assert task == pb_core.CLASSIFICATION
@@ -202,7 +211,7 @@ class CoreService(pb_core_grpc.PipelineComputeServicer):
 
     def ExecutePipeline(self, request, context):
         sessioncontext = request.context
-        assert sessioncontext.session_id == '1'
+        assert self._app.has_session(sessioncontext.session_id)
         pipeline_id = request.pipeline_id
 
         logger.info("Got ExecutePipeline request, session=%s",
@@ -223,7 +232,7 @@ class DataflowService(pb_dataflow_grpc.DataflowServicer):
 
     def DescribeDataflow(self, request, context):
         sessioncontext = request.context
-        assert sessioncontext.session_id == '1'
+        assert self._app.has_session(sessioncontext.session_id)
         pipeline_id = request.pipeline_id
 
         # TODO: Build description from VisTrails workflow
@@ -236,7 +245,7 @@ class DataflowService(pb_dataflow_grpc.DataflowServicer):
 
     def GetDataflowResults(self, request, context):
         sessioncontext = request.context
-        assert sessioncontext.session_id == '1'
+        assert self._app.has_session(sessioncontext.session_id)
         pipeline_id = request.pipeline_id
 
         yield pb_dataflow.ModuleResult(
