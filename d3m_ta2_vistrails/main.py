@@ -119,6 +119,22 @@ class D3mTa2(object):
 
         return pipeline_id, scores
 
+    def get_pipeline(self, session, pipeline_id):
+        if pipeline_id not in self._sessions[session]:
+            raise KeyError("No such pipeline ID for session")
+
+        filename = os.path.join(self.directory,
+                                'workflows',
+                                pipeline_id + '.vt')
+
+        # copied from VistrailsApplicationInterface#open_vistrail()
+        locator = BaseLocator.from_url(filename)
+        loaded_objs = vistrails.core.db.io.load_vistrail(locator)
+        controller = VistrailController(loaded_objs[0], locator,
+                                        *loaded_objs[1:])
+        controller.select_latest_version()
+        return controller
+
     def _example_template(self, controller):
         controller.select_latest_version()
         ops = []
@@ -217,6 +233,7 @@ class CoreService(pb_core_grpc.PipelineComputeServicer):
         logger.info("Got ExecutePipeline request, session=%s",
                     sessioncontext.session_id)
 
+        # TODO: ExecutePipeline
         yield pb_core.PipelineExecuteResult(
             response_info=pb_core.Response(
                 status=pb_core.Status(code=pb_core.OK),
@@ -235,12 +252,53 @@ class DataflowService(pb_dataflow_grpc.DataflowServicer):
         assert self._app.has_session(sessioncontext.session_id)
         pipeline_id = request.pipeline_id
 
-        # TODO: Build description from VisTrails workflow
+        # Build description from VisTrails workflow
+        controller = self._app.get_pipeline(sessioncontext.session_id,
+                                            pipeline_id)
+        vt_pipeline = controller.current_pipeline
+        modules = []
+        for vt_module in vt_pipeline.module_list:
+            functions = dict((func.name, func.params[0].strValue)
+                             for func in vt_module.functions
+                             if len(func.param) == 1)
+            inputs = []
+            for port in vt_module.destinationPorts():
+                port = pb_dataflow.DataflowDescription.Input(
+                    name=port.name,
+                    type=port.sigstring,
+                )
+                if port.name in functions:
+                    port.value.CopyFrom(functions[port.name])
+                inputs.append(port)
+            outputs = [
+                pb_dataflow.DataflowDescription.Output(
+                    name=port.name,
+                    type=port.sigstring,
+                )
+                for port in vt_module.sourcePorts()
+            ]
+
+            modules.append(pb_dataflow.DataflowDescription.Module(
+                id='%d' % vt_module.id,
+                type=vt_module.module_descriptor.sigstring,
+                label=vt_module.module_descriptor.name,
+                inputs=inputs,
+                outputs=outputs,
+            ))
+
+        connections = []
+        for vt_connection in vt_pipeline.connection_list:
+            connections.append(pb_dataflow.DataflowDescription.Connection(
+                from_module_id='%d' % vt_connection.source.moduleId,
+                from_output_name=vt_connection.source.name,
+                to_module_id='%d' % vt_connection.destination.moduleId,
+                to_input_name=vt_connection.destination.name,
+            ))
 
         return pb_dataflow.DataflowDescription(
             pipeline_id=pipeline_id,
-            modules=[],
-            connections=[],
+            modules=modules,
+            connections=connections,
         )
 
     def GetDataflowResults(self, request, context):
@@ -248,6 +306,7 @@ class DataflowService(pb_dataflow_grpc.DataflowServicer):
         assert self._app.has_session(sessioncontext.session_id)
         pipeline_id = request.pipeline_id
 
+        # TODO: GetDataflowResults
         yield pb_dataflow.ModuleResult(
             module_id='module1',
             status=pb_dataflow.ModuleResult.RUNNING,
