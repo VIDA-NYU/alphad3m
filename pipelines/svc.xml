@@ -1,0 +1,452 @@
+<vistrail id="" name="" version="1.0.4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vistrails.org/vistrail.xsd">
+  <action date="2017-09-07 15:03:52" id="1" prevId="0" session="0" user="remram">
+    <annotation id="5" key="__description__" value="Paste" />
+    <add id="0" objectId="0" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="0" name="CSVFile" namespace="read" package="org.vistrails.vistrails.tabledata" version="0.1.6" />
+    </add>
+    <add id="1" objectId="0" parentObjId="0" parentObjType="module" what="annotation">
+      <annotation id="0" key="__desc__" value="TrainData" />
+    </add>
+    <add id="2" objectId="0" parentObjId="0" parentObjType="module" what="location">
+      <location id="0" x="-136.382953018" y="50.305771812" />
+    </add>
+    <add id="3" objectId="1" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="1" name="File" namespace="" package="org.vistrails.vistrails.basic" version="2.1.1" />
+    </add>
+    <add id="4" objectId="1" parentObjId="1" parentObjType="module" what="annotation">
+      <annotation id="1" key="__desc__" value="Train" />
+    </add>
+    <add id="5" objectId="1" parentObjId="1" parentObjType="module" what="function">
+      <function id="1" name="value" pos="1" />
+    </add>
+    <add id="6" objectId="1" parentObjId="1" parentObjType="function" what="parameter">
+      <parameter alias="" id="1" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:File" val="/media/data/yamuna/D3M/data/classification/o_185/data/trainData.csv" />
+    </add>
+    <add id="7" objectId="0" parentObjId="1" parentObjType="module" what="function">
+      <function id="0" name="name" pos="0" />
+    </add>
+    <add id="8" objectId="0" parentObjId="0" parentObjType="function" what="parameter">
+      <parameter alias="" id="0" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:String" val="" />
+    </add>
+    <add id="9" objectId="1" parentObjId="1" parentObjType="module" what="location">
+      <location id="1" x="-159.052751678" y="146.289664432" />
+    </add>
+    <add id="10" objectId="2" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="2" name="TableCell" namespace="" package="org.vistrails.vistrails.tabledata" version="0.1.6" />
+    </add>
+    <add id="11" objectId="2" parentObjId="2" parentObjType="module" what="location">
+      <location id="2" x="303.088187922" y="-82.896912748" />
+    </add>
+    <add id="12" objectId="3" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="3" name="Imputer" namespace="preprocessing" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="13" objectId="3" parentObjId="3" parentObjType="module" what="function">
+      <function id="3" name="missing_values" pos="1" />
+    </add>
+    <add id="14" objectId="3" parentObjId="3" parentObjType="function" what="parameter">
+      <parameter alias="" id="3" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:String" val="NaN" />
+    </add>
+    <add id="15" objectId="2" parentObjId="3" parentObjType="module" what="function">
+      <function id="2" name="strategy" pos="0" />
+    </add>
+    <add id="16" objectId="2" parentObjId="2" parentObjType="function" what="parameter">
+      <parameter alias="" id="2" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:String" val="mean" />
+    </add>
+    <add id="17" objectId="3" parentObjId="3" parentObjType="module" what="location">
+      <location id="3" x="-141.099731548" y="-143.772080538" />
+    </add>
+    <add id="18" objectId="4" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="4" name="ExtractColumn" namespace="" package="org.vistrails.vistrails.tabledata" version="0.1.6" />
+    </add>
+    <add id="19" objectId="2" parentObjId="4" parentObjType="module" what="annotation">
+      <annotation id="2" key="__desc__" value="Missing Value Extract Col" />
+    </add>
+    <add id="20" objectId="4" parentObjId="4" parentObjType="module" what="function">
+      <function id="4" name="column_name" pos="0" />
+    </add>
+    <add id="21" objectId="4" parentObjId="4" parentObjType="function" what="parameter">
+      <parameter alias="" id="4" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:String" val="Strikeouts" />
+    </add>
+    <add id="22" objectId="4" parentObjId="4" parentObjType="module" what="location">
+      <location id="4" x="-133.539999998" y="-46.870067118" />
+    </add>
+    <add id="23" objectId="5" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="5" name="Pipeline" namespace="" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="24" objectId="5" parentObjId="5" parentObjType="module" what="location">
+      <location id="5" x="43.082818792" y="-191.192214768" />
+    </add>
+    <add id="25" objectId="6" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="6" name="LinearSVC" namespace="classifiers" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="26" objectId="6" parentObjId="6" parentObjType="module" what="location">
+      <location id="6" x="155.791543622" y="-121.092885908" />
+    </add>
+    <add id="27" objectId="7" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="7" name="File" namespace="" package="org.vistrails.vistrails.basic" version="2.1.1" />
+    </add>
+    <add id="28" objectId="3" parentObjId="7" parentObjType="module" what="annotation">
+      <annotation id="3" key="__desc__" value="Target" />
+    </add>
+    <add id="29" objectId="5" parentObjId="7" parentObjType="module" what="function">
+      <function id="5" name="value" pos="0" />
+    </add>
+    <add id="30" objectId="5" parentObjId="5" parentObjType="function" what="parameter">
+      <parameter alias="" id="5" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:File" val="/media/data/yamuna/D3M/data/classification/o_185/data/trainTargets.csv" />
+    </add>
+    <add id="31" objectId="7" parentObjId="7" parentObjType="module" what="location">
+      <location id="7" x="-41.448724828" y="151.057449662" />
+    </add>
+    <add id="32" objectId="8" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="8" name="CSVFile" namespace="read" package="org.vistrails.vistrails.tabledata" version="0.1.6" />
+    </add>
+    <add id="33" objectId="4" parentObjId="8" parentObjType="module" what="annotation">
+      <annotation id="4" key="__desc__" value="TrainTarget" />
+    </add>
+    <add id="34" objectId="8" parentObjId="8" parentObjType="module" what="location">
+      <location id="8" x="-1.588322148" y="52.780939602" />
+    </add>
+    <add id="35" objectId="9" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="9" name="TrainTestSplit" namespace="cross-validation" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="36" objectId="9" parentObjId="9" parentObjType="module" what="location">
+      <location id="9" x="201.149932882" y="95.390335572" />
+    </add>
+    <add id="37" objectId="0" parentObjId="" parentObjType="" what="connection">
+      <connection id="0" />
+    </add>
+    <add id="38" objectId="1" parentObjId="0" parentObjType="connection" what="port">
+      <port id="1" moduleId="0" moduleName="CSVFile" name="file" signature="(org.vistrails.vistrails.basic:File)" type="destination" />
+    </add>
+    <add id="39" objectId="0" parentObjId="0" parentObjType="connection" what="port">
+      <port id="0" moduleId="1" moduleName="File" name="value" signature="(org.vistrails.vistrails.basic:File)" type="source" />
+    </add>
+    <add id="40" objectId="1" parentObjId="" parentObjType="" what="connection">
+      <connection id="1" />
+    </add>
+    <add id="41" objectId="3" parentObjId="1" parentObjType="connection" what="port">
+      <port id="3" moduleId="9" moduleName="TrainTestSplit" name="training_data" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="42" objectId="2" parentObjId="1" parentObjType="connection" what="port">
+      <port id="2" moduleId="2" moduleName="TableCell" name="table" signature="(org.vistrails.vistrails.tabledata:Table)" type="destination" />
+    </add>
+    <add id="43" objectId="2" parentObjId="" parentObjType="" what="connection">
+      <connection id="2" />
+    </add>
+    <add id="44" objectId="5" parentObjId="2" parentObjType="connection" what="port">
+      <port id="5" moduleId="0" moduleName="CSVFile" name="value" signature="(org.vistrails.vistrails.tabledata:Table)" type="source" />
+    </add>
+    <add id="45" objectId="4" parentObjId="2" parentObjType="connection" what="port">
+      <port id="4" moduleId="4" moduleName="ExtractColumn" name="table" signature="(org.vistrails.vistrails.tabledata:Table)" type="destination" />
+    </add>
+    <add id="46" objectId="3" parentObjId="" parentObjType="" what="connection">
+      <connection id="3" />
+    </add>
+    <add id="47" objectId="7" parentObjId="3" parentObjType="connection" what="port">
+      <port id="7" moduleId="4" moduleName="ExtractColumn" name="value" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="48" objectId="6" parentObjId="3" parentObjType="connection" what="port">
+      <port id="6" moduleId="3" moduleName="Imputer" name="training_data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+    <add id="49" objectId="4" parentObjId="" parentObjType="" what="connection">
+      <connection id="4" />
+    </add>
+    <add id="50" objectId="9" parentObjId="4" parentObjType="connection" what="port">
+      <port id="9" moduleId="3" moduleName="Imputer" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="source" />
+    </add>
+    <add id="51" objectId="8" parentObjId="4" parentObjType="connection" what="port">
+      <port id="8" moduleId="5" moduleName="Pipeline" name="model1" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="destination" />
+    </add>
+    <add id="52" objectId="5" parentObjId="" parentObjType="" what="connection">
+      <connection id="5" />
+    </add>
+    <add id="53" objectId="11" parentObjId="5" parentObjType="connection" what="port">
+      <port id="11" moduleId="6" moduleName="LinearSVC" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="source" />
+    </add>
+    <add id="54" objectId="10" parentObjId="5" parentObjType="connection" what="port">
+      <port id="10" moduleId="5" moduleName="Pipeline" name="model2" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="destination" />
+    </add>
+    <add id="55" objectId="6" parentObjId="" parentObjType="" what="connection">
+      <connection id="6" />
+    </add>
+    <add id="56" objectId="13" parentObjId="6" parentObjType="connection" what="port">
+      <port id="13" moduleId="8" moduleName="CSVFile" name="file" signature="(org.vistrails.vistrails.basic:File)" type="destination" />
+    </add>
+    <add id="57" objectId="12" parentObjId="6" parentObjType="connection" what="port">
+      <port id="12" moduleId="7" moduleName="File" name="value" signature="(org.vistrails.vistrails.basic:File)" type="source" />
+    </add>
+    <add id="58" objectId="7" parentObjId="" parentObjType="" what="connection">
+      <connection id="7" />
+    </add>
+    <add id="59" objectId="15" parentObjId="7" parentObjType="connection" what="port">
+      <port id="15" moduleId="0" moduleName="CSVFile" name="value" signature="(org.vistrails.vistrails.tabledata:Table)" type="source" />
+    </add>
+    <add id="60" objectId="14" parentObjId="7" parentObjType="connection" what="port">
+      <port id="14" moduleId="9" moduleName="TrainTestSplit" name="data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+    <add id="61" objectId="8" parentObjId="" parentObjType="" what="connection">
+      <connection id="8" />
+    </add>
+    <add id="62" objectId="17" parentObjId="8" parentObjType="connection" what="port">
+      <port id="17" moduleId="8" moduleName="CSVFile" name="value" signature="(org.vistrails.vistrails.tabledata:Table)" type="source" />
+    </add>
+    <add id="63" objectId="16" parentObjId="8" parentObjType="connection" what="port">
+      <port id="16" moduleId="9" moduleName="TrainTestSplit" name="target" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+    <add id="64" objectId="9" parentObjId="" parentObjType="" what="connection">
+      <connection id="9" />
+    </add>
+    <add id="65" objectId="19" parentObjId="9" parentObjType="connection" what="port">
+      <port id="19" moduleId="9" moduleName="TrainTestSplit" name="training_data" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="66" objectId="18" parentObjId="9" parentObjType="connection" what="port">
+      <port id="18" moduleId="5" moduleName="Pipeline" name="training_data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+    <add id="67" objectId="10" parentObjId="" parentObjType="" what="connection">
+      <connection id="10" />
+    </add>
+    <add id="68" objectId="21" parentObjId="10" parentObjType="connection" what="port">
+      <port id="21" moduleId="9" moduleName="TrainTestSplit" name="training_target" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="69" objectId="20" parentObjId="10" parentObjType="connection" what="port">
+      <port id="20" moduleId="5" moduleName="Pipeline" name="training_target" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-07 15:04:46" id="2" prevId="1" session="0" user="remram">
+    <annotation id="8" key="__description__" value="Paste" />
+    <add id="70" objectId="10" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="10" name="TrainTestSplitTable" namespace="cross-validation" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="71" objectId="10" parentObjId="10" parentObjType="module" what="location">
+      <location id="10" x="606.099010118" y="-102.664660122" />
+    </add>
+    <add id="72" objectId="11" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="11" name="ExtractColumn" namespace="" package="org.vistrails.vistrails.tabledata" version="0.1.6" />
+    </add>
+    <add id="73" objectId="6" parentObjId="11" parentObjType="module" what="function">
+      <function id="6" name="column_name" pos="0" />
+    </add>
+    <add id="74" objectId="6" parentObjId="6" parentObjType="function" what="parameter">
+      <parameter alias="" id="6" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:String" val="Hall_of_Fame" />
+    </add>
+    <add id="75" objectId="11" parentObjId="11" parentObjType="module" what="location">
+      <location id="11" x="630.242099548" y="-18.580107282" />
+    </add>
+    <add id="76" objectId="12" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="12" name="PythonSource" namespace="" package="org.vistrails.vistrails.basic" version="2.1.1" />
+    </add>
+    <add id="77" objectId="3" parentObjId="12" parentObjType="module" what="portSpec">
+      <portSpec depth="0" id="3" maxConns="-1" minConns="0" name="training_array" optional="0" sortKey="1" type="output">
+        <portSpecItem default="" entryType="" id="3" label="" module="List" namespace="" package="org.vistrails.vistrails.basic" pos="0" values="" />
+      </portSpec>
+    </add>
+    <add id="78" objectId="2" parentObjId="12" parentObjType="module" what="portSpec">
+      <portSpec depth="0" id="2" maxConns="-1" minConns="0" name="test_array" optional="0" sortKey="0" type="output">
+        <portSpecItem default="" entryType="" id="2" label="" module="List" namespace="" package="org.vistrails.vistrails.basic" pos="0" values="" />
+      </portSpec>
+    </add>
+    <add id="79" objectId="1" parentObjId="12" parentObjType="module" what="portSpec">
+      <portSpec depth="0" id="1" maxConns="-1" minConns="0" name="test_table" optional="0" sortKey="1" type="input">
+        <portSpecItem default="" entryType="" id="1" label="" module="Table" namespace="" package="org.vistrails.vistrails.tabledata" pos="0" values="" />
+      </portSpec>
+    </add>
+    <add id="80" objectId="0" parentObjId="12" parentObjType="module" what="portSpec">
+      <portSpec depth="0" id="0" maxConns="-1" minConns="0" name="training_table" optional="0" sortKey="0" type="input">
+        <portSpecItem default="" entryType="" id="0" label="" module="Table" namespace="" package="org.vistrails.vistrails.tabledata" pos="0" values="" />
+      </portSpec>
+    </add>
+    <add id="81" objectId="7" parentObjId="12" parentObjType="module" what="annotation">
+      <annotation id="7" key="__desc__" value="Transform data" />
+    </add>
+    <add id="82" objectId="7" parentObjId="12" parentObjType="module" what="function">
+      <function id="7" name="source" pos="0" />
+    </add>
+    <add id="83" objectId="7" parentObjId="7" parentObjType="function" what="parameter">
+      <parameter alias="" id="7" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:String" val="import%20numpy%0Afrom%20sklearn.preprocessing%20import%20LabelEncoder%0A%0A%0Atraining_array%20%3D%20%5B%5D%0Atransforms%20%3D%20%5B%5B%5D%5D%20%2A%20training_table.columns%0A%0Afor%20i%20in%20xrange%28training_table.columns%29%3A%0A%20%20%20%20column%20%3D%20training_table.get_column%28i%29%0A%20%20%20%20if%20isinstance%28column%5B0%5D%2C%20basestring%29%3A%0A%20%20%20%20%20%20%20%20trans%20%3D%20LabelEncoder%28%29.fit_transform%0A%20%20%20%20%20%20%20%20transforms%5Bi%5D.append%28trans%29%0A%20%20%20%20%20%20%20%20column%20%3D%20trans%28column%29%0A%20%20%20%20training_array.append%28column%29%0A%0Atraining_array%20%3D%20numpy.transpose%28numpy.array%28training_array%2C%20dtype%3Dnumpy.float%29%29%0A%0Atest_array%20%3D%20%5B%5D%0A%0Afor%20i%20in%20xrange%28test_table.columns%29%3A%0A%20%20%20%20column%20%3D%20test_table.get_column%28i%29%0A%20%20%20%20for%20trans%20in%20transforms%5Bi%5D%5B%3A%3A-1%5D%3A%0A%20%20%20%20%20%20%20%20column%20%3D%20trans%28column%29%0A%20%20%20%20test_array.append%28column%29%0A%0Atest_array%20%3D%20numpy.transpose%28numpy.array%28test_array%2C%20dtype%3Dnumpy.float%29%29%0A%0Acache_this%28%29" />
+    </add>
+    <add id="84" objectId="12" parentObjId="12" parentObjType="module" what="location">
+      <location id="12" x="713.630712698" y="-203.001464652" />
+    </add>
+    <add id="85" objectId="13" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="13" name="CrossValScore" namespace="cross-validation" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="86" objectId="13" parentObjId="13" parentObjType="module" what="location">
+      <location id="13" x="779.279427138" y="-401.588825822" />
+    </add>
+    <add id="87" objectId="14" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="14" name="StandardOutput" namespace="" package="org.vistrails.vistrails.basic" version="2.1.1" />
+    </add>
+    <add id="88" objectId="14" parentObjId="14" parentObjType="module" what="location">
+      <location id="14" x="845.748750498" y="-504.164942122" />
+    </add>
+    <add id="89" objectId="11" parentObjId="" parentObjType="" what="connection">
+      <connection id="11" />
+    </add>
+    <add id="90" objectId="23" parentObjId="11" parentObjType="connection" what="port">
+      <port id="23" moduleId="13" moduleName="CrossValScore" name="target" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+    <add id="91" objectId="22" parentObjId="11" parentObjType="connection" what="port">
+      <port id="22" moduleId="10" moduleName="TrainTestSplitTable" name="test_target" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="92" objectId="12" parentObjId="" parentObjType="" what="connection">
+      <connection id="12" />
+    </add>
+    <add id="93" objectId="25" parentObjId="12" parentObjType="connection" what="port">
+      <port id="25" moduleId="14" moduleName="StandardOutput" name="value" signature="(org.vistrails.vistrails.basic:Variant)" type="destination" />
+    </add>
+    <add id="94" objectId="24" parentObjId="12" parentObjType="connection" what="port">
+      <port id="24" moduleId="13" moduleName="CrossValScore" name="scores" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="95" objectId="13" parentObjId="" parentObjType="" what="connection">
+      <connection id="13" />
+    </add>
+    <add id="96" objectId="27" parentObjId="13" parentObjType="connection" what="port">
+      <port id="27" moduleId="10" moduleName="TrainTestSplitTable" name="target" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+    <add id="97" objectId="26" parentObjId="13" parentObjType="connection" what="port">
+      <port id="26" moduleId="11" moduleName="ExtractColumn" name="value" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="98" objectId="14" parentObjId="" parentObjType="" what="connection">
+      <connection id="14" />
+    </add>
+    <add id="99" objectId="29" parentObjId="14" parentObjType="connection" what="port">
+      <port id="29" moduleId="12" moduleName="PythonSource" name="training_table" signature="(org.vistrails.vistrails.tabledata:Table)" type="destination" />
+    </add>
+    <add id="100" objectId="28" parentObjId="14" parentObjType="connection" what="port">
+      <port id="28" moduleId="10" moduleName="TrainTestSplitTable" name="training_data" signature="(org.vistrails.vistrails.tabledata:Table)" type="source" />
+    </add>
+    <add id="101" objectId="15" parentObjId="" parentObjType="" what="connection">
+      <connection id="15" />
+    </add>
+    <add id="102" objectId="31" parentObjId="15" parentObjType="connection" what="port">
+      <port id="31" moduleId="12" moduleName="PythonSource" name="test_table" signature="(org.vistrails.vistrails.tabledata:Table)" type="destination" />
+    </add>
+    <add id="103" objectId="30" parentObjId="15" parentObjType="connection" what="port">
+      <port id="30" moduleId="10" moduleName="TrainTestSplitTable" name="test_data" signature="(org.vistrails.vistrails.tabledata:Table)" type="source" />
+    </add>
+    <add id="104" objectId="16" parentObjId="" parentObjType="" what="connection">
+      <connection id="16" />
+    </add>
+    <add id="105" objectId="33" parentObjId="16" parentObjType="connection" what="port">
+      <port id="33" moduleId="13" moduleName="CrossValScore" name="data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+    <add id="106" objectId="32" parentObjId="16" parentObjType="connection" what="port">
+      <port id="32" moduleId="12" moduleName="PythonSource" name="test_array" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+  </action>
+  <action date="2017-09-07 15:05:25" id="3" prevId="2" session="0" user="remram">
+    <delete id="107" objectId="3" parentObjId="1" parentObjType="connection" what="port" />
+    <delete id="108" objectId="2" parentObjId="1" parentObjType="connection" what="port" />
+    <delete id="109" objectId="1" parentObjId="" parentObjType="" what="connection" />
+    <delete id="110" objectId="5" parentObjId="2" parentObjType="connection" what="port" />
+    <delete id="111" objectId="4" parentObjId="2" parentObjType="connection" what="port" />
+    <delete id="112" objectId="2" parentObjId="" parentObjType="" what="connection" />
+    <delete id="113" objectId="7" parentObjId="3" parentObjType="connection" what="port" />
+    <delete id="114" objectId="6" parentObjId="3" parentObjType="connection" what="port" />
+    <delete id="115" objectId="3" parentObjId="" parentObjType="" what="connection" />
+    <delete id="116" objectId="9" parentObjId="4" parentObjType="connection" what="port" />
+    <delete id="117" objectId="8" parentObjId="4" parentObjType="connection" what="port" />
+    <delete id="118" objectId="4" parentObjId="" parentObjType="" what="connection" />
+    <delete id="119" objectId="11" parentObjId="5" parentObjType="connection" what="port" />
+    <delete id="120" objectId="10" parentObjId="5" parentObjType="connection" what="port" />
+    <delete id="121" objectId="5" parentObjId="" parentObjType="" what="connection" />
+    <delete id="122" objectId="15" parentObjId="7" parentObjType="connection" what="port" />
+    <delete id="123" objectId="14" parentObjId="7" parentObjType="connection" what="port" />
+    <delete id="124" objectId="7" parentObjId="" parentObjType="" what="connection" />
+    <delete id="125" objectId="17" parentObjId="8" parentObjType="connection" what="port" />
+    <delete id="126" objectId="16" parentObjId="8" parentObjType="connection" what="port" />
+    <delete id="127" objectId="8" parentObjId="" parentObjType="" what="connection" />
+    <delete id="128" objectId="19" parentObjId="9" parentObjType="connection" what="port" />
+    <delete id="129" objectId="18" parentObjId="9" parentObjType="connection" what="port" />
+    <delete id="130" objectId="9" parentObjId="" parentObjType="" what="connection" />
+    <delete id="131" objectId="21" parentObjId="10" parentObjType="connection" what="port" />
+    <delete id="132" objectId="20" parentObjId="10" parentObjType="connection" what="port" />
+    <delete id="133" objectId="10" parentObjId="" parentObjType="" what="connection" />
+    <delete id="134" objectId="9" parentObjId="9" parentObjType="module" what="location" />
+    <delete id="135" objectId="9" parentObjId="" parentObjType="" what="module" />
+    <delete id="136" objectId="3" parentObjId="3" parentObjType="module" what="location" />
+    <delete id="137" objectId="2" parentObjId="2" parentObjType="function" what="parameter" />
+    <delete id="138" objectId="2" parentObjId="3" parentObjType="module" what="function" />
+    <delete id="139" objectId="3" parentObjId="3" parentObjType="function" what="parameter" />
+    <delete id="140" objectId="3" parentObjId="3" parentObjType="module" what="function" />
+    <delete id="141" objectId="3" parentObjId="" parentObjType="" what="module" />
+    <delete id="142" objectId="4" parentObjId="4" parentObjType="module" what="location" />
+    <delete id="143" objectId="4" parentObjId="4" parentObjType="function" what="parameter" />
+    <delete id="144" objectId="4" parentObjId="4" parentObjType="module" what="function" />
+    <delete id="145" objectId="2" parentObjId="4" parentObjType="module" what="annotation" />
+    <delete id="146" objectId="4" parentObjId="" parentObjType="" what="module" />
+    <delete id="147" objectId="5" parentObjId="5" parentObjType="module" what="location" />
+    <delete id="148" objectId="5" parentObjId="" parentObjType="" what="module" />
+    <delete id="149" objectId="2" parentObjId="2" parentObjType="module" what="location" />
+    <delete id="150" objectId="2" parentObjId="" parentObjType="" what="module" />
+  </action>
+  <action date="2017-09-07 15:06:00" id="4" prevId="3" session="0" user="remram">
+    <change id="151" newObjId="15" oldObjId="0" parentObjId="0" parentObjType="module" what="location">
+      <location id="15" x="-132.585584534" y="52.2044560539" />
+    </change>
+    <change id="152" newObjId="16" oldObjId="6" parentObjId="6" parentObjType="module" what="location">
+      <location id="16" x="91.2362793974" y="-312.85999434" />
+    </change>
+    <change id="153" newObjId="17" oldObjId="10" parentObjId="10" parentObjType="module" what="location">
+      <location id="17" x="45.9871587572" y="-108.360712848" />
+    </change>
+    <change id="154" newObjId="18" oldObjId="11" parentObjId="11" parentObjType="module" what="location">
+      <location id="18" x="70.1302481872" y="-24.2761600077" />
+    </change>
+    <change id="155" newObjId="19" oldObjId="12" parentObjId="12" parentObjType="module" what="location">
+      <location id="19" x="153.518861337" y="-208.697517378" />
+    </change>
+    <change id="156" newObjId="20" oldObjId="13" parentObjId="13" parentObjType="module" what="location">
+      <location id="20" x="219.167575777" y="-407.284878548" />
+    </change>
+    <change id="157" newObjId="21" oldObjId="14" parentObjId="14" parentObjType="module" what="location">
+      <location id="21" x="285.636899137" y="-509.860994848" />
+    </change>
+  </action>
+  <action date="2017-09-07 15:06:00" id="5" prevId="4" session="0" user="remram">
+    <add id="158" objectId="17" parentObjId="" parentObjType="" what="connection">
+      <connection id="17" />
+    </add>
+    <add id="159" objectId="34" parentObjId="17" parentObjType="connection" what="port">
+      <port id="34" moduleId="0" moduleName="CSVFile" name="value" signature="(org.vistrails.vistrails.tabledata:Table)" type="source" />
+    </add>
+    <add id="160" objectId="35" parentObjId="17" parentObjType="connection" what="port">
+      <port id="35" moduleId="10" moduleName="TrainTestSplitTable" name="data" signature="(org.vistrails.vistrails.tabledata:Table)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-07 15:06:13" id="6" prevId="5" session="0" user="remram">
+    <add id="161" objectId="18" parentObjId="" parentObjType="" what="connection">
+      <connection id="18" />
+    </add>
+    <add id="162" objectId="36" parentObjId="18" parentObjType="connection" what="port">
+      <port id="36" moduleId="12" moduleName="PythonSource" name="training_array" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="163" objectId="37" parentObjId="18" parentObjType="connection" what="port">
+      <port id="37" moduleId="6" moduleName="LinearSVC" name="training_data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-07 15:06:19" id="7" prevId="6" session="0" user="remram">
+    <add id="164" objectId="19" parentObjId="" parentObjType="" what="connection">
+      <connection id="19" />
+    </add>
+    <add id="165" objectId="38" parentObjId="19" parentObjType="connection" what="port">
+      <port id="38" moduleId="10" moduleName="TrainTestSplitTable" name="training_target" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="166" objectId="39" parentObjId="19" parentObjType="connection" what="port">
+      <port id="39" moduleId="6" moduleName="LinearSVC" name="training_target" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-07 15:06:23" id="8" prevId="7" session="0" user="remram">
+    <add id="167" objectId="20" parentObjId="" parentObjType="" what="connection">
+      <connection id="20" />
+    </add>
+    <add id="168" objectId="40" parentObjId="20" parentObjType="connection" what="port">
+      <port id="40" moduleId="6" moduleName="LinearSVC" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="source" />
+    </add>
+    <add id="169" objectId="41" parentObjId="20" parentObjType="connection" what="port">
+      <port id="41" moduleId="13" moduleName="CrossValScore" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="destination" />
+    </add>
+  </action>
+  <actionAnnotation actionId="1" date="2017-09-07 15:03:56" id="6" key="__tag__" user="remram" value="draft from yamuna" />
+  <actionAnnotation actionId="8" date="2017-09-07 15:06:43" id="9" key="__tag__" user="remram" value="works" />
+</vistrail>
