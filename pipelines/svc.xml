@@ -447,6 +447,30 @@
       <port id="41" moduleId="13" moduleName="CrossValScore" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="destination" />
     </add>
   </action>
+  <action date="2017-09-08 09:30:19" id="9" prevId="8" session="1" user="remram">
+    <add id="170" objectId="21" parentObjId="" parentObjType="" what="connection">
+      <connection id="21" />
+    </add>
+    <add id="171" objectId="42" parentObjId="21" parentObjType="connection" what="port">
+      <port id="42" moduleId="8" moduleName="CSVFile" name="value" signature="(org.vistrails.vistrails.tabledata:Table)" type="source" />
+    </add>
+    <add id="172" objectId="43" parentObjId="21" parentObjType="connection" what="port">
+      <port id="43" moduleId="11" moduleName="ExtractColumn" name="table" signature="(org.vistrails.vistrails.tabledata:Table)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-08 09:30:24" id="10" prevId="9" session="1" user="remram">
+    <add id="173" objectId="8" parentObjId="11" parentObjType="module" what="function">
+      <function id="8" name="numeric" pos="1" />
+    </add>
+    <add id="174" objectId="8" parentObjId="8" parentObjType="function" what="parameter">
+      <parameter alias="" id="8" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:Boolean" val="True" />
+    </add>
+  </action>
+  <action date="2017-09-08 09:33:27" id="11" prevId="10" session="2" user="remram">
+    <add id="175" objectId="11" parentObjId="6" parentObjType="module" what="annotation">
+      <annotation id="11" key="__desc__" value="Classifier" />
+    </add>
+  </action>
   <actionAnnotation actionId="1" date="2017-09-07 15:03:56" id="6" key="__tag__" user="remram" value="draft from yamuna" />
-  <actionAnnotation actionId="8" date="2017-09-07 15:06:43" id="9" key="__tag__" user="remram" value="works" />
+  <actionAnnotation actionId="11" date="2017-09-08 09:36:57" id="12" key="__tag__" user="remram" value="works" />
 </vistrail>
