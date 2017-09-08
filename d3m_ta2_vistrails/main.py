@@ -14,10 +14,10 @@ from vistrails.core.packagemanager import get_package_manager
 from vistrails.core.vistrail.controller import VistrailController
 
 from d3m_ta2_vistrails import __version__
-import d3m_ta2_vistrails.proto.pipeline_service_pb2 as pb_core
-import d3m_ta2_vistrails.proto.pipeline_service_pb2_grpc as pb_core_grpc
-import d3m_ta2_vistrails.proto.dataflow_service_pb2 as pb_dataflow
-import d3m_ta2_vistrails.proto.dataflow_service_pb2_grpc as pb_dataflow_grpc
+import d3m_ta2_vistrails.proto.core_pb2 as pb_core
+import d3m_ta2_vistrails.proto.core_pb2_grpc as pb_core_grpc
+import d3m_ta2_vistrails.proto.dataflow_ext_pb2 as pb_dataflow
+import d3m_ta2_vistrails.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
 
 
 logger = logging.getLogger(__name__)
@@ -56,9 +56,9 @@ class D3mTa2(object):
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
         try:
             server = grpc.server(self.executor)
-            pb_core_grpc.add_PipelineComputeServicer_to_server(
+            pb_core_grpc.add_CoreServicer_to_server(
                 self.core_rpc, server)
-            pb_dataflow_grpc.add_DataflowServicer_to_server(
+            pb_dataflow_grpc.add_DataflowExtServicer_to_server(
                 self.dataflow_rpc, server)
             for port in self._insecure_ports:
                 server.add_insecure_port(port)
@@ -223,7 +223,7 @@ class D3mTa2(object):
     ]
 
 
-class CoreService(pb_core_grpc.PipelineComputeServicer):
+class CoreService(pb_core_grpc.CoreServicer):
     def __init__(self, app):
         self._app = app
 
@@ -300,8 +300,17 @@ class CoreService(pb_core_grpc.PipelineComputeServicer):
             pipeline_id=pipeline_id,
         )
 
+    def ListPipelines(self, request, context):
+        raise NotImplementedError  # TODO: ListPipelines
 
-class DataflowService(pb_dataflow_grpc.DataflowServicer):
+    def GetCreatePipelineResults(self, request, context):
+        raise NotImplementedError  # TODO: GetCreatePipelineResults
+
+    def GetExecutePipelineResults(self, request, context):
+        raise NotImplementedError  # TODO: GetExecutePipelineResults
+
+
+class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
     def __init__(self, app):
         self._app = app
 
@@ -380,6 +389,7 @@ class DataflowService(pb_dataflow_grpc.DataflowServicer):
                     value='42',
                 ),
             ],
+            execution_time=60.0,
         )
 
 

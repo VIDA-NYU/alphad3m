@@ -1,6 +1,6 @@
 import grpc
-import d3m_ta2_vistrails.proto.pipeline_service_pb2 as pb_core
-import d3m_ta2_vistrails.proto.pipeline_service_pb2_grpc as pb_core_grpc
+import d3m_ta2_vistrails.proto.core_pb2 as pb_core
+import d3m_ta2_vistrails.proto.core_pb2_grpc as pb_core_grpc
 
 
 __version__ = '0.1'
@@ -8,7 +8,7 @@ __version__ = '0.1'
 
 if __name__ == '__main__':
     channel = grpc.insecure_channel('localhost:50051')
-    stub = pb_core_grpc.PipelineComputeStub(channel)
+    stub = pb_core_grpc.CoreStub(channel)
 
     version = pb_core.DESCRIPTOR.GetOptions().Extensions[
         pb_core.protocol_version]
@@ -25,9 +25,9 @@ if __name__ == '__main__':
         context=context,
         train_features=[
             pb_core.Feature(feature_id='feature1',
-                           data_uri='file:///data/feature1.csv'),
+                            data_uri='file:///data/feature1.csv'),
             pb_core.Feature(feature_id='feature2',
-                           data_uri='file:///data/feature2.csv'),
+                            data_uri='file:///data/feature2.csv'),
         ],
         task=pb_core.CLASSIFICATION,
         task_subtype=pb_core.NONE,
@@ -39,7 +39,7 @@ if __name__ == '__main__':
         ],
         target_features=[
             pb_core.Feature(feature_id='targetfeature',
-                           data_uri='file:///data/targetfeature.csv'),
+                            data_uri='file:///data/targetfeature.csv'),
         ],
         max_pipelines=10,
     ))
