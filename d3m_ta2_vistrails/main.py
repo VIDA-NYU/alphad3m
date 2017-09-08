@@ -70,7 +70,7 @@ class D3mTa2(object):
 
     def new_session(self):
         session = '%d' % len(self._sessions)
-        self._sessions[session] = {}
+        self._sessions[session] = set()
         return session
 
     def finish_session(self, session):
