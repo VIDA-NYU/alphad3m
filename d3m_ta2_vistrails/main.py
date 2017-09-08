@@ -80,20 +80,26 @@ class D3mTa2(object):
         return session in self._sessions
 
     def build_pipelines(self, session):
-        for template in self.TEMPLATES:
-            yield self.build_pipeline_from_template(session, template)
+        for template_iter in self.TEMPLATES:
+            for template in template_iter:
+                if isinstance(template, (list, tuple)):
+                    func, args = template[0], template[1:]
+                    tpl_func = lambda s: func(s, *args)
+                else:
+                    tpl_func = template
+                try:
+                    ret = self.build_pipeline_from_template(session, tpl_func)
+                except Exception:
+                    logger.exception("Error building pipeline from %r",
+                                     template)
+                else:
+                    yield ret
 
     def build_pipeline_from_template(self, session, template):
         pipeline_id = str(uuid.uuid4())
 
-        # Copied from VistrailsApplicationInterface#open_vistrail()
-        locator = UntitledLocator()
-        loaded_objs = vistrails.core.db.io.load_vistrail(locator)
-        controller = VistrailController(loaded_objs[0], locator,
-                                        *loaded_objs[1:])
-
-        # Populate it from a template
-        template(self, controller)
+        # Create workflow from a template
+        controller = template(self)
 
         # Save it to disk
         locator = BaseLocator.from_url(os.path.join(self.directory,
@@ -119,6 +125,28 @@ class D3mTa2(object):
 
         return pipeline_id, scores
 
+    def _new_controller(self):
+        # Copied from VistrailsApplicationInterface#open_vistrail()
+        locator = UntitledLocator()
+        loaded_objs = vistrails.core.db.io.load_vistrail(locator)
+        controller = VistrailController(loaded_objs[0], locator,
+                                        *loaded_objs[1:])
+        controller.select_latest_version()
+        return controller
+
+    def _load_template(self, name):
+        # Copied from VistrailsApplicationInterface#open_vistrail()
+        locator = BaseLocator.from_url(
+            os.path.join(os.path.dirname(__file__),
+                         '..',
+                         'pipelines',
+                         name))
+        loaded_objs = vistrails.core.db.io.load_vistrail(locator)
+        controller = VistrailController(loaded_objs[0], locator,
+                                        *loaded_objs[1:])
+        controller.select_latest_version()
+        return controller
+
     def get_pipeline(self, session, pipeline_id):
         if pipeline_id not in self._sessions[session]:
             raise KeyError("No such pipeline ID for session")
@@ -135,9 +163,10 @@ class D3mTa2(object):
         controller.select_latest_version()
         return controller
 
-    def _example_template(self, controller):
-        controller.select_latest_version()
+    def _example_template(self):
+        controller = self._new_controller()
         ops = []
+
         # Create String module
         mod_string = controller.create_module(
             'org.vistrails.vistrails.basic', 'String')
@@ -161,8 +190,37 @@ class D3mTa2(object):
         controller.add_new_action(action)
         version = controller.perform_action(action)
         controller.change_selected_version(version)
+        return controller
 
-    TEMPLATES = [_example_template]
+    def _classification_template(self, classifier_name):
+        controller = self._load_template('classification.xml')
+        ops = []
+
+        # TODO: Replace the classifier module
+        for module in controller.current_pipeline.module_list:
+            if '__desc__' in module.db_annotations_key_index:
+                name = module.get_annotation_by_key('__desc__').value
+                if name == 'Classifier':
+                    #TODO
+                    break
+        else:
+            raise ValueError("Couldn't find Classifier module in "
+                             "classification template")
+
+        # TODO: Set the correct input files
+
+        action = create_action(ops)
+        controller.add_new_action(action)
+        version = controller.perform_action(action)
+        controller.change_selected_version(version)
+        return controller
+
+    TEMPLATES = [
+        [_example_template],
+        [(_classification_template, 'LinearSVC'),
+         (_classification_template, 'LDA'),
+         (_classification_template, 'DecisionTreeClassifier')]
+    ]
 
 
 class CoreService(pb_core_grpc.PipelineComputeServicer):
