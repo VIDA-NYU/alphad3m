@@ -1,16 +1,15 @@
 from concurrent import futures
+import functools
 import grpc
 import logging
 import os
+import threading
 import time
 import uuid
 import vistrails.core.application
 from vistrails.core.db.action import create_action
 import vistrails.core.db.io
 from vistrails.core.db.locator import BaseLocator, UntitledLocator
-from vistrails.core.modules.module_registry import get_module_registry
-from vistrails.core.modules.vistrails_module import ModuleError
-from vistrails.core.packagemanager import get_package_manager
 from vistrails.core.vistrail.controller import VistrailController
 
 from d3m_ta2_vistrails import __version__
@@ -33,6 +32,17 @@ vistrails_app = vistrails.core.application.init(
         'enablePackagesSilently': True,
     },
     args=[])
+
+
+vistrails_lock = threading.RLock()
+
+
+def with_vistrails_lock(wrapped):
+    def wrapper(*args, **kwargs):
+        with vistrails_lock:
+            return wrapped(*args, **kwargs)
+    functools.update_wrapper(wrapper, wrapped)
+    return wrapper
 
 
 class D3mTa2(object):
@@ -79,6 +89,22 @@ class D3mTa2(object):
     def has_session(self, session):
         return session in self._sessions
 
+    def get_pipeline(self, session, pipeline_id):
+        if pipeline_id not in self._sessions[session]:
+            raise KeyError("No such pipeline ID for session")
+
+        filename = os.path.join(self.directory,
+                                'workflows',
+                                pipeline_id + '.vt')
+
+        # copied from VistrailsApplicationInterface#open_vistrail()
+        locator = BaseLocator.from_url(filename)
+        loaded_objs = vistrails.core.db.io.load_vistrail(locator)
+        controller = VistrailController(loaded_objs[0], locator,
+                                        *loaded_objs[1:])
+        controller.select_latest_version()
+        return controller
+
     def build_pipelines(self, session):
         for template_iter in self.TEMPLATES:
             for template in template_iter:
@@ -95,6 +121,7 @@ class D3mTa2(object):
                 else:
                     yield ret
 
+    @with_vistrails_lock
     def build_pipeline_from_template(self, session, template):
         pipeline_id = str(uuid.uuid4())
 
@@ -147,21 +174,35 @@ class D3mTa2(object):
         controller.select_latest_version()
         return controller
 
-    def get_pipeline(self, session, pipeline_id):
-        if pipeline_id not in self._sessions[session]:
-            raise KeyError("No such pipeline ID for session")
+    @staticmethod
+    def _replace_module(controller, ops, old_module_id, new_module):
+        ops.append(('add', new_module))
+        pipeline = controller.current_pipeline
+        up_list = pipeline.graph.inverse_adjacency_list[old_module_id]
+        for up_mod_id, up_conn_id in up_list:
+            up_conn = pipeline.connections[up_conn_id]
+            # Remove old connection
+            ops.append(('delete', up_conn))
+            # Add new connection
+            new_up_conn = controller.create_connection(
+                pipeline.modules[up_conn.source.moduleId], up_conn.source.name,
+                new_module, up_conn.destination.name)
+            ops.append(('add', new_up_conn))
 
-        filename = os.path.join(self.directory,
-                                'workflows',
-                                pipeline_id + '.vt')
+        down_list = pipeline.graph.adjacency_list[old_module_id]
+        assert len(down_list) <= 1
+        for down_mod_id, down_conn_id in down_list:
+            down_conn = pipeline.connections[down_conn_id]
+            # Remove old connection
+            ops.append(('delete', down_conn))
+            # Add new connection
+            new_down_conn = controller.create_connection(
+                new_module, down_conn.source.name,
+                pipeline.modules[down_conn.destination.moduleId],
+                down_conn.destination.name)
+            ops.append(('add', new_down_conn))
 
-        # copied from VistrailsApplicationInterface#open_vistrail()
-        locator = BaseLocator.from_url(filename)
-        loaded_objs = vistrails.core.db.io.load_vistrail(locator)
-        controller = VistrailController(loaded_objs[0], locator,
-                                        *loaded_objs[1:])
-        controller.select_latest_version()
-        return controller
+        ops.append(('delete', pipeline.modules[old_module_id]))
 
     def _example_template(self):
         controller = self._new_controller()
@@ -192,22 +233,41 @@ class D3mTa2(object):
         controller.change_selected_version(version)
         return controller
 
+    @staticmethod
+    def _get_module(pipeline, label):
+        for module in pipeline.module_list:
+            if '__desc__' in module.db_annotations_key_index:
+                name = module.get_annotation_by_key('__desc__').value
+                if name == label:
+                    return module
+        return None
+
     def _classification_template(self, classifier_name):
         controller = self._load_template('classification.xml')
         ops = []
 
-        # TODO: Replace the classifier module
-        for module in controller.current_pipeline.module_list:
-            if '__desc__' in module.db_annotations_key_index:
-                name = module.get_annotation_by_key('__desc__').value
-                if name == 'Classifier':
-                    #TODO
-                    break
+        # Replace the classifier module
+        module = self._get_module(controller.current_pipeline, 'Classifier')
+        if module is not None:
+            new_module = controller.create_module(
+                'org.vistrails.vistrails.sklearn',
+                classifier_name,
+                namespace='classifiers')
+            self._replace_module(controller, ops,
+                                 module.id, new_module)
         else:
             raise ValueError("Couldn't find Classifier module in "
                              "classification template")
 
-        # TODO: Set the correct input files
+        # Set the correct input files
+        module = self._get_module(controller.current_pipeline, 'Train')
+        if module is not None:
+            ops.extend(controller.update_function_ops(
+                module, 'name', ['TODO']))
+        module = self._get_module(controller.current_pipeline, 'Target')
+        if module is not None:
+            ops.extend(controller.update_function_ops(
+                module, 'name', ['TODO']))
 
         action = create_action(ops)
         controller.add_new_action(action)
@@ -218,7 +278,7 @@ class D3mTa2(object):
     TEMPLATES = [
         [_example_template],
         [(_classification_template, 'LinearSVC'),
-         (_classification_template, 'LDA'),
+         (_classification_template, 'KNeighborsClassifier'),
          (_classification_template, 'DecisionTreeClassifier')]
     ]
 
