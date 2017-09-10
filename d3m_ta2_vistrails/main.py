@@ -105,6 +105,9 @@ class D3mTa2(object):
         controller.select_latest_version()
         return controller
 
+    def get_pipelines(self, session):
+        return self._sessions[session]
+
     def build_pipelines(self, session):
         for template_iter in self.TEMPLATES:
             for template in template_iter:
@@ -361,7 +364,15 @@ class CoreService(pb_core_grpc.CoreServicer):
         )
 
     def ListPipelines(self, request, context):
-        raise NotImplementedError  # TODO: ListPipelines
+        sessioncontext = request.context
+        assert self._app.has_session(sessioncontext.session_id)
+        pipelines = self._app.get_pipelines(sessioncontext.session_id)
+        return pb_core.PipelineListResult(
+            response_info=pb_core.Response(
+                status=pb_core.Status(code=pb_core.OK),
+            ),
+            pipeline_ids=list(pipelines),
+        )
 
     def GetCreatePipelineResults(self, request, context):
         raise NotImplementedError  # TODO: GetCreatePipelineResults
