@@ -203,35 +203,6 @@ class D3mTa2(object):
 
         ops.append(('delete', pipeline.modules[old_module_id]))
 
-    def _example_template(self):
-        controller = self._new_controller()
-        ops = []
-
-        # Create String module
-        mod_string = controller.create_module(
-            'org.vistrails.vistrails.basic', 'String')
-        ops.append(('add', mod_string))
-        # Set the function
-        ops.extend(controller.update_function_ops(
-            mod_string, 'value', ["Hello, World"]))
-
-        # Create the StandardOutput module
-        mod_out = controller.create_module(
-            'org.vistrails.vistrails.basic', 'StandardOutput')
-        ops.append(('add', mod_out))
-
-        # Add the connection
-        connection = controller.create_connection(
-            mod_string, 'value',
-            mod_out, 'value')
-        ops.append(('add', connection))
-
-        action = create_action(ops)
-        controller.add_new_action(action)
-        version = controller.perform_action(action)
-        controller.change_selected_version(version)
-        return controller
-
     @staticmethod
     def _get_module(pipeline, label):
         for module in pipeline.module_list:
@@ -276,7 +247,6 @@ class D3mTa2(object):
         return controller
 
     TEMPLATES = [
-        [_example_template],
         [(_classification_template, 'LinearSVC'),
          (_classification_template, 'KNeighborsClassifier'),
          (_classification_template, 'DecisionTreeClassifier')]
@@ -303,15 +273,27 @@ class CoreService(pb_core_grpc.CoreServicer):
         )
 
     def EndSession(self, request, context):
-        self._app.finish_session(request.session_id)
-        logger.info("Session terminated: %s", request.session_id)
+        if request.session_id in self._app.sessions:
+            status = pb_core.OK
+            self._app.finish_session(request.session_id)
+            logger.info("Session terminated: %s", request.session_id)
+        elif request.session_id < self._app._next_session:
+            status = pb_core.SESSION_ENDED
+        else:
+            status = pb_core.SESSION_UNKNOWN
         return pb_core.Response(
-            status=pb_core.Status(code=pb_core.OK),
+            status=pb_core.Status(code=status),
         )
 
     def CreatePipelines(self, request, context):
         sessioncontext = request.context
-        assert sessioncontext.session_id in self._app.sessions
+        if sessioncontext.session_id not in self._app.sessions:
+            yield pb_core.PipelineCreateResult(
+                response_inf0=pb_core.Response(
+                    status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
+                )
+            )
+            return
         train_features = request.train_features
         task = request.task
         assert task == pb_core.CLASSIFICATION
@@ -345,7 +327,13 @@ class CoreService(pb_core_grpc.CoreServicer):
 
     def ExecutePipeline(self, request, context):
         sessioncontext = request.context
-        assert sessioncontext.session_id in self._app.sessions
+        if sessioncontext.session_id not in self._app.sessions:
+            yield pb_core.PipelineExecuteResult(
+                response_info=pb_core.Response(
+                    status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
+                ),
+            )
+            return
         pipeline_id = request.pipeline_id
 
         logger.info("Got ExecutePipeline request, session=%s",
@@ -362,7 +350,10 @@ class CoreService(pb_core_grpc.CoreServicer):
 
     def ListPipelines(self, request, context):
         sessioncontext = request.context
-        assert sessioncontext.session_id in self._app.sessions
+        if sessioncontext.session_id not in self._app.sessions:
+            return pb_core.PipelineListResult(
+                status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
+            )
         pipelines = self._app.sessions[sessioncontext.session_id].pipelines
         return pb_core.PipelineListResult(
             response_info=pb_core.Response(
