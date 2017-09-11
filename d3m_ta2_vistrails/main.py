@@ -1,5 +1,4 @@
 from concurrent import futures
-import functools
 import grpc
 import logging
 import os
@@ -17,6 +16,7 @@ import d3m_ta2_vistrails.proto.core_pb2 as pb_core
 import d3m_ta2_vistrails.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_vistrails.proto.dataflow_ext_pb2 as pb_dataflow
 import d3m_ta2_vistrails.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
+from d3m_ta2_vistrails.utils import Observable, synchronized
 
 
 logger = logging.getLogger(__name__)
@@ -37,12 +37,10 @@ vistrails_app = vistrails.core.application.init(
 vistrails_lock = threading.RLock()
 
 
-def with_vistrails_lock(wrapped):
-    def wrapper(*args, **kwargs):
-        with vistrails_lock:
-            return wrapped(*args, **kwargs)
-    functools.update_wrapper(wrapper, wrapped)
-    return wrapper
+class Session(Observable):
+    def __init__(self):
+        Observable.__init__(self)
+        self.pipelines = set()
 
 
 class D3mTa2(object):
@@ -58,8 +56,8 @@ class D3mTa2(object):
             self._insecure_ports = insecure_ports
         self.core_rpc = CoreService(self)
         self.dataflow_rpc = DataflowService(self)
-        self._pipelines = set()
-        self._sessions = {}
+        self.sessions = {}
+        self._next_session = 0
         self.executor = None
 
     def run(self):
@@ -79,18 +77,17 @@ class D3mTa2(object):
             self.executor.shutdown(wait=True)
 
     def new_session(self):
-        session = '%d' % len(self._sessions)
-        self._sessions[session] = set()
+        session = '%d' % self._next_session
+        self._next_session += 1
+        self.sessions[session] = Session()
         return session
 
     def finish_session(self, session):
-        self._sessions.pop(session)
-
-    def has_session(self, session):
-        return session in self._sessions
+        session = self.sessions.pop(session)
+        session.notify('finish_session')
 
     def get_pipeline(self, session, pipeline_id):
-        if pipeline_id not in self._sessions[session]:
+        if pipeline_id not in self.sessions[session].pipelines:
             raise KeyError("No such pipeline ID for session")
 
         filename = os.path.join(self.directory,
@@ -104,9 +101,6 @@ class D3mTa2(object):
                                         *loaded_objs[1:])
         controller.select_latest_version()
         return controller
-
-    def get_pipelines(self, session):
-        return self._sessions[session]
 
     def build_pipelines(self, session):
         for template_iter in self.TEMPLATES:
@@ -124,7 +118,7 @@ class D3mTa2(object):
                 else:
                     yield ret
 
-    @with_vistrails_lock
+    @synchronized(vistrails_lock)
     def build_pipeline_from_template(self, session, template):
         pipeline_id = str(uuid.uuid4())
 
@@ -139,9 +133,11 @@ class D3mTa2(object):
         controller.write_vistrail(locator)
 
         # Add it to the database
-        self._pipelines.add(pipeline_id)
-        self._sessions[session].add(pipeline_id)
+        session = self.sessions[session]
+        session.pipelines.add(pipeline_id)
+        session.notify('new_pipeline', pipeline_id=pipeline_id)
 
+        # FIXME: Scores
         scores = [
             pb_core.Score(
                 metric=pb_core.ACCURACY,
@@ -263,6 +259,7 @@ class D3mTa2(object):
                              "classification template")
 
         # Set the correct input files
+        # TODO: Input files
         module = self._get_module(controller.current_pipeline, 'Train')
         if module is not None:
             ops.extend(controller.update_function_ops(
@@ -314,7 +311,7 @@ class CoreService(pb_core_grpc.CoreServicer):
 
     def CreatePipelines(self, request, context):
         sessioncontext = request.context
-        assert self._app.has_session(sessioncontext.session_id)
+        assert sessioncontext.session_id in self._app.sessions
         train_features = request.train_features
         task = request.task
         assert task == pb_core.CLASSIFICATION
@@ -348,7 +345,7 @@ class CoreService(pb_core_grpc.CoreServicer):
 
     def ExecutePipeline(self, request, context):
         sessioncontext = request.context
-        assert self._app.has_session(sessioncontext.session_id)
+        assert sessioncontext.session_id in self._app.sessions
         pipeline_id = request.pipeline_id
 
         logger.info("Got ExecutePipeline request, session=%s",
@@ -365,8 +362,8 @@ class CoreService(pb_core_grpc.CoreServicer):
 
     def ListPipelines(self, request, context):
         sessioncontext = request.context
-        assert self._app.has_session(sessioncontext.session_id)
-        pipelines = self._app.get_pipelines(sessioncontext.session_id)
+        assert sessioncontext.session_id in self._app.sessions
+        pipelines = self._app.sessions[sessioncontext.session_id].pipelines
         return pb_core.PipelineListResult(
             response_info=pb_core.Response(
                 status=pb_core.Status(code=pb_core.OK),
@@ -387,7 +384,7 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
 
     def DescribeDataflow(self, request, context):
         sessioncontext = request.context
-        assert self._app.has_session(sessioncontext.session_id)
+        assert sessioncontext.session_id in self._app.sessions
         pipeline_id = request.pipeline_id
 
         # Build description from VisTrails workflow
@@ -441,7 +438,7 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
 
     def GetDataflowResults(self, request, context):
         sessioncontext = request.context
-        assert self._app.has_session(sessioncontext.session_id)
+        assert sessioncontext.session_id in self._app.sessions
         pipeline_id = request.pipeline_id
 
         # TODO: GetDataflowResults
