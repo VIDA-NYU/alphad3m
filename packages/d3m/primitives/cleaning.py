@@ -5,9 +5,9 @@ from vistrails.core.modules.vistrails_module import Module
 from vistrails.core.packagemanager import get_package_manager
 
 from dsbox.datapreprocessing.cleaner import Encoder as _Encoder
-from dsbox.datapreprocessing.cleaner import Imputation
+from dsbox.datapreprocessing.cleaner import Imputation as _Imputation
 
-
+from sklearn.metrics import SCORERS
 
 class Encoder(Module):
     """Perform one-hot encoding"""
@@ -34,17 +34,23 @@ class Encoder(Module):
 
 class Imputation(Module):
     """Profile the data"""
-    _input_ports = [("data", "basic:String", {'shape': 'square'})]
-    _output_ports = [("result", "basic:String", {'shape': 'square'})]
+    _input_ports = [("data", "basic:List", {'shape': 'square'}),
+                    ("model", "sklearn:Estimator", {'shape': 'diamond'}),
+                    ("metric", "basic:String", {"defaults": ["accuracy"]}),
+                    ("greater_is_better", "basic:Boolean", {"defaults": [True]}),
+                    ("strategy", "basic:String", {"defaults": ["greedy"]}),]
+
+    _output_ports = [("model", "sklearn:Estimator", {'shape': 'diamond'})]
 
     def compute(self):
-        #enc = _Encoder()
+
+        scorer = SCORERS[self.get_input("metric")]
+        imputation = _Imputation(model=self.get_input("model"),
+                                scorer=scorer, strategy=self.get_input("strategy"),
+                                greater_is_better=self.get_input("greater_is_better"))
+        imputation.fit(self.get_input("data"))
         
-        if "data" in self.inputPorts:
-            result = profile_data(self.get_input("data"))
-        else:
-            result = ""
-    	self.set_output("result",result)
+    	self.set_output("model",imputation)
 
 '''
 class Discretizer(Module)
