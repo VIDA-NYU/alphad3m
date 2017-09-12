@@ -2,6 +2,7 @@ from concurrent import futures
 import grpc
 import logging
 import os
+from Queue import Queue
 import threading
 import time
 import uuid
@@ -40,7 +41,11 @@ vistrails_lock = threading.RLock()
 class Session(Observable):
     def __init__(self):
         Observable.__init__(self)
-        self.pipelines = set()
+        self.pipelines = {}
+
+
+class Pipeline(object):
+    pass
 
 
 class D3mTa2(object):
@@ -58,10 +63,9 @@ class D3mTa2(object):
         self.dataflow_rpc = DataflowService(self)
         self.sessions = {}
         self._next_session = 0
-        self.executor = None
+        self.executor = futures.ThreadPoolExecutor(max_workers=10)
 
     def run(self):
-        self.executor = futures.ThreadPoolExecutor(max_workers=10)
         try:
             server = grpc.server(self.executor)
             pb_core_grpc.add_CoreServicer_to_server(
@@ -82,12 +86,12 @@ class D3mTa2(object):
         self.sessions[session] = Session()
         return session
 
-    def finish_session(self, session):
-        session = self.sessions.pop(session)
+    def finish_session(self, session_id):
+        session = self.sessions.pop(session_id)
         session.notify('finish_session')
 
-    def get_pipeline(self, session, pipeline_id):
-        if pipeline_id not in self.sessions[session].pipelines:
+    def get_pipeline(self, session_id, pipeline_id):
+        if pipeline_id not in self.sessions[session_id].pipelines:
             raise KeyError("No such pipeline ID for session")
 
         filename = os.path.join(self.directory,
@@ -102,24 +106,33 @@ class D3mTa2(object):
         controller.select_latest_version()
         return controller
 
-    def build_pipelines(self, session):
+    def build_pipelines(self, session_id):
+        self.executor.submit(self._build_pipelines, session_id)
+
+    def _build_pipelines(self, session_id):
+        session = self.sessions[session_id]
+        logger.info("Creating pipelines...")
         for template_iter in self.TEMPLATES:
             for template in template_iter:
+                logger.info("Creating pipeline from %r", template)
                 if isinstance(template, (list, tuple)):
                     func, args = template[0], template[1:]
                     tpl_func = lambda s: func(s, *args)
                 else:
                     tpl_func = template
                 try:
-                    ret = self.build_pipeline_from_template(session, tpl_func)
+                    pipeline_id, pipeline = \
+                        self._build_pipeline_from_template(session, tpl_func)
                 except Exception:
                     logger.exception("Error building pipeline from %r",
                                      template)
                 else:
-                    yield ret
+                    pass  # TODO: Run the pipeline to get scores
+        logger.info("Pipeline creation completed")
+        session.notify('done')
 
     @synchronized(vistrails_lock)
-    def build_pipeline_from_template(self, session, template):
+    def _build_pipeline_from_template(self, session, template):
         pipeline_id = str(uuid.uuid4())
 
         # Create workflow from a template
@@ -133,23 +146,11 @@ class D3mTa2(object):
         controller.write_vistrail(locator)
 
         # Add it to the database
-        session = self.sessions[session]
-        session.pipelines.add(pipeline_id)
+        with session.lock:
+            session.pipelines[pipeline_id] = pipeline = Pipeline()
         session.notify('new_pipeline', pipeline_id=pipeline_id)
 
-        # FIXME: Scores
-        scores = [
-            pb_core.Score(
-                metric=pb_core.ACCURACY,
-                value=0.8,
-            ),
-            pb_core.Score(
-                metric=pb_core.ROC_AUC,
-                value=0.5,
-            ),
-        ]
-
-        return pipeline_id, scores
+        return pipeline_id, pipeline
 
     def _new_controller(self):
         # Copied from VistrailsApplicationInterface#open_vistrail()
@@ -289,7 +290,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         sessioncontext = request.context
         if sessioncontext.session_id not in self._app.sessions:
             yield pb_core.PipelineCreateResult(
-                response_inf0=pb_core.Response(
+                response_info=pb_core.Response(
                     status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
                 )
             )
@@ -308,22 +309,54 @@ class CoreService(pb_core_grpc.CoreServicer):
         logger.info("Got CreatePipelines request, session=%s",
                     sessioncontext.session_id)
 
-        results = self._app.build_pipelines(sessioncontext.session_id)
-        for pipeline_id, scores in results:
-            if not context.is_active():
-                logger.info("Client closed CreatePipelines stream")
+        queue = Queue()
+        session = self._app.sessions[sessioncontext.session_id]
+        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+            self._app.build_pipelines(sessioncontext.session_id)
 
-            yield pb_core.PipelineCreateResult(
-                response_info=pb_core.Response(
-                    status=pb_core.Status(code=pb_core.OK),
-                ),
-                progress_info=pb_core.COMPLETED,
-                pipeline_id=pipeline_id,
-                pipeline_info=pb_core.Pipeline(
-                    output=pb_core.FILE,
-                    scores=scores,
-                ),
-            )
+            while True:
+                if not context.is_active():
+                    logger.info("Client closed CreatePipelines stream")
+                    break
+                event, kwargs = queue.get()
+                if event == 'finish_session':
+                    yield pb_core.PipelineCreateResult(
+                        response_info=pb_core.Response(
+                            status=pb_core.Status(code=pb_core.SESSION_ENDED),
+                        )
+                    )
+                    break
+                elif event == 'new_pipeline':
+                    pipeline_id = kwargs['pipeline_id']
+                    yield pb_core.PipelineCreateResult(
+                        response_info=pb_core.Response(
+                            status=pb_core.Status(code=pb_core.OK),
+                        ),
+                        progress_info=pb_core.SUBMITTED,
+                        pipeline_id=pipeline_id,
+                        pipeline_info=pb_core.Pipeline(
+                            output=pb_core.FILE,  # FIXME: OutputType
+                        ),
+                    )
+                elif event == 'ran':
+                    pipeline_id = kwargs['pipeline_id']
+                    scores = kwargs['scores']
+                    yield pb_core.PipelineCreateResult(
+                        response_info=pb_core.Response(
+                            status=pb_core.Status(code=pb_core.OK),
+                        ),
+                        progress_info=pb_core.COMPLETED,
+                        pipeline_id=pipeline_id,
+                        pipeline_info=pb_core.Pipeline(
+                            output=pb_core.FILE,
+                            scores=scores,
+                        ),
+                    )
+                elif event == 'done':
+                    break
+                else:
+                    logger.error("Unexpected notification event %s",
+                                 event)
 
     def ExecutePipeline(self, request, context):
         sessioncontext = request.context
@@ -354,12 +387,14 @@ class CoreService(pb_core_grpc.CoreServicer):
             return pb_core.PipelineListResult(
                 status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
             )
-        pipelines = self._app.sessions[sessioncontext.session_id].pipelines
+        session = self._app.sessions[sessioncontext.session_id]
+        with session.lock:
+            pipelines = session.pipelines.keys()
         return pb_core.PipelineListResult(
             response_info=pb_core.Response(
                 status=pb_core.Status(code=pb_core.OK),
             ),
-            pipeline_ids=list(pipelines),
+            pipeline_ids=pipelines,
         )
 
     def GetCreatePipelineResults(self, request, context):
@@ -376,6 +411,7 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
     def __init__(self, app):
         self._app = app
 
+    @synchronized(vistrails_lock)
     def DescribeDataflow(self, request, context):
         sessioncontext = request.context
         assert sessioncontext.session_id in self._app.sessions
@@ -430,6 +466,7 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
             connections=connections,
         )
 
+    @synchronized(vistrails_lock)
     def GetDataflowResults(self, request, context):
         sessioncontext = request.context
         assert sessioncontext.session_id in self._app.sessions
