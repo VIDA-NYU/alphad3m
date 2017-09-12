@@ -34,16 +34,17 @@ class Encoder(Module):
 
 class Imputation(Module):
     """Profile the data"""
-    _input_ports = [("data", "basic:List", {'shape': 'circle'})]
-    _output_ports = [("result", "basic:String", {'shape': 'circle'})]
+    _input_ports = [("data", "basic:String", {'shape': 'square'})]
+    _output_ports = [("result", "basic:String", {'shape': 'square'})]
 
     def compute(self):
         #enc = _Encoder()
         
         if "data" in self.inputPorts:
+            result = profile_data(self.get_input("data"))
+        else:
             result = ""
-            #result = profile_data(data)
-    	self.set_output("result", result)
+    	self.set_output("result",result)
 
 '''
 class Discretizer(Module)

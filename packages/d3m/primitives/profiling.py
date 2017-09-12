@@ -4,19 +4,23 @@ from vistrails.core.modules.config import ModuleSettings
 from vistrails.core.modules.vistrails_module import Module
 from vistrails.core.packagemanager import get_package_manager
 
-from dsbox.datapreprocessing.profiler import data_profile
+from dsbox.datapreprocessing.profiler import Profiler as _Profiler
 
 
 class Profiler(Module):
     """Profile the data"""
-    _input_ports = [("data", "basic:List", {'shape': 'circle'})]
-    _output_ports = [("result", "basic:String", {'shape': 'circle'})]
+    _input_ports = [("data", "basic:String", {'shape': 'square'}),("dataFrame", "basic:List", {'shape': 'circle'})]
+    _output_ports = [("result", "basic:String", {'shape': 'square'})]
 
     def compute(self):
-        #enc = _Encoder()
+        profiler = _Profiler()
         if "data" in self.inputPorts:
-            result = data_profile(data)
-    	self.set_output("result", result)
+            result = profiler.profile_data(self.get_input("data"))
+        elif "dataFrame" in self.inputPorts:
+            result = profiler.profile_data(self.get_input("dataFrame"))
+        else:
+            result = ""
+        self.set_output("result",result)
 
 
 _modules = [Profiler,]
