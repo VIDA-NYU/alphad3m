@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 
-from d3m_ta2_vistrails.main import main  # noqa
+from d3m_ta2_vistrails.main import main_search  # noqa
 
 
-main()
+main_search()

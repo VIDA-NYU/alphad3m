@@ -1,8 +1,10 @@
 from concurrent import futures
 import grpc
+import json
 import logging
 import os
 from Queue import Queue
+import sys
 import threading
 import time
 import uuid
@@ -49,36 +51,34 @@ class Pipeline(object):
 
 
 class D3mTa2(object):
-    def __init__(self, directory, insecure_ports=None):
-        self.directory = directory
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        if not os.path.exists(os.path.join(directory, 'workflows')):
-            os.mkdir(os.path.join(directory, 'workflows'))
-        if insecure_ports is None:
-            self._insecure_ports = ['[::]:50051']
-        else:
-            self._insecure_ports = insecure_ports
-        self.core_rpc = CoreService(self)
-        self.dataflow_rpc = DataflowService(self)
+    def __init__(self, storage_root,
+                 logs_root=None, executables_root=None):
+        self.storage = storage_root
+        if not os.path.exists(self.storage):
+            os.mkdir(self.storage)
+        if not os.path.exists(os.path.join(self.storage, 'workflows')):
+            os.mkdir(os.path.join(self.storage, 'workflows'))
         self.sessions = {}
         self._next_session = 0
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
 
-    def run(self):
-        try:
-            server = grpc.server(self.executor)
-            pb_core_grpc.add_CoreServicer_to_server(
-                self.core_rpc, server)
-            pb_dataflow_grpc.add_DataflowExtServicer_to_server(
-                self.dataflow_rpc, server)
-            for port in self._insecure_ports:
-                server.add_insecure_port(port)
-            server.start()
-            while True:
-                time.sleep(60)
-        finally:
-            self.executor.shutdown(wait=True)
+    def run_search(self, dataset, problem):
+        raise NotImplementedError  # TODO: Standalone TA2 mode
+
+    def run_server(self, port=None):
+        if not port:
+            port = 50051
+        core_rpc = CoreService(self)
+        dataflow_rpc = DataflowService(self)
+        server = grpc.server(self.executor)
+        pb_core_grpc.add_CoreServicer_to_server(
+            core_rpc, server)
+        pb_dataflow_grpc.add_DataflowExtServicer_to_server(
+            dataflow_rpc, server)
+        server.add_insecure_port('[::]:%d' % port)
+        server.start()
+        while True:
+            time.sleep(60)
 
     def new_session(self):
         session = '%d' % self._next_session
@@ -94,7 +94,7 @@ class D3mTa2(object):
         if pipeline_id not in self.sessions[session_id].pipelines:
             raise KeyError("No such pipeline ID for session")
 
-        filename = os.path.join(self.directory,
+        filename = os.path.join(self.storage,
                                 'workflows',
                                 pipeline_id + '.vt')
 
@@ -139,7 +139,7 @@ class D3mTa2(object):
         controller = template(self)
 
         # Save it to disk
-        locator = BaseLocator.from_url(os.path.join(self.directory,
+        locator = BaseLocator.from_url(os.path.join(self.storage,
                                                     'workflows',
                                                     pipeline_id + '.vt'))
         controller.flush_delayed_actions()
@@ -498,7 +498,38 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
         )
 
 
-def main():
+def main_search():
     logging.basicConfig(level=logging.INFO)
 
-    D3mTa2('/tmp/vistrails_ta2').run()
+    if len(sys.argv) == 2:
+        with open(sys.argv[1]) as config_file:
+            config = json.load(config_file)
+        ta2 = D3mTa2(
+            storage_root=config['temp_storage_root'],
+            logs_root=config['pipeline_logs_root'],
+            executables_root=config['executables_root'])
+        ta2.run_search(
+            dataset=config['training_data_root'],
+            problem=config['problem_schema'])
+    elif len(sys.argv) in (3, 4) and sys.argv[1] == 'serve':
+        with open(sys.argv[2]) as config_file:
+            config = json.load(config_file)
+        port = None
+        if len(sys.argv) == 4:
+            port = sys.argv[3]
+        ta2 = D3mTa2(
+            storage_root=config['temp_storage_root'],
+            logs_root=config['pipeline_logs_root'],
+            executables_root=config['executables_root'])
+        ta2.run_server(port)
+    else:
+        sys.stderr.write(
+            "Invalid usage, either use:\n"
+            "    1 argument: <config_file.json>\n"
+            "        Runs the system standalone, solving the given problem as "
+            "per official schemas\n\n"
+            "    3 arguments: \"serve\" <config_file.json> [port_number]\n"
+            "        Runs in server mode, waiting for a TA3 to connect on the "
+            "given port\n"
+            "        (default: 50051)\n")
+        sys.exit(2)
