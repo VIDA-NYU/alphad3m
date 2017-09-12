@@ -31,6 +31,8 @@ vistrails_app = vistrails.core.application.init(
         'loadPackages': False,
         # Enable packages automatically when they are required
         'enablePackagesSilently': True,
+        # Load additional packages from there
+        'userPackageDir': os.path.join(os.getcwd(), 'userpackages'),
     },
     args=[])
 
