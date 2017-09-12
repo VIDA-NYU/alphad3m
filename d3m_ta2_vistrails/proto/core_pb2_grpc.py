@@ -29,6 +29,11 @@ class CoreStub(object):
         request_serializer=core__pb2.PipelineListRequest.SerializeToString,
         response_deserializer=core__pb2.PipelineListResult.FromString,
         )
+    self.DeletePipelines = channel.unary_unary(
+        '/Core/DeletePipelines',
+        request_serializer=core__pb2.PipelineDeleteRequest.SerializeToString,
+        response_deserializer=core__pb2.PipelineListResult.FromString,
+        )
     self.GetCreatePipelineResults = channel.unary_stream(
         '/Core/GetCreatePipelineResults',
         request_serializer=core__pb2.PipelineCreateResultsRequest.SerializeToString,
@@ -38,6 +43,11 @@ class CoreStub(object):
         '/Core/GetExecutePipelineResults',
         request_serializer=core__pb2.PipelineExecuteResultsRequest.SerializeToString,
         response_deserializer=core__pb2.PipelineExecuteResult.FromString,
+        )
+    self.ExportPipeline = channel.unary_unary(
+        '/Core/ExportPipeline',
+        request_serializer=core__pb2.PipelineExportRequest.SerializeToString,
+        response_deserializer=core__pb2.Response.FromString,
         )
     self.UpdateProblemSchema = channel.unary_unary(
         '/Core/UpdateProblemSchema',
@@ -75,15 +85,22 @@ class CoreServicer(object):
     raise NotImplementedError('Method not implemented!')
 
   def ListPipelines(self, request, context):
-    """Get pipelines already present in the session.
+    """Manage pipelines already present in the session.
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def GetCreatePipelineResults(self, request, context):
+  def DeletePipelines(self, request, context):
     # missing associated documentation comment in .proto file
     pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def GetCreatePipelineResults(self, request, context):
+    """Obtain results
+    """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
@@ -91,6 +108,13 @@ class CoreServicer(object):
   def GetExecutePipelineResults(self, request, context):
     # missing associated documentation comment in .proto file
     pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def ExportPipeline(self, request, context):
+    """Export executable of a pipeline, including any optional preprocessing used in session
+    """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
@@ -134,6 +158,11 @@ def add_CoreServicer_to_server(servicer, server):
           request_deserializer=core__pb2.PipelineListRequest.FromString,
           response_serializer=core__pb2.PipelineListResult.SerializeToString,
       ),
+      'DeletePipelines': grpc.unary_unary_rpc_method_handler(
+          servicer.DeletePipelines,
+          request_deserializer=core__pb2.PipelineDeleteRequest.FromString,
+          response_serializer=core__pb2.PipelineListResult.SerializeToString,
+      ),
       'GetCreatePipelineResults': grpc.unary_stream_rpc_method_handler(
           servicer.GetCreatePipelineResults,
           request_deserializer=core__pb2.PipelineCreateResultsRequest.FromString,
@@ -143,6 +172,11 @@ def add_CoreServicer_to_server(servicer, server):
           servicer.GetExecutePipelineResults,
           request_deserializer=core__pb2.PipelineExecuteResultsRequest.FromString,
           response_serializer=core__pb2.PipelineExecuteResult.SerializeToString,
+      ),
+      'ExportPipeline': grpc.unary_unary_rpc_method_handler(
+          servicer.ExportPipeline,
+          request_deserializer=core__pb2.PipelineExportRequest.FromString,
+          response_serializer=core__pb2.Response.SerializeToString,
       ),
       'UpdateProblemSchema': grpc.unary_unary_rpc_method_handler(
           servicer.UpdateProblemSchema,

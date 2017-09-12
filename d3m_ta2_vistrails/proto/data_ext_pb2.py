@@ -632,6 +632,93 @@ _sym_db.RegisterMessage(RevertRequest)
 
 DESCRIPTOR.has_options = True
 DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('Z\010pipeline'))
+
+_DATAEXT = _descriptor.ServiceDescriptor(
+  name='DataExt',
+  full_name='DataExt',
+  file=DESCRIPTOR,
+  index=0,
+  options=None,
+  serialized_start=1038,
+  serialized_end=1455,
+  methods=[
+  _descriptor.MethodDescriptor(
+    name='AddFeatures',
+    full_name='DataExt.AddFeatures',
+    index=0,
+    containing_service=None,
+    input_type=_ADDFEATURESREQUEST,
+    output_type=core__pb2._RESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='RemoveFeatures',
+    full_name='DataExt.RemoveFeatures',
+    index=1,
+    containing_service=None,
+    input_type=_REMOVEFEATURESREQUEST,
+    output_type=core__pb2._RESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='AddSamples',
+    full_name='DataExt.AddSamples',
+    index=2,
+    containing_service=None,
+    input_type=_ADDSAMPLESREQUEST,
+    output_type=core__pb2._RESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='RemoveSamples',
+    full_name='DataExt.RemoveSamples',
+    index=3,
+    containing_service=None,
+    input_type=_REMOVESAMPLESREQUEST,
+    output_type=core__pb2._RESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='ReplaceData',
+    full_name='DataExt.ReplaceData',
+    index=4,
+    containing_service=None,
+    input_type=_REPLACEDATAREQUEST,
+    output_type=core__pb2._RESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='Materialize',
+    full_name='DataExt.Materialize',
+    index=5,
+    containing_service=None,
+    input_type=_MATERIALIZEREQUEST,
+    output_type=core__pb2._RESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='TrainValidationSplit',
+    full_name='DataExt.TrainValidationSplit',
+    index=6,
+    containing_service=None,
+    input_type=_TRAINVALIDATIONSPLITREQUEST,
+    output_type=core__pb2._RESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='Revert',
+    full_name='DataExt.Revert',
+    index=7,
+    containing_service=None,
+    input_type=_REVERTREQUEST,
+    output_type=core__pb2._RESPONSE,
+    options=None,
+  ),
+])
+_sym_db.RegisterServiceDescriptor(_DATAEXT)
+
+DESCRIPTOR.services_by_name['DataExt'] = _DATAEXT
+
 try:
   # THESE ELEMENTS WILL BE DEPRECATED.
   # Please use the generated *_pb2_grpc.py files instead.

@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='dataflow_ext.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\x12\x64\x61taflow_ext.proto\x1a\ncore.proto\"J\n\x11PipelineReference\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x13\n\x0bpipeline_id\x18\x02 \x01(\t\"\xe3\x03\n\x13\x44\x61taflowDescription\x12\x13\n\x0bpipeline_id\x18\x01 \x01(\t\x12,\n\x07modules\x18\x02 \x03(\x0b\x32\x1b.DataflowDescription.Module\x12\x34\n\x0b\x63onnections\x18\x03 \x03(\x0b\x32\x1f.DataflowDescription.Connection\x1a\x32\n\x05Input\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\x1a$\n\x06Output\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x1a\x8b\x01\n\x06Module\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\r\n\x05label\x18\x03 \x01(\t\x12*\n\x06inputs\x18\x04 \x03(\x0b\x32\x1a.DataflowDescription.Input\x12,\n\x07outputs\x18\x05 \x03(\x0b\x32\x1b.DataflowDescription.Output\x1ak\n\nConnection\x12\x16\n\x0e\x66rom_module_id\x18\x01 \x01(\t\x12\x18\n\x10\x66rom_output_name\x18\x02 \x01(\t\x12\x14\n\x0cto_module_id\x18\x03 \x01(\t\x12\x15\n\rto_input_name\x18\x04 \x01(\t\"2\n\x0cModuleOutput\x12\x13\n\x0boutput_name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"\xca\x01\n\x0cModuleResult\x12\x11\n\tmodule_id\x18\x01 \x01(\t\x12$\n\x06status\x18\x02 \x01(\x0e\x32\x14.ModuleResult.Status\x12\x10\n\x08progress\x18\x03 \x01(\x02\x12\x1e\n\x07outputs\x18\x04 \x03(\x0b\x32\r.ModuleOutput\x12\x16\n\x0e\x65xecution_time\x18\x05 \x01(\x02\"7\n\x06Status\x12\x0b\n\x07PENDING\x10\x00\x12\x0b\n\x07RUNNING\x10\x01\x12\x08\n\x04\x44ONE\x10\x02\x12\t\n\x05\x45RROR\x10\x03\x32\x8a\x01\n\x0b\x44\x61taflowExt\x12>\n\x10\x44\x65scribeDataflow\x12\x12.PipelineReference\x1a\x14.DataflowDescription\"\x00\x12;\n\x12GetDataflowResults\x12\x12.PipelineReference\x1a\r.ModuleResult\"\x00\x30\x01\x42\nZ\x08pipelineb\x06proto3')
+  serialized_pb=_b('\n\x12\x64\x61taflow_ext.proto\x1a\ncore.proto\"J\n\x11PipelineReference\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x13\n\x0bpipeline_id\x18\x02 \x01(\t\"\x85\x04\n\x13\x44\x61taflowDescription\x12 \n\rresponse_info\x18\x04 \x01(\x0b\x32\t.Response\x12\x13\n\x0bpipeline_id\x18\x01 \x01(\t\x12,\n\x07modules\x18\x02 \x03(\x0b\x32\x1b.DataflowDescription.Module\x12\x34\n\x0b\x63onnections\x18\x03 \x03(\x0b\x32\x1f.DataflowDescription.Connection\x1a\x32\n\x05Input\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\x1a$\n\x06Output\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x1a\x8b\x01\n\x06Module\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\r\n\x05label\x18\x03 \x01(\t\x12*\n\x06inputs\x18\x04 \x03(\x0b\x32\x1a.DataflowDescription.Input\x12,\n\x07outputs\x18\x05 \x03(\x0b\x32\x1b.DataflowDescription.Output\x1ak\n\nConnection\x12\x16\n\x0e\x66rom_module_id\x18\x01 \x01(\t\x12\x18\n\x10\x66rom_output_name\x18\x02 \x01(\t\x12\x14\n\x0cto_module_id\x18\x03 \x01(\t\x12\x15\n\rto_input_name\x18\x04 \x01(\t\"2\n\x0cModuleOutput\x12\x13\n\x0boutput_name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"\xec\x01\n\x0cModuleResult\x12 \n\rresponse_info\x18\x06 \x01(\x0b\x32\t.Response\x12\x11\n\tmodule_id\x18\x01 \x01(\t\x12$\n\x06status\x18\x02 \x01(\x0e\x32\x14.ModuleResult.Status\x12\x10\n\x08progress\x18\x03 \x01(\x02\x12\x1e\n\x07outputs\x18\x04 \x03(\x0b\x32\r.ModuleOutput\x12\x16\n\x0e\x65xecution_time\x18\x05 \x01(\x02\"7\n\x06Status\x12\x0b\n\x07PENDING\x10\x00\x12\x0b\n\x07RUNNING\x10\x01\x12\x08\n\x04\x44ONE\x10\x02\x12\t\n\x05\x45RROR\x10\x03\x32\x8a\x01\n\x0b\x44\x61taflowExt\x12>\n\x10\x44\x65scribeDataflow\x12\x12.PipelineReference\x1a\x14.DataflowDescription\"\x00\x12;\n\x12GetDataflowResults\x12\x12.PipelineReference\x1a\r.ModuleResult\"\x00\x30\x01\x42\nZ\x08pipelineb\x06proto3')
   ,
   dependencies=[core__pb2.DESCRIPTOR,])
 
@@ -51,8 +51,8 @@ _MODULERESULT_STATUS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=796,
-  serialized_end=851,
+  serialized_start=864,
+  serialized_end=919,
 )
 _sym_db.RegisterEnumDescriptor(_MODULERESULT_STATUS)
 
@@ -135,8 +135,8 @@ _DATAFLOWDESCRIPTION_INPUT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=255,
-  serialized_end=305,
+  serialized_start=289,
+  serialized_end=339,
 )
 
 _DATAFLOWDESCRIPTION_OUTPUT = _descriptor.Descriptor(
@@ -172,8 +172,8 @@ _DATAFLOWDESCRIPTION_OUTPUT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=307,
-  serialized_end=343,
+  serialized_start=341,
+  serialized_end=377,
 )
 
 _DATAFLOWDESCRIPTION_MODULE = _descriptor.Descriptor(
@@ -230,8 +230,8 @@ _DATAFLOWDESCRIPTION_MODULE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=346,
-  serialized_end=485,
+  serialized_start=380,
+  serialized_end=519,
 )
 
 _DATAFLOWDESCRIPTION_CONNECTION = _descriptor.Descriptor(
@@ -281,8 +281,8 @@ _DATAFLOWDESCRIPTION_CONNECTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=487,
-  serialized_end=594,
+  serialized_start=521,
+  serialized_end=628,
 )
 
 _DATAFLOWDESCRIPTION = _descriptor.Descriptor(
@@ -293,21 +293,28 @@ _DATAFLOWDESCRIPTION = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='pipeline_id', full_name='DataflowDescription.pipeline_id', index=0,
+      name='response_info', full_name='DataflowDescription.response_info', index=0,
+      number=4, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='pipeline_id', full_name='DataflowDescription.pipeline_id', index=1,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='modules', full_name='DataflowDescription.modules', index=1,
+      name='modules', full_name='DataflowDescription.modules', index=2,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='connections', full_name='DataflowDescription.connections', index=2,
+      name='connections', full_name='DataflowDescription.connections', index=3,
       number=3, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -326,7 +333,7 @@ _DATAFLOWDESCRIPTION = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=111,
-  serialized_end=594,
+  serialized_end=628,
 )
 
 
@@ -363,8 +370,8 @@ _MODULEOUTPUT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=596,
-  serialized_end=646,
+  serialized_start=630,
+  serialized_end=680,
 )
 
 
@@ -376,35 +383,42 @@ _MODULERESULT = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='module_id', full_name='ModuleResult.module_id', index=0,
+      name='response_info', full_name='ModuleResult.response_info', index=0,
+      number=6, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='module_id', full_name='ModuleResult.module_id', index=1,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='status', full_name='ModuleResult.status', index=1,
+      name='status', full_name='ModuleResult.status', index=2,
       number=2, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='progress', full_name='ModuleResult.progress', index=2,
+      name='progress', full_name='ModuleResult.progress', index=3,
       number=3, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='outputs', full_name='ModuleResult.outputs', index=3,
+      name='outputs', full_name='ModuleResult.outputs', index=4,
       number=4, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='execution_time', full_name='ModuleResult.execution_time', index=4,
+      name='execution_time', full_name='ModuleResult.execution_time', index=5,
       number=5, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
@@ -423,8 +437,8 @@ _MODULERESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=649,
-  serialized_end=851,
+  serialized_start=683,
+  serialized_end=919,
 )
 
 _PIPELINEREFERENCE.fields_by_name['context'].message_type = core__pb2._SESSIONCONTEXT
@@ -434,8 +448,10 @@ _DATAFLOWDESCRIPTION_MODULE.fields_by_name['inputs'].message_type = _DATAFLOWDES
 _DATAFLOWDESCRIPTION_MODULE.fields_by_name['outputs'].message_type = _DATAFLOWDESCRIPTION_OUTPUT
 _DATAFLOWDESCRIPTION_MODULE.containing_type = _DATAFLOWDESCRIPTION
 _DATAFLOWDESCRIPTION_CONNECTION.containing_type = _DATAFLOWDESCRIPTION
+_DATAFLOWDESCRIPTION.fields_by_name['response_info'].message_type = core__pb2._RESPONSE
 _DATAFLOWDESCRIPTION.fields_by_name['modules'].message_type = _DATAFLOWDESCRIPTION_MODULE
 _DATAFLOWDESCRIPTION.fields_by_name['connections'].message_type = _DATAFLOWDESCRIPTION_CONNECTION
+_MODULERESULT.fields_by_name['response_info'].message_type = core__pb2._RESPONSE
 _MODULERESULT.fields_by_name['status'].enum_type = _MODULERESULT_STATUS
 _MODULERESULT.fields_by_name['outputs'].message_type = _MODULEOUTPUT
 _MODULERESULT_STATUS.containing_type = _MODULERESULT
@@ -508,6 +524,39 @@ _sym_db.RegisterMessage(ModuleResult)
 
 DESCRIPTOR.has_options = True
 DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('Z\010pipeline'))
+
+_DATAFLOWEXT = _descriptor.ServiceDescriptor(
+  name='DataflowExt',
+  full_name='DataflowExt',
+  file=DESCRIPTOR,
+  index=0,
+  options=None,
+  serialized_start=922,
+  serialized_end=1060,
+  methods=[
+  _descriptor.MethodDescriptor(
+    name='DescribeDataflow',
+    full_name='DataflowExt.DescribeDataflow',
+    index=0,
+    containing_service=None,
+    input_type=_PIPELINEREFERENCE,
+    output_type=_DATAFLOWDESCRIPTION,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='GetDataflowResults',
+    full_name='DataflowExt.GetDataflowResults',
+    index=1,
+    containing_service=None,
+    input_type=_PIPELINEREFERENCE,
+    output_type=_MODULERESULT,
+    options=None,
+  ),
+])
+_sym_db.RegisterServiceDescriptor(_DATAFLOWEXT)
+
+DESCRIPTOR.services_by_name['DataflowExt'] = _DATAFLOWEXT
+
 try:
   # THESE ELEMENTS WILL BE DEPRECATED.
   # Please use the generated *_pb2_grpc.py files instead.

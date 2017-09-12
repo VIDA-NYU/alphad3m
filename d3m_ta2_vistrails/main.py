@@ -368,6 +368,9 @@ class CoreService(pb_core_grpc.CoreServicer):
     def GetExecutePipelineResults(self, request, context):
         raise NotImplementedError  # TODO: GetExecutePipelineResults
 
+    def ExportPipeline(self, request, context):
+        raise NotImplementedError  # TODO: ExportPipeline
+
 
 class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
     def __init__(self, app):
@@ -434,11 +437,17 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
 
         # TODO: GetDataflowResults
         yield pb_dataflow.ModuleResult(
+            response_info=pb_core.Response(
+                status=pb_core.Status(code=pb_core.OK),
+            ),
             module_id='module1',
             status=pb_dataflow.ModuleResult.RUNNING,
             progress=0.5,
         )
         yield pb_dataflow.ModuleResult(
+            response_info=pb_core.Response(
+                status=pb_core.Status(code=pb_core.OK),
+            ),
             module_id='module1',
             status=pb_dataflow.ModuleResult.DONE,
             progress=1.0,
