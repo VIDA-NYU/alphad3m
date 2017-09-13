@@ -35,10 +35,11 @@ class Encoder(Module):
 class Imputation(Module):
     """Profile the data"""
     _input_ports = [("data", "basic:List", {'shape': 'square'}),
+                    ("target", "basic:List", {'optional': True,'shape': 'square'}),
                     ("model", "sklearn:Estimator", {'shape': 'diamond'}),
                     ("metric", "basic:String", {"defaults": ["accuracy"]}),
                     ("greater_is_better", "basic:Boolean", {"defaults": [True]}),
-                    ("strategy", "basic:String", {"defaults": ["greedy"]}),]
+                    ("strategy", "basic:String", {"defaults": ["iteratively_regre"]}),]
 
     _output_ports = [("model", "sklearn:Estimator", {'shape': 'diamond'})]
 
@@ -48,7 +49,10 @@ class Imputation(Module):
         imputation = _Imputation(model=self.get_input("model"),
                                 scorer=scorer, strategy=self.get_input("strategy"),
                                 greater_is_better=self.get_input("greater_is_better"))
-        imputation.fit(self.get_input("data"))
+        if "target" in self.inputPorts:
+            imputation.fit(self.get_input("data"),self.get_input("target"))
+        else:
+            imputation.fit(self.get_input("data"))
         
     	self.set_output("model",imputation)
 
