@@ -52,7 +52,7 @@ class Pipeline(object):
 
 class D3mTa2(object):
     def __init__(self, storage_root,
-                 logs_root=None, executables_root=None):
+                 logs_root=None, executables_root=None, results_root=None):
         self.storage = storage_root
         if not os.path.exists(self.storage):
             os.mkdir(self.storage)
@@ -64,6 +64,9 @@ class D3mTa2(object):
 
     def run_search(self, dataset, problem):
         raise NotImplementedError  # TODO: Standalone TA2 mode
+
+    def run_test(self, dataset, executable_files):
+        raise NotImplementedError  # TODO: Test executable mode
 
     def run_server(self, port=None):
         if not port:
@@ -522,6 +525,15 @@ def main_search():
             logs_root=config['pipeline_logs_root'],
             executables_root=config['executables_root'])
         ta2.run_server(port)
+    elif len(sys.argv) == 4 and sys.argv[1] == 'test':
+        with open(sys.argv[2]) as config_file:
+            config = json.load(config_file)
+        ta2 = D3mTa2(
+            storage_root=config['temp_storage_root'],
+            results_root=config['results_path'])
+        ta2.run_test(
+            dataset=config['test_data_root'],
+            executable_files=sys.argv[3])
     else:
         sys.stderr.write(
             "Invalid usage, either use:\n"
