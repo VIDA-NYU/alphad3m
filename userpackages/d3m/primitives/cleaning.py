@@ -10,7 +10,36 @@ from dsbox.datapreprocessing.cleaner import Imputation as _Imputation
 from sklearn.metrics import SCORERS
 
 class Encoder(Module):
-    """Perform one-hot encoding"""
+    """ DSBox Data Encoder
+
+    A one-hot encoder, which
+    
+    1. is given rules or values to identify categorical columns/
+       - categorical_features:
+            '95in10': is category if 95% of the column fall into 10 values.
+       - tex2int: if non-categorical text/string columns be mapped to integers
+       - n_limit: max number of distinct values to one-hot encode,
+         remaining values with fewer occurence are put in [colname]_other_ column.
+    
+    2. uses data given in fit() function to tune the encoder.
+    
+    3. transform(): input data to be encoded and output the result.
+    
+    Team: USC ISI
+    Version: 0.1.2
+    Source Code: https://github.com/usc-isi-i2/dsbox-cleaning.git
+
+    Parameters
+    -------
+    n_limit: int (default=10)
+       Max number of distinct values to one-hot encode
+       is_hyperparameter=true
+    
+    text2int: boolean (default=false)
+       Encode text strings as integers. For example, set to true if text strings encode categorical data, and set to false if text strings contain natural language text
+       is_hyperparameter=true
+
+    """
     _input_ports = [("data", "basic:List", {'shape': 'circle'}),
                    ('text2int','(org.vistrails.vistrails.basic:Boolean)', {'optional': True, 'defaults': "['False']"}),
                    ('n_limit','(org.vistrails.vistrails.basic:Integer)', {'optional': True, 'defaults': "['10']"})]
