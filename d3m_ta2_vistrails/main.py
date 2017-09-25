@@ -3,7 +3,8 @@ import grpc
 import json
 import logging
 import os
-from Queue import Queue
+from Queue import Empty, Queue
+import subprocess
 import sys
 import threading
 import time
@@ -44,10 +45,17 @@ class Session(Observable):
     def __init__(self):
         Observable.__init__(self)
         self.pipelines = {}
+        self.training = False
+        self.pipelines_training = set()
+
+    def check_status(self):
+        if self.training and not self.pipelines_training:
+            self.notify('done_training')
+            self.training = False
 
 
 class Pipeline(object):
-    pass
+    trained = False
 
 
 class D3mTa2(object):
@@ -61,6 +69,10 @@ class D3mTa2(object):
         self.sessions = {}
         self._next_session = 0
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
+        self._run_queue = Queue()
+        self._run_thread = threading.Thread(target=self._pipeline_running_thread)
+        self._run_thread.setDaemon(True)
+        self._run_thread.start()
 
     def run_search(self, dataset, problem):
         raise NotImplementedError  # TODO: Standalone TA2 mode
@@ -79,6 +91,7 @@ class D3mTa2(object):
         pb_dataflow_grpc.add_DataflowExtServicer_to_server(
             dataflow_rpc, server)
         server.add_insecure_port('[::]:%d' % port)
+        logger.info("Started gRPC server on port %d", port)
         server.start()
         while True:
             time.sleep(60)
@@ -93,7 +106,7 @@ class D3mTa2(object):
         session = self.sessions.pop(session_id)
         session.notify('finish_session')
 
-    def get_pipeline(self, session_id, pipeline_id):
+    def get_workflow(self, session_id, pipeline_id):
         if pipeline_id not in self.sessions[session_id].pipelines:
             raise KeyError("No such pipeline ID for session")
 
@@ -115,6 +128,7 @@ class D3mTa2(object):
     def _build_pipelines(self, session_id):
         session = self.sessions[session_id]
         logger.info("Creating pipelines...")
+        session.training = True
         for template_iter in self.TEMPLATES:
             for template in template_iter:
                 logger.info("Creating pipeline from %r", template)
@@ -130,9 +144,10 @@ class D3mTa2(object):
                     logger.exception("Error building pipeline from %r",
                                      template)
                 else:
-                    pass  # TODO: Run the pipeline to get scores
+                    session.pipelines_training.add(pipeline_id)
+                    self._run_queue.put((session, pipeline_id))
         logger.info("Pipeline creation completed")
-        session.notify('done')
+        session.check_status()
 
     @synchronized(vistrails_lock)
     def _build_pipeline_from_template(self, session, template):
@@ -154,6 +169,40 @@ class D3mTa2(object):
         session.notify('new_pipeline', pipeline_id=pipeline_id)
 
         return pipeline_id, pipeline
+
+    def _pipeline_running_thread(self):
+        MAX_RUNNING_PROCESSES = 2
+        running_pipelines = []
+        while True:
+            # FIXME: Wait on subprocesses better
+
+            # Wait for a process to be done
+            remove = []
+            for i, (session, pipeline_id, proc) in enumerate(running_pipelines):
+                ret = proc.poll()
+                if ret is not None:
+                    logger.info("Pipeline training process done, returned %d", ret)
+                    if ret == 0:
+                        session.notify('training_success', pipeline_id=pipeline_id)
+                    else:
+                        session.notify('training_error', pipeline_id=pipeline_id)
+                    session.pipelines_training.discard(pipeline_id)
+                    session.check_status()
+                    remove.append(i)
+            for i in reversed(remove):
+                del running_pipelines[i]
+
+            if len(running_pipelines) < MAX_RUNNING_PROCESSES:
+                try:
+                    session, pipeline_id = self._run_queue.get(True, 3)
+                except Empty:
+                    pass
+                else:
+                    logger.info("Running training pipeline for %s", pipeline_id)
+                    # TODO: Run training pipeline
+                    proc = subprocess.Popen(['/bin/sh', '-c', 'sleep 5; exit 1'], stdin=subprocess.PIPE)
+                    proc.stdin.close()
+                    running_pipelines.append((session, pipeline_id, proc))
 
     def _new_controller(self):
         # Copied from VistrailsApplicationInterface#open_vistrail()
@@ -341,7 +390,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                             output=pb_core.FILE,  # FIXME: OutputType
                         ),
                     )
-                elif event == 'ran':
+                elif event == 'training_success':
                     pipeline_id = kwargs['pipeline_id']
                     scores = kwargs['scores']
                     yield pb_core.PipelineCreateResult(
@@ -355,7 +404,17 @@ class CoreService(pb_core_grpc.CoreServicer):
                             scores=scores,
                         ),
                     )
-                elif event == 'done':
+                elif event == 'training_error':
+                    #pipeline_id = kwargs['pipeline_id']
+                    #yield pb_core.PipelineCreateResult(
+                    #    response_info=pb_core.Response(
+                    #        status=pb_core.Status(code=pb_core.OK),
+                    #    ),
+                    #    progress_info=pb_core.ERRORED,
+                    #    pipeline_id=pipeline_id,
+                    #)
+                    pass  # FIXME: signal pipeline failure
+                elif event == 'done_training':
                     break
                 else:
                     logger.error("Unexpected notification event %s",
@@ -421,7 +480,7 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
         pipeline_id = request.pipeline_id
 
         # Build description from VisTrails workflow
-        controller = self._app.get_pipeline(sessioncontext.session_id,
+        controller = self._app.get_workflow(sessioncontext.session_id,
                                             pipeline_id)
         vt_pipeline = controller.current_pipeline
         modules = []
