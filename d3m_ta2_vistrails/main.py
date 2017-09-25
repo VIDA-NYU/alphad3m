@@ -26,16 +26,7 @@ from d3m_ta2_vistrails.utils import Observable, synchronized
 logger = logging.getLogger(__name__)
 
 
-vistrails_app = vistrails.core.application.init(
-    options_dict={
-        # Don't try to install missing dependencies
-        'installBundles': False,
-        # Don't enable all packages on start
-        'loadPackages': False,
-        # Enable packages automatically when they are required
-        'enablePackagesSilently': True,
-    },
-    args=[])
+vistrails_app = None
 
 
 vistrails_lock = threading.RLock()
@@ -61,6 +52,19 @@ class Pipeline(object):
 class D3mTa2(object):
     def __init__(self, storage_root,
                  logs_root=None, executables_root=None, results_root=None):
+        global vistrails_app
+        if vistrails_app is None:
+            vistrails_app = vistrails.core.application.init(
+                options_dict={
+                    # Don't try to install missing dependencies
+                    'installBundles': False,
+                    # Don't enable all packages on start
+                    'loadPackages': False,
+                    # Enable packages automatically when they are required
+                    'enablePackagesSilently': True,
+                },
+                args=[])
+
         self.storage = storage_root
         if not os.path.exists(self.storage):
             os.mkdir(self.storage)
