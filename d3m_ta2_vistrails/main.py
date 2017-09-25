@@ -365,59 +365,95 @@ class CoreService(pb_core_grpc.CoreServicer):
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             self._app.build_pipelines(sessioncontext.session_id)
 
-            while True:
-                if not context.is_active():
-                    logger.info("Client closed CreatePipelines stream")
-                    break
-                event, kwargs = queue.get()
-                if event == 'finish_session':
-                    yield pb_core.PipelineCreateResult(
-                        response_info=pb_core.Response(
-                            status=pb_core.Status(code=pb_core.SESSION_ENDED),
-                        )
+            for msg in self._pipelinecreateresult_stream(context, queue):
+                yield msg
+
+    def GetCreatePipelineResults(self, request, context):
+        sessioncontext = request.context
+        if sessioncontext.session_id not in self._app.sessions:
+            yield pb_core.PipelineCreateResult(
+                response_info=pb_core.Response(
+                    status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
+                ),
+            )
+            return
+        pipeline_ids = request.pipeline_ids
+
+        logger.info("Got GetCreatePipelineResults request, session=%s",
+                    sessioncontext.session_id)
+
+        queue = Queue()
+        session = self._app.sessions[sessioncontext.session_id]
+        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+            for msg in self._pipelinecreateresult_stream(context, queue,
+                                                         pipeline_ids):
+                yield msg
+
+    def _pipelinecreateresult_stream(self, context, queue, pipeline_ids=None):
+        if pipeline_ids is None:
+            pipeline_filter = lambda p_id: True
+        else:
+            pipeline_filter = lambda p_id, s=set(pipeline_ids): p_id in s
+
+        while True:
+            if not context.is_active():
+                logger.info("Client closed CreatePipelines stream")
+                break
+            event, kwargs = queue.get()
+            if event == 'finish_session':
+                yield pb_core.PipelineCreateResult(
+                    response_info=pb_core.Response(
+                        status=pb_core.Status(code=pb_core.SESSION_ENDED),
                     )
-                    break
-                elif event == 'new_pipeline':
-                    pipeline_id = kwargs['pipeline_id']
-                    yield pb_core.PipelineCreateResult(
-                        response_info=pb_core.Response(
-                            status=pb_core.Status(code=pb_core.OK),
-                        ),
-                        progress_info=pb_core.SUBMITTED,
-                        pipeline_id=pipeline_id,
-                        pipeline_info=pb_core.Pipeline(
-                            # FIXME: OutputType
-                        ),
-                    )
-                elif event == 'training_success':
-                    pipeline_id = kwargs['pipeline_id']
-                    scores = kwargs['scores']
-                    yield pb_core.PipelineCreateResult(
-                        response_info=pb_core.Response(
-                            status=pb_core.Status(code=pb_core.OK),
-                        ),
-                        progress_info=pb_core.COMPLETED,
-                        pipeline_id=pipeline_id,
-                        pipeline_info=pb_core.Pipeline(
-                            # FIXME: OutputType
-                            scores=scores,
-                        ),
-                    )
-                elif event == 'training_error':
-                    #pipeline_id = kwargs['pipeline_id']
-                    #yield pb_core.PipelineCreateResult(
-                    #    response_info=pb_core.Response(
-                    #        status=pb_core.Status(code=pb_core.OK),
-                    #    ),
-                    #    progress_info=pb_core.ERRORED,
-                    #    pipeline_id=pipeline_id,
-                    #)
-                    pass  # FIXME: signal pipeline failure
-                elif event == 'done_training':
-                    break
-                else:
-                    logger.error("Unexpected notification event %s",
-                                 event)
+                )
+                break
+            elif event == 'new_pipeline':
+                pipeline_id = kwargs['pipeline_id']
+                if not pipeline_filter(pipeline_id):
+                    continue
+                yield pb_core.PipelineCreateResult(
+                    response_info=pb_core.Response(
+                        status=pb_core.Status(code=pb_core.OK),
+                    ),
+                    progress_info=pb_core.SUBMITTED,
+                    pipeline_id=pipeline_id,
+                    pipeline_info=pb_core.Pipeline(
+                        # FIXME: OutputType
+                    ),
+                )
+            elif event == 'training_success':
+                pipeline_id = kwargs['pipeline_id']
+                if not pipeline_filter(pipeline_id):
+                    continue
+                scores = kwargs['scores']
+                yield pb_core.PipelineCreateResult(
+                    response_info=pb_core.Response(
+                        status=pb_core.Status(code=pb_core.OK),
+                    ),
+                    progress_info=pb_core.COMPLETED,
+                    pipeline_id=pipeline_id,
+                    pipeline_info=pb_core.Pipeline(
+                        # FIXME: OutputType
+                        scores=scores,
+                    ),
+                )
+            elif event == 'training_error':
+                #pipeline_id = kwargs['pipeline_id']
+                #if not pipeline_filter(pipeline_id):
+                #    continue
+                #yield pb_core.PipelineCreateResult(
+                #    response_info=pb_core.Response(
+                #        status=pb_core.Status(code=pb_core.OK),
+                #    ),
+                #    progress_info=pb_core.ERRORED,
+                #    pipeline_id=pipeline_id,
+                #)
+                pass  # FIXME: signal pipeline failure
+            elif event == 'done_training':
+                break
+            else:
+                logger.error("Unexpected notification event %s",
+                             event)
 
     def ExecutePipeline(self, request, context):
         sessioncontext = request.context
@@ -457,9 +493,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             ),
             pipeline_ids=pipelines,
         )
-
-    def GetCreatePipelineResults(self, request, context):
-        raise NotImplementedError  # TODO: GetCreatePipelineResults
 
     def GetExecutePipelineResults(self, request, context):
         raise NotImplementedError  # TODO: GetExecutePipelineResults
