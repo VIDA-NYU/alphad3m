@@ -501,8 +501,10 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
         )
 
 
-def main_search():
-    logging.basicConfig(level=logging.INFO)
+def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
 
     if len(sys.argv) == 2:
         with open(sys.argv[1]) as config_file:
