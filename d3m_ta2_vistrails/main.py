@@ -620,6 +620,10 @@ def main_search():
             problem=config['problem_schema'])
 
 def main_serve():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
+
     if len(sys.argv) not in (2, 3):
         sys.stderr.write(
             "Invalid usage, use:\n"
@@ -633,7 +637,7 @@ def main_serve():
             config = json.load(config_file)
         port = None
         if len(sys.argv) == 3:
-            port = sys.argv[2]
+            port = int(sys.argv[2])
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
             logs_root=config['pipeline_logs_root'],
@@ -642,6 +646,10 @@ def main_serve():
 
 
 def main_test():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
+
     if len(sys.argv) != 3:
         sys.exit(1)
     else:
