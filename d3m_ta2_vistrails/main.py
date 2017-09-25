@@ -353,7 +353,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         task_subtype = request.task_subtype
         task_description = request.task_description
         output = request.output
-        assert output == pb_core.FILE
         metrics = request.metrics
         target_features = request.target_features
         max_pipelines = request.max_pipelines
@@ -387,7 +386,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         progress_info=pb_core.SUBMITTED,
                         pipeline_id=pipeline_id,
                         pipeline_info=pb_core.Pipeline(
-                            output=pb_core.FILE,  # FIXME: OutputType
+                            # FIXME: OutputType
                         ),
                     )
                 elif event == 'training_success':
@@ -400,7 +399,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         progress_info=pb_core.COMPLETED,
                         pipeline_id=pipeline_id,
                         pipeline_info=pb_core.Pipeline(
-                            output=pb_core.FILE,
+                            # FIXME: OutputType
                             scores=scores,
                         ),
                     )
