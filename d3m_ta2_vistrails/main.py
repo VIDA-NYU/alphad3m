@@ -592,12 +592,19 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
         )
 
 
-def main():
+def main_search():
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
 
-    if len(sys.argv) == 2:
+    if len(sys.argv) != 2:
+        sys.stderr.write(
+            "Invalid usage, use:\n"
+            "    ta2_search <config_file.json>\n"
+            "        Run the TA2 system standalone, solving the given problem "
+            "as per official schemas\n")
+        sys.exit(1)
+    else:
         with open(sys.argv[1]) as config_file:
             config = json.load(config_file)
         ta2 = D3mTa2(
@@ -607,34 +614,38 @@ def main():
         ta2.run_search(
             dataset=config['training_data_root'],
             problem=config['problem_schema'])
-    elif len(sys.argv) in (3, 4) and sys.argv[1] == 'serve':
-        with open(sys.argv[2]) as config_file:
+
+def main_serve():
+    if len(sys.argv) not in (2, 3):
+        sys.stderr.write(
+            "Invalid usage, use:\n"
+            "    ta2_serve <config_file.json> [port_number]\n"
+            "        Runs in server mode, waiting for a TA3 to connect on the "
+            "given port\n"
+            "        (default: 50051)\n")
+        sys.exit(1)
+    else:
+        with open(sys.argv[1]) as config_file:
             config = json.load(config_file)
         port = None
-        if len(sys.argv) == 4:
-            port = sys.argv[3]
+        if len(sys.argv) == 3:
+            port = sys.argv[2]
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
             logs_root=config['pipeline_logs_root'],
             executables_root=config['executables_root'])
         ta2.run_server(port)
-    elif len(sys.argv) == 4 and sys.argv[1] == 'test':
-        with open(sys.argv[2]) as config_file:
+
+
+def main_test():
+    if len(sys.argv) != 3:
+        sys.exit(1)
+    else:
+        with open(sys.argv[1]) as config_file:
             config = json.load(config_file)
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
             results_root=config['results_path'])
         ta2.run_test(
             dataset=config['test_data_root'],
-            executable_files=sys.argv[3])
-    else:
-        sys.stderr.write(
-            "Invalid usage, either use:\n"
-            "    1 argument: <config_file.json>\n"
-            "        Runs the system standalone, solving the given problem as "
-            "per official schemas\n\n"
-            "    3 arguments: \"serve\" <config_file.json> [port_number]\n"
-            "        Runs in server mode, waiting for a TA3 to connect on the "
-            "given port\n"
-            "        (default: 50051)\n")
-        sys.exit(2)
+            executable_files=sys.argv[2])
