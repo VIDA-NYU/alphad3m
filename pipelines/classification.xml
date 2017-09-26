@@ -1400,6 +1400,86 @@
       <port id="103" moduleId="24" moduleName="StandardOutput" name="value" signature="(org.vistrails.vistrails.basic:Variant)" type="destination" />
     </add>
   </action>
+  <action date="2017-09-26 15:25:58" id="108" prevId="107" session="4" user="remram">
+    <add id="500" objectId="52" parentObjId="" parentObjType="" what="connection">
+      <connection id="52" />
+    </add>
+    <add id="501" objectId="104" parentObjId="52" parentObjType="connection" what="port">
+      <port id="104" moduleId="27" moduleName="ReadDataSchema" name="trainTargets_list" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="502" objectId="105" parentObjId="52" parentObjType="connection" what="port">
+      <port id="105" moduleId="28" moduleName="StandardOutput" name="value" signature="(org.vistrails.vistrails.basic:Variant)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 15:26:04" id="109" prevId="108" session="4" user="remram">
+    <add id="503" objectId="53" parentObjId="" parentObjType="" what="connection">
+      <connection id="53" />
+    </add>
+    <add id="504" objectId="106" parentObjId="53" parentObjType="connection" what="port">
+      <port id="106" moduleId="27" moduleName="ReadDataSchema" name="trainTargets_list" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="505" objectId="107" parentObjId="53" parentObjType="connection" what="port">
+      <port id="107" moduleId="31" moduleName="PythonSource" name="table" signature="(org.vistrails.vistrails.tabledata:Table)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 15:26:09" id="110" prevId="109" session="4" user="remram">
+    <delete id="506" objectId="86" parentObjId="43" parentObjType="connection" what="port" />
+    <delete id="507" objectId="87" parentObjId="43" parentObjType="connection" what="port" />
+    <delete id="508" objectId="43" parentObjId="" parentObjType="" what="connection" />
+    <delete id="509" objectId="94" parentObjId="47" parentObjType="connection" what="port" />
+    <delete id="510" objectId="95" parentObjId="47" parentObjType="connection" what="port" />
+    <delete id="511" objectId="47" parentObjId="" parentObjType="" what="connection" />
+  </action>
+  <action date="2017-09-26 15:26:33" id="111" prevId="110" session="4" user="remram">
+    <delete id="512" objectId="96" parentObjId="48" parentObjType="connection" what="port" />
+    <delete id="513" objectId="97" parentObjId="48" parentObjType="connection" what="port" />
+    <delete id="514" objectId="48" parentObjId="" parentObjType="" what="connection" />
+    <delete id="515" objectId="106" parentObjId="53" parentObjType="connection" what="port" />
+    <delete id="516" objectId="107" parentObjId="53" parentObjType="connection" what="port" />
+    <delete id="517" objectId="53" parentObjId="" parentObjType="" what="connection" />
+    <delete id="518" objectId="86" parentObjId="31" parentObjType="module" what="location" />
+    <delete id="519" objectId="20" parentObjId="13" parentObjType="function" what="parameter" />
+    <delete id="520" objectId="13" parentObjId="31" parentObjType="module" what="function" />
+    <delete id="521" objectId="16" parentObjId="31" parentObjType="module" what="annotation" />
+    <delete id="522" objectId="7" parentObjId="31" parentObjType="module" what="portSpec" />
+    <delete id="523" objectId="8" parentObjId="31" parentObjType="module" what="portSpec" />
+    <delete id="524" objectId="31" parentObjId="" parentObjType="" what="module" />
+  </action>
+  <action date="2017-09-26 15:26:39" id="112" prevId="111" session="4" user="remram">
+    <add id="525" objectId="54" parentObjId="" parentObjType="" what="connection">
+      <connection id="54" />
+    </add>
+    <add id="526" objectId="108" parentObjId="54" parentObjType="connection" what="port">
+      <port id="108" moduleId="27" moduleName="ReadDataSchema" name="trainTargets_list" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="527" objectId="109" parentObjId="54" parentObjType="connection" what="port">
+      <port id="109" moduleId="20" moduleName="LinearSVC" name="training_target" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 15:30:08" id="113" prevId="112" session="4" user="remram">
+    <change id="528" newObjId="22" oldObjId="11" parentObjId="9" parentObjType="function" what="parameter">
+      <parameter alias="" id="22" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:Directory" val="" />
+    </change>
+  </action>
+  <action date="2017-09-26 15:30:08" id="114" prevId="113" session="4" user="remram">
+    <delete id="529" objectId="22" parentObjId="9" parentObjType="function" what="parameter" />
+    <delete id="530" objectId="9" parentObjId="27" parentObjType="module" what="function" />
+  </action>
+  <action date="2017-09-26 15:30:12" id="115" prevId="114" session="4" user="remram">
+    <add id="531" objectId="14" parentObjId="27" parentObjType="module" what="function">
+      <function id="14" name="data_path" pos="0" />
+    </add>
+    <add id="532" objectId="23" parentObjId="14" parentObjType="function" what="parameter">
+      <parameter alias="" id="23" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:Directory" val="/Users/remram/Documents/programming/d3m/data/o_185/data" />
+    </add>
+  </action>
+  <action date="2017-09-26 15:42:12" id="116" prevId="115" session="5" user="remram">
+    <delete id="533" objectId="104" parentObjId="52" parentObjType="connection" what="port" />
+    <delete id="534" objectId="105" parentObjId="52" parentObjType="connection" what="port" />
+    <delete id="535" objectId="52" parentObjId="" parentObjType="" what="connection" />
+    <delete id="536" objectId="79" parentObjId="28" parentObjType="module" what="location" />
+    <delete id="537" objectId="28" parentObjId="" parentObjType="" what="module" />
+  </action>
   <actionAnnotation actionId="1" date="2017-09-07 15:03:56" id="6" key="__tag__" user="remram" value="draft from yamuna" />
   <actionAnnotation actionId="11" date="2017-09-08 09:36:57" id="12" key="__tag__" user="remram" value="works" />
 </vistrail>

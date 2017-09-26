@@ -58,7 +58,8 @@ class ReadDataSchema(Module):
         ('testData_list',  '(org.vistrails.vistrails.basic:List)'), ('testData_frame', '(org.vistrails.vistrails.basic:List)'),
     ]
 
-    def _readFile(self, data_schema, filename, data_type='trainData', output_type='trainData'):
+    def _readFile(self, data_schema, filename, data_type, output_type,
+                  single_column=False):
         try:
             data_frame = pd.read_csv(filename)
             data_column_names = []
@@ -79,24 +80,32 @@ class ReadDataSchema(Module):
 
             data_frame = pd.DataFrame(data=data_frame, index=data_index)
             self.set_output(output_type + '_columns', data_column_names)
-            self.set_output(output_type + '_list', data_frame.as_matrix())
+            list_ = data_frame.as_matrix()
+            if single_column:
+                assert list_.shape[1] == 1
+                list_ = list_.reshape((-1,))
+            self.set_output(output_type + '_list', list_)
             self.set_output(output_type + '_frame', data_frame)
         except IOError:
             print output_type + " not found"
 
     def compute(self):
-        data_path = self.get_input('data_path')
+        data_path = self.get_input('data_path').name
         with open(os.path.join(data_path, 'dataSchema.json')) as fp:
             data_schema = json.load(fp)
 
             train_data_file = os.path.join(data_path, 'trainData.csv')
-            self._readFile(data_schema['trainData'], train_data_file)
+            self._readFile(data_schema['trainData'], train_data_file,
+                           'trainData', 'trainData')
 
             train_target_file = os.path.join(data_path, 'trainTargets.csv')
-            self._readFile(data_schema['trainData'], train_target_file, 'trainTargets', 'trainTargets')
+            self._readFile(data_schema['trainData'], train_target_file,
+                           'trainTargets', 'trainTargets',
+                           single_column=True)
 
             test_data_file = os.path.join(data_path, 'testData.csv')
-            self._readFile(data_schema['trainData'], test_data_file, 'trainData', 'testData')
+            self._readFile(data_schema['trainData'], test_data_file,
+                           'trainData', 'testData')
 
 
 _modules = [ReadDataSchema]
