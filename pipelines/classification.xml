@@ -471,6 +471,935 @@
       <annotation id="11" key="__desc__" value="Classifier" />
     </add>
   </action>
+  <action date="2017-09-26 11:59:55" id="12" prevId="11" session="3" user="remram">
+    <change id="176" newObjId="23" oldObjId="15" parentObjId="0" parentObjType="module" what="location">
+      <location id="23" x="-146.078915692" y="151.155551213" />
+    </change>
+    <change id="177" newObjId="24" oldObjId="1" parentObjId="1" parentObjType="module" what="location">
+      <location id="24" x="-172.546082836" y="245.240759592" />
+    </change>
+    <change id="178" newObjId="25" oldObjId="7" parentObjId="7" parentObjType="module" what="location">
+      <location id="25" x="-54.9420559861" y="250.008544822" />
+    </change>
+    <change id="179" newObjId="26" oldObjId="8" parentObjId="8" parentObjType="module" what="location">
+      <location id="26" x="-15.0816533061" y="151.732034762" />
+    </change>
+    <change id="180" newObjId="27" oldObjId="17" parentObjId="10" parentObjType="module" what="location">
+      <location id="27" x="32.4938275991" y="-9.40961768841" />
+    </change>
+    <change id="181" newObjId="28" oldObjId="18" parentObjId="11" parentObjType="module" what="location">
+      <location id="28" x="56.6369170291" y="74.6749351519" />
+    </change>
+  </action>
+  <action date="2017-09-26 11:59:55" id="13" prevId="12" session="3" user="remram">
+    <add id="182" objectId="15" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="15" name="Imputation" namespace="primitives|cleaning" package="org.vistrails.vistrails.d3m" version="0.0.1" />
+    </add>
+    <add id="183" objectId="22" parentObjId="15" parentObjType="module" what="location">
+      <location id="22" x="-188.906636214" y="-169.416268985" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:00:31" id="14" prevId="13" session="3" user="remram">
+    <change id="184" newObjId="30" oldObjId="23" parentObjId="0" parentObjType="module" what="location">
+      <location id="30" x="-153.57521078" y="226.118502092" />
+    </change>
+    <change id="185" newObjId="31" oldObjId="24" parentObjId="1" parentObjType="module" what="location">
+      <location id="31" x="-180.042377924" y="320.20371047" />
+    </change>
+    <change id="186" newObjId="32" oldObjId="25" parentObjId="7" parentObjType="module" what="location">
+      <location id="32" x="-62.438351074" y="324.9714957" />
+    </change>
+    <change id="187" newObjId="33" oldObjId="26" parentObjId="8" parentObjType="module" what="location">
+      <location id="33" x="-22.577948394" y="226.69498564" />
+    </change>
+    <change id="188" newObjId="34" oldObjId="27" parentObjId="10" parentObjType="module" what="location">
+      <location id="34" x="24.9975325112" y="65.5533331901" />
+    </change>
+    <change id="189" newObjId="35" oldObjId="28" parentObjId="11" parentObjType="module" what="location">
+      <location id="35" x="49.1406219412" y="149.63788603" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:00:31" id="15" prevId="14" session="3" user="remram">
+    <add id="190" objectId="16" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="16" name="Encoder" namespace="primitives|cleaning" package="org.vistrails.vistrails.d3m" version="0.0.1" />
+    </add>
+    <add id="191" objectId="29" parentObjId="16" parentObjType="module" what="location">
+      <location id="29" x="-223.389593618" y="-28.4859213338" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:00:54" id="16" prevId="15" session="3" user="remram">
+    <change id="192" newObjId="36" oldObjId="29" parentObjId="16" parentObjType="module" what="location">
+      <location id="36" x="-187.407377196" y="-62.9688787379" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:00:54" id="17" prevId="16" session="3" user="remram">
+    <add id="193" objectId="22" parentObjId="" parentObjType="" what="connection">
+      <connection id="22" />
+    </add>
+    <add id="194" objectId="44" parentObjId="22" parentObjType="connection" what="port">
+      <port id="44" moduleId="10" moduleName="TrainTestSplitTable" name="training_data" signature="(org.vistrails.vistrails.tabledata:Table)" type="source" />
+    </add>
+    <add id="195" objectId="45" parentObjId="22" parentObjType="connection" what="port">
+      <port id="45" moduleId="16" moduleName="Encoder" name="data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:01:46" id="18" prevId="17" session="3" user="remram">
+    <add id="196" objectId="17" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="17" name="Transform" namespace="" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="197" objectId="37" parentObjId="17" parentObjType="module" what="location">
+      <location id="37" x="-304.349580567" y="-431.78659706" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:01:50" id="19" prevId="18" session="3" user="remram">
+    <add id="198" objectId="23" parentObjId="" parentObjType="" what="connection">
+      <connection id="23" />
+    </add>
+    <add id="199" objectId="46" parentObjId="23" parentObjType="connection" what="port">
+      <port id="46" moduleId="16" moduleName="Encoder" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="source" />
+    </add>
+    <add id="200" objectId="47" parentObjId="23" parentObjType="connection" what="port">
+      <port id="47" moduleId="17" moduleName="Transform" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:01:56" id="20" prevId="19" session="3" user="remram">
+    <change id="201" newObjId="38" oldObjId="22" parentObjId="15" parentObjType="module" what="location">
+      <location id="38" x="-187.407377196" y="-328.337724848" />
+    </change>
+    <change id="202" newObjId="39" oldObjId="37" parentObjId="17" parentObjType="module" what="location">
+      <location id="39" x="-103.448872212" y="-151.425160775" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:01:57" id="21" prevId="20" session="3" user="remram">
+    <add id="203" objectId="24" parentObjId="" parentObjType="" what="connection">
+      <connection id="24" />
+    </add>
+    <add id="204" objectId="48" parentObjId="24" parentObjType="connection" what="port">
+      <port id="48" moduleId="10" moduleName="TrainTestSplitTable" name="training_data" signature="(org.vistrails.vistrails.tabledata:Table)" type="source" />
+    </add>
+    <add id="205" objectId="49" parentObjId="24" parentObjType="connection" what="port">
+      <port id="49" moduleId="17" moduleName="Transform" name="data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:02:03" id="22" prevId="21" session="3" user="remram">
+    <change id="206" newObjId="40" oldObjId="38" parentObjId="15" parentObjType="module" what="location">
+      <location id="40" x="-95.9525771244" y="-283.359954321" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:02:03" id="23" prevId="22" session="3" user="remram">
+    <add id="207" objectId="25" parentObjId="" parentObjType="" what="connection">
+      <connection id="25" />
+    </add>
+    <add id="208" objectId="50" parentObjId="25" parentObjType="connection" what="port">
+      <port id="50" moduleId="17" moduleName="Transform" name="transformed_data" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="209" objectId="51" parentObjId="25" parentObjType="connection" what="port">
+      <port id="51" moduleId="15" moduleName="Imputation" name="data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:02:27" id="24" prevId="23" session="3" user="remram">
+    <change id="210" newObjId="42" oldObjId="16" parentObjId="6" parentObjType="module" what="location">
+      <location id="42" x="280.142915611" y="-239.396302479" />
+    </change>
+    <change id="211" newObjId="43" oldObjId="19" parentObjId="12" parentObjType="module" what="location">
+      <location id="43" x="342.425497551" y="-135.233825517" />
+    </change>
+    <change id="212" newObjId="44" oldObjId="20" parentObjId="13" parentObjType="module" what="location">
+      <location id="44" x="408.074211991" y="-333.821186687" />
+    </change>
+    <change id="213" newObjId="45" oldObjId="21" parentObjId="14" parentObjType="module" what="location">
+      <location id="45" x="474.543535351" y="-436.397302987" />
+    </change>
+    <change id="214" newObjId="46" oldObjId="40" parentObjId="15" parentObjType="module" what="location">
+      <location id="46" x="-20.989626246" y="-266.868105127" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:02:27" id="25" prevId="24" session="3" user="remram">
+    <add id="215" objectId="18" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="18" name="LogisticRegression" namespace="classifiers" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="216" objectId="41" parentObjId="18" parentObjType="module" what="location">
+      <location id="41" x="-190.405895231" y="-400.302157691" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:02:31" id="26" prevId="25" session="3" user="remram">
+    <change id="217" newObjId="47" oldObjId="41" parentObjId="18" parentObjType="module" what="location">
+      <location id="47" x="56.9718426676" y="-170.915528003" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:02:31" id="27" prevId="26" session="3" user="remram">
+    <add id="218" objectId="26" parentObjId="" parentObjType="" what="connection">
+      <connection id="26" />
+    </add>
+    <add id="219" objectId="52" parentObjId="26" parentObjType="connection" what="port">
+      <port id="52" moduleId="18" moduleName="LogisticRegression" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="source" />
+    </add>
+    <add id="220" objectId="53" parentObjId="26" parentObjType="connection" what="port">
+      <port id="53" moduleId="15" moduleName="Imputation" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:03:04" id="28" prevId="27" session="3" user="remram">
+    <change id="221" newObjId="49" oldObjId="46" parentObjId="15" parentObjType="module" what="location">
+      <location id="49" x="-22.4888852635" y="-299.851803514" />
+    </change>
+    <change id="222" newObjId="50" oldObjId="47" parentObjId="18" parentObjType="module" what="location">
+      <location id="50" x="53.9733246325" y="-215.89329853" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:03:04" id="29" prevId="28" session="3" user="remram">
+    <add id="223" objectId="19" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="19" name="Transform" namespace="" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="224" objectId="48" parentObjId="19" parentObjType="module" what="location">
+      <location id="48" x="-122.939239441" y="-415.294747867" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:03:08" id="30" prevId="29" session="3" user="remram">
+    <change id="225" newObjId="51" oldObjId="48" parentObjId="19" parentObjType="module" what="location">
+      <location id="51" x="76.462209896" y="-412.296229832" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:03:08" id="31" prevId="30" session="3" user="remram">
+    <add id="226" objectId="27" parentObjId="" parentObjType="" what="connection">
+      <connection id="27" />
+    </add>
+    <add id="227" objectId="54" parentObjId="27" parentObjType="connection" what="port">
+      <port id="54" moduleId="15" moduleName="Imputation" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="source" />
+    </add>
+    <add id="228" objectId="55" parentObjId="27" parentObjType="connection" what="port">
+      <port id="55" moduleId="19" moduleName="Transform" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:03:14" id="32" prevId="31" session="3" user="remram">
+    <add id="229" objectId="28" parentObjId="" parentObjType="" what="connection">
+      <connection id="28" />
+    </add>
+    <add id="230" objectId="56" parentObjId="28" parentObjType="connection" what="port">
+      <port id="56" moduleId="17" moduleName="Transform" name="transformed_data" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="231" objectId="57" parentObjId="28" parentObjType="connection" what="port">
+      <port id="57" moduleId="19" moduleName="Transform" name="data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:03:31" id="33" prevId="32" session="3" user="remram">
+    <change id="232" newObjId="53" oldObjId="49" parentObjId="15" parentObjType="module" what="location">
+      <location id="53" x="40.4799934744" y="-310.346616637" />
+    </change>
+    <change id="233" newObjId="54" oldObjId="50" parentObjId="18" parentObjType="module" what="location">
+      <location id="54" x="73.4636918609" y="-215.89329853" />
+    </change>
+    <change id="234" newObjId="55" oldObjId="51" parentObjId="19" parentObjType="module" what="location">
+      <location id="55" x="-7.49629508785" y="-427.288820007" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:03:31" id="34" prevId="33" session="3" user="remram">
+    <add id="235" objectId="20" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="20" name="LinearSVC" namespace="classifiers" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="236" objectId="52" parentObjId="20" parentObjType="module" what="location">
+      <location id="52" x="83.9585049839" y="-553.226577483" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:03:36" id="35" prevId="34" session="3" user="remram">
+    <add id="237" objectId="29" parentObjId="" parentObjType="" what="connection">
+      <connection id="29" />
+    </add>
+    <add id="238" objectId="58" parentObjId="29" parentObjType="connection" what="port">
+      <port id="58" moduleId="19" moduleName="Transform" name="transformed_data" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="239" objectId="59" parentObjId="29" parentObjType="connection" what="port">
+      <port id="59" moduleId="20" moduleName="LinearSVC" name="training_data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:03:42" id="36" prevId="35" session="3" user="remram">
+    <change id="240" newObjId="56" oldObjId="52" parentObjId="20" parentObjType="module" what="location">
+      <location id="56" x="89.9555410542" y="-539.733246325" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:03:43" id="37" prevId="36" session="3" user="remram">
+    <add id="241" objectId="30" parentObjId="" parentObjType="" what="connection">
+      <connection id="30" />
+    </add>
+    <add id="242" objectId="60" parentObjId="30" parentObjType="connection" what="port">
+      <port id="60" moduleId="10" moduleName="TrainTestSplitTable" name="training_target" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="243" objectId="61" parentObjId="30" parentObjType="connection" what="port">
+      <port id="61" moduleId="20" moduleName="LinearSVC" name="training_target" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:04:05" id="38" prevId="37" session="3" user="remram">
+    <change id="244" newObjId="58" oldObjId="53" parentObjId="15" parentObjType="module" what="location">
+      <location id="58" x="-62.9688787379" y="-308.847357619" />
+    </change>
+    <change id="245" newObjId="59" oldObjId="36" parentObjId="16" parentObjType="module" what="location">
+      <location id="59" x="-290.856249408" y="-61.4696197203" />
+    </change>
+    <change id="246" newObjId="60" oldObjId="39" parentObjId="17" parentObjType="module" what="location">
+      <location id="60" x="-206.897744425" y="-149.925901757" />
+    </change>
+    <change id="247" newObjId="61" oldObjId="54" parentObjId="18" parentObjType="module" what="location">
+      <location id="61" x="-29.9851803514" y="-214.394039512" />
+    </change>
+    <change id="248" newObjId="62" oldObjId="55" parentObjId="19" parentObjType="module" what="location">
+      <location id="62" x="-110.9451673" y="-425.78956099" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:04:05" id="39" prevId="38" session="3" user="remram">
+    <add id="249" objectId="21" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="21" name="Transform" namespace="" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="250" objectId="57" parentObjId="21" parentObjType="module" what="location">
+      <location id="57" x="344.829574041" y="-679.164334959" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:04:07" id="40" prevId="39" session="3" user="remram">
+    <delete id="251" objectId="23" parentObjId="11" parentObjType="connection" what="port" />
+    <delete id="252" objectId="22" parentObjId="11" parentObjType="connection" what="port" />
+    <delete id="253" objectId="11" parentObjId="" parentObjType="" what="connection" />
+    <delete id="254" objectId="25" parentObjId="12" parentObjType="connection" what="port" />
+    <delete id="255" objectId="24" parentObjId="12" parentObjType="connection" what="port" />
+    <delete id="256" objectId="12" parentObjId="" parentObjType="" what="connection" />
+    <delete id="257" objectId="29" parentObjId="14" parentObjType="connection" what="port" />
+    <delete id="258" objectId="28" parentObjId="14" parentObjType="connection" what="port" />
+    <delete id="259" objectId="14" parentObjId="" parentObjType="" what="connection" />
+    <delete id="260" objectId="31" parentObjId="15" parentObjType="connection" what="port" />
+    <delete id="261" objectId="30" parentObjId="15" parentObjType="connection" what="port" />
+    <delete id="262" objectId="15" parentObjId="" parentObjType="" what="connection" />
+    <delete id="263" objectId="33" parentObjId="16" parentObjType="connection" what="port" />
+    <delete id="264" objectId="32" parentObjId="16" parentObjType="connection" what="port" />
+    <delete id="265" objectId="16" parentObjId="" parentObjType="" what="connection" />
+    <delete id="266" objectId="36" parentObjId="18" parentObjType="connection" what="port" />
+    <delete id="267" objectId="37" parentObjId="18" parentObjType="connection" what="port" />
+    <delete id="268" objectId="18" parentObjId="" parentObjType="" what="connection" />
+    <delete id="269" objectId="38" parentObjId="19" parentObjType="connection" what="port" />
+    <delete id="270" objectId="39" parentObjId="19" parentObjType="connection" what="port" />
+    <delete id="271" objectId="19" parentObjId="" parentObjType="" what="connection" />
+    <delete id="272" objectId="40" parentObjId="20" parentObjType="connection" what="port" />
+    <delete id="273" objectId="41" parentObjId="20" parentObjType="connection" what="port" />
+    <delete id="274" objectId="20" parentObjId="" parentObjType="" what="connection" />
+    <delete id="275" objectId="42" parentObjId="6" parentObjType="module" what="location" />
+    <delete id="276" objectId="11" parentObjId="6" parentObjType="module" what="annotation" />
+    <delete id="277" objectId="6" parentObjId="" parentObjType="" what="module" />
+    <delete id="278" objectId="43" parentObjId="12" parentObjType="module" what="location" />
+    <delete id="279" objectId="7" parentObjId="7" parentObjType="function" what="parameter" />
+    <delete id="280" objectId="7" parentObjId="12" parentObjType="module" what="function" />
+    <delete id="281" objectId="7" parentObjId="12" parentObjType="module" what="annotation" />
+    <delete id="282" objectId="3" parentObjId="12" parentObjType="module" what="portSpec" />
+    <delete id="283" objectId="2" parentObjId="12" parentObjType="module" what="portSpec" />
+    <delete id="284" objectId="1" parentObjId="12" parentObjType="module" what="portSpec" />
+    <delete id="285" objectId="0" parentObjId="12" parentObjType="module" what="portSpec" />
+    <delete id="286" objectId="12" parentObjId="" parentObjType="" what="module" />
+    <delete id="287" objectId="45" parentObjId="14" parentObjType="module" what="location" />
+    <delete id="288" objectId="14" parentObjId="" parentObjType="" what="module" />
+    <delete id="289" objectId="44" parentObjId="13" parentObjType="module" what="location" />
+    <delete id="290" objectId="13" parentObjId="" parentObjType="" what="module" />
+  </action>
+  <action date="2017-09-26 12:04:15" id="41" prevId="40" session="3" user="remram">
+    <change id="291" newObjId="64" oldObjId="57" parentObjId="21" parentObjType="module" what="location">
+      <location id="64" x="355.324387164" y="-589.208793905" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:04:15" id="42" prevId="41" session="3" user="remram">
+    <add id="292" objectId="22" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="22" name="Transform" namespace="" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="293" objectId="63" parentObjId="22" parentObjType="module" what="location">
+      <location id="63" x="187.407377196" y="-145.428124704" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:04:19" id="43" prevId="42" session="3" user="remram">
+    <add id="294" objectId="31" parentObjId="" parentObjType="" what="connection">
+      <connection id="31" />
+    </add>
+    <add id="295" objectId="62" parentObjId="31" parentObjType="connection" what="port">
+      <port id="62" moduleId="16" moduleName="Encoder" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="source" />
+    </add>
+    <add id="296" objectId="63" parentObjId="31" parentObjType="connection" what="port">
+      <port id="63" moduleId="22" moduleName="Transform" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:04:22" id="44" prevId="43" session="3" user="remram">
+    <add id="297" objectId="32" parentObjId="" parentObjType="" what="connection">
+      <connection id="32" />
+    </add>
+    <add id="298" objectId="64" parentObjId="32" parentObjType="connection" what="port">
+      <port id="64" moduleId="10" moduleName="TrainTestSplitTable" name="test_data" signature="(org.vistrails.vistrails.tabledata:Table)" type="source" />
+    </add>
+    <add id="299" objectId="65" parentObjId="32" parentObjType="connection" what="port">
+      <port id="65" moduleId="22" moduleName="Transform" name="data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:04:25" id="45" prevId="44" session="3" user="remram">
+    <add id="300" objectId="23" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="23" name="Transform" namespace="" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="301" objectId="65" parentObjId="23" parentObjType="module" what="location">
+      <location id="65" x="223.389593618" y="-386.808826533" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:04:29" id="46" prevId="45" session="3" user="remram">
+    <add id="302" objectId="33" parentObjId="" parentObjType="" what="connection">
+      <connection id="33" />
+    </add>
+    <add id="303" objectId="66" parentObjId="33" parentObjType="connection" what="port">
+      <port id="66" moduleId="15" moduleName="Imputation" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="source" />
+    </add>
+    <add id="304" objectId="67" parentObjId="33" parentObjType="connection" what="port">
+      <port id="67" moduleId="23" moduleName="Transform" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:04:31" id="47" prevId="46" session="3" user="remram">
+    <add id="305" objectId="34" parentObjId="" parentObjType="" what="connection">
+      <connection id="34" />
+    </add>
+    <add id="306" objectId="68" parentObjId="34" parentObjType="connection" what="port">
+      <port id="68" moduleId="22" moduleName="Transform" name="transformed_data" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="307" objectId="69" parentObjId="34" parentObjType="connection" what="port">
+      <port id="69" moduleId="23" moduleName="Transform" name="data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:04:49" id="48" prevId="47" session="3" user="remram">
+    <change id="308" newObjId="66" oldObjId="64" parentObjId="21" parentObjType="module" what="location">
+      <location id="66" x="262.370328075" y="-625.191010326" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:04:49" id="49" prevId="48" session="3" user="remram">
+    <add id="309" objectId="35" parentObjId="" parentObjType="" what="connection">
+      <connection id="35" />
+    </add>
+    <add id="310" objectId="70" parentObjId="35" parentObjType="connection" what="port">
+      <port id="70" moduleId="23" moduleName="Transform" name="transformed_data" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="311" objectId="71" parentObjId="35" parentObjType="connection" what="port">
+      <port id="71" moduleId="21" moduleName="Transform" name="data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:04:51" id="50" prevId="49" session="3" user="remram">
+    <add id="312" objectId="36" parentObjId="" parentObjType="" what="connection">
+      <connection id="36" />
+    </add>
+    <add id="313" objectId="72" parentObjId="36" parentObjType="connection" what="port">
+      <port id="72" moduleId="20" moduleName="LinearSVC" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="source" />
+    </add>
+    <add id="314" objectId="73" parentObjId="36" parentObjType="connection" what="port">
+      <port id="73" moduleId="21" moduleName="Transform" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:04:58" id="51" prevId="50" session="3" user="remram">
+    <add id="315" objectId="24" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="24" name="StandardOutput" namespace="" package="org.vistrails.vistrails.basic" version="2.1.1" />
+    </add>
+    <add id="316" objectId="67" parentObjId="24" parentObjType="module" what="location">
+      <location id="67" x="386.808826533" y="-746.63099075" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:04:58" id="52" prevId="51" session="3" user="remram">
+    <add id="317" objectId="37" parentObjId="" parentObjType="" what="connection">
+      <connection id="37" />
+    </add>
+    <add id="318" objectId="74" parentObjId="37" parentObjType="connection" what="port">
+      <port id="74" moduleId="21" moduleName="Transform" name="transformed_data" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="319" objectId="75" parentObjId="37" parentObjType="connection" what="port">
+      <port id="75" moduleId="24" moduleName="StandardOutput" name="value" signature="(org.vistrails.vistrails.basic:Variant)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:05:04" id="53" prevId="52" session="3" user="remram">
+    <change id="320" newObjId="69" oldObjId="67" parentObjId="24" parentObjType="module" what="location">
+      <location id="69" x="407.798452779" y="-763.122839943" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:05:04" id="54" prevId="53" session="3" user="remram">
+    <add id="321" objectId="25" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="25" name="Score" namespace="" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="322" objectId="68" parentObjId="25" parentObjType="module" what="location">
+      <location id="68" x="-145.428124704" y="-749.629508785" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:05:35" id="55" prevId="54" session="3" user="remram">
+    <change id="323" newObjId="70" oldObjId="69" parentObjId="24" parentObjType="module" what="location">
+      <location id="70" x="307.348098602" y="-769.119876013" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:05:35" id="56" prevId="55" session="3" user="remram">
+    <delete id="324" objectId="68" parentObjId="25" parentObjType="module" what="location" />
+    <delete id="325" objectId="25" parentObjId="" parentObjType="" what="module" />
+  </action>
+  <action date="2017-09-26 12:05:38" id="57" prevId="56" session="3" user="remram">
+    <add id="326" objectId="26" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="26" name="CrossValScore" namespace="cross-validation" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="327" objectId="71" parentObjId="26" parentObjType="module" what="location">
+      <location id="71" x="-257.872551022" y="-578.713980782" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:05:40" id="58" prevId="57" session="3" user="remram">
+    <delete id="328" objectId="71" parentObjId="26" parentObjType="module" what="location" />
+    <delete id="329" objectId="26" parentObjId="" parentObjType="" what="module" />
+  </action>
+  <action date="2017-09-26 12:06:36" id="59" prevId="58" session="3" user="remram">
+    <change id="330" newObjId="9" oldObjId="1" parentObjId="1" parentObjType="function" what="parameter">
+      <parameter alias="" id="9" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:File" val="/Users/remram/Documents/programming/d3m/data/o_185/data/trainData.csv" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:06:42" id="60" prevId="59" session="3" user="remram">
+    <change id="331" newObjId="10" oldObjId="5" parentObjId="5" parentObjType="function" what="parameter">
+      <parameter alias="" id="10" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:File" val="/Users/remram/Documents/programming/d3m/data/o_185/data/trainTargets.csv" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:07:03" id="61" prevId="60" session="3" user="remram">
+    <add id="332" objectId="27" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="27" name="ReadDataSchema" namespace="read" package="org.vistrails.vistrails.d3m" version="0.0.1" />
+    </add>
+    <add id="333" objectId="72" parentObjId="27" parentObjType="module" what="location">
+      <location id="72" x="323.839947795" y="65.9673967731" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:07:49" id="62" prevId="61" session="3" user="remram">
+    <add id="334" objectId="9" parentObjId="27" parentObjType="module" what="function">
+      <function id="9" name="data_path" pos="0" />
+    </add>
+    <add id="335" objectId="11" parentObjId="9" parentObjType="function" what="parameter">
+      <parameter alias="" id="11" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:String" val="/Users/remram/Documents/programming/d3m/data/o_185/data" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:08:40" id="63" prevId="62" session="3" user="remram">
+    <delete id="336" objectId="1" parentObjId="0" parentObjType="connection" what="port" />
+    <delete id="337" objectId="0" parentObjId="0" parentObjType="connection" what="port" />
+    <delete id="338" objectId="0" parentObjId="" parentObjType="" what="connection" />
+    <delete id="339" objectId="64" parentObjId="32" parentObjType="connection" what="port" />
+    <delete id="340" objectId="65" parentObjId="32" parentObjType="connection" what="port" />
+    <delete id="341" objectId="32" parentObjId="" parentObjType="" what="connection" />
+    <delete id="342" objectId="13" parentObjId="6" parentObjType="connection" what="port" />
+    <delete id="343" objectId="12" parentObjId="6" parentObjType="connection" what="port" />
+    <delete id="344" objectId="6" parentObjId="" parentObjType="" what="connection" />
+    <delete id="345" objectId="27" parentObjId="13" parentObjType="connection" what="port" />
+    <delete id="346" objectId="26" parentObjId="13" parentObjType="connection" what="port" />
+    <delete id="347" objectId="13" parentObjId="" parentObjType="" what="connection" />
+    <delete id="348" objectId="34" parentObjId="17" parentObjType="connection" what="port" />
+    <delete id="349" objectId="35" parentObjId="17" parentObjType="connection" what="port" />
+    <delete id="350" objectId="17" parentObjId="" parentObjType="" what="connection" />
+    <delete id="351" objectId="42" parentObjId="21" parentObjType="connection" what="port" />
+    <delete id="352" objectId="43" parentObjId="21" parentObjType="connection" what="port" />
+    <delete id="353" objectId="21" parentObjId="" parentObjType="" what="connection" />
+    <delete id="354" objectId="44" parentObjId="22" parentObjType="connection" what="port" />
+    <delete id="355" objectId="45" parentObjId="22" parentObjType="connection" what="port" />
+    <delete id="356" objectId="22" parentObjId="" parentObjType="" what="connection" />
+    <delete id="357" objectId="48" parentObjId="24" parentObjType="connection" what="port" />
+    <delete id="358" objectId="49" parentObjId="24" parentObjType="connection" what="port" />
+    <delete id="359" objectId="24" parentObjId="" parentObjType="" what="connection" />
+    <delete id="360" objectId="60" parentObjId="30" parentObjType="connection" what="port" />
+    <delete id="361" objectId="61" parentObjId="30" parentObjType="connection" what="port" />
+    <delete id="362" objectId="30" parentObjId="" parentObjType="" what="connection" />
+    <delete id="363" objectId="35" parentObjId="11" parentObjType="module" what="location" />
+    <delete id="364" objectId="6" parentObjId="6" parentObjType="function" what="parameter" />
+    <delete id="365" objectId="6" parentObjId="11" parentObjType="module" what="function" />
+    <delete id="366" objectId="8" parentObjId="8" parentObjType="function" what="parameter" />
+    <delete id="367" objectId="8" parentObjId="11" parentObjType="module" what="function" />
+    <delete id="368" objectId="11" parentObjId="" parentObjType="" what="module" />
+    <delete id="369" objectId="32" parentObjId="7" parentObjType="module" what="location" />
+    <delete id="370" objectId="10" parentObjId="5" parentObjType="function" what="parameter" />
+    <delete id="371" objectId="5" parentObjId="7" parentObjType="module" what="function" />
+    <delete id="372" objectId="3" parentObjId="7" parentObjType="module" what="annotation" />
+    <delete id="373" objectId="7" parentObjId="" parentObjType="" what="module" />
+    <delete id="374" objectId="31" parentObjId="1" parentObjType="module" what="location" />
+    <delete id="375" objectId="0" parentObjId="0" parentObjType="function" what="parameter" />
+    <delete id="376" objectId="0" parentObjId="1" parentObjType="module" what="function" />
+    <delete id="377" objectId="9" parentObjId="1" parentObjType="function" what="parameter" />
+    <delete id="378" objectId="1" parentObjId="1" parentObjType="module" what="function" />
+    <delete id="379" objectId="1" parentObjId="1" parentObjType="module" what="annotation" />
+    <delete id="380" objectId="1" parentObjId="" parentObjType="" what="module" />
+    <delete id="381" objectId="33" parentObjId="8" parentObjType="module" what="location" />
+    <delete id="382" objectId="4" parentObjId="8" parentObjType="module" what="annotation" />
+    <delete id="383" objectId="8" parentObjId="" parentObjType="" what="module" />
+    <delete id="384" objectId="34" parentObjId="10" parentObjType="module" what="location" />
+    <delete id="385" objectId="10" parentObjId="" parentObjType="" what="module" />
+    <delete id="386" objectId="30" parentObjId="0" parentObjType="module" what="location" />
+    <delete id="387" objectId="0" parentObjId="0" parentObjType="module" what="annotation" />
+    <delete id="388" objectId="0" parentObjId="" parentObjType="" what="module" />
+  </action>
+  <action date="2017-09-26 12:09:31" id="64" prevId="63" session="3" user="remram">
+    <change id="389" newObjId="73" oldObjId="56" parentObjId="20" parentObjType="module" what="location">
+      <location id="73" x="-11.9940721406" y="-527.739174184" />
+    </change>
+    <change id="390" newObjId="74" oldObjId="66" parentObjId="21" parentObjType="module" what="location">
+      <location id="74" x="254.874032987" y="-625.191010326" />
+    </change>
+    <change id="391" newObjId="75" oldObjId="63" parentObjId="22" parentObjType="module" what="location">
+      <location id="75" x="239.881442811" y="-149.925901757" />
+    </change>
+    <change id="392" newObjId="76" oldObjId="65" parentObjId="23" parentObjType="module" what="location">
+      <location id="76" x="245.878478881" y="-385.309567515" />
+    </change>
+    <change id="393" newObjId="77" oldObjId="70" parentObjId="24" parentObjType="module" what="location">
+      <location id="77" x="268.367364145" y="-770.619135031" />
+    </change>
+    <change id="394" newObjId="78" oldObjId="72" parentObjId="27" parentObjType="module" what="location">
+      <location id="78" x="-34.4829574041" y="49.4755475798" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:09:31" id="65" prevId="64" session="3" user="remram">
+    <add id="395" objectId="38" parentObjId="" parentObjType="" what="connection">
+      <connection id="38" />
+    </add>
+    <add id="396" objectId="76" parentObjId="38" parentObjType="connection" what="port">
+      <port id="76" moduleId="27" moduleName="ReadDataSchema" name="trainData_frame" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="397" objectId="77" parentObjId="38" parentObjType="connection" what="port">
+      <port id="77" moduleId="16" moduleName="Encoder" name="data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:09:56" id="66" prevId="65" session="3" user="remram">
+    <add id="398" objectId="39" parentObjId="" parentObjType="" what="connection">
+      <connection id="39" />
+    </add>
+    <add id="399" objectId="78" parentObjId="39" parentObjType="connection" what="port">
+      <port id="78" moduleId="27" moduleName="ReadDataSchema" name="trainTargets_frame" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="400" objectId="79" parentObjId="39" parentObjType="connection" what="port">
+      <port id="79" moduleId="20" moduleName="LinearSVC" name="training_target" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:10:25" id="67" prevId="66" session="3" user="remram">
+    <delete id="401" objectId="78" parentObjId="39" parentObjType="connection" what="port" />
+    <delete id="402" objectId="79" parentObjId="39" parentObjType="connection" what="port" />
+    <delete id="403" objectId="39" parentObjId="" parentObjType="" what="connection" />
+  </action>
+  <action date="2017-09-26 12:10:33" id="68" prevId="67" session="3" user="remram">
+    <add id="404" objectId="40" parentObjId="" parentObjType="" what="connection">
+      <connection id="40" />
+    </add>
+    <add id="405" objectId="80" parentObjId="40" parentObjType="connection" what="port">
+      <port id="80" moduleId="27" moduleName="ReadDataSchema" name="testData_frame" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="406" objectId="81" parentObjId="40" parentObjType="connection" what="port">
+      <port id="81" moduleId="22" moduleName="Transform" name="data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:10:47" id="69" prevId="68" session="3" user="remram">
+    <add id="407" objectId="41" parentObjId="" parentObjType="" what="connection">
+      <connection id="41" />
+    </add>
+    <add id="408" objectId="82" parentObjId="41" parentObjType="connection" what="port">
+      <port id="82" moduleId="27" moduleName="ReadDataSchema" name="trainData_frame" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="409" objectId="83" parentObjId="41" parentObjType="connection" what="port">
+      <port id="83" moduleId="17" moduleName="Transform" name="data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:20:05" id="70" prevId="69" session="3" user="remram">
+    <add id="410" objectId="10" parentObjId="16" parentObjType="module" what="function">
+      <function id="10" name="text2int" pos="0" />
+    </add>
+    <add id="411" objectId="12" parentObjId="10" parentObjType="function" what="parameter">
+      <parameter alias="" id="12" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:Boolean" val="True" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:20:10" id="71" prevId="70" session="3" user="remram">
+    <add id="412" objectId="11" parentObjId="16" parentObjType="module" what="function">
+      <function id="11" name="n_limit" pos="1" />
+    </add>
+    <add id="413" objectId="13" parentObjId="11" parentObjType="function" what="parameter">
+      <parameter alias="" id="13" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:Integer" val="100" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:21:07" id="72" prevId="71" session="3" user="remram">
+    <add id="414" objectId="42" parentObjId="" parentObjType="" what="connection">
+      <connection id="42" />
+    </add>
+    <add id="415" objectId="84" parentObjId="42" parentObjType="connection" what="port">
+      <port id="84" moduleId="27" moduleName="ReadDataSchema" name="trainTargets_table" signature="(org.vistrails.vistrails.tabledata:Table)" type="source" />
+    </add>
+    <add id="416" objectId="85" parentObjId="42" parentObjType="connection" what="port">
+      <port id="85" moduleId="20" moduleName="LinearSVC" name="training_target" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:21:13" id="73" prevId="72" session="3" user="remram">
+    <add id="417" objectId="28" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="28" name="StandardOutput" namespace="" package="org.vistrails.vistrails.basic" version="2.1.1" />
+    </add>
+    <add id="418" objectId="79" parentObjId="28" parentObjType="module" what="location">
+      <location id="79" x="218.891816565" y="-307.348098602" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:21:16" id="74" prevId="73" session="3" user="remram">
+    <add id="419" objectId="43" parentObjId="" parentObjType="" what="connection">
+      <connection id="43" />
+    </add>
+    <add id="420" objectId="86" parentObjId="43" parentObjType="connection" what="port">
+      <port id="86" moduleId="27" moduleName="ReadDataSchema" name="trainTargets_table" signature="(org.vistrails.vistrails.tabledata:Table)" type="source" />
+    </add>
+    <add id="421" objectId="87" parentObjId="43" parentObjType="connection" what="port">
+      <port id="87" moduleId="28" moduleName="StandardOutput" name="value" signature="(org.vistrails.vistrails.basic:Variant)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:22:28" id="75" prevId="74" session="3" user="remram">
+    <annotation id="13" key="__description__" value="Paste" />
+    <add id="422" objectId="29" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="29" name="StandardOutput" namespace="" package="org.vistrails.vistrails.basic" version="2.1.1" />
+    </add>
+    <add id="423" objectId="80" parentObjId="29" parentObjType="module" what="location">
+      <location id="80" x="28.4859213338" y="-365.819200287" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:22:33" id="76" prevId="75" session="3" user="remram">
+    <change id="424" newObjId="81" oldObjId="80" parentObjId="29" parentObjType="module" what="location">
+      <location id="81" x="-193.404413266" y="-563.721390606" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:22:33" id="77" prevId="76" session="3" user="remram">
+    <add id="425" objectId="44" parentObjId="" parentObjType="" what="connection">
+      <connection id="44" />
+    </add>
+    <add id="426" objectId="88" parentObjId="44" parentObjType="connection" what="port">
+      <port id="88" moduleId="19" moduleName="Transform" name="transformed_data" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="427" objectId="89" parentObjId="44" parentObjType="connection" what="port">
+      <port id="89" moduleId="29" moduleName="StandardOutput" name="value" signature="(org.vistrails.vistrails.basic:Variant)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:23:07" id="78" prevId="77" session="3" user="remram">
+    <change id="428" newObjId="83" oldObjId="73" parentObjId="20" parentObjType="module" what="location">
+      <location id="83" x="59.9703607028" y="-590.708052922" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:23:07" id="79" prevId="78" session="3" user="remram">
+    <add id="429" objectId="30" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="30" name="PythonSource" namespace="" package="org.vistrails.vistrails.basic" version="2.1.1" />
+    </add>
+    <add id="430" objectId="82" parentObjId="30" parentObjType="module" what="location">
+      <location id="82" x="-367.318459305" y="-410.796970814" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:23:09" id="80" prevId="79" session="3" user="remram">
+    <add id="431" objectId="14" parentObjId="30" parentObjType="module" what="annotation">
+      <annotation id="14" key="__desc__" value="Ravel" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:23:25" id="81" prevId="80" session="3" user="remram">
+    <add id="432" objectId="4" parentObjId="30" parentObjType="module" what="portSpec">
+      <portSpec depth="0" id="4" maxConns="-1" minConns="0" name="dataframe" optional="0" sortKey="0" type="input">
+        <portSpecItem default="" entryType="" id="0" label="" module="Variant" namespace="" package="org.vistrails.vistrails.basic" pos="0" values="" />
+      </portSpec>
+    </add>
+    <add id="433" objectId="5" parentObjId="30" parentObjType="module" what="portSpec">
+      <portSpec depth="0" id="5" maxConns="-1" minConns="0" name="array" optional="0" sortKey="0" type="output">
+        <portSpecItem default="" entryType="" id="1" label="" module="List" namespace="" package="org.vistrails.vistrails.basic" pos="0" values="" />
+      </portSpec>
+    </add>
+  </action>
+  <action date="2017-09-26 12:23:45" id="82" prevId="81" session="3" user="remram">
+    <delete id="434" objectId="4" parentObjId="30" parentObjType="module" what="portSpec" />
+    <add id="435" objectId="6" parentObjId="30" parentObjType="module" what="portSpec">
+      <portSpec depth="0" id="6" maxConns="-1" minConns="0" name="dataframe" optional="0" sortKey="0" type="input">
+        <portSpecItem default="" entryType="" id="2" label="" module="List" namespace="" package="org.vistrails.vistrails.basic" pos="0" values="" />
+      </portSpec>
+    </add>
+    <add id="436" objectId="12" parentObjId="30" parentObjType="module" what="function">
+      <function id="12" name="source" pos="0" />
+    </add>
+    <add id="437" objectId="14" parentObjId="12" parentObjType="function" what="parameter">
+      <parameter alias="" id="14" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:String" val="array%20%3D%20dataframe.ravel%28%29" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:23:50" id="83" prevId="82" session="3" user="remram">
+    <add id="438" objectId="45" parentObjId="" parentObjType="" what="connection">
+      <connection id="45" />
+    </add>
+    <add id="439" objectId="90" parentObjId="45" parentObjType="connection" what="port">
+      <port id="90" moduleId="19" moduleName="Transform" name="transformed_data" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="440" objectId="91" parentObjId="45" parentObjType="connection" what="port">
+      <port id="91" moduleId="30" moduleName="PythonSource" name="dataframe" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:23:53" id="84" prevId="83" session="3" user="remram">
+    <add id="441" objectId="46" parentObjId="" parentObjType="" what="connection">
+      <connection id="46" />
+    </add>
+    <add id="442" objectId="92" parentObjId="46" parentObjType="connection" what="port">
+      <port id="92" moduleId="30" moduleName="PythonSource" name="array" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="443" objectId="93" parentObjId="46" parentObjType="connection" what="port">
+      <port id="93" moduleId="20" moduleName="LinearSVC" name="training_data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:23:54" id="85" prevId="84" session="3" user="remram">
+    <delete id="444" objectId="58" parentObjId="29" parentObjType="connection" what="port" />
+    <delete id="445" objectId="59" parentObjId="29" parentObjType="connection" what="port" />
+    <delete id="446" objectId="29" parentObjId="" parentObjType="" what="connection" />
+  </action>
+  <action date="2017-09-26 12:23:58" id="86" prevId="85" session="3" user="remram">
+    <change id="447" newObjId="84" oldObjId="82" parentObjId="30" parentObjType="module" what="location">
+      <location id="84" x="-37.4814754392" y="-509.748065974" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:24:10" id="87" prevId="86" session="3" user="remram">
+    <change id="448" newObjId="15" oldObjId="14" parentObjId="12" parentObjType="function" what="parameter">
+      <parameter alias="" id="15" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:String" val="import%20pdb%3B%20pdb.set_trace%28%29%0Aarray%20%3D%20dataframe.ravel%28%29" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:24:23" id="88" prevId="87" session="3" user="remram">
+    <change id="449" newObjId="16" oldObjId="15" parentObjId="12" parentObjType="function" what="parameter">
+      <parameter alias="" id="16" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:String" val="from%20PyQt4%20import%20QtCore%3B%20QtCore.pyqtRemoveInputHook%28%29%0Aimport%20pdb%3B%20pdb.set_trace%28%29%0Aarray%20%3D%20dataframe.ravel%28%29" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:25:39" id="89" prevId="88" session="3" user="remram">
+    <change id="450" newObjId="15" oldObjId="14" parentObjId="30" parentObjType="module" what="annotation">
+      <annotation id="15" key="__desc__" value="as_matrix" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:25:52" id="90" prevId="89" session="3" user="remram">
+    <change id="451" newObjId="17" oldObjId="16" parentObjId="12" parentObjType="function" what="parameter">
+      <parameter alias="" id="17" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:String" val="%23import%20pdb%3B%20pdb.set_trace%28%29%0Aarray%20%3D%20dataframe.as_matrix%28%29" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:26:33" id="91" prevId="90" session="3" user="remram">
+    <change id="452" newObjId="18" oldObjId="17" parentObjId="12" parentObjType="function" what="parameter">
+      <parameter alias="" id="18" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:String" val="import%20pdb%3B%20pdb.set_trace%28%29%0Aarray%20%3D%20dataframe.as_matrix%28%29" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:27:24" id="92" prevId="91" session="3" user="remram">
+    <add id="453" objectId="31" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="31" name="PythonSource" namespace="" package="org.vistrails.vistrails.basic" version="2.1.1" />
+    </add>
+    <add id="454" objectId="85" parentObjId="31" parentObjType="module" what="location">
+      <location id="85" x="-172.41478702" y="-740.633954679" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:27:50" id="93" prevId="92" session="3" user="remram">
+    <change id="455" newObjId="86" oldObjId="85" parentObjId="31" parentObjType="module" what="location">
+      <location id="86" x="143.928865687" y="-470.767331517" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:27:50" id="94" prevId="93" session="3" user="remram">
+    <add id="456" objectId="7" parentObjId="31" parentObjType="module" what="portSpec">
+      <portSpec depth="0" id="7" maxConns="-1" minConns="0" name="table" optional="0" sortKey="0" type="input">
+        <portSpecItem default="" entryType="" id="3" label="" module="Table" namespace="" package="org.vistrails.vistrails.tabledata" pos="0" values="" />
+      </portSpec>
+    </add>
+    <add id="457" objectId="13" parentObjId="31" parentObjType="module" what="function">
+      <function id="13" name="source" pos="0" />
+    </add>
+    <add id="458" objectId="19" parentObjId="13" parentObjType="function" what="parameter">
+      <parameter alias="" id="19" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:String" val="import%20pdb%3B%20pdb.set_trace%28%29" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:27:53" id="95" prevId="94" session="3" user="remram">
+    <add id="459" objectId="47" parentObjId="" parentObjType="" what="connection">
+      <connection id="47" />
+    </add>
+    <add id="460" objectId="94" parentObjId="47" parentObjType="connection" what="port">
+      <port id="94" moduleId="27" moduleName="ReadDataSchema" name="trainTargets_table" signature="(org.vistrails.vistrails.tabledata:Table)" type="source" />
+    </add>
+    <add id="461" objectId="95" parentObjId="47" parentObjType="connection" what="port">
+      <port id="95" moduleId="31" moduleName="PythonSource" name="table" signature="(org.vistrails.vistrails.tabledata:Table)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:29:17" id="96" prevId="95" session="3" user="remram">
+    <add id="462" objectId="16" parentObjId="31" parentObjType="module" what="annotation">
+      <annotation id="16" key="__desc__" value="flatten" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:29:32" id="97" prevId="96" session="3" user="remram">
+    <add id="463" objectId="8" parentObjId="31" parentObjType="module" what="portSpec">
+      <portSpec depth="0" id="8" maxConns="-1" minConns="0" name="array" optional="0" sortKey="0" type="output">
+        <portSpecItem default="" entryType="" id="4" label="" module="List" namespace="" package="org.vistrails.vistrails.basic" pos="0" values="" />
+      </portSpec>
+    </add>
+    <change id="464" newObjId="20" oldObjId="19" parentObjId="13" parentObjType="function" what="parameter">
+      <parameter alias="" id="20" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:String" val="%23import%20pdb%3B%20pdb.set_trace%28%29%0Aarray%20%3D%20table.flatten%28%29" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:29:37" id="98" prevId="97" session="3" user="remram">
+    <add id="465" objectId="48" parentObjId="" parentObjType="" what="connection">
+      <connection id="48" />
+    </add>
+    <add id="466" objectId="96" parentObjId="48" parentObjType="connection" what="port">
+      <port id="96" moduleId="31" moduleName="PythonSource" name="array" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="467" objectId="97" parentObjId="48" parentObjType="connection" what="port">
+      <port id="97" moduleId="20" moduleName="LinearSVC" name="training_target" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:29:47" id="99" prevId="98" session="3" user="remram">
+    <delete id="468" objectId="84" parentObjId="42" parentObjType="connection" what="port" />
+    <delete id="469" objectId="85" parentObjId="42" parentObjType="connection" what="port" />
+    <delete id="470" objectId="42" parentObjId="" parentObjType="" what="connection" />
+  </action>
+  <action date="2017-09-26 12:29:54" id="100" prevId="99" session="3" user="remram">
+    <delete id="471" objectId="88" parentObjId="44" parentObjType="connection" what="port" />
+    <delete id="472" objectId="89" parentObjId="44" parentObjType="connection" what="port" />
+    <delete id="473" objectId="44" parentObjId="" parentObjType="" what="connection" />
+    <delete id="474" objectId="81" parentObjId="29" parentObjType="module" what="location" />
+    <delete id="475" objectId="29" parentObjId="" parentObjType="" what="module" />
+  </action>
+  <action date="2017-09-26 12:29:57" id="101" prevId="100" session="3" user="remram">
+    <change id="476" newObjId="21" oldObjId="18" parentObjId="12" parentObjType="function" what="parameter">
+      <parameter alias="" id="21" name="&lt;no description&gt;" pos="0" type="org.vistrails.vistrails.basic:String" val="%23import%20pdb%3B%20pdb.set_trace%28%29%0Aarray%20%3D%20dataframe.as_matrix%28%29" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:30:18" id="102" prevId="101" session="3" user="remram">
+    <add id="477" objectId="32" parentObjId="" parentObjType="" what="module">
+      <module cache="1" id="32" name="Predict" namespace="" package="org.vistrails.vistrails.sklearn" version="0.15.2" />
+    </add>
+    <add id="478" objectId="87" parentObjId="32" parentObjType="module" what="location">
+      <location id="87" x="-257.872551022" y="-680.663593977" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:30:19" id="103" prevId="102" session="3" user="remram">
+    <delete id="479" objectId="70" parentObjId="35" parentObjType="connection" what="port" />
+    <delete id="480" objectId="71" parentObjId="35" parentObjType="connection" what="port" />
+    <delete id="481" objectId="35" parentObjId="" parentObjType="" what="connection" />
+    <delete id="482" objectId="72" parentObjId="36" parentObjType="connection" what="port" />
+    <delete id="483" objectId="73" parentObjId="36" parentObjType="connection" what="port" />
+    <delete id="484" objectId="36" parentObjId="" parentObjType="" what="connection" />
+    <delete id="485" objectId="74" parentObjId="37" parentObjType="connection" what="port" />
+    <delete id="486" objectId="75" parentObjId="37" parentObjType="connection" what="port" />
+    <delete id="487" objectId="37" parentObjId="" parentObjType="" what="connection" />
+    <delete id="488" objectId="74" parentObjId="21" parentObjType="module" what="location" />
+    <delete id="489" objectId="21" parentObjId="" parentObjType="" what="module" />
+  </action>
+  <action date="2017-09-26 12:30:22" id="104" prevId="103" session="3" user="remram">
+    <add id="490" objectId="49" parentObjId="" parentObjType="" what="connection">
+      <connection id="49" />
+    </add>
+    <add id="491" objectId="98" parentObjId="49" parentObjType="connection" what="port">
+      <port id="98" moduleId="23" moduleName="Transform" name="transformed_data" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="492" objectId="99" parentObjId="49" parentObjType="connection" what="port">
+      <port id="99" moduleId="32" moduleName="Predict" name="data" signature="(org.vistrails.vistrails.basic:List)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:30:24" id="105" prevId="104" session="3" user="remram">
+    <add id="493" objectId="50" parentObjId="" parentObjType="" what="connection">
+      <connection id="50" />
+    </add>
+    <add id="494" objectId="100" parentObjId="50" parentObjType="connection" what="port">
+      <port id="100" moduleId="20" moduleName="LinearSVC" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="source" />
+    </add>
+    <add id="495" objectId="101" parentObjId="50" parentObjType="connection" what="port">
+      <port id="101" moduleId="32" moduleName="Predict" name="model" signature="(org.vistrails.vistrails.sklearn:Estimator)" type="destination" />
+    </add>
+  </action>
+  <action date="2017-09-26 12:30:30" id="106" prevId="105" session="3" user="remram">
+    <change id="496" newObjId="88" oldObjId="87" parentObjId="32" parentObjType="module" what="location">
+      <location id="88" x="167.917009968" y="-671.668039871" />
+    </change>
+  </action>
+  <action date="2017-09-26 12:30:30" id="107" prevId="106" session="3" user="remram">
+    <add id="497" objectId="51" parentObjId="" parentObjType="" what="connection">
+      <connection id="51" />
+    </add>
+    <add id="498" objectId="102" parentObjId="51" parentObjType="connection" what="port">
+      <port id="102" moduleId="32" moduleName="Predict" name="prediction" signature="(org.vistrails.vistrails.basic:List)" type="source" />
+    </add>
+    <add id="499" objectId="103" parentObjId="51" parentObjType="connection" what="port">
+      <port id="103" moduleId="24" moduleName="StandardOutput" name="value" signature="(org.vistrails.vistrails.basic:Variant)" type="destination" />
+    </add>
+  </action>
   <actionAnnotation actionId="1" date="2017-09-07 15:03:56" id="6" key="__tag__" user="remram" value="draft from yamuna" />
   <actionAnnotation actionId="11" date="2017-09-08 09:36:57" id="12" key="__tag__" user="remram" value="works" />
 </vistrail>
