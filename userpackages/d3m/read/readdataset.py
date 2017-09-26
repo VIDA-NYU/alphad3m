@@ -38,7 +38,7 @@ from __future__ import division
 from vistrails.core.modules.basic_modules import ListType
 from vistrails.core.modules.vistrails_module import Module, ModuleError
 
-from vistrails.packages.tabledata.common import Table, TableObject, InternalModuleError
+from vistrails.packages.tabledata.common import TableObject, InternalModuleError
 
 import pandas as pd
 import json
@@ -51,13 +51,13 @@ class ReadDataSchema(Module):
     _input_ports = [('data_path', '(org.vistrails.vistrails.basic:String)')]
     _output_ports = [('trainData_index', '(org.vistrails.vistrails.basic:List)'),
                      ('trainData_columns', '(org.vistrails.vistrails.basic:List)'),
-                     ('trainData_table', Table), ('trainData_frame', '(org.vistrails.vistrails.basic:List)'),
+                     ('trainData_list',  '(org.vistrails.vistrails.basic:List)'), ('trainData_frame', '(org.vistrails.vistrails.basic:List)'),
                      ('trainTargets_index', '(org.vistrails.vistrails.basic:List)'),
                      ('trainTargets_columns', '(org.vistrails.vistrails.basic:List)'),
-                     ('trainTargets_table', Table), ('trainTargets_frame', '(org.vistrails.vistrails.basic:List)'),
+                     ('trainTargets_list',  '(org.vistrails.vistrails.basic:List)'), ('trainTargets_frame', '(org.vistrails.vistrails.basic:List)'),
                      ('testData_index', '(org.vistrails.vistrails.basic:List)'),
                      ('testData_columns', '(org.vistrails.vistrails.basic:List)'),
-                     ('testData_table', Table), ('testData_frame', '(org.vistrails.vistrails.basic:List)')
+                     ('testData_list',  '(org.vistrails.vistrails.basic:List)'), ('testData_frame', '(org.vistrails.vistrails.basic:List)')
     ]
     def _readFile(self, data_schema, filename, data_type='trainData',output_type='trainData'):
         try:
@@ -80,7 +80,7 @@ class ReadDataSchema(Module):
         
             data_frame = pd.DataFrame(data=data_frame, index=data_index)
             self.set_output(output_type+'_columns', data_column_names)
-            self.set_output(output_type+'_table', data_frame.values)
+            self.set_output(output_type+'_list', data_frame.as_matrix())
             self.set_output(output_type+'_frame', data_frame)
         except IOError:
             print output_type + " not found"
