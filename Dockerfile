@@ -14,6 +14,7 @@ RUN pip install backports.ssl-match-hostname certifi docutils futures grpcio \
     chmod +x /usr/local/bin/ta2_serve
 COPY vistrails /usr/src/app/vistrails
 RUN /usr/src/app/venv/bin/pip install -e /usr/src/app/vistrails
+COPY userpackages /usr/src/app/userpackages
 COPY d3m_ta2_vistrails /usr/src/app/d3m_ta2_vistrails
 COPY setup.py /usr/src/app/setup.py
 RUN /usr/src/app/venv/bin/pip install -e /usr/src/app
