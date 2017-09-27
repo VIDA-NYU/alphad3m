@@ -1480,6 +1480,11 @@
     <delete id="536" objectId="79" parentObjId="28" parentObjType="module" what="location" />
     <delete id="537" objectId="28" parentObjId="" parentObjType="" what="module" />
   </action>
+  <action date="2017-09-26 22:31:58" id="117" prevId="116" session="6" user="remram">
+    <add id="538" objectId="17" parentObjId="20" parentObjType="module" what="annotation">
+      <annotation id="17" key="__desc__" value="Classifier" />
+    </add>
+  </action>
   <actionAnnotation actionId="1" date="2017-09-07 15:03:56" id="6" key="__tag__" user="remram" value="draft from yamuna" />
   <actionAnnotation actionId="11" date="2017-09-08 09:36:57" id="12" key="__tag__" user="remram" value="works" />
 </vistrail>

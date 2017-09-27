@@ -288,17 +288,6 @@ class D3mTa2(object):
             raise ValueError("Couldn't find Classifier module in "
                              "classification template")
 
-        # Set the correct input files
-        # TODO: Input files
-        module = self._get_module(controller.current_pipeline, 'Train')
-        if module is not None:
-            ops.extend(controller.update_function_ops(
-                module, 'name', ['TODO']))
-        module = self._get_module(controller.current_pipeline, 'Target')
-        if module is not None:
-            ops.extend(controller.update_function_ops(
-                module, 'name', ['TODO']))
-
         action = create_action(ops)
         controller.add_new_action(action)
         version = controller.perform_action(action)
