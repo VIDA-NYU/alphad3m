@@ -433,17 +433,18 @@ class CoreService(pb_core_grpc.CoreServicer):
                     ),
                 )
             elif event == 'training_error':
-                #pipeline_id = kwargs['pipeline_id']
-                #if not pipeline_filter(pipeline_id):
-                #    continue
-                #yield pb_core.PipelineCreateResult(
-                #    response_info=pb_core.Response(
-                #        status=pb_core.Status(code=pb_core.OK),
-                #    ),
-                #    progress_info=pb_core.ERRORED,
-                #    pipeline_id=pipeline_id,
-                #)
-                pass  # FIXME: signal pipeline failure
+                pipeline_id = kwargs['pipeline_id']
+                if not pipeline_filter(pipeline_id):
+                    continue
+                yield pb_core.PipelineCreateResult(
+                    response_info=pb_core.Response(
+                        status=pb_core.Status(
+                            code=pb_core.ABORTED,
+                            details="Pipeline execution failed",
+                        ),
+                    ),
+                    pipeline_id=pipeline_id,
+                )
             elif event == 'done_training':
                 break
             else:
