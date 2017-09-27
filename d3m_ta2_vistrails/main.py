@@ -2,9 +2,9 @@ from concurrent import futures
 import grpc
 import json
 import logging
+import multiprocessing
 import os
 from Queue import Empty, Queue
-import subprocess
 import sys
 import threading
 import time
@@ -20,6 +20,7 @@ import d3m_ta2_vistrails.proto.core_pb2 as pb_core
 import d3m_ta2_vistrails.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_vistrails.proto.dataflow_ext_pb2 as pb_dataflow
 import d3m_ta2_vistrails.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
+from d3m_ta2_vistrails.train import train
 from d3m_ta2_vistrails.utils import Observable, synchronized
 
 
@@ -179,16 +180,15 @@ class D3mTa2(object):
     def _pipeline_running_thread(self):
         MAX_RUNNING_PROCESSES = 2
         running_pipelines = []
+        msg_queue = multiprocessing.Queue()
         while True:
-            # FIXME: Wait on subprocesses better
-
             # Wait for a process to be done
             remove = []
             for i, (session, pipeline_id, proc) in enumerate(running_pipelines):
-                ret = proc.poll()
-                if ret is not None:
-                    logger.info("Pipeline training process done, returned %d", ret)
-                    if ret == 0:
+                if not proc.is_alive():
+                    logger.info("Pipeline training process done, returned %d",
+                                proc.exitcode)
+                    if proc.exitcode == 0:
                         session.notify('training_success', pipeline_id=pipeline_id)
                     else:
                         session.notify('training_error', pipeline_id=pipeline_id)
@@ -205,9 +205,11 @@ class D3mTa2(object):
                     pass
                 else:
                     logger.info("Running training pipeline for %s", pipeline_id)
-                    # TODO: Run training pipeline
-                    proc = subprocess.Popen(['/bin/sh', '-c', 'sleep 5; exit 1'], stdin=subprocess.PIPE)
-                    proc.stdin.close()
+                    filename = os.path.join(self.storage, 'workflows',
+                                            pipeline_id + '.vt')
+                    proc = multiprocessing.Process(target=train,
+                                                   args=(filename, msg_queue))
+                    proc.start()
                     running_pipelines.append((session, pipeline_id, proc))
 
     def _new_controller(self):
