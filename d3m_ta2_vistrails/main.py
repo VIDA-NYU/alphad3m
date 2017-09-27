@@ -525,7 +525,7 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
         for vt_module in vt_pipeline.module_list:
             functions = dict((func.name, func.params[0].strValue)
                              for func in vt_module.functions
-                             if len(func.param) == 1)
+                             if len(func.params) == 1)
             inputs = []
             for port in vt_module.destinationPorts():
                 port = pb_dataflow.DataflowDescription.Input(
