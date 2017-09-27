@@ -48,6 +48,10 @@ class Session(Observable):
 
 class Pipeline(object):
     trained = False
+    test_run_module = None
+
+    def __init__(self, test_run_module):
+        self.test_run_module = test_run_module
 
 
 class D3mTa2(object):
@@ -129,10 +133,10 @@ class D3mTa2(object):
         controller.select_latest_version()
         return controller
 
-    def build_pipelines(self, session_id):
-        self.executor.submit(self._build_pipelines, session_id)
+    def build_pipelines(self, session_id, dataset):
+        self.executor.submit(self._build_pipelines, session_id, dataset)
 
-    def _build_pipelines(self, session_id):
+    def _build_pipelines(self, session_id, dataset):
         session = self.sessions[session_id]
         logger.info("Creating pipelines...")
         session.training = True
@@ -152,7 +156,7 @@ class D3mTa2(object):
                                      template)
                 else:
                     session.pipelines_training.add(pipeline_id)
-                    self._run_queue.put((session, pipeline_id))
+                    self._run_queue.put((session, pipeline_id, dataset))
         logger.info("Pipeline creation completed")
         session.check_status()
 
@@ -161,7 +165,7 @@ class D3mTa2(object):
         pipeline_id = str(uuid.uuid4())
 
         # Create workflow from a template
-        controller = template(self)
+        controller, pipeline = template(self)
 
         # Save it to disk
         locator = BaseLocator.from_url(os.path.join(self.storage,
@@ -172,7 +176,7 @@ class D3mTa2(object):
 
         # Add it to the database
         with session.lock:
-            session.pipelines[pipeline_id] = pipeline = Pipeline()
+            session.pipelines[pipeline_id] = pipeline
         session.notify('new_pipeline', pipeline_id=pipeline_id)
 
         return pipeline_id, pipeline
@@ -200,15 +204,18 @@ class D3mTa2(object):
 
             if len(running_pipelines) < MAX_RUNNING_PROCESSES:
                 try:
-                    session, pipeline_id = self._run_queue.get(True, 3)
+                    session, pipeline_id, dataset = \
+                        self._run_queue.get(timeout=3)
                 except Empty:
                     pass
                 else:
                     logger.info("Running training pipeline for %s", pipeline_id)
+                    pipeline = session.pipelines[pipeline_id]
                     filename = os.path.join(self.storage, 'workflows',
                                             pipeline_id + '.vt')
                     proc = multiprocessing.Process(target=train,
-                                                   args=(filename, msg_queue))
+                                                   args=(filename, pipeline,
+                                                         dataset, msg_queue))
                     proc.start()
                     running_pipelines.append((session, pipeline_id, proc))
 
@@ -294,7 +301,7 @@ class D3mTa2(object):
         controller.add_new_action(action)
         version = controller.perform_action(action)
         controller.change_selected_version(version)
-        return controller
+        return controller, Pipeline(test_run_module='test_targets')
 
     TEMPLATES = [
         [(_classification_template, 'LinearSVC'),
@@ -354,13 +361,25 @@ class CoreService(pb_core_grpc.CoreServicer):
         target_features = request.target_features
         max_pipelines = request.max_pipelines
 
+        # FIXME: Handle the actual list of training features
+        dataset = set(feat.data_uri for feat in train_features)
+        if len(dataset) != 1:
+            yield pb_core.PipelineCreateResult(
+                response_info=pb_core.Response(
+                    status=pb_core.Status(code=pb_core.INVALID_ARGUMENT),
+                    details="Please only use a single training dataset",
+                )
+            )
+            return
+        dataset, = dataset
+
         logger.info("Got CreatePipelines request, session=%s",
                     sessioncontext.session_id)
 
         queue = Queue()
         session = self._app.sessions[sessioncontext.session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            self._app.build_pipelines(sessioncontext.session_id)
+            self._app.build_pipelines(sessioncontext.session_id, dataset)
 
             for msg in self._pipelinecreateresult_stream(context, queue):
                 yield msg
@@ -416,6 +435,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     pipeline_id=pipeline_id,
                     pipeline_info=pb_core.Pipeline(
                         # FIXME: OutputType
+                        output=pb_core.CLASS_LABEL,
                     ),
                 )
             elif event == 'training_success':
@@ -430,7 +450,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     progress_info=pb_core.COMPLETED,
                     pipeline_id=pipeline_id,
                     pipeline_info=pb_core.Pipeline(
-                        # FIXME: OutputType
+                        output=pb_core.CLASS_LABEL,
                         scores=scores,
                     ),
                 )
