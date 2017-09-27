@@ -518,13 +518,12 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
                              if len(func.params) == 1)
             inputs = []
             for port in vt_module.destinationPorts():
-                port = pb_dataflow.DataflowDescription.Input(
-                    name=port.name,
-                    type=port.sigstring,
-                )
+                port_desc = dict(name=port.name,
+                                 type=port.sigstring)
                 if port.name in functions:
-                    port.value.CopyFrom(functions[port.name])
-                inputs.append(port)
+                    port_desc['value'] = functions[port.name]
+                port_desc = pb_dataflow.DataflowDescription.Input(**port_desc)
+                inputs.append(port_desc)
             outputs = [
                 pb_dataflow.DataflowDescription.Output(
                     name=port.name,
