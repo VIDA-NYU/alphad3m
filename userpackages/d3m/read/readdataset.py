@@ -6,6 +6,8 @@ import pandas as pd
 import json
 import os.path
 
+from d3m_ta2_vistrails.common import read_dataset
+
 
 class ReadDataSchema(Module):
     """ Read the D3M data schema and parse the corresponding trainData, trainTargets and testData
@@ -55,22 +57,15 @@ class ReadDataSchema(Module):
             print output_type + " not found"
 
     def compute(self):
-        data_path = self.get_input('data_path').name
-        with open(os.path.join(data_path, 'dataSchema.json')) as fp:
-            data_schema = json.load(fp)
-
-            train_data_file = os.path.join(data_path, 'trainData.csv')
-            self._readFile(data_schema['trainData'], train_data_file,
-                           'trainData', 'trainData')
-
-            train_target_file = os.path.join(data_path, 'trainTargets.csv')
-            self._readFile(data_schema['trainData'], train_target_file,
-                           'trainTargets', 'trainTargets',
-                           single_column=True)
-
-            test_data_file = os.path.join(data_path, 'testData.csv')
-            self._readFile(data_schema['trainData'], test_data_file,
-                           'trainData', 'testData')
+        data = read_dataset(self.get_input('data_path').name)
+        for output_type in ['trainData', 'trainTargets', 'testData']:
+            out = data.get(output_type)
+            if out is None:
+                continue
+            self.set_output(output_type + '_index', out['index'])
+            self.set_output(output_type + '_columns', out['columns'])
+            self.set_output(output_type + '_list', out['list'])
+            self.set_output(output_type + '_frame', out['frame'])
 
 
 _modules = [ReadDataSchema]
