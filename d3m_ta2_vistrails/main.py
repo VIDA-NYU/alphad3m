@@ -34,8 +34,9 @@ vistrails_lock = threading.RLock()
 
 
 class Session(Observable):
-    def __init__(self):
+    def __init__(self, id):
         Observable.__init__(self)
+        self.id = id
         self.pipelines = {}
         self.training = False
         self.pipelines_training = set()
@@ -115,7 +116,7 @@ class D3mTa2(object):
     def new_session(self):
         session = '%d' % self._next_session
         self._next_session += 1
-        self.sessions[session] = Session()
+        self.sessions[session] = Session(session)
         return session
 
     def finish_session(self, session_id):
