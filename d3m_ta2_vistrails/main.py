@@ -53,6 +53,7 @@ class Pipeline(object):
     test_run_module = None
 
     def __init__(self, train_run_module, test_run_module):
+        self.id = str(uuid.uuid4())
         self.train_run_module = train_run_module
         self.test_run_module = test_run_module
         self.scores = {}
@@ -154,38 +155,36 @@ class D3mTa2(object):
                 else:
                     tpl_func = template
                 try:
-                    pipeline_id, pipeline = \
-                        self._build_pipeline_from_template(session, tpl_func)
+                    pipeline = self._build_pipeline_from_template(session,
+                                                                  tpl_func)
                     pipeline.metrics = metrics
                 except Exception:
                     logger.exception("Error building pipeline from %r",
                                      template)
                 else:
-                    session.pipelines_training.add(pipeline_id)
-                    self._run_queue.put((session, pipeline_id, dataset))
+                    session.pipelines_training.add(pipeline.id)
+                    self._run_queue.put((session, pipeline.id, dataset))
         logger.info("Pipeline creation completed")
         session.check_status()
 
     @synchronized(vistrails_lock)
     def _build_pipeline_from_template(self, session, template):
-        pipeline_id = str(uuid.uuid4())
-
         # Create workflow from a template
         controller, pipeline = template(self)
 
         # Save it to disk
         locator = BaseLocator.from_url(os.path.join(self.storage,
                                                     'workflows',
-                                                    pipeline_id + '.vt'))
+                                                    pipeline.id + '.vt'))
         controller.flush_delayed_actions()
         controller.write_vistrail(locator)
 
         # Add it to the database
         with session.lock:
-            session.pipelines[pipeline_id] = pipeline
-        session.notify('new_pipeline', pipeline_id=pipeline_id)
+            session.pipelines[pipeline.id] = pipeline
+        session.notify('new_pipeline', pipeline_id=pipeline.id)
 
-        return pipeline_id, pipeline
+        return pipeline
 
     def _pipeline_running_thread(self):
         MAX_RUNNING_PROCESSES = 2
@@ -194,15 +193,15 @@ class D3mTa2(object):
         while True:
             # Wait for a process to be done
             remove = []
-            for i, (session, pipeline_id, proc) in enumerate(running_pipelines):
+            for i, (session, pipeline, proc) in enumerate(running_pipelines):
                 if not proc.is_alive():
                     logger.info("Pipeline training process done, returned %d",
                                 proc.exitcode)
                     if proc.exitcode == 0:
-                        session.notify('training_success', pipeline_id=pipeline_id)
+                        session.notify('training_success', pipeline_id=pipeline.id)
                     else:
-                        session.notify('training_error', pipeline_id=pipeline_id)
-                    session.pipelines_training.discard(pipeline_id)
+                        session.notify('training_error', pipeline_id=pipeline.id)
+                    session.pipelines_training.discard(pipeline.id)
                     session.check_status()
                     remove.append(i)
             for i in reversed(remove):
@@ -210,20 +209,19 @@ class D3mTa2(object):
 
             if len(running_pipelines) < MAX_RUNNING_PROCESSES:
                 try:
-                    session, pipeline_id, dataset = \
+                    session, pipeline, dataset = \
                         self._run_queue.get(timeout=3)
                 except Empty:
                     pass
                 else:
-                    logger.info("Running training pipeline for %s", pipeline_id)
-                    pipeline = session.pipelines[pipeline_id]
+                    logger.info("Running training pipeline for %s", pipeline.id)
                     filename = os.path.join(self.storage, 'workflows',
-                                            pipeline_id + '.vt')
+                                            pipeline.id + '.vt')
                     proc = multiprocessing.Process(target=train,
                                                    args=(filename, pipeline,
                                                          dataset, msg_queue))
                     proc.start()
-                    running_pipelines.append((session, pipeline_id, proc))
+                    running_pipelines.append((session, pipeline, proc))
 
     def _new_controller(self):
         # Copied from VistrailsApplicationInterface#open_vistrail()
