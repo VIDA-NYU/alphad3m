@@ -26,8 +26,7 @@ def train(vt_file, pipeline, dataset, msg_queue):
 
     # Load file
     # Copied from VistrailsApplicationInterface#open_vistrail()
-    locator = BaseLocator.from_url(
-        '/tmp/vistrails_ta2/workflows/2bd8d3aa-6c3a-41bb-8b1f-381e6b077f6c.vt')
+    locator = BaseLocator.from_url(vt_file)
     loaded_objs = vistrails.core.db.io.load_vistrail(locator)
     controller = VistrailController(loaded_objs[0], locator,
                                     *loaded_objs[1:])

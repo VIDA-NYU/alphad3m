@@ -48,9 +48,11 @@ class Session(Observable):
 
 class Pipeline(object):
     trained = False
+    train_run_module = None
     test_run_module = None
 
-    def __init__(self, test_run_module):
+    def __init__(self, train_run_module, test_run_module):
+        self.train_run_module = train_run_module
         self.test_run_module = test_run_module
 
 
@@ -301,7 +303,8 @@ class D3mTa2(object):
         controller.add_new_action(action)
         version = controller.perform_action(action)
         controller.change_selected_version(version)
-        return controller, Pipeline(test_run_module='test_targets')
+        return controller, Pipeline(train_run_module='classifier-sink',
+                                    test_run_module='test_targets')
 
     TEMPLATES = [
         [(_classification_template, 'LinearSVC'),
