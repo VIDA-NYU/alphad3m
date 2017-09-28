@@ -164,7 +164,7 @@ class D3mTa2(object):
                                      template)
                 else:
                     session.pipelines_training.add(pipeline.id)
-                    self._run_queue.put((session, pipeline.id, dataset))
+                    self._run_queue.put((session, pipeline, dataset))
         logger.info("Pipeline creation completed")
         session.check_status()
 
@@ -381,18 +381,20 @@ class CoreService(pb_core_grpc.CoreServicer):
         if len(dataset) != 1:
             yield pb_core.PipelineCreateResult(
                 response_info=pb_core.Response(
-                    status=pb_core.Status(code=pb_core.INVALID_ARGUMENT),
-                    details="Please only use a single training dataset",
+                    status=pb_core.Status(
+                        code=pb_core.INVALID_ARGUMENT,
+                        details="Please only use a single training dataset",
+                    ),
                 )
             )
             return
         dataset, = dataset
+        if dataset.startswith('file:///'):
+            dataset = dataset[7:]
 
         logger.info("Got CreatePipelines request, session=%s, metrics=%s, "
                     "dataset=%s",
-                    sessioncontext.session_id,
-                    metrics=", ".join(metrics),
-                    dataset=dataset)
+                    sessioncontext.session_id, ", ".join(metrics), dataset)
 
         queue = Queue()
         session = self._app.sessions[sessioncontext.session_id]
