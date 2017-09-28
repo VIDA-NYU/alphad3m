@@ -48,12 +48,14 @@ class Session(Observable):
 
 class Pipeline(object):
     trained = False
+    metrics = []
     train_run_module = None
     test_run_module = None
 
     def __init__(self, train_run_module, test_run_module):
         self.train_run_module = train_run_module
         self.test_run_module = test_run_module
+        self.scores = {}
 
 
 class D3mTa2(object):
@@ -135,10 +137,11 @@ class D3mTa2(object):
         controller.select_latest_version()
         return controller
 
-    def build_pipelines(self, session_id, dataset):
-        self.executor.submit(self._build_pipelines, session_id, dataset)
+    def build_pipelines(self, session_id, dataset, metrics):
+        self.executor.submit(self._build_pipelines,
+                             session_id, dataset, metrics)
 
-    def _build_pipelines(self, session_id, dataset):
+    def _build_pipelines(self, session_id, dataset, metrics):
         session = self.sessions[session_id]
         logger.info("Creating pipelines...")
         session.training = True
@@ -153,6 +156,7 @@ class D3mTa2(object):
                 try:
                     pipeline_id, pipeline = \
                         self._build_pipeline_from_template(session, tpl_func)
+                    pipeline.metrics = metrics
                 except Exception:
                     logger.exception("Error building pipeline from %r",
                                      template)
@@ -314,6 +318,9 @@ class D3mTa2(object):
 
 
 class CoreService(pb_core_grpc.CoreServicer):
+    grpc2metric = dict((k, v) for v, k in pb_core.Metric.items())
+    metric2grpc = dict(pb_core.Metric.items())
+
     def __init__(self, app):
         self._app = app
 
@@ -361,6 +368,12 @@ class CoreService(pb_core_grpc.CoreServicer):
         task_description = request.task_description
         output = request.output
         metrics = request.metrics
+        if any(m not in self.grpc2metric for m in metrics):
+            logger.warning("Got metrics that we don't know about: %s",
+                           ", ".join(m for m in metrics
+                                     if m not in self.grpc2metric))
+        metrics = [self.grpc2metric[m] for m in metrics
+                   if m in self.grpc2metric]
         target_features = request.target_features
         max_pipelines = request.max_pipelines
 
@@ -376,13 +389,17 @@ class CoreService(pb_core_grpc.CoreServicer):
             return
         dataset, = dataset
 
-        logger.info("Got CreatePipelines request, session=%s",
-                    sessioncontext.session_id)
+        logger.info("Got CreatePipelines request, session=%s, metrics=%s, "
+                    "dataset=%s",
+                    sessioncontext.session_id,
+                    metrics=", ".join(metrics),
+                    dataset=dataset)
 
         queue = Queue()
         session = self._app.sessions[sessioncontext.session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            self._app.build_pipelines(sessioncontext.session_id, dataset)
+            self._app.build_pipelines(sessioncontext.session_id, dataset,
+                                      metrics)
 
             for msg in self._pipelinecreateresult_stream(context, queue):
                 yield msg

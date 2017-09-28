@@ -1,7 +1,9 @@
 import json
 import logging
+import math
 import os.path
 import pandas
+import sklearn.metrics
 
 
 logger = logging.getLogger(__name__)
@@ -68,3 +70,42 @@ def read_dataset(data_path):
             'trainData')
 
     return output
+
+
+SCORES_TO_SKLEARN = dict(
+    ACCURACY=sklearn.metrics.accuracy_score,
+    F1=sklearn.metrics.f1_score,
+    F1_MICRO=lambda y_true, y_pred:
+        sklearn.metrics.f1_score(y_true, y_pred, average='micro'),
+    F1_MACRO=lambda y_true, y_pred:
+        sklearn.metrics.f1_score(y_true, y_pred, average='macro'),
+    ROC_AUC=sklearn.metrics.roc_auc_score,
+    ROC_AUC_MICRO=lambda y_true, y_pred:
+        sklearn.metrics.roc_auc_score(y_true, y_pred, average='micro'),
+    ROC_AUC_MACRO=lambda y_true, y_pred:
+        sklearn.metrics.roc_auc_score(y_true, y_pred, average='macro'),
+    MEAN_SQUARED_ERROR=sklearn.metrics.mean_squared_error,  # FIXME: Not in gRPC?
+    ROOT_MEAN_SQUARED_ERROR=lambda y_true, y_pred:
+        math.sqrt(sklearn.metrics.mean_squared_error(y_true, y_pred)),
+    # FIXME: ROOT_MEAN_SQUARED_ERROR_AVG // sum(mean_squared_error_list)/len(mean_squared_error_list)
+    # FIXME: MEAN_ABSOLUTE_ERROR // sklearn.metrics.mean_absolute_error
+    R_SQUARED=sklearn.metrics.r2_score,
+    EXECUTION_TIME=None,
+)
+
+SCORES_FROM_SCHEMA = {
+    'accuracy': 'ACCURACY',
+    'f1': 'F1',
+    'f1Micro': 'F1_MICRO',
+    'f1Macro': 'F1_MACRO',
+    'rocAuc': 'ROC_AUC',
+    'rocAucMicro': 'ROC_AUC_MICRO',
+    'rocAucMacro': 'ROC_AUC_MACRO',
+    'meanSquaredError': 'MEAN_SQUARED_ERROR',
+    'rootMeanSquaredError': 'ROOT_MEAN_SQUARED_ERROR',
+    'rootMeanSquaredErrorAvg': 'ROOT_MEAN_SQUARED_ERROR_AVG',
+    'meanAbsoluteError': 'MEAN_ABSOLUTE_ERROR',
+    'rSquared': 'R_SQUARED',
+    'normalizedMutualInformation': 'NORMALIZED_MUTUAL_INFORMATION',
+    'jaccardSimilarityScore': 'JACCARD_SIMILARITY_SCORE',
+}

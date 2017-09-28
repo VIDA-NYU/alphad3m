@@ -1,11 +1,11 @@
 import logging
 import numpy
-import sklearn
+import time
 import vistrails.core.db.io
 from vistrails.core.db.locator import BaseLocator
 from vistrails.core.vistrail.controller import VistrailController
 
-from d3m_ta2_vistrails.common import read_dataset
+from d3m_ta2_vistrails.common import SCORES_TO_SKLEARN, read_dataset
 
 
 logger = logging.getLogger(__name__)
@@ -19,11 +19,6 @@ def get_module(pipeline, label):
             if name == label:
                 return module
     return None
-
-
-SCORES = dict(
-    R_SQUARED=sklearn.metrics.r2_score,
-)
 
 
 def train(vt_file, pipeline, dataset, msg_queue):
@@ -69,6 +64,8 @@ def train(vt_file, pipeline, dataset, msg_queue):
         Internal.values[get_module(vt_pipeline, 'training_data').id] = \
             data['trainingData']['frame']
 
+        start_time = time.time()
+
         results, changed = controller.execute_workflow_list([[
             controller.locator,  # locator
             controller.current_version,  # version
@@ -82,14 +79,20 @@ def train(vt_file, pipeline, dataset, msg_queue):
         ]])
         result, = results
 
+        run_time = time.time() - start_time
+
         # Compute score
-        for score in pipeline.metrics:
-            score_func = SCORES[score]
-            scores.setdefault(score, []).append(
-                score_func(test_target_split, predicted_results))
+        for metric in pipeline.metrics:
+            # Special case
+            if metric == 'EXECUTION_TIME':
+                scores.setdefault(metric, []).append(run_time)
+            else:
+                score_func = SCORES_TO_SKLEARN[metric]
+                scores.setdefault(metric, []).append(
+                    score_func(test_target_split, predicted_results))
 
     # Aggregate results over the folds
-    scores = dict((metric, mean(values)) for metric, values in scores)
+    scores = dict((metric, numpy.mean(values)) for metric, values in scores)
 
     # Training step - run pipeline on full training_data,
     # sink = classifier-sink (the Persist downstream of the classifier),
