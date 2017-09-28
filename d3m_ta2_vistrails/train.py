@@ -1,8 +1,10 @@
 import logging
 import numpy
+import sys
 import time
 import vistrails.core.db.io
 from vistrails.core.db.locator import BaseLocator
+from vistrails.core.utils import DummyView
 from vistrails.core.vistrail.controller import VistrailController
 
 from d3m_ta2_vistrails.common import SCORES_TO_SKLEARN, read_dataset
@@ -26,6 +28,15 @@ def train(vt_file, pipeline, dataset, msg_queue):
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
 
+    FOLDS = 3
+    SPLIT_RATIO = 0.25
+    TOTAL_PROGRESS = FOLDS + 2.0
+
+    logger.info("About to run training pipeline, file=%r, dataset=%r",
+                vt_file, dataset)
+
+    from userpackages.simple_persist import configuration as persist_config
+
     # Load file
     # Copied from VistrailsApplicationInterface#open_vistrail()
     locator = BaseLocator.from_url(vt_file)
@@ -37,19 +48,22 @@ def train(vt_file, pipeline, dataset, msg_queue):
 
     # Load data
     data = read_dataset(dataset)
+    logger.info("Loaded dataset, columns: %r", data['trainData']['columns'])
 
     # Scoring step - make folds, run them through the pipeline one by one
     # (set both training_data and test_data),
     # get predictions from OutputPort to get cross validation scores
-    FOLDS = 3
-    SPLIT_RATIO = 0.25
-
     scores = {}
 
-    for _ in range(FOLDS):
+    for i in range(FOLDS):
+        logger.info("Scoring round %d/%d", i + 1, FOLDS)
+
+        msg_queue.put((pipeline.id, 'progress', (i + 1.0) / TOTAL_PROGRESS))
+
         data_frame = data['trainData']['frame']
         targets = data['trainTargets']['list']
 
+        # Do the split
         random_sample = numpy.random.rand(len(data_frame)) < SPLIT_RATIO
 
         train_data_split = data_frame[random_sample]
@@ -58,11 +72,24 @@ def train(vt_file, pipeline, dataset, msg_queue):
         train_target_split = targets[random_sample]
         test_target_split = targets[~random_sample]
 
+        # Don't persist anything
+        persist_config.file_store = None
+
         # Set input to Internal modules
         from userpackages.simple_persist.init import Internal
 
         Internal.values[get_module(vt_pipeline, 'training_data').id] = \
-            data['trainingData']['frame']
+            train_data_split
+        Internal.values[get_module(vt_pipeline, 'training_targets').id] = \
+            train_target_split
+        Internal.values[get_module(vt_pipeline, 'test_data').id] = \
+            test_data_split
+
+        # Select the sink
+        if pipeline.test_run_module is not None:
+            sinks = [get_module(vt_pipeline, pipeline.test_run_module).id]
+        else:
+            sinks = None
 
         start_time = time.time()
 
@@ -79,6 +106,16 @@ def train(vt_file, pipeline, dataset, msg_queue):
         ]])
         result, = results
 
+        if result.errors:
+            logger.error("Errors running pipeline:\n%s",
+                         '\n'.join('%d: %s' % p
+                                   for p in result.errors.iteritems()))
+            sys.exit(1)
+
+        predicted_results = get_module(vt_pipeline, 'test_targets').id
+        predicted_results = result.objects[predicted_results]
+        predicted_results = predicted_results.get_input('InternalPipe')
+
         run_time = time.time() - start_time
 
         # Compute score
@@ -91,9 +128,13 @@ def train(vt_file, pipeline, dataset, msg_queue):
                 scores.setdefault(metric, []).append(
                     score_func(test_target_split, predicted_results))
 
+    msg_queue.put((pipeline.id, 'progress', (FOLDS + 1.0) / TOTAL_PROGRESS))
+
     # Aggregate results over the folds
     scores = dict((metric, numpy.mean(values)) for metric, values in scores)
+    msg_queue.put((pipeline.id, 'scores', scores))
 
     # Training step - run pipeline on full training_data,
     # sink = classifier-sink (the Persist downstream of the classifier),
     # Persist module set to write
+    logger.info("Scoring done, running training on full data")

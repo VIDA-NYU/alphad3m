@@ -45,6 +45,7 @@ class Session(Observable):
         if self.training and not self.pipelines_training:
             self.notify('done_training')
             self.training = False
+            logger.info("Session %s: training done", self.id)
 
 
 class Pipeline(object):
@@ -189,12 +190,12 @@ class D3mTa2(object):
 
     def _pipeline_running_thread(self):
         MAX_RUNNING_PROCESSES = 2
-        running_pipelines = []
+        running_pipelines = {}
         msg_queue = multiprocessing.Queue()
         while True:
             # Wait for a process to be done
             remove = []
-            for i, (session, pipeline, proc) in enumerate(running_pipelines):
+            for session, pipeline, proc in running_pipelines.itervalues():
                 if not proc.is_alive():
                     logger.info("Pipeline training process done, returned %d",
                                 proc.exitcode)
@@ -204,14 +205,13 @@ class D3mTa2(object):
                         session.notify('training_error', pipeline_id=pipeline.id)
                     session.pipelines_training.discard(pipeline.id)
                     session.check_status()
-                    remove.append(i)
-            for i in reversed(remove):
-                del running_pipelines[i]
+                    remove.append(pipeline.id)
+            for id in remove:
+                del running_pipelines[id]
 
             if len(running_pipelines) < MAX_RUNNING_PROCESSES:
                 try:
-                    session, pipeline, dataset = \
-                        self._run_queue.get(timeout=3)
+                    session, pipeline, dataset = self._run_queue.get(False)
                 except Empty:
                     pass
                 else:
@@ -222,7 +222,23 @@ class D3mTa2(object):
                                                    args=(filename, pipeline,
                                                          dataset, msg_queue))
                     proc.start()
-                    running_pipelines.append((session, pipeline, proc))
+                    running_pipelines[pipeline.id] = session, pipeline, proc
+                    session.notify('training_start', pipeline_id=pipeline.id)
+
+            try:
+                pipeline_id, msg, arg = msg_queue.get(timeout=3)
+            except Empty:
+                pass
+            else:
+                session, pipeline, proc = running_pipelines[pipeline_id]
+                if msg == 'progress':
+                    # TODO: Report progress
+                    logger.info("Training pipeline %s: %.0f", pipeline_id, arg)
+                elif msg == 'scores':
+                    pipeline.scores = arg
+                else:
+                    logger.error("Unexpected message from training process %s",
+                                 msg)
 
     def _new_controller(self):
         # Copied from VistrailsApplicationInterface#open_vistrail()
@@ -458,6 +474,17 @@ class CoreService(pb_core_grpc.CoreServicer):
                         # FIXME: OutputType
                         output=pb_core.CLASS_LABEL,
                     ),
+                )
+            elif event == 'training_start':
+                pipeline_id = kwargs['pipeline_id']
+                if not pipeline_filter(pipeline_id):
+                    continue
+                yield pb_core.PipelineCreateResult(
+                    response_info=pb_core.Response(
+                        status=pb_core.Status(code=pb_core.OK),
+                    ),
+                    progress_info=pb_core.RUNNING,
+                    pipeline_id=pipeline_id,
                 )
             elif event == 'training_success':
                 pipeline_id = kwargs['pipeline_id']
