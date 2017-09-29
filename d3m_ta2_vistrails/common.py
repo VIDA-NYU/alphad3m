@@ -3,6 +3,9 @@ import logging
 import math
 import os.path
 import pandas
+from skimage import io
+import numpy as np
+from sklearn.decomposition import IncrementalPCA
 import sklearn.metrics
 
 
@@ -35,32 +38,74 @@ def _read_file(data_schema, filename, data_type,
         logger.info("file %s not present; skipping", filename)
         return None
 
-    out = {'index': None}
+    out = {'index': None, 'image': False, 'categorical': False}    
     data_frame = pandas.read_csv(filename)
     data_column_names = []
     data_index = []
+    file_data = {}    
     for feature in data_schema[data_type]:
-        if 'index' in feature['varRole']:
-            data_index = list(data_frame[feature['varName']])
-            out['index'] = data_index
-        elif 'attribute' in feature['varRole']:
-            data_column_names.append(feature['varName'])
-        elif 'target' in feature['varRole']:
-            data_column_names.append(feature['varName'])
+        try:
+            if 'index' in feature['varRole']:
+                data_index = list(data_frame[feature['varName']])
+                out['index'] = data_index
+            elif 'attribute' in feature['varRole']:
+                data_column_names.append(feature['varName'])
+                out['categorical'] = out['categorical'] or (feature['varType'] == 'categorical')
+            elif 'target' in feature['varRole']:
+                data_column_names.append(feature['varName'])
+        except KeyError:
+            if 'file' in feature['varType']:
+                file_data['column_name'] = feature['varName']
+                file_data['fileType'] = feature['varFileType']
+                file_data['fileFormat'] = feature['varFileFormat']
 
-    data_columns = data_frame.keys()
+    data_frame_copy = data_frame.copy()
+    data_columns = data_frame_copy.keys()
     for key in data_columns:
         if key not in data_column_names:
-            data_frame = data_frame.drop(key, axis=1)
+            data_frame_copy = data_frame_copy.drop(key, axis=1)
 
-    data_frame = pandas.DataFrame(data=data_frame, index=data_index)
+    raw_data_np = np.empty([len(data_frame_copy.values), 0])
+    if file_data:
+        data_path = os.path.dirname(os.path.abspath(filename))
+        file_names = [os.path.join(data_path, 'raw_data', file_name) for file_name in data_frame[file_data['column_name']]]
+        
+        if file_data['fileType'] == 'image':
+            out['image'] = True
+            count = 0
+            ipca = IncrementalPCA(n_components=2, batch_size=10)
+            training_data = []
+            raw_data_np = None
+            for image in file_names:
+                image_out = read_image_file(image)
+                training_data.append(image_out['image_array'])
+                sample = np.array(image_out['image_array']).reshape(1, -1)
+                if count > 7:
+                    if raw_data_np is None:
+                        raw_data_np = ipca.fit_transform(np.array(training_data))
+                    else:
+                        raw_data_np = np.vstack((raw_data_np, ipca.transform(sample)))
+                count = count + 1
+            
+    result_data = data_frame_copy.values
+    
+    if len(raw_data_np) > 0:
+        if len(result_data) > 0:
+            result_data = np.hstack((result_data, raw_data_np))
+        else:
+            result_data =  raw_data_np
+            
+    if (not np.shape(result_data)[1] == len(data_columns)) or out['image']:
+        final_data_frame = pandas.DataFrame(data=result_data, index=data_index)
+    else:
+        final_data_frame = pandas.DataFrame(data=result_data, columns=data_column_names, index=data_index)
     out['columns'] = data_column_names
-    list_ = data_frame.as_matrix()
+    list_ = final_data_frame.as_matrix()
     if single_column:
         assert list_.shape[1] == 1
         list_ = list_.reshape((-1,))
     out['list'] = list_
-    out['frame'] = data_frame
+    out['frame'] = final_data_frame
     return out
 
 
@@ -90,6 +135,14 @@ def read_dataset(data_path):
             'trainData')
 
     return output
+
+
+def read_image_file(filename):
+    out = {}
+    image_ndarray = io.imread(filename)
+    image_2darray = image_ndarray.reshape((len(image_ndarray), -1))
+    out['image_array'] = image_2darray.reshape((1, -1))[0]
+    return out
 
 
 SCORES_TO_SKLEARN = dict(

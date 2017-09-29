@@ -10,7 +10,8 @@ os.chdir(os.path.abspath(os.path.dirname(__file__)))
 req = [
     'vistrails',
     'grpcio',
-    'scikit-learn']
+    'scikit-learn',
+    'scikit-image']
 setup(name='d3m_ta2_vistrails',
       version='0.1',
       packages=['d3m_ta2_vistrails'],

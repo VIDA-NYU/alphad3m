@@ -2,10 +2,6 @@ from __future__ import division
 
 from vistrails.core.modules.vistrails_module import Module
 
-import pandas as pd
-import json
-import os.path
-
 from d3m_ta2_vistrails.common import read_dataset
 
 
@@ -23,18 +19,25 @@ class ReadDataSchema(Module):
         ('testData_index', '(org.vistrails.vistrails.basic:List)'),
         ('testData_columns', '(org.vistrails.vistrails.basic:List)'),
         ('testData_list',  '(org.vistrails.vistrails.basic:List)'), ('testData_frame', '(org.vistrails.vistrails.basic:List)'),
+        ('categorical',  '(org.vistrails.vistrails.basic:Boolean)',{'shape':'diamond'}),
+        ('image',  '(org.vistrails.vistrails.basic:Boolean)',{'shape':'diamond'})
     ]
 
     def compute(self):
         data = read_dataset(self.get_input('data_path').name)
+        image_data = False
+        categorical = False
         for output_type in ['trainData', 'trainTargets', 'testData']:
             out = data.get(output_type)
             if out is None:
                 continue
+            image_data = image_data or out['image']
+            categorical = categorical or out['categorical']
             self.set_output(output_type + '_index', out['index'])
             self.set_output(output_type + '_columns', out['columns'])
             self.set_output(output_type + '_list', out['list'])
             self.set_output(output_type + '_frame', out['frame'])
-
+        self.set_output('image', image_data)
+        self.set_output('categorical', categorical)
 
 _modules = [ReadDataSchema]

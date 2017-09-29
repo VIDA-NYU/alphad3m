@@ -21,4 +21,4 @@ def package_dependencies():
 def package_requirements():
     require_python_module('dsbox', {
         'pip': ['pandas >= 0.20.1', 'langdetect >= 1.0.7',
-                'dsbox-dataprofiling', 'dsbox-datacleaning']})
+                'dsbox-dataprofiling', 'dsbox-datacleaning == 0.1.3']})
