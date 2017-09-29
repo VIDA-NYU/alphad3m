@@ -16,6 +16,7 @@ from vistrails.core.db.locator import BaseLocator, UntitledLocator
 from vistrails.core.vistrail.controller import VistrailController
 
 from d3m_ta2_vistrails import __version__
+from d3m_ta2_vistrails.common import SCORES_FROM_SCHEMA
 import d3m_ta2_vistrails.proto.core_pb2 as pb_core
 import d3m_ta2_vistrails.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_vistrails.proto.dataflow_ext_pb2 as pb_dataflow
@@ -34,8 +35,9 @@ vistrails_lock = threading.RLock()
 
 
 class Session(Observable):
-    def __init__(self):
+    def __init__(self, id):
         Observable.__init__(self)
+        self.id = id
         self.pipelines = {}
         self.training = False
         self.pipelines_training = set()
@@ -44,10 +46,20 @@ class Session(Observable):
         if self.training and not self.pipelines_training:
             self.notify('done_training')
             self.training = False
+            logger.info("Session %s: training done", self.id)
 
 
 class Pipeline(object):
     trained = False
+    metrics = []
+    train_run_module = None
+    test_run_module = None
+
+    def __init__(self, train_run_module, test_run_module):
+        self.id = str(uuid.uuid4())
+        self.train_run_module = train_run_module
+        self.test_run_module = test_run_module
+        self.scores = {}
 
 
 class D3mTa2(object):
@@ -82,7 +94,39 @@ class D3mTa2(object):
         self._run_thread.start()
 
     def run_search(self, dataset, problem):
-        raise NotImplementedError  # TODO: Standalone TA2 mode
+        # Read problem
+        with open(problem) as fp:
+            problem_json = json.load(fp)
+        if len(problem_json['datasets']) > 1:
+            logger.error("Problem schema lists multiple datasets!")
+            sys.exit(1)
+        if problem_json['datasets'] != [dataset]:
+            logger.error("Configuration and problem disagree on dataset! "
+                         "Using configuration.")
+        task = problem_json['taskType']
+        metric = problem_json['metric']
+        if metric not in SCORES_FROM_SCHEMA:
+            logger.error("Unknown metric %r", metric)
+            sys.exit(1)
+        metric = SCORES_FROM_SCHEMA[metric]
+        logger.info("Dataset: %s, task: %s, metric: %s",
+                    dataset, task, metric)
+
+        # Create pipelines
+        session = Session('commandline')
+        self.sessions[session.id] = session
+        queue = Queue()
+        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+            self.build_pipelines(session.id, dataset,
+                                 [metric])
+            while queue.get(True)[0] != 'done_training':
+                pass
+
+        logger.info("Generated %d pipelines",
+                    sum(1 for pipeline in session.pipelines.itervalues()
+                        if pipeline.trained))
+
+        # TODO: Export pipelines
 
     def run_test(self, dataset, executable_files):
         raise NotImplementedError  # TODO: Test executable mode
@@ -106,7 +150,7 @@ class D3mTa2(object):
     def new_session(self):
         session = '%d' % self._next_session
         self._next_session += 1
-        self.sessions[session] = Session()
+        self.sessions[session] = Session(session)
         return session
 
     def finish_session(self, session_id):
@@ -129,10 +173,11 @@ class D3mTa2(object):
         controller.select_latest_version()
         return controller
 
-    def build_pipelines(self, session_id):
-        self.executor.submit(self._build_pipelines, session_id)
+    def build_pipelines(self, session_id, dataset, metrics):
+        self.executor.submit(self._build_pipelines,
+                             session_id, dataset, metrics)
 
-    def _build_pipelines(self, session_id):
+    def _build_pipelines(self, session_id, dataset, metrics):
         session = self.sessions[session_id]
         logger.info("Creating pipelines...")
         session.training = True
@@ -145,72 +190,89 @@ class D3mTa2(object):
                 else:
                     tpl_func = template
                 try:
-                    pipeline_id, pipeline = \
-                        self._build_pipeline_from_template(session, tpl_func)
+                    pipeline = self._build_pipeline_from_template(session,
+                                                                  tpl_func)
+                    pipeline.metrics = metrics
                 except Exception:
                     logger.exception("Error building pipeline from %r",
                                      template)
                 else:
-                    session.pipelines_training.add(pipeline_id)
-                    self._run_queue.put((session, pipeline_id))
+                    session.pipelines_training.add(pipeline.id)
+                    self._run_queue.put((session, pipeline, dataset))
         logger.info("Pipeline creation completed")
         session.check_status()
 
     @synchronized(vistrails_lock)
     def _build_pipeline_from_template(self, session, template):
-        pipeline_id = str(uuid.uuid4())
-
         # Create workflow from a template
-        controller = template(self)
+        controller, pipeline = template(self)
 
         # Save it to disk
         locator = BaseLocator.from_url(os.path.join(self.storage,
                                                     'workflows',
-                                                    pipeline_id + '.vt'))
+                                                    pipeline.id + '.vt'))
         controller.flush_delayed_actions()
         controller.write_vistrail(locator)
 
         # Add it to the database
         with session.lock:
-            session.pipelines[pipeline_id] = pipeline = Pipeline()
-        session.notify('new_pipeline', pipeline_id=pipeline_id)
+            session.pipelines[pipeline.id] = pipeline
+        session.notify('new_pipeline', pipeline_id=pipeline.id)
 
-        return pipeline_id, pipeline
+        return pipeline
 
     def _pipeline_running_thread(self):
         MAX_RUNNING_PROCESSES = 2
-        running_pipelines = []
+        running_pipelines = {}
         msg_queue = multiprocessing.Queue()
         while True:
             # Wait for a process to be done
             remove = []
-            for i, (session, pipeline_id, proc) in enumerate(running_pipelines):
+            for session, pipeline, proc in running_pipelines.itervalues():
                 if not proc.is_alive():
                     logger.info("Pipeline training process done, returned %d",
                                 proc.exitcode)
                     if proc.exitcode == 0:
-                        session.notify('training_success', pipeline_id=pipeline_id)
+                        pipeline.trained = True
+                        session.notify('training_success', pipeline_id=pipeline.id)
                     else:
-                        session.notify('training_error', pipeline_id=pipeline_id)
-                    session.pipelines_training.discard(pipeline_id)
+                        session.notify('training_error', pipeline_id=pipeline.id)
+                    session.pipelines_training.discard(pipeline.id)
                     session.check_status()
-                    remove.append(i)
-            for i in reversed(remove):
-                del running_pipelines[i]
+                    remove.append(pipeline.id)
+            for id in remove:
+                del running_pipelines[id]
 
             if len(running_pipelines) < MAX_RUNNING_PROCESSES:
                 try:
-                    session, pipeline_id = self._run_queue.get(True, 3)
+                    session, pipeline, dataset = self._run_queue.get(False)
                 except Empty:
                     pass
                 else:
-                    logger.info("Running training pipeline for %s", pipeline_id)
+                    logger.info("Running training pipeline for %s", pipeline.id)
                     filename = os.path.join(self.storage, 'workflows',
-                                            pipeline_id + '.vt')
+                                            pipeline.id + '.vt')
                     proc = multiprocessing.Process(target=train,
-                                                   args=(filename, msg_queue))
+                                                   args=(filename, pipeline,
+                                                         dataset, msg_queue))
                     proc.start()
-                    running_pipelines.append((session, pipeline_id, proc))
+                    running_pipelines[pipeline.id] = session, pipeline, proc
+                    session.notify('training_start', pipeline_id=pipeline.id)
+
+            try:
+                pipeline_id, msg, arg = msg_queue.get(timeout=3)
+            except Empty:
+                pass
+            else:
+                session, pipeline, proc = running_pipelines[pipeline_id]
+                if msg == 'progress':
+                    # TODO: Report progress
+                    logger.info("Training pipeline %s: %.0f", pipeline_id, arg)
+                elif msg == 'scores':
+                    pipeline.scores = arg
+                else:
+                    logger.error("Unexpected message from training process %s",
+                                 msg)
 
     def _new_controller(self):
         # Copied from VistrailsApplicationInterface#open_vistrail()
@@ -294,7 +356,8 @@ class D3mTa2(object):
         controller.add_new_action(action)
         version = controller.perform_action(action)
         controller.change_selected_version(version)
-        return controller
+        return controller, Pipeline(train_run_module='classifier-sink',
+                                    test_run_module='test_targets')
 
     TEMPLATES = [
         [(_classification_template, 'LinearSVC'),
@@ -304,6 +367,9 @@ class D3mTa2(object):
 
 
 class CoreService(pb_core_grpc.CoreServicer):
+    grpc2metric = dict((k, v) for v, k in pb_core.Metric.items())
+    metric2grpc = dict(pb_core.Metric.items())
+
     def __init__(self, app):
         self._app = app
 
@@ -351,16 +417,40 @@ class CoreService(pb_core_grpc.CoreServicer):
         task_description = request.task_description
         output = request.output
         metrics = request.metrics
+        if any(m not in self.grpc2metric for m in metrics):
+            logger.warning("Got metrics that we don't know about: %s",
+                           ", ".join(m for m in metrics
+                                     if m not in self.grpc2metric))
+        metrics = [self.grpc2metric[m] for m in metrics
+                   if m in self.grpc2metric]
         target_features = request.target_features
         max_pipelines = request.max_pipelines
 
-        logger.info("Got CreatePipelines request, session=%s",
-                    sessioncontext.session_id)
+        # FIXME: Handle the actual list of training features
+        dataset = set(feat.data_uri for feat in train_features)
+        if len(dataset) != 1:
+            yield pb_core.PipelineCreateResult(
+                response_info=pb_core.Response(
+                    status=pb_core.Status(
+                        code=pb_core.INVALID_ARGUMENT,
+                        details="Please only use a single training dataset",
+                    ),
+                )
+            )
+            return
+        dataset, = dataset
+        if dataset.startswith('file:///'):
+            dataset = dataset[7:]
+
+        logger.info("Got CreatePipelines request, session=%s, metrics=%s, "
+                    "dataset=%s",
+                    sessioncontext.session_id, ", ".join(metrics), dataset)
 
         queue = Queue()
         session = self._app.sessions[sessioncontext.session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            self._app.build_pipelines(sessioncontext.session_id)
+            self._app.build_pipelines(sessioncontext.session_id, dataset,
+                                      metrics)
 
             for msg in self._pipelinecreateresult_stream(context, queue):
                 yield msg
@@ -416,7 +506,19 @@ class CoreService(pb_core_grpc.CoreServicer):
                     pipeline_id=pipeline_id,
                     pipeline_info=pb_core.Pipeline(
                         # FIXME: OutputType
+                        output=pb_core.CLASS_LABEL,
                     ),
+                )
+            elif event == 'training_start':
+                pipeline_id = kwargs['pipeline_id']
+                if not pipeline_filter(pipeline_id):
+                    continue
+                yield pb_core.PipelineCreateResult(
+                    response_info=pb_core.Response(
+                        status=pb_core.Status(code=pb_core.OK),
+                    ),
+                    progress_info=pb_core.RUNNING,
+                    pipeline_id=pipeline_id,
                 )
             elif event == 'training_success':
                 pipeline_id = kwargs['pipeline_id']
@@ -430,7 +532,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     progress_info=pb_core.COMPLETED,
                     pipeline_id=pipeline_id,
                     pipeline_info=pb_core.Pipeline(
-                        # FIXME: OutputType
+                        output=pb_core.CLASS_LABEL,
                         scores=scores,
                     ),
                 )
@@ -564,29 +666,8 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
         pipeline_id = request.pipeline_id
 
         # TODO: GetDataflowResults
-        yield pb_dataflow.ModuleResult(
-            response_info=pb_core.Response(
-                status=pb_core.Status(code=pb_core.OK),
-            ),
-            module_id='module1',
-            status=pb_dataflow.ModuleResult.RUNNING,
-            progress=0.5,
-        )
-        yield pb_dataflow.ModuleResult(
-            response_info=pb_core.Response(
-                status=pb_core.Status(code=pb_core.OK),
-            ),
-            module_id='module1',
-            status=pb_dataflow.ModuleResult.DONE,
-            progress=1.0,
-            outputs=[
-                pb_dataflow.ModuleOutput(
-                    output_name='result',
-                    value='42',
-                ),
-            ],
-            execution_time=60.0,
-        )
+        if False:
+            yield
 
 
 def main_search():
@@ -609,7 +690,7 @@ def main_search():
             logs_root=config['pipeline_logs_root'],
             executables_root=config['executables_root'])
         ta2.run_search(
-            dataset=config['training_data_root'],
+            dataset=os.path.dirname(config['dataset_schema']),
             problem=config['problem_schema'])
 
 def main_serve():

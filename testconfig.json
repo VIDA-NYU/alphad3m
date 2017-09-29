@@ -2,6 +2,6 @@
     "temp_storage_root": "/tmp/vistrails_ta2",
     "pipeline_logs_root": "/tmp/vistrails_ta2/logs",
     "executables_root": "/tmp/vistrails_ta2/executables",
-    "training_data_root": "/data/o_185/data",
+    "dataset_schema": "/data/o_185/data/dataSchema.json",
     "problem_schema": "/data/o_185/problemSchema.json"
 }

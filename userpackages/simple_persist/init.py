@@ -35,4 +35,15 @@ class Persist(Module):
             self.set_output('value', value)
 
 
-_modules = [Persist]
+class Internal(Module):
+    _output_ports = [('value', '(org.vistrails.vistrails.basic:Variant)')]
+
+    values = {}
+
+    def compute(self):
+        module_id = self.moduleInfo['moduleId']
+
+        self.set_output('value', Internal.values[module_id])
+
+
+_modules = [Persist, Internal]
