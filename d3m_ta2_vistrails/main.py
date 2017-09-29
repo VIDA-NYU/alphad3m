@@ -81,6 +81,7 @@ class Pipeline(object):
         self.test_run_module = test_run_module
         self.scores = {}
         self.rank = 0
+        self.primitives = []
 
 
 class D3mTa2(object):
@@ -101,11 +102,15 @@ class D3mTa2(object):
                 },
                 args=[])
 
+        self.problem_id = 'problem_id_unset'
         self.storage = storage_root
         if not os.path.exists(self.storage):
             os.mkdir(self.storage)
         if not os.path.exists(os.path.join(self.storage, 'workflows')):
             os.mkdir(os.path.join(self.storage, 'workflows'))
+        self.logs_root = logs_root
+        if not os.path.exists(self.logs_root):
+            os.mkdir(self.logs_root)
         self.sessions = {}
         self._next_session = 0
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
@@ -118,6 +123,7 @@ class D3mTa2(object):
         # Read problem
         with open(problem) as fp:
             problem_json = json.load(fp)
+        self.problem_id = problem_json['problemId']
         if len(problem_json['datasets']) > 1:
             logger.error("Problem schema lists multiple datasets!")
             sys.exit(1)
@@ -152,7 +158,8 @@ class D3mTa2(object):
     def run_test(self, dataset, executable_files):
         raise NotImplementedError  # TODO: Test executable mode
 
-    def run_server(self, port=None):
+    def run_server(self, problem_id, port=None):
+        self.problem_id = problem_id
         if not port:
             port = 50051
         core_rpc = CoreService(self)
@@ -255,7 +262,9 @@ class D3mTa2(object):
                                 proc.exitcode)
                     if proc.exitcode == 0:
                         pipeline.trained = True
-                        session.notify('training_success', pipeline_id=pipeline.id)
+                        self._write_logfile(pipeline)
+                        session.notify('training_success',
+                                       pipeline_id=pipeline.id)
                     else:
                         session.notify('training_error', pipeline_id=pipeline.id)
                     session.pipelines_training.discard(pipeline.id)
@@ -295,6 +304,17 @@ class D3mTa2(object):
                 else:
                     logger.error("Unexpected message from training process %s",
                                  msg)
+
+    def _write_logfile(self, pipeline):
+        filename = os.path.join(self.logs_root, pipeline.id + '.json')
+        obj = {
+            'problem_id': self.problem_id,
+            'pipeline_rank': pipeline.rank,
+            'name': pipeline.id,
+            'primitives': pipeline.primitives,
+        }
+        with open(filename, 'w') as fp:
+            json.dump(obj, fp)
 
     def _new_controller(self):
         # Copied from VistrailsApplicationInterface#open_vistrail()
@@ -745,11 +765,13 @@ def main_serve():
         port = None
         if len(sys.argv) == 3:
             port = int(sys.argv[2])
+        with open(config['problem_schema']) as fp:
+            problem_id = json.load(fp)['problemId']
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
             logs_root=config['pipeline_logs_root'],
             executables_root=config['executables_root'])
-        ta2.run_server(port)
+        ta2.run_server(problem_id, port)
 
 
 def main_test():
