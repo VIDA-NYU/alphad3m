@@ -103,13 +103,15 @@ class Pipeline(object):
     train_run_module = None
     test_run_module = None
 
-    def __init__(self, train_run_module, test_run_module):
+    def __init__(self, train_run_module, test_run_module, primitives=None):
         self.id = str(uuid.uuid4())
         self.train_run_module = train_run_module
         self.test_run_module = test_run_module
         self.scores = {}
         self.rank = 0
         self.primitives = []
+        if primitives is not None:
+            self.primitives = list(primitives)
 
 
 class D3mTa2(object):
@@ -394,7 +396,7 @@ class D3mTa2(object):
                     return module
         return None
 
-    def _classification_template(self, classifier_name):
+    def _classification_template(self, classifier_name, primitive):
         controller = self._load_template('classification.xml')
         ops = []
 
@@ -411,17 +413,26 @@ class D3mTa2(object):
             raise ValueError("Couldn't find Classifier module in "
                              "classification template")
 
+        primitives = [
+            'dsbox.datapreprocessing.cleaner.Encoder',
+            'dsbox.datapreprocessing.cleaner.Imputation'
+        ] + [primitive]
+
         action = create_action(ops)
         controller.add_new_action(action)
         version = controller.perform_action(action)
         controller.change_selected_version(version)
         return controller, Pipeline(train_run_module='classifier-sink',
-                                    test_run_module='test_targets')
+                                    test_run_module='test_targets',
+                                    primitives=primitives)
 
     TEMPLATES = [
-        [(_classification_template, 'LinearSVC'),
-         (_classification_template, 'KNeighborsClassifier'),
-         (_classification_template, 'DecisionTreeClassifier')]
+        [(_classification_template, 'LinearSVC',
+          'sklearn.svm.classes.LinearSVC'),
+         (_classification_template, 'KNeighborsClassifier',
+          'sklearn.neighbors.classification.KNeighborsClassifier'),
+         (_classification_template, 'DecisionTreeClassifier',
+          'sklearn.tree.tree.DecisionTreeClassifier')]
     ]
 
 
