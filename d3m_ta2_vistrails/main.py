@@ -16,6 +16,7 @@ from vistrails.core.db.locator import BaseLocator, UntitledLocator
 from vistrails.core.vistrail.controller import VistrailController
 
 from d3m_ta2_vistrails import __version__
+from d3m_ta2_vistrails.common import SCORES_FROM_SCHEMA
 import d3m_ta2_vistrails.proto.core_pb2 as pb_core
 import d3m_ta2_vistrails.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_vistrails.proto.dataflow_ext_pb2 as pb_dataflow
@@ -93,7 +94,39 @@ class D3mTa2(object):
         self._run_thread.start()
 
     def run_search(self, dataset, problem):
-        raise NotImplementedError  # TODO: Standalone TA2 mode
+        # Read problem
+        with open(problem) as fp:
+            problem_json = json.load(fp)
+        if len(problem_json['datasets']) > 1:
+            logger.error("Problem schema lists multiple datasets!")
+            sys.exit(1)
+        if problem_json['datasets'] != [dataset]:
+            logger.error("Configuration and problem disagree on dataset! "
+                         "Using configuration.")
+        task = problem_json['taskType']
+        metric = problem_json['metric']
+        if metric not in SCORES_FROM_SCHEMA:
+            logger.error("Unknown metric %r", metric)
+            sys.exit(1)
+        metric = SCORES_FROM_SCHEMA[metric]
+        logger.info("Dataset: %s, task: %s, metric: %s",
+                    dataset, task, metric)
+
+        # Create pipelines
+        session = Session('commandline')
+        self.sessions[session.id] = session
+        queue = Queue()
+        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+            self.build_pipelines(session.id, dataset,
+                                 [metric])
+            while queue.get(True)[0] != 'done_training':
+                pass
+
+        logger.info("Generated %d pipelines",
+                    sum(1 for pipeline in session.pipelines.itervalues()
+                        if pipeline.trained))
+
+        # TODO: Export pipelines
 
     def run_test(self, dataset, executable_files):
         raise NotImplementedError  # TODO: Test executable mode
@@ -200,6 +233,7 @@ class D3mTa2(object):
                     logger.info("Pipeline training process done, returned %d",
                                 proc.exitcode)
                     if proc.exitcode == 0:
+                        pipeline.trained = True
                         session.notify('training_success', pipeline_id=pipeline.id)
                     else:
                         session.notify('training_error', pipeline_id=pipeline.id)
@@ -632,29 +666,8 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
         pipeline_id = request.pipeline_id
 
         # TODO: GetDataflowResults
-        yield pb_dataflow.ModuleResult(
-            response_info=pb_core.Response(
-                status=pb_core.Status(code=pb_core.OK),
-            ),
-            module_id='module1',
-            status=pb_dataflow.ModuleResult.RUNNING,
-            progress=0.5,
-        )
-        yield pb_dataflow.ModuleResult(
-            response_info=pb_core.Response(
-                status=pb_core.Status(code=pb_core.OK),
-            ),
-            module_id='module1',
-            status=pb_dataflow.ModuleResult.DONE,
-            progress=1.0,
-            outputs=[
-                pb_dataflow.ModuleOutput(
-                    output_name='result',
-                    value='42',
-                ),
-            ],
-            execution_time=60.0,
-        )
+        if False:
+            yield
 
 
 def main_search():
