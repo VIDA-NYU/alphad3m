@@ -35,16 +35,17 @@ vistrails_lock = threading.RLock()
 
 
 class Session(Observable):
-    def __init__(self, id):
+    def __init__(self, id, logs_dir, problem_id):
         Observable.__init__(self)
         self.id = id
+        self._logs_dir = logs_dir
+        self._problem_id = problem_id
         self.pipelines = {}
         self.training = False
         self.pipelines_training = set()
 
     def check_status(self):
         if self.training and not self.pipelines_training:
-            self.notify('done_training')
             self.training = False
             logger.info("Session %s: training done", self.id)
 
@@ -67,6 +68,33 @@ class Session(Observable):
                 for i, pipeline in enumerate(sorted(pipelines, key=rank)):
                     pipeline.rank = i + 1
                     logger.info("  %d: %s", i, pipeline.id)
+
+            self.write_logs()
+            self.notify('done_training')
+
+    def write_logs(self):
+        oldlogs = os.listdir(self._logs_dir)
+        if oldlogs:
+            logger.warning("Warning: removing %d previous log files",
+                           len(oldlogs))
+            for filename in oldlogs:
+                os.remove(os.path.join(self._logs_dir, filename))
+
+        written = 0
+        for pipeline in self.pipelines.itervalues():
+            if not pipeline.trained:
+                continue
+            filename = os.path.join(self._logs_dir, pipeline.id + '.json')
+            obj = {
+                'problem_id': self._problem_id,
+                'pipeline_rank': pipeline.rank,
+                'name': pipeline.id,
+                'primitives': pipeline.primitives,
+            }
+            with open(filename, 'w') as fp:
+                json.dump(obj, fp)
+            written += 1
+        logger.info("Wrote %d log files", written)
 
 
 class Pipeline(object):
@@ -140,7 +168,7 @@ class D3mTa2(object):
                     dataset, task, metric)
 
         # Create pipelines
-        session = Session('commandline')
+        session = Session('commandline', self.logs_root, self.problem_id)
         self.sessions[session.id] = session
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
@@ -178,7 +206,8 @@ class D3mTa2(object):
     def new_session(self):
         session = '%d' % self._next_session
         self._next_session += 1
-        self.sessions[session] = Session(session)
+        self.sessions[session] = Session(session,
+                                         self.logs_root, self.problem_id)
         return session
 
     def finish_session(self, session_id):
@@ -262,7 +291,6 @@ class D3mTa2(object):
                                 proc.exitcode)
                     if proc.exitcode == 0:
                         pipeline.trained = True
-                        self._write_logfile(pipeline)
                         session.notify('training_success',
                                        pipeline_id=pipeline.id)
                     else:
@@ -304,17 +332,6 @@ class D3mTa2(object):
                 else:
                     logger.error("Unexpected message from training process %s",
                                  msg)
-
-    def _write_logfile(self, pipeline):
-        filename = os.path.join(self.logs_root, pipeline.id + '.json')
-        obj = {
-            'problem_id': self.problem_id,
-            'pipeline_rank': pipeline.rank,
-            'name': pipeline.id,
-            'primitives': pipeline.primitives,
-        }
-        with open(filename, 'w') as fp:
-            json.dump(obj, fp)
 
     def _new_controller(self):
         # Copied from VistrailsApplicationInterface#open_vistrail()
