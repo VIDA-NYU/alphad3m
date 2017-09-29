@@ -88,10 +88,7 @@ def train(vt_file, pipeline, dataset, persist_dir, msg_queue):
         }
 
         # Select the sink
-        if pipeline.test_run_module is not None:
-            sinks = [get_module(vt_pipeline, pipeline.test_run_module).id]
-        else:
-            sinks = None
+        sinks = [get_module(vt_pipeline, 'test_targets').id]
 
         start_time = time.time()
 

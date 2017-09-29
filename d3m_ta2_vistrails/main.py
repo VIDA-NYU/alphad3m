@@ -17,11 +17,13 @@ from vistrails.core.db.locator import BaseLocator, UntitledLocator
 from vistrails.core.vistrail.controller import VistrailController
 
 from d3m_ta2_vistrails import __version__
-from d3m_ta2_vistrails.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER
+from d3m_ta2_vistrails.common import SCORES_FROM_SCHEMA, \
+    SCORES_RANKING_ORDER, shell_escape
 import d3m_ta2_vistrails.proto.core_pb2 as pb_core
 import d3m_ta2_vistrails.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_vistrails.proto.dataflow_ext_pb2 as pb_dataflow
 import d3m_ta2_vistrails.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
+from d3m_ta2_vistrails.test import test
 from d3m_ta2_vistrails.train import train
 from d3m_ta2_vistrails.utils import Observable, synchronized
 
@@ -101,11 +103,9 @@ class Session(Observable):
 class Pipeline(object):
     trained = False
     metrics = []
-    test_run_module = None
 
-    def __init__(self, test_run_module, primitives=None):
+    def __init__(self, primitives=None):
         self.id = str(uuid.uuid4())
-        self.test_run_module = test_run_module
         self.scores = {}
         self.rank = 0
         self.primitives = []
@@ -127,7 +127,8 @@ class D3mTa2(object):
                     # Enable packages automatically when they are required
                     'enablePackagesSilently': True,
                     # Load additional packages from there
-                    'userPackageDir': os.path.join(os.getcwd(), 'userpackages'),
+                    'userPackageDir': os.path.join(os.path.dirname(__file__),
+                                                   '../userpackages'),
                 },
                 args=[])
 
@@ -140,10 +141,10 @@ class D3mTa2(object):
         if not os.path.exists(os.path.join(self.storage, 'persist')):
             os.mkdir(os.path.join(self.storage, 'persist'))
         self.logs_root = logs_root
-        if not os.path.exists(self.logs_root):
+        if self.logs_root and not os.path.exists(self.logs_root):
             os.mkdir(self.logs_root)
         self.executables_root = executables_root
-        if not os.path.exists(self.executables_root):
+        if self.executables_root and not os.path.exists(self.executables_root):
             os.mkdir(self.executables_root)
         self.sessions = {}
         self._next_session = 0
@@ -190,8 +191,14 @@ class D3mTa2(object):
         for pipeline in session.pipelines.itervalues():
             self.write_executable(pipeline)
 
-    def run_test(self, dataset, executable_files):
-        raise NotImplementedError  # TODO: Test executable mode
+    def run_test(self, dataset, pipeline_id):
+        vt_file = os.path.join(self.storage,
+                               'workflows',
+                               pipeline_id + '.vt')
+        persist_dir = os.path.join(self.storage, 'persist',
+                                   pipeline_id)
+        logger.info("About to run test")
+        test(vt_file, dataset, persist_dir)
 
     def run_server(self, problem_id, port=None):
         self.problem_id = problem_id
@@ -349,8 +356,12 @@ class D3mTa2(object):
         filename = os.path.join(self.executables_root, pipeline.id)
         with open(filename, 'w') as fp:
             fp.write('#!/bin/sh\n\n'
-                     'echo "Running pipeline %s..." >&2\n'
-                     'echo "Not yet implemented!" >&2\nexit 1\n' % pipeline.id)
+                     'echo "Running pipeline {pipeline_id}..." >&2\n'
+                     '{python} -c '
+                     '"from d3m_ta2_vistrails.main import main_test; '
+                     'main_test" {pipeline_id} "$@"\n'.format(
+                         pipeline_id=pipeline.id,
+                         python=sys.executable))
         st = os.stat(filename)
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
@@ -442,8 +453,7 @@ class D3mTa2(object):
         controller.add_new_action(action)
         version = controller.perform_action(action)
         controller.change_selected_version(version)
-        return controller, Pipeline(test_run_module='test_targets',
-                                    primitives=primitives)
+        return controller, Pipeline(primitives)
 
     TEMPLATES = [
         [(_classification_template, 'LinearSVC',
@@ -849,11 +859,11 @@ def main_test():
     if len(sys.argv) != 3:
         sys.exit(1)
     else:
-        with open(sys.argv[1]) as config_file:
+        with open(sys.argv[2]) as config_file:
             config = json.load(config_file)
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
             results_root=config['results_path'])
         ta2.run_test(
             dataset=config['test_data_root'],
-            executable_files=sys.argv[2])
+            pipeline_id=sys.argv[1])
