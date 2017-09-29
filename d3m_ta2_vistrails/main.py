@@ -267,7 +267,8 @@ class D3mTa2(object):
                 session, pipeline, proc = running_pipelines[pipeline_id]
                 if msg == 'progress':
                     # TODO: Report progress
-                    logger.info("Training pipeline %s: %.0f", pipeline_id, arg)
+                    logger.info("Training pipeline %s: %.0f%%",
+                                pipeline_id, arg * 100)
                 elif msg == 'scores':
                     pipeline.scores = arg
                 else:
@@ -452,7 +453,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             self._app.build_pipelines(sessioncontext.session_id, dataset,
                                       metrics)
 
-            for msg in self._pipelinecreateresult_stream(context, queue):
+            for msg in self._pipelinecreateresult_stream(context, queue,
+                                                         session):
                 yield msg
 
     def GetCreatePipelineResults(self, request, context):
@@ -473,10 +475,12 @@ class CoreService(pb_core_grpc.CoreServicer):
         session = self._app.sessions[sessioncontext.session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             for msg in self._pipelinecreateresult_stream(context, queue,
+                                                         session,
                                                          pipeline_ids):
                 yield msg
 
-    def _pipelinecreateresult_stream(self, context, queue, pipeline_ids=None):
+    def _pipelinecreateresult_stream(self, context, queue,
+                                     session, pipeline_ids=None):
         if pipeline_ids is None:
             pipeline_filter = lambda p_id: True
         else:
@@ -524,7 +528,15 @@ class CoreService(pb_core_grpc.CoreServicer):
                 pipeline_id = kwargs['pipeline_id']
                 if not pipeline_filter(pipeline_id):
                     continue
-                scores = kwargs['scores']
+                pipeline = session.pipelines[pipeline_id]
+                scores = [
+                    pb_core.Score(
+                        metric=self.metric2grpc[m],
+                        value=s,
+                    )
+                    for m, s in pipeline.scores.iteritems()
+                    if m in self.metric2grpc
+                ]
                 yield pb_core.PipelineCreateResult(
                     response_info=pb_core.Response(
                         status=pb_core.Status(code=pb_core.OK),
