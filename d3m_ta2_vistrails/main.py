@@ -16,7 +16,7 @@ from vistrails.core.db.locator import BaseLocator, UntitledLocator
 from vistrails.core.vistrail.controller import VistrailController
 
 from d3m_ta2_vistrails import __version__
-from d3m_ta2_vistrails.common import SCORES_FROM_SCHEMA
+from d3m_ta2_vistrails.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER
 import d3m_ta2_vistrails.proto.core_pb2 as pb_core
 import d3m_ta2_vistrails.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_vistrails.proto.dataflow_ext_pb2 as pb_dataflow
@@ -48,6 +48,26 @@ class Session(Observable):
             self.training = False
             logger.info("Session %s: training done", self.id)
 
+            # Rank pipelines
+            pipelines = [pipeline for pipeline in self.pipelines.itervalues()
+                         if pipeline.trained]
+            metric = None
+            for pipeline in pipelines:
+                if pipeline.metrics:
+                    metric = pipeline.metrics[0]
+                    break
+            if metric:
+                logger.info("Ranking %d pipelines using %s...",
+                            len(pipelines), metric)
+                def rank(pipeline):
+                    order = SCORES_RANKING_ORDER[metric]
+                    if metric not in pipeline.scores:
+                        return 9.0e99
+                    return pipeline.scores.get(metric, 0) * order
+                for i, pipeline in enumerate(sorted(pipelines, key=rank)):
+                    pipeline.rank = i + 1
+                    logger.info("  %d: %s", i, pipeline.id)
+
 
 class Pipeline(object):
     trained = False
@@ -60,6 +80,7 @@ class Pipeline(object):
         self.train_run_module = train_run_module
         self.test_run_module = test_run_module
         self.scores = {}
+        self.rank = 0
 
 
 class D3mTa2(object):

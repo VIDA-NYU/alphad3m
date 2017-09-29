@@ -109,3 +109,20 @@ SCORES_FROM_SCHEMA = {
     'normalizedMutualInformation': 'NORMALIZED_MUTUAL_INFORMATION',
     'jaccardSimilarityScore': 'JACCARD_SIMILARITY_SCORE',
 }
+
+# 1 if lower values of that metric indicate a better classifier, -1 otherwise
+SCORES_RANKING_ORDER = dict(
+    ACCURACY=-1,
+    F1=-1,
+    F1_MICRO=-1,
+    F1_MACRO=-1,
+    ROC_AUC=-1,
+    ROC_AUC_MICRO=-1,
+    ROC_AUC_MACRO=-1,
+    MEAN_SQUARED_ERROR=1,
+    ROOT_MEAN_SQUARED_ERROR=1,
+    ROOT_MEAN_SQUARED_ERROR_AVG=1,
+    MEAN_ABSOLUTE_ERROR=1,
+    R_SQUARED=-1,
+    EXECUTION_TIME=1,
+)
