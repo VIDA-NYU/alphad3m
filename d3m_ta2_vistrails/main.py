@@ -139,6 +139,8 @@ class D3mTa2(object):
             os.mkdir(self.storage)
         if not os.path.exists(os.path.join(self.storage, 'workflows')):
             os.mkdir(os.path.join(self.storage, 'workflows'))
+        if not os.path.exists(os.path.join(self.storage, 'persist')):
+            os.mkdir(os.path.join(self.storage, 'persist'))
         self.logs_root = logs_root
         if not os.path.exists(self.logs_root):
             os.mkdir(self.logs_root)
@@ -317,9 +319,14 @@ class D3mTa2(object):
                     logger.info("Running training pipeline for %s", pipeline.id)
                     filename = os.path.join(self.storage, 'workflows',
                                             pipeline.id + '.vt')
+                    persist_dir = os.path.join(self.storage, 'persist',
+                                               pipeline.id)
+                    if not os.path.exists(persist_dir):
+                        os.mkdir(persist_dir)
                     proc = multiprocessing.Process(target=train,
                                                    args=(filename, pipeline,
-                                                         dataset, msg_queue))
+                                                         dataset, persist_dir,
+                                                         msg_queue))
                     proc.start()
                     running_pipelines[pipeline.id] = session, pipeline, proc
                     session.notify('training_start', pipeline_id=pipeline.id)

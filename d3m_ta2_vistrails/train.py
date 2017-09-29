@@ -24,7 +24,7 @@ def get_module(pipeline, label):
     return None
 
 
-def train(vt_file, pipeline, dataset, msg_queue):
+def train(vt_file, pipeline, dataset, persist_dir, msg_queue):
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
@@ -37,6 +37,7 @@ def train(vt_file, pipeline, dataset, msg_queue):
                 vt_file, dataset)
 
     from userpackages.simple_persist import configuration as persist_config
+    from userpackages.simple_persist.init import Internal
 
     interpreter = get_default_interpreter()
 
@@ -53,6 +54,9 @@ def train(vt_file, pipeline, dataset, msg_queue):
     data = read_dataset(dataset)
     logger.info("Loaded dataset, columns: %r", data['trainData']['columns'])
 
+    data_frame = data['trainData']['frame']
+    targets = data['trainTargets']['list']
+
     # Scoring step - make folds, run them through the pipeline one by one
     # (set both training_data and test_data),
     # get predictions from OutputPort to get cross validation scores
@@ -62,9 +66,6 @@ def train(vt_file, pipeline, dataset, msg_queue):
         logger.info("Scoring round %d/%d", i + 1, FOLDS)
 
         msg_queue.put((pipeline.id, 'progress', (i + 1.0) / TOTAL_PROGRESS))
-
-        data_frame = data['trainData']['frame']
-        targets = data['trainTargets']['list']
 
         # Do the split
         random_sample = numpy.random.rand(len(data_frame)) < SPLIT_RATIO
@@ -79,14 +80,11 @@ def train(vt_file, pipeline, dataset, msg_queue):
         persist_config.file_store = None
 
         # Set input to Internal modules
-        from userpackages.simple_persist.init import Internal
-
-        Internal.values[get_module(vt_pipeline, 'training_data').id] = \
-            train_data_split
-        Internal.values[get_module(vt_pipeline, 'training_targets').id] = \
-            train_target_split
-        Internal.values[get_module(vt_pipeline, 'test_data').id] = \
-            test_data_split
+        Internal.values = {
+            get_module(vt_pipeline, 'training_data').id: train_data_split,
+            get_module(vt_pipeline, 'training_targets').id: train_target_split,
+            get_module(vt_pipeline, 'test_data').id: test_data_split,
+        }
 
         # Select the sink
         if pipeline.test_run_module is not None:
@@ -103,7 +101,7 @@ def train(vt_file, pipeline, dataset, msg_queue):
             DummyView(),  # view
             None,  # custom_aliases
             None,  # custom_params
-            "Training pipeline from d3m_ta2_vistrails.train",  # reason
+            "Scoring pipeline from d3m_ta2_vistrails.train",  # reason
             sinks,  # sinks
             None,  # extra_info
         ]])
@@ -144,3 +142,37 @@ def train(vt_file, pipeline, dataset, msg_queue):
     # sink = classifier-sink (the Persist downstream of the classifier),
     # Persist module set to write
     logger.info("Scoring done, running training on full data")
+
+    # Persist trained primitives
+    persist_config.file_store = persist_dir
+
+    # Set input to Internal modules
+    Internal.values = {
+        get_module(vt_pipeline, 'training_data').id: data_frame,
+        get_module(vt_pipeline, 'training_targets').id: targets,
+    }
+
+    # Select the sink
+    if pipeline.train_run_module is not None:
+        sinks = [get_module(vt_pipeline, pipeline.train_run_module).id]
+    else:
+        sinks = None
+
+    results, changed = controller.execute_workflow_list([[
+        controller.locator,  # locator
+        controller.current_version,  # version
+        vt_pipeline,  # pipeline
+        DummyView(),  # view
+        None,  # custom_aliases
+        None,  # custom_params
+        "Training pipeline from d3m_ta2_vistrails.train",  # reason
+        sinks,  # sinks
+        None,  # extra_info
+    ]])
+    result, = results
+
+    if result.errors:
+        logger.error("Errors running pipeline:\n%s",
+                     '\n'.join('%d: %s' % p
+                               for p in result.errors.iteritems()))
+        sys.exit(1)
