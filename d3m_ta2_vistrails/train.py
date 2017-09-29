@@ -4,6 +4,7 @@ import sys
 import time
 import vistrails.core.db.io
 from vistrails.core.db.locator import BaseLocator
+from vistrails.core.interpreter.default import get_default_interpreter
 from vistrails.core.utils import DummyView
 from vistrails.core.vistrail.controller import VistrailController
 
@@ -36,6 +37,8 @@ def train(vt_file, pipeline, dataset, msg_queue):
                 vt_file, dataset)
 
     from userpackages.simple_persist import configuration as persist_config
+
+    interpreter = get_default_interpreter()
 
     # Load file
     # Copied from VistrailsApplicationInterface#open_vistrail()
@@ -128,10 +131,13 @@ def train(vt_file, pipeline, dataset, msg_queue):
                 scores.setdefault(metric, []).append(
                     score_func(test_target_split, predicted_results))
 
+        interpreter.flush()
+
     msg_queue.put((pipeline.id, 'progress', (FOLDS + 1.0) / TOTAL_PROGRESS))
 
     # Aggregate results over the folds
-    scores = dict((metric, numpy.mean(values)) for metric, values in scores)
+    scores = dict((metric, numpy.mean(values))
+                  for metric, values in scores.iteritems())
     msg_queue.put((pipeline.id, 'scores', scores))
 
     # Training step - run pipeline on full training_data,
