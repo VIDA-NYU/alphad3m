@@ -5,6 +5,7 @@ import logging
 import multiprocessing
 import os
 from Queue import Empty, Queue
+import stat
 import sys
 import threading
 import time
@@ -141,6 +142,9 @@ class D3mTa2(object):
         self.logs_root = logs_root
         if not os.path.exists(self.logs_root):
             os.mkdir(self.logs_root)
+        self.executables_root = executables_root
+        if not os.path.exists(self.executables_root):
+            os.mkdir(self.executables_root)
         self.sessions = {}
         self._next_session = 0
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
@@ -183,7 +187,8 @@ class D3mTa2(object):
                     sum(1 for pipeline in session.pipelines.itervalues()
                         if pipeline.trained))
 
-        # TODO: Export pipelines
+        for pipeline in session.pipelines.itervalues():
+            self.write_executable(pipeline)
 
     def run_test(self, dataset, executable_files):
         raise NotImplementedError  # TODO: Test executable mode
@@ -334,6 +339,16 @@ class D3mTa2(object):
                 else:
                     logger.error("Unexpected message from training process %s",
                                  msg)
+
+    def write_executable(self, pipeline):
+        filename = os.path.join(self.executables_root, pipeline.id)
+        with open(filename, 'w') as fp:
+            fp.write('#!/bin/sh\n\n'
+                     'echo "Running pipeline %s..." >&2\n'
+                     'echo "Not yet implemented!" >&2\nexit 1\n' % pipeline.id)
+        st = os.stat(filename)
+        os.chmod(filename, st.st_mode | stat.S_IEXEC)
+        logger.info("Wrote executable %s", filename)
 
     def _new_controller(self):
         # Copied from VistrailsApplicationInterface#open_vistrail()
@@ -679,7 +694,27 @@ class CoreService(pb_core_grpc.CoreServicer):
         raise NotImplementedError  # TODO: GetExecutePipelineResults
 
     def ExportPipeline(self, request, context):
-        raise NotImplementedError  # TODO: ExportPipeline
+        sessioncontext = request.context
+        if sessioncontext.session_id not in self._app.sessions:
+            return pb_core.Response(
+                status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
+            )
+        session = self._app.sessions[sessioncontext.session_id]
+        with session.lock:
+            if request.pipeline_id not in session.pipelines:
+                return pb_core.Response(
+                    status=pb_core.Status(
+                        code=pb_core.INVALID_ARGUMENT,
+                        details="No such pipeline"),
+                )
+            pipeline = session.pipelines[request.pipeline_id]
+            if not pipeline.trained:
+                return pb_core.Response(
+                    status=pb_core.Status(
+                        code=pb_core.UNAVAILABLE,
+                        details="This pipeline is not trained yet"),
+                )
+            self._app.write_executable(pipeline)
 
 
 class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
