@@ -5,6 +5,7 @@ import time
 import vistrails.core.db.io
 from vistrails.core.db.locator import BaseLocator
 from vistrails.core.interpreter.default import get_default_interpreter
+from vistrails.core.modules.module_registry import get_module_registry
 from vistrails.core.utils import DummyView
 from vistrails.core.vistrail.controller import VistrailController
 
@@ -152,11 +153,14 @@ def train(vt_file, pipeline, dataset, persist_dir, msg_queue):
         get_module(vt_pipeline, 'training_targets').id: targets,
     }
 
-    # Select the sink
-    if pipeline.train_run_module is not None:
-        sinks = [get_module(vt_pipeline, pipeline.train_run_module).id]
-    else:
-        sinks = None
+    # Select the sink: all the Persist modules
+    registry = get_module_registry()
+    descr = registry.get_descriptor_by_name('org.vistrails.vistrails.persist',
+                                            'Persist')
+    sinks = []
+    for module in vt_pipeline.module_list:
+        if module.module_descriptor == descr:
+            sinks.append(module.id)
 
     results, changed = controller.execute_workflow_list([[
         controller.locator,  # locator

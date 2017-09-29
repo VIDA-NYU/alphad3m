@@ -101,12 +101,10 @@ class Session(Observable):
 class Pipeline(object):
     trained = False
     metrics = []
-    train_run_module = None
     test_run_module = None
 
-    def __init__(self, train_run_module, test_run_module, primitives=None):
+    def __init__(self, test_run_module, primitives=None):
         self.id = str(uuid.uuid4())
-        self.train_run_module = train_run_module
         self.test_run_module = test_run_module
         self.scores = {}
         self.rank = 0
@@ -444,8 +442,7 @@ class D3mTa2(object):
         controller.add_new_action(action)
         version = controller.perform_action(action)
         controller.change_selected_version(version)
-        return controller, Pipeline(train_run_module='classifier-sink',
-                                    test_run_module='test_targets',
+        return controller, Pipeline(test_run_module='test_targets',
                                     primitives=primitives)
 
     TEMPLATES = [
