@@ -71,7 +71,7 @@ class Session(Observable):
                     return pipeline.scores.get(metric, 0) * order
                 for i, pipeline in enumerate(sorted(pipelines, key=rank)):
                     pipeline.rank = i + 1
-                    logger.info("  %d: %s", i, pipeline.id)
+                    logger.info("  %d: %s", i + 1, pipeline.id)
 
             self.write_logs()
             self.notify('done_training')
