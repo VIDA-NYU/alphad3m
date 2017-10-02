@@ -189,7 +189,8 @@ class D3mTa2(object):
                         if pipeline.trained))
 
         for pipeline in session.pipelines.itervalues():
-            self.write_executable(pipeline)
+            if pipeline.trained:
+                self.write_executable(pipeline)
 
     def run_test(self, dataset, pipeline_id, results_path):
         vt_file = os.path.join(self.storage,
