@@ -199,3 +199,15 @@ SCORES_RANKING_ORDER = dict(
     R_SQUARED=-1,
     EXECUTION_TIME=1,
 )
+
+TASKS_FROM_SCHEMA = {
+    'classification': 'CLASSIFICATION',
+    'regression': 'REGRESSION',
+    'similarityMatching': 'SIMILARITY_MATCHING',
+    'linkPrediction': 'LINK_PREDICTION',
+    'vertexNomination': 'VERTEX_NOMINATION',
+    'communityDetection': 'COMMUNITY_DETECTION',
+    'graphMatching': 'GRAPH_MATCHING',
+    'timeseriesForecasting': 'TIMESERIES_FORECASTING',
+    'collaborativeFiltering': 'COLLABORATIVE_FILTERING',
+}

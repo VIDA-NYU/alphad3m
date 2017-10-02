@@ -18,7 +18,7 @@ from vistrails.core.vistrail.controller import VistrailController
 
 from d3m_ta2_vistrails import __version__
 from d3m_ta2_vistrails.common import SCORES_FROM_SCHEMA, \
-    SCORES_RANKING_ORDER, shell_escape
+    SCORES_RANKING_ORDER, TASKS_FROM_SCHEMA, shell_escape
 import d3m_ta2_vistrails.proto.core_pb2 as pb_core
 import d3m_ta2_vistrails.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_vistrails.proto.dataflow_ext_pb2 as pb_dataflow
@@ -166,6 +166,13 @@ class D3mTa2(object):
             logger.error("Configuration and problem disagree on dataset! "
                          "Using configuration.")
         task = problem_json['taskType']
+        if task not in TASKS_FROM_SCHEMA:
+            logger.error("Unknown task %r", task)
+            sys.exit(1)
+        task = TASKS_FROM_SCHEMA[task]
+        if task not in ('CLASSIFICATION', 'REGRESSION'):  # TODO
+            logger.error("Unsupported task %s requested", task)
+            sys.exit(1)
         metric = problem_json['metric']
         if metric not in SCORES_FROM_SCHEMA:
             logger.error("Unknown metric %r", metric)
@@ -179,7 +186,7 @@ class D3mTa2(object):
         self.sessions[session.id] = session
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            self.build_pipelines(session.id, dataset,
+            self.build_pipelines(session.id, task, dataset,
                                  [metric])
             while queue.get(True)[0] != 'done_training':
                 pass
@@ -245,32 +252,32 @@ class D3mTa2(object):
         controller.select_latest_version()
         return controller
 
-    def build_pipelines(self, session_id, dataset, metrics):
+    def build_pipelines(self, session_id, task, dataset, metrics):
         self.executor.submit(self._build_pipelines,
-                             session_id, dataset, metrics)
+                             session_id, task, dataset, metrics)
 
-    def _build_pipelines(self, session_id, dataset, metrics):
+    def _build_pipelines(self, session_id, task, dataset, metrics):
         session = self.sessions[session_id]
         logger.info("Creating pipelines...")
         session.training = True
-        for template_iter in self.TEMPLATES:
-            for template in template_iter:
-                logger.info("Creating pipeline from %r", template)
-                if isinstance(template, (list, tuple)):
-                    func, args = template[0], template[1:]
-                    tpl_func = lambda s: func(s, *args)
-                else:
-                    tpl_func = template
-                try:
-                    pipeline = self._build_pipeline_from_template(session,
-                                                                  tpl_func)
-                    pipeline.metrics = metrics
-                except Exception:
-                    logger.exception("Error building pipeline from %r",
-                                     template)
-                else:
-                    session.pipelines_training.add(pipeline.id)
-                    self._run_queue.put((session, pipeline, dataset))
+        for template in self.TEMPLATES.get(task, []):
+            logger.info("Creating pipeline from %r", template)
+            if isinstance(template, (list, tuple)):
+                func, args = template[0], template[1:]
+                tpl_func = lambda s: func(s, *args)
+            else:
+                tpl_func = template
+            try:
+                pipeline = self._build_pipeline_from_template(session,
+                                                              tpl_func)
+                pipeline.metrics = metrics
+            except Exception:
+                logger.exception("Error building pipeline from %r",
+                                 template)
+            else:
+                logger.info("Created pipeline %s", pipeline.id)
+                session.pipelines_training.add(pipeline.id)
+                self._run_queue.put((session, pipeline, dataset))
         logger.info("Pipeline creation completed")
         session.check_status()
 
@@ -429,21 +436,26 @@ class D3mTa2(object):
         return None
 
     def _classification_template(self, classifier_name, primitive):
+        from vistrails.core.modules.utils import parse_descriptor_string
+
         controller = self._load_template('classification.xml')
         ops = []
 
         # Replace the classifier module
         module = self._get_module(controller.current_pipeline, 'Classifier')
-        if module is not None:
-            new_module = controller.create_module(
-                'org.vistrails.vistrails.sklearn',
-                classifier_name,
-                namespace='classifiers')
-            self._replace_module(controller, ops,
-                                 module.id, new_module)
-        else:
+        if module is None:
             raise ValueError("Couldn't find Classifier module in "
                              "classification template")
+
+        mod_identifier, mod_name, mod_namespace = parse_descriptor_string(
+            classifier_name,
+            'org.vistrails.vistrails.sklearn')
+        new_module = controller.create_module(
+            mod_identifier,
+            mod_name,
+            namespace=mod_namespace)
+        self._replace_module(controller, ops,
+                             module.id, new_module)
 
         primitives = [
             'dsbox.datapreprocessing.cleaner.Encoder',
@@ -456,19 +468,42 @@ class D3mTa2(object):
         controller.change_selected_version(version)
         return controller, Pipeline(primitives)
 
-    TEMPLATES = [
-        [(_classification_template, 'LinearSVC',
-          'sklearn.svm.classes.LinearSVC'),
-         (_classification_template, 'KNeighborsClassifier',
-          'sklearn.neighbors.classification.KNeighborsClassifier'),
-         (_classification_template, 'DecisionTreeClassifier',
-          'sklearn.tree.tree.DecisionTreeClassifier')]
-    ]
+    TEMPLATES = {
+        'CLASSIFICATION': [
+            (_classification_template, 'classifiers|LinearSVC',
+             'sklearn.svm.classes.LinearSVC'),
+            (_classification_template, 'classifiers|KNeighborsClassifier',
+             'sklearn.neighbors.classification.KNeighborsClassifier'),
+            (_classification_template, 'classifiers|DecisionTreeClassifier',
+             'sklearn.tree.tree.DecisionTreeClassifier'),
+            (_classification_template, 'classifiers|MultinomialNB',
+             'sklearn.naive_bayes.MultinomialNB'),
+            (_classification_template, 'classifiers|RandomForestClassifier',
+             'sklearn.ensemble.forest.RandomForestClassifier'),
+            (_classification_template, 'classifiers|LogisticRegression',
+             'sklearn.linear_model.logistic.LogisticRegression'),
+        ],
+        'REGRESSION': [
+            (_classification_template, 'regressors|LinearRegression',
+             'sklearn.linear_model.base.LinearRegression'),
+            (_classification_template, 'regressors|BayesianRidge',
+             'sklearn.linear_model.bayes.BayesianRidge'),
+            (_classification_template, 'regressors|LassoCV',
+             'sklearn.linear_model.coordinate_descent.LassoCV'),
+            (_classification_template, 'regressors|Ridge',
+             'sklearn.linear_model.ridge.Ridge'),
+            (_classification_template, 'regressors|Lars',
+             'sklearn.linear_model.least_angle.Lars'),
+        ],
+    }
 
 
 class CoreService(pb_core_grpc.CoreServicer):
-    grpc2metric = dict((k, v) for v, k in pb_core.Metric.items())
+    grpc2metric = dict((k, v) for v, k in pb_core.Metric.items()
+                       if k != pb_core.METRIC_UNDEFINED)
     metric2grpc = dict(pb_core.Metric.items())
+    grpc2task = dict((k, v) for v, k in pb_core.TaskType.items()
+                     if k != pb_core.TASK_TYPE_UNDEFINED)
 
     def __init__(self, app):
         self._app = app
@@ -512,7 +547,30 @@ class CoreService(pb_core_grpc.CoreServicer):
             return
         train_features = request.train_features
         task = request.task
-        assert task == pb_core.CLASSIFICATION
+        if task not in self.grpc2task:
+            logger.error("Got unknown task %r", task)
+            yield pb_core.PipelineCreateResult(
+                response_info=pb_core.Response(
+                    status=pb_core.Status(
+                        code=pb_core.INVALID_ARGUMENT,
+                        details="Unknown task",
+                    ),
+                ),
+            )
+            return
+        task = self.grpc2task[task]
+        if task not in ('CLASSIFICATION', 'REGRESSION'):  # TODO
+            logger.error("Unsupported task %s requested", task)
+            yield pb_core.PipelineCreateResult(
+                response_info=pb_core.Response(
+                    status=pb_core.Status(
+                        code=pb_core.UNIMPLEMENTED,
+                        details="Only CLASSIFICATION and REGRESSION are "
+                                "supported for now",
+                    ),
+                ),
+            )
+            return
         task_subtype = request.task_subtype
         task_description = request.task_description
         output = request.output
@@ -535,21 +593,22 @@ class CoreService(pb_core_grpc.CoreServicer):
                         code=pb_core.INVALID_ARGUMENT,
                         details="Please only use a single training dataset",
                     ),
-                )
+                ),
             )
             return
         dataset, = dataset
         if dataset.startswith('file:///'):
             dataset = dataset[7:]
 
-        logger.info("Got CreatePipelines request, session=%s, metrics=%s, "
-                    "dataset=%s",
-                    sessioncontext.session_id, ", ".join(metrics), dataset)
+        logger.info("Got CreatePipelines request, session=%s, task=%s, "
+                    "dataset=%s, metrics=%s, ",
+                    sessioncontext.session_id, task,
+                    dataset, ", ".join(metrics))
 
         queue = Queue()
         session = self._app.sessions[sessioncontext.session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            self._app.build_pipelines(sessioncontext.session_id, dataset,
+            self._app.build_pipelines(sessioncontext.session_id, task, dataset,
                                       metrics)
 
             for msg in self._pipelinecreateresult_stream(context, queue,
