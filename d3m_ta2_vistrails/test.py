@@ -1,4 +1,5 @@
 import logging
+import numpy
 import sys
 import vistrails.core.db.io
 from vistrails.core.db.locator import BaseLocator
@@ -22,7 +23,7 @@ def get_module(pipeline, label):
     return None
 
 
-def test(vt_file, dataset, persist_dir):
+def test(vt_file, dataset, persist_dir, results_path):
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
@@ -84,3 +85,9 @@ def test(vt_file, dataset, persist_dir):
                      '\n'.join('%d: %s' % p
                                for p in result.errors.iteritems()))
         sys.exit(1)
+
+    output = get_module(vt_pipeline, 'test_targets').id
+    output = result.objects[output]
+    output = output.get_input('InternalPipe')
+
+    numpy.savetxt(results_path, output, delimiter=',', header="prediction")

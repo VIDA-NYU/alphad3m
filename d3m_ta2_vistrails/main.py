@@ -191,14 +191,14 @@ class D3mTa2(object):
         for pipeline in session.pipelines.itervalues():
             self.write_executable(pipeline)
 
-    def run_test(self, dataset, pipeline_id):
+    def run_test(self, dataset, pipeline_id, results_path):
         vt_file = os.path.join(self.storage,
                                'workflows',
                                pipeline_id + '.vt')
         persist_dir = os.path.join(self.storage, 'persist',
                                    pipeline_id)
         logger.info("About to run test")
-        test(vt_file, dataset, persist_dir)
+        test(vt_file, dataset, persist_dir, results_path)
 
     def run_server(self, problem_id, port=None):
         self.problem_id = problem_id
@@ -866,4 +866,5 @@ def main_test():
             results_root=config['results_path'])
         ta2.run_test(
             dataset=config['test_data_root'],
-            pipeline_id=sys.argv[1])
+            pipeline_id=sys.argv[1],
+            results_path=config['results_path'])
