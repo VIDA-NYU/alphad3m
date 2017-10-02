@@ -359,7 +359,7 @@ class D3mTa2(object):
                      'echo "Running pipeline {pipeline_id}..." >&2\n'
                      '{python} -c '
                      '"from d3m_ta2_vistrails.main import main_test; '
-                     'main_test" {pipeline_id} "$@"\n'.format(
+                     'main_test()" {pipeline_id} "$@"\n'.format(
                          pipeline_id=pipeline.id,
                          python=sys.executable))
         st = os.stat(filename)
