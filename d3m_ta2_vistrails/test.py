@@ -1,5 +1,5 @@
+from itertools import izip
 import logging
-import numpy
 import os
 import sys
 import vistrails.core.db.io
@@ -92,4 +92,8 @@ def test(vt_file, dataset, persist_dir, results_path):
     output = result.objects[output]
     output = output.get_input('InternalPipe')
 
-    numpy.savetxt(results_path, output, delimiter=',', header="prediction")
+    with open(results_path, 'w') as fp:
+        fp.write("d3mIndex,prediction\n")
+
+        for i, o in izip(data['testData']['index'], output):
+            fp.write('%s,%s\n' % (i, o))
