@@ -5,6 +5,7 @@ import logging
 import multiprocessing
 import os
 from Queue import Empty, Queue
+import shutil
 import stat
 import sys
 import threading
@@ -164,7 +165,8 @@ class D3mTa2(object):
             sys.exit(1)
         if problem_json['datasets'] != [dataset]:
             logger.error("Configuration and problem disagree on dataset! "
-                         "Using configuration.")
+                         "Using configuration.\n"
+                         "%r != %r", dataset, problem_json['datasets'])
         task = problem_json['taskType']
         if task not in TASKS_FROM_SCHEMA:
             logger.error("Unknown task %r", task)
@@ -336,6 +338,9 @@ class D3mTa2(object):
                                                pipeline.id)
                     if not os.path.exists(persist_dir):
                         os.mkdir(persist_dir)
+                    shutil.copyfile(
+                        os.path.join(dataset, 'dataSchema.json'),
+                        os.path.join(persist_dir, 'dataSchema.json'))
                     proc = multiprocessing.Process(target=train,
                                                    args=(filename, pipeline,
                                                          dataset, persist_dir,

@@ -1,5 +1,6 @@
 import logging
 import numpy
+import os
 import sys
 import vistrails.core.db.io
 from vistrails.core.db.locator import BaseLocator
@@ -41,7 +42,8 @@ def test(vt_file, dataset, persist_dir, results_path):
     vt_pipeline = controller.current_pipeline.do_copy()
 
     # Load data
-    data = read_dataset(dataset)
+    data = read_dataset(dataset,
+                        schema=os.path.join(persist_dir, 'dataSchema.json'))
     logger.info("Loaded dataset, columns: %r", data['testData']['columns'])
 
     test_data = data['testData']['frame']

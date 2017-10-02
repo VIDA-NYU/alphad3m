@@ -109,30 +109,32 @@ def _read_file(data_schema, filename, data_type,
     return out
 
 
-def read_dataset(data_path):
+def read_dataset(data_path, schema=None):
     output = {}
 
-    with open(os.path.join(data_path, 'dataSchema.json')) as fp:
+    if schema is None:
+        schema = os.path.join(data_path, 'dataSchema.json')
+    with open(schema) as fp:
         data_schema = json.load(fp)
 
-        train_data_file = os.path.join(data_path, 'trainData.csv')
-        output['trainData'] = _read_file(
-            data_schema['trainData'],
-            train_data_file,
-            'trainData')
+    train_data_file = os.path.join(data_path, 'trainData.csv')
+    output['trainData'] = _read_file(
+        data_schema['trainData'],
+        train_data_file,
+        'trainData')
 
-        train_target_file = os.path.join(data_path, 'trainTargets.csv')
-        output['trainTargets'] = _read_file(
-            data_schema['trainData'],
-            train_target_file,
-            'trainTargets',
-            single_column=True)
+    train_target_file = os.path.join(data_path, 'trainTargets.csv')
+    output['trainTargets'] = _read_file(
+        data_schema['trainData'],
+        train_target_file,
+        'trainTargets',
+        single_column=True)
 
-        test_data_file = os.path.join(data_path, 'testData.csv')
-        output['testData'] = _read_file(
-            data_schema['trainData'],
-            test_data_file,
-            'trainData')
+    test_data_file = os.path.join(data_path, 'testData.csv')
+    output['testData'] = _read_file(
+        data_schema['trainData'],
+        test_data_file,
+        'trainData')
 
     return output
 
