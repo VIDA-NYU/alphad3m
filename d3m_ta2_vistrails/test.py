@@ -1,4 +1,6 @@
+import csv
 from itertools import izip
+import json
 import logging
 import os
 import sys
@@ -92,8 +94,14 @@ def test(vt_file, dataset, persist_dir, results_path):
     output = result.objects[output]
     output = output.get_input('InternalPipe')
 
+    with open(os.path.join(persist_dir, 'dataSchema.json')) as fp:
+        column_name = [c['varName']
+                       for c in json.load(fp)['trainData']['trainTargets']
+                       if c['varName'] != 'd3mIndex'][0]
+
     with open(results_path, 'w') as fp:
-        fp.write("d3mIndex,prediction\n")
+        writer = csv.writer(fp)
+        writer.writerow(['d3mIndex', column_name])
 
         for i, o in izip(data['testData']['index'], output):
-            fp.write('%s,%s\n' % (i, o))
+            writer.writerow([i, o])
