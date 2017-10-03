@@ -729,6 +729,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                             details="Pipeline execution failed",
                         ),
                     ),
+                    progress_info=pb_core.ERRORED,
                     pipeline_id=pipeline_id,
                 )
             elif event == 'done_training':
