@@ -21,4 +21,7 @@ COPY setup.py /usr/src/app/setup.py
 RUN /usr/src/app/venv/bin/pip install -e /usr/src/app
 COPY pipelines /usr/src/app/pipelines
 
+# Workaround for installation issues
+RUN /usr/src/app/venv/bin/pip install decorator==4.1.2
+
 EXPOSE 50051
