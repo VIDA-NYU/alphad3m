@@ -77,13 +77,6 @@ class Session(Observable):
             self.notify('done_training')
 
     def write_logs(self):
-        oldlogs = os.listdir(self._logs_dir)
-        if oldlogs:
-            logger.warning("Warning: removing %d previous log files",
-                           len(oldlogs))
-            for filename in oldlogs:
-                os.remove(os.path.join(self._logs_dir, filename))
-
         written = 0
         for pipeline in self.pipelines.itervalues():
             if not pipeline.trained:
