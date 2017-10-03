@@ -787,6 +787,9 @@ class CoreService(pb_core_grpc.CoreServicer):
                         details="This pipeline is not trained yet"),
                 )
             self._app.write_executable(pipeline)
+        return pb_core.Response(
+            status=pb_core.Status(code=pb_core.OK)
+        )
 
 
 class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
