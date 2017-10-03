@@ -19,7 +19,7 @@ from vistrails.core.vistrail.controller import VistrailController
 
 from d3m_ta2_vistrails import __version__
 from d3m_ta2_vistrails.common import SCORES_FROM_SCHEMA, \
-    SCORES_RANKING_ORDER, TASKS_FROM_SCHEMA, shell_escape
+    SCORES_RANKING_ORDER, TASKS_FROM_SCHEMA
 import d3m_ta2_vistrails.proto.core_pb2 as pb_core
 import d3m_ta2_vistrails.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_vistrails.proto.dataflow_ext_pb2 as pb_dataflow
