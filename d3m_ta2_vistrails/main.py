@@ -15,6 +15,7 @@ import vistrails.core.application
 from vistrails.core.db.action import create_action
 import vistrails.core.db.io
 from vistrails.core.db.locator import BaseLocator, UntitledLocator
+from vistrails.core.modules.module_registry import get_module_registry
 from vistrails.core.vistrail.controller import VistrailController
 
 from d3m_ta2_vistrails import __version__
@@ -818,12 +819,24 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
         assert sessioncontext.session_id in self._app.sessions
         pipeline_id = request.pipeline_id
 
+        # We want to hide Persist modules, which are pass-through modules used
+        # to transfer state between train & test
+        registry = get_module_registry()
+        descr_persist = registry.get_descriptor_by_name(
+            'org.vistrails.vistrails.persist',
+            'Persist')
+        persist_modules = {}
+
         # Build description from VisTrails workflow
         controller = self._app.get_workflow(sessioncontext.session_id,
                                             pipeline_id)
         vt_pipeline = controller.current_pipeline
         modules = []
         for vt_module in vt_pipeline.module_list:
+            if vt_module.module_descriptor == descr_persist:
+                persist_modules[vt_module.id] = None
+                continue
+
             functions = dict((func.name, func.params[0].strValue)
                              for func in vt_module.functions
                              if len(func.params) == 1)
@@ -855,11 +868,25 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
                 outputs=outputs,
             ))
 
+        # Find upstream connections of Persist modules
+        for vt_connection in vt_pipeline.connection_list:
+            dest_mod_id = vt_connection.destination.moduleId
+            if dest_mod_id in persist_modules:
+                persist_modules[dest_mod_id] = vt_connection.source
+
         connections = []
         for vt_connection in vt_pipeline.connection_list:
+            if vt_connection.destination.moduleId in persist_modules:
+                continue
+
+            # Connect over the Persist modules
+            source = vt_connection.source
+            if source.moduleId in persist_modules:
+                source = persist_modules[source.moduleId]
+
             connections.append(pb_dataflow.DataflowDescription.Connection(
-                from_module_id='%d' % vt_connection.source.moduleId,
-                from_output_name=vt_connection.source.name,
+                from_module_id='%d' % source.moduleId,
+                from_output_name=source.name,
                 to_module_id='%d' % vt_connection.destination.moduleId,
                 to_input_name=vt_connection.destination.name,
             ))
@@ -903,6 +930,7 @@ def main_search():
         ta2.run_search(
             dataset=os.path.dirname(config['dataset_schema']),
             problem=config['problem_schema'])
+
 
 def main_serve():
     logging.basicConfig(
