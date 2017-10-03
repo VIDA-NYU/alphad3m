@@ -18,11 +18,11 @@ def _read_file(data_schema, filename, data_type,
         logger.info("file %s not present; skipping", filename)
         return None
 
-    out = {'index': None, 'image': False, 'categorical': False}    
+    out = {'index': None, 'image': False, 'categorical': False}
     data_frame = pandas.read_csv(filename)
     data_column_names = []
     data_index = []
-    file_data = {}    
+    file_data = {}
     for feature in data_schema[data_type]:
         try:
             if 'index' in feature['varRole']:
@@ -33,6 +33,7 @@ def _read_file(data_schema, filename, data_type,
                 out['categorical'] = out['categorical'] or (feature['varType'] == 'categorical')
             elif 'target' in feature['varRole']:
                 data_column_names.append(feature['varName'])
+                out['categorical'] = out['categorical'] or (feature['varType'] == 'categorical')
         except KeyError:
             if 'file' in feature['varType']:
                 file_data['column_name'] = feature['varName']
@@ -49,7 +50,7 @@ def _read_file(data_schema, filename, data_type,
     if file_data:
         data_path = os.path.dirname(os.path.abspath(filename))
         file_names = [os.path.join(data_path, 'raw_data', file_name) for file_name in data_frame[file_data['column_name']]]
-        
+
         if file_data['fileType'] == 'image':
             out['image'] = True
             count = 0
@@ -66,21 +67,26 @@ def _read_file(data_schema, filename, data_type,
                     else:
                         raw_data_np = np.vstack((raw_data_np, ipca.transform(sample)))
                 count = count + 1
-            
+
     result_data = data_frame_copy.values
-    
-    if len(raw_data_np) > 0:
+
+    if raw_data_np.any():
         if len(result_data) > 0:
             result_data = np.hstack((result_data, raw_data_np))
         else:
             result_data =  raw_data_np
-            
-    if (not np.shape(result_data)[1] == len(data_columns)) or out['image']:
+
+    if out['image']:
         final_data_frame = pandas.DataFrame(data=result_data, index=data_index)
     else:
         final_data_frame = pandas.DataFrame(data=result_data, columns=data_column_names, index=data_index)
+
+    if data_type is 'trainTargets' and out['categorical']:
+        final_data_frame = final_data_frame.astype('|S')
+
     out['columns'] = data_column_names
     list_ = final_data_frame.as_matrix()
+
     if single_column:
         assert list_.shape[1] == 1
         list_ = list_.reshape((-1,))
