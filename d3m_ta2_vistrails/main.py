@@ -121,8 +121,9 @@ class D3mTa2(object):
                     # Enable packages automatically when they are required
                     'enablePackagesSilently': True,
                     # Load additional packages from there
-                    'userPackageDir': os.path.join(os.path.dirname(__file__),
-                                                   '../userpackages'),
+                    'userPackageDir': os.path.join(
+                        os.path.dirname(os.path.abspath(__file__)),
+                        '../userpackages'),
                 },
                 args=[])
 
@@ -384,7 +385,7 @@ class D3mTa2(object):
     def _load_template(self, name):
         # Copied from VistrailsApplicationInterface#open_vistrail()
         locator = BaseLocator.from_url(
-            os.path.join(os.path.dirname(__file__),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)),
                          '..',
                          'pipelines',
                          name))
