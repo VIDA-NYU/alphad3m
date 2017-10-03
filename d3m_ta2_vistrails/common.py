@@ -164,7 +164,7 @@ SCORES_TO_SKLEARN = dict(
         sklearn.metrics.roc_auc_score(y_true, y_pred, average='micro'),
     ROC_AUC_MACRO=lambda y_true, y_pred:
         sklearn.metrics.roc_auc_score(y_true, y_pred, average='macro'),
-    MEAN_SQUARED_ERROR=sklearn.metrics.mean_squared_error,  # FIXME: Not in gRPC?
+    MEAN_SQUARED_ERROR=sklearn.metrics.mean_squared_error,
     ROOT_MEAN_SQUARED_ERROR=lambda y_true, y_pred:
         math.sqrt(sklearn.metrics.mean_squared_error(y_true, y_pred)),
     # FIXME: ROOT_MEAN_SQUARED_ERROR_AVG // sum(mean_squared_error_list)/len(mean_squared_error_list)
