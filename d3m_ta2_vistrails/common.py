@@ -12,86 +12,102 @@ import sklearn.metrics
 logger = logging.getLogger(__name__)
 
 
+# When loading images, we run PCA to fit them into the dataframe
+# This is the number of components to project onto
+IMAGE_PCA_COMPONENTS = 2
+# This is the number of images we train the PCA on (then we just transform)
+IMAGE_PCA_SAMPLE = 8
+
+
 def _read_file(data_schema, filename, data_type,
                single_column=False):
     if not os.path.exists(filename):
         logger.info("file %s not present; skipping", filename)
         return None
 
+    # Output object
     out = {'index': None, 'image': False, 'categorical': False}
-    data_frame = pandas.read_csv(filename)
+
+    # Read the type & role of each column
+    if data_type == 'trainTargets':
+        data_frame = pandas.read_csv(filename, dtype=str)
+    else:
+        data_frame = pandas.read_csv(filename)
     data_column_names = []
     data_index = []
     file_data = {}
     for feature in data_schema[data_type]:
-        try:
-            if 'index' in feature['varRole']:
-                data_index = list(data_frame[feature['varName']])
-                out['index'] = data_index
-            elif 'attribute' in feature['varRole']:
-                data_column_names.append(feature['varName'])
-                out['categorical'] = out['categorical'] or (feature['varType'] == 'categorical')
-            elif 'target' in feature['varRole']:
-                data_column_names.append(feature['varName'])
-                out['categorical'] = out['categorical'] or (feature['varType'] == 'categorical')
-        except KeyError:
-            if 'file' in feature['varType']:
-                file_data['column_name'] = feature['varName']
-                file_data['fileType'] = feature['varFileType']
-                file_data['fileFormat'] = feature['varFileFormat']
+        if 'index' in feature['varRole']:
+            data_index = list(data_frame[feature['varName']])
+            out['index'] = data_index
+        elif 'file' in feature['varType']:
+            file_data['column_name'] = feature['varName']
+            file_data['fileType'] = feature['varFileType']
+            file_data['fileFormat'] = feature['varFileFormat']
+        elif 'attribute' in feature['varRole']:
+            data_column_names.append(feature['varName'])
+            out['categorical'] = out['categorical'] or (feature['varType'] == 'categorical')
+        elif 'target' in feature['varRole']:
+            data_column_names.append(feature['varName'])
+            out['categorical'] = out['categorical'] or (feature['varType'] == 'categorical')
 
-    data_frame_copy = data_frame.copy()
-    data_columns = data_frame_copy.keys()
-    for key in data_columns:
-        if key not in data_column_names:
-            data_frame_copy = data_frame_copy.drop(key, axis=1)
+    # Only keep the data columns
+    orig_data_frame = data_frame
+    data_frame = data_frame[data_column_names]
+    result_data = data_frame.values
 
-    raw_data_np = np.empty([len(data_frame_copy.values), 0])
+    # Load files into the dataframe
+    raw_data_np = np.empty([len(result_data), 0])
     if file_data:
         data_path = os.path.dirname(os.path.abspath(filename))
-        file_names = [os.path.join(data_path, 'raw_data', file_name) for file_name in data_frame[file_data['column_name']]]
 
+        file_names = (os.path.join(data_path, 'raw_data', file_name)
+                      for file_name in orig_data_frame[file_data['column_name']])
+
+        # For images, perform PCA
         if file_data['fileType'] == 'image':
             out['image'] = True
-            count = 0
-            ipca = IncrementalPCA(n_components=2, batch_size=10)
+            ipca = IncrementalPCA(n_components=IMAGE_PCA_COMPONENTS,
+                                  batch_size=10)
             training_data = []
             raw_data_np = None
-            for image in file_names:
-                image_out = read_image_file(image)
-                training_data.append(image_out['image_array'])
-                sample = np.array(image_out['image_array']).reshape(1, -1)
-                if count > 7:
-                    if raw_data_np is None:
-                        raw_data_np = ipca.fit_transform(np.array(training_data))
-                    else:
-                        raw_data_np = np.vstack((raw_data_np, ipca.transform(sample)))
-                count = count + 1
+            for count, file_name in enumerate(file_names):
+                image = read_image_file(file_name)
+                # Only collect data for the first few samples
+                if count < IMAGE_PCA_SAMPLE:
+                    training_data.append(image['image_array'])
+                # Once we have enough samples, fit and transform
+                elif raw_data_np is None:
+                    raw_data_np = ipca.fit_transform(np.array(training_data))
+                    training_data = None
+                # Then transform new data and keep appending it
+                else:
+                    sample = np.array(image['image_array']).reshape(1, -1)
+                    raw_data_np = np.vstack((raw_data_np, ipca.transform(sample)))
+        else:
+            raise ValueError("Unknown fileType %r" % file_data['fileType'])
 
-    result_data = data_frame_copy.values
-
-    if raw_data_np.any():
+    if raw_data_np.size:
         if len(result_data) > 0:
             result_data = np.hstack((result_data, raw_data_np))
         else:
-            result_data =  raw_data_np
+            result_data = raw_data_np
 
+    # Make a dataframe with the correct index, and add image data
+    # FIXME: This assumes all the data is those images, no other columns in CSV
     if out['image']:
-        final_data_frame = pandas.DataFrame(data=result_data, index=data_index)
+        data_frame = pandas.DataFrame(data=result_data, index=data_index)
     else:
-        final_data_frame = pandas.DataFrame(data=result_data, columns=data_column_names, index=data_index)
-
-    if data_type is 'trainTargets' and out['categorical']:
-        final_data_frame = final_data_frame.astype('|S')
+        data_frame = pandas.DataFrame(data=result_data, columns=data_column_names, index=data_index)
 
     out['columns'] = data_column_names
-    list_ = final_data_frame.as_matrix()
+    list_ = data_frame.as_matrix()
 
     if single_column:
         assert list_.shape[1] == 1
         list_ = list_.reshape((-1,))
     out['list'] = list_
-    out['frame'] = final_data_frame
+    out['frame'] = data_frame
     return out
 
 

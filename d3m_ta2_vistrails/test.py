@@ -44,8 +44,12 @@ def test(vt_file, dataset, persist_dir, results_path):
     vt_pipeline = controller.current_pipeline.do_copy()
 
     # Load data
-    data = read_dataset(dataset,
-                        schema=os.path.join(persist_dir, 'dataSchema.json'))
+    try:
+        data = read_dataset(dataset,
+                            schema=os.path.join(persist_dir, 'dataSchema.json'))
+    except Exception:
+        logger.exception("Error loading dataset")
+        raise
     logger.info("Loaded dataset, columns: %r", data['testData']['columns'])
 
     test_data = data['testData']['frame']
