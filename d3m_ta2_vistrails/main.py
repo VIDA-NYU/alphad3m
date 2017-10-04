@@ -359,8 +359,9 @@ class D3mTa2(object):
                     logger.error("Unexpected message from training process %s",
                                  msg)
 
-    def write_executable(self, pipeline):
-        filename = os.path.join(self.executables_root, pipeline.id)
+    def write_executable(self, pipeline, filename=None):
+        if filename is None:
+            filename = os.path.join(self.executables_root, pipeline.id)
         with open(filename, 'w') as fp:
             fp.write('#!/bin/sh\n\n'
                      'echo "Running pipeline {pipeline_id}..." >&2\n'
@@ -787,7 +788,15 @@ class CoreService(pb_core_grpc.CoreServicer):
                         code=pb_core.UNAVAILABLE,
                         details="This pipeline is not trained yet"),
                 )
-            self._app.write_executable(pipeline)
+            uri = request.pipeline_exec_uri
+            if not uri.startswith('file:///'):
+                return pb_core.Response(
+                    status=pb_core.Status(
+                        code=pb_core.INVALID_ARGUMENT,
+                        details="Invalid pipeline_exec_uri"),
+                )
+            uri = uri[7:]
+            self._app.write_executable(pipeline, filename=uri)
         return pb_core.Response(
             status=pb_core.Status(code=pb_core.OK)
         )
