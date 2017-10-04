@@ -581,6 +581,17 @@ class CoreService(pb_core_grpc.CoreServicer):
                                      if m not in self.grpc2metric))
         metrics = [self.grpc2metric[m] for m in metrics
                    if m in self.grpc2metric]
+        if not metrics:
+            logger.error("Didn't get any metrics we know")
+            yield pb_core.PipelineCreateResult(
+                response_info=pb_core.Response(
+                    status=pb_core.Status(
+                        code=pb_core.INVALID_ARGUMENT,
+                        details="Didn't get any metrics we know",
+                    ),
+                ),
+            )
+            return
         target_features = request.target_features
         max_pipelines = request.max_pipelines
 
