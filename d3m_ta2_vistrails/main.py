@@ -130,17 +130,17 @@ class D3mTa2(object):
         self.problem_id = 'problem_id_unset'
         self.storage = storage_root
         if not os.path.exists(self.storage):
-            os.mkdir(self.storage)
+            os.makedirs(self.storage)
         if not os.path.exists(os.path.join(self.storage, 'workflows')):
-            os.mkdir(os.path.join(self.storage, 'workflows'))
+            os.makedirs(os.path.join(self.storage, 'workflows'))
         if not os.path.exists(os.path.join(self.storage, 'persist')):
-            os.mkdir(os.path.join(self.storage, 'persist'))
+            os.makedirs(os.path.join(self.storage, 'persist'))
         self.logs_root = logs_root
         if self.logs_root and not os.path.exists(self.logs_root):
-            os.mkdir(self.logs_root)
+            os.makedirs(self.logs_root)
         self.executables_root = executables_root
         if self.executables_root and not os.path.exists(self.executables_root):
-            os.mkdir(self.executables_root)
+            os.makedirs(self.executables_root)
         self.sessions = {}
         self._next_session = 0
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
@@ -331,7 +331,7 @@ class D3mTa2(object):
                     persist_dir = os.path.join(self.storage, 'persist',
                                                pipeline.id)
                     if not os.path.exists(persist_dir):
-                        os.mkdir(persist_dir)
+                        os.makedirs(persist_dir)
                     shutil.copyfile(
                         os.path.join(dataset, 'dataSchema.json'),
                         os.path.join(persist_dir, 'dataSchema.json'))
