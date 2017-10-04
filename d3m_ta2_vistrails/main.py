@@ -843,10 +843,14 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
                 for port in vt_module.sourcePorts()
             ]
 
+            label = vt_module.module_descriptor.name
+            if '__desc__' in vt_module.db_annotations_key_index:
+                label = vt_module.get_annotation_by_key('__desc__').value
+
             modules.append(pb_dataflow.DataflowDescription.Module(
                 id='%d' % vt_module.id,
                 type=vt_module.module_descriptor.sigstring,
-                label=vt_module.module_descriptor.name,
+                label=label,
                 inputs=inputs,
                 outputs=outputs,
             ))
