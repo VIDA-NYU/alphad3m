@@ -12,7 +12,7 @@ RUN /usr/src/app/venv/bin/pip install backports.ssl-match-hostname certifi docut
     chmod +x /usr/local/bin/ta2_search && \
     printf "#!/bin/sh\n\n/usr/src/app/venv/bin/ta2_serve \"\$@\"\n" >/usr/local/bin/ta2_serve && \
     chmod +x /usr/local/bin/ta2_serve
-RUN /usr/src/app/venv/bin/pip install 'pandas>=0.20.1' 'langdetect>=1.0.7' dsbox-dataprofiling dsbox-datacleaning
+RUN /usr/src/app/venv/bin/pip install 'pandas>=0.20.1' 'langdetect>=1.0.7' dsbox-datacleaning==0.1.3 dsbox-dataprofiling==0.1.4
 COPY vistrails /usr/src/app/vistrails
 RUN /usr/src/app/venv/bin/pip install -e /usr/src/app/vistrails
 COPY userpackages /usr/src/app/userpackages
