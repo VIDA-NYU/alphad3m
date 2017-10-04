@@ -37,19 +37,22 @@ def _read_file(data_schema, filename, data_type,
     data_index = []
     file_data = {}
     for feature in data_schema[data_type]:
-        if 'index' in feature['varRole']:
-            data_index = list(data_frame[feature['varName']])
-            out['index'] = data_index
-        elif 'file' in feature['varType']:
+        # File type: data is not in CSV but in separate file
+        if 'file' in feature['varType']:
             file_data['column_name'] = feature['varName']
             file_data['fileType'] = feature['varFileType']
             file_data['fileFormat'] = feature['varFileFormat']
-        elif 'attribute' in feature['varRole']:
-            data_column_names.append(feature['varName'])
-            out['categorical'] = out['categorical'] or (feature['varType'] == 'categorical')
-        elif 'target' in feature['varRole']:
-            data_column_names.append(feature['varName'])
-            out['categorical'] = out['categorical'] or (feature['varType'] == 'categorical')
+        # All other types
+        else:
+            if 'index' in feature['varRole']:
+                data_index = list(data_frame[feature['varName']])
+                out['index'] = data_index
+            elif 'attribute' in feature['varRole']:
+                data_column_names.append(feature['varName'])
+                out['categorical'] = out['categorical'] or (feature['varType'] == 'categorical')
+            elif 'target' in feature['varRole']:
+                data_column_names.append(feature['varName'])
+                out['categorical'] = out['categorical'] or (feature['varType'] == 'categorical')
 
     # Only keep the data columns
     orig_data_frame = data_frame
@@ -77,28 +80,28 @@ def _read_file(data_schema, filename, data_type,
                 if count < IMAGE_PCA_SAMPLE:
                     training_data.append(image['image_array'])
                 # Once we have enough samples, fit and transform
-                elif raw_data_np is None:
-                    raw_data_np = ipca.fit_transform(np.array(training_data))
-                    training_data = None
-                # Then transform new data and keep appending it
                 else:
+                    # Do the fit once on first few samples
+                    if raw_data_np is None:
+                        raw_data_np = ipca.fit_transform(np.array(training_data))
+                        training_data = None
+
+                    # Then transform new data and keep appending it
                     sample = np.array(image['image_array']).reshape(1, -1)
                     raw_data_np = np.vstack((raw_data_np, ipca.transform(sample)))
         else:
             raise ValueError("Unknown fileType %r" % file_data['fileType'])
 
     if raw_data_np.size:
-        if len(result_data) > 0:
+        if result_data.size:
             result_data = np.hstack((result_data, raw_data_np))
         else:
             result_data = raw_data_np
 
-    # Make a dataframe with the correct index, and add image data
-    # FIXME: This assumes all the data is those images, no other columns in CSV
     if out['image']:
-        data_frame = pandas.DataFrame(data=result_data, index=data_index)
-    else:
-        data_frame = pandas.DataFrame(data=result_data, columns=data_column_names, index=data_index)
+        # Create column names for the image data and append to existing column names
+        data_column_names = data_column_names + range(0, result_data.shape[1])
+    data_frame = pandas.DataFrame(data=result_data, columns=data_column_names, index=data_index)
 
     out['columns'] = data_column_names
     list_ = data_frame.as_matrix()
