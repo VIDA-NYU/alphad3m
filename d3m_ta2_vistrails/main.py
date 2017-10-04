@@ -899,20 +899,24 @@ def main_serve():
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
 
-    if len(sys.argv) not in (2, 3):
+    if len(sys.argv) not in (1, 2):
         sys.stderr.write(
             "Invalid usage, use:\n"
-            "    ta2_serve <config_file.json> [port_number]\n"
+            "    ta2_serve [port_number]\n"
             "        Runs in server mode, waiting for a TA3 to connect on the "
             "given port\n"
-            "        (default: 50051)\n")
+            "        (default: 50051)\n"
+            "        The configuration file is read from $CONFIG_JSON_PATH\n")
+        sys.exit(1)
+    elif 'CONFIG_JSON_PATH' not in os.environ:
+        sys.stderr.write("CONFIG_JSON_PATH is not set!\n")
         sys.exit(1)
     else:
-        with open(sys.argv[1]) as config_file:
+        with open(os.environ['CONFIG_JSON_PATH']) as config_file:
             config = json.load(config_file)
         port = None
-        if len(sys.argv) == 3:
-            port = int(sys.argv[2])
+        if len(sys.argv) == 2:
+            port = int(sys.argv[1])
         with open(config['problem_schema']) as fp:
             problem_id = json.load(fp)['problemId']
         ta2 = D3mTa2(
