@@ -846,6 +846,8 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
                                  type=port.sigstring)
                 if port.name in functions:
                     port_desc['value'] = functions[port.name]
+                elif port.optional:
+                    continue  # Skip unset optional ports
                 port_desc = pb_dataflow.DataflowDescription.Input(**port_desc)
                 inputs.append(port_desc)
             outputs = [
