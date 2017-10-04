@@ -1,10 +1,14 @@
 FROM ubuntu:16.04
 MAINTAINER "remirampin@gmail.com"
 
-WORKDIR /usr/src/app
 RUN apt-get update -yy && \
     apt-get install -yy git python python-pip python-virtualenv python-numpy python-dateutil python-scipy && \
     apt-get clean
+
+# Required by NIST to build Python in our image, apparently needed for their evaluation process (?)
+RUN apt-get install -yy build-essential libncursesw5-dev libreadline6-dev libssl-dev libgdbm-dev libc6-dev libsqlite3-dev tk-dev libbz2-dev zlib1g-dev
+
+WORKDIR /usr/src/app
 RUN virtualenv --system-site-packages /usr/src/app/venv && . /usr/src/app/venv/bin/activate
 RUN /usr/src/app/venv/bin/pip install backports.ssl-match-hostname certifi docutils futures grpcio \
     ipython~=5.4 scikit-learn==0.19 usagestats==0.7 nose && \
@@ -23,8 +27,5 @@ COPY pipelines /usr/src/app/pipelines
 
 # Workaround for installation issues
 RUN /usr/src/app/venv/bin/pip install decorator==4.1.2
-
-# Required by NIST to build Python in our image, apparently needed for their evaluation process (?)
-RUN apt-get install -yy build-essential libncursesw5-dev libreadline6-dev libssl-dev libgdbm-dev libc6-dev libsqlite3-dev tk-dev libbz2-dev zlib1g-dev
 
 EXPOSE 50051
