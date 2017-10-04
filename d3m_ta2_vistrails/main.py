@@ -800,13 +800,8 @@ class CoreService(pb_core_grpc.CoreServicer):
                         details="This pipeline is not trained yet"),
                 )
             uri = request.pipeline_exec_uri
-            if not uri.startswith('file:///'):
-                return pb_core.Response(
-                    status=pb_core.Status(
-                        code=pb_core.INVALID_ARGUMENT,
-                        details="Invalid pipeline_exec_uri"),
-                )
-            uri = uri[7:]
+            if uri.startswith('file:///'):
+                uri = uri[7:]
             self._app.write_executable(pipeline, filename=uri)
         return pb_core.Response(
             status=pb_core.Status(code=pb_core.OK)
