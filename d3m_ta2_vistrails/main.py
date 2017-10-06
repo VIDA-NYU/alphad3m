@@ -129,17 +129,17 @@ class D3mTa2(object):
                 args=[])
 
         self.problem_id = 'problem_id_unset'
-        self.storage = storage_root
+        self.storage = os.path.abspath(storage_root)
         if not os.path.exists(self.storage):
             os.makedirs(self.storage)
         if not os.path.exists(os.path.join(self.storage, 'workflows')):
             os.makedirs(os.path.join(self.storage, 'workflows'))
         if not os.path.exists(os.path.join(self.storage, 'persist')):
             os.makedirs(os.path.join(self.storage, 'persist'))
-        self.logs_root = logs_root
+        self.logs_root = os.path.abspath(logs_root)
         if self.logs_root and not os.path.exists(self.logs_root):
             os.makedirs(self.logs_root)
-        self.executables_root = executables_root
+        self.executables_root = os.path.abspath(executables_root)
         if self.executables_root and not os.path.exists(self.executables_root):
             os.makedirs(self.executables_root)
         self.sessions = {}
