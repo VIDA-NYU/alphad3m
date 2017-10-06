@@ -110,7 +110,7 @@ class Pipeline(object):
 
 class D3mTa2(object):
     def __init__(self, storage_root,
-                 logs_root=None, executables_root=None, results_root=None):
+                 logs_root=None, executables_root=None):
         global vistrails_app
         if vistrails_app is None:
             vistrails_app = vistrails.core.application.init(
@@ -977,8 +977,7 @@ def main_test():
         with open(sys.argv[2]) as config_file:
             config = json.load(config_file)
         ta2 = D3mTa2(
-            storage_root=config['temp_storage_root'],
-            results_root=config['results_path'])
+            storage_root=config['temp_storage_root'])
         ta2.run_test(
             dataset=config['test_data_root'],
             pipeline_id=sys.argv[1],
