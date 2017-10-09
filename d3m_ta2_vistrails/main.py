@@ -10,7 +10,6 @@ import stat
 import sys
 import threading
 import time
-import uuid
 import vistrails.core.application
 from vistrails.core.db.action import create_action
 import vistrails.core.db.io
@@ -21,6 +20,7 @@ from vistrails.core.vistrail.controller import VistrailController
 from d3m_ta2_vistrails import __version__
 from d3m_ta2_vistrails.common import SCORES_FROM_SCHEMA, \
     SCORES_RANKING_ORDER, TASKS_FROM_SCHEMA
+from d3m_ta2_vistrails.names import name
 import d3m_ta2_vistrails.proto.core_pb2 as pb_core
 import d3m_ta2_vistrails.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_vistrails.proto.dataflow_ext_pb2 as pb_dataflow
@@ -100,7 +100,7 @@ class Pipeline(object):
     metrics = []
 
     def __init__(self, primitives=None):
-        self.id = str(uuid.uuid4())
+        self.id = name()
         self.scores = {}
         self.rank = 0
         self.primitives = []
