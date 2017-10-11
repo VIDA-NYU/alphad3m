@@ -33,15 +33,16 @@ class DataflowExtServicer(object):
   """
 
   def DescribeDataflow(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
+    """Get a description of the training process as a dataflow.
+    """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
   def GetDataflowResults(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
+    """Get the results of each module making up the dataflow, for the most
+    recent training run.
+    """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
