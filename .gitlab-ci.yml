@@ -9,6 +9,7 @@ stages:
   - eval_validate_results
 
 variables:
+  DOCKER_DRIVER: overlay2
   EVAL_REGISTRY_IMAGE: $CI_REGISTRY_IMAGE/nist-validation-image
   EVAL_DATA: o_185 # options o_185, r_32:
   EVAL_TAGGED_IMAGE: $EVAL_REGISTRY_IMAGE:latest
