@@ -2,7 +2,7 @@ FROM ubuntu:16.04
 MAINTAINER "remirampin@gmail.com"
 
 RUN apt-get update -yy && \
-    apt-get install -yy git python python-pip python-virtualenv python-numpy python-dateutil python-scipy && \
+    apt-get install -yy git python python-pip python-virtualenv python-dateutil && \
     apt-get clean
 
 # Required by NIST to build Python in our image, apparently needed for their evaluation process (?)
