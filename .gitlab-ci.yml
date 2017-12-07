@@ -15,8 +15,6 @@ variables:
   IMAGE: $CI_REGISTRY_IMAGE:git-$CI_COMMIT_SHA
   GIT_SUBMODULE_STRATEGY: recursive
 
-# TODO: Delete $IMAGE after build
-
 services:
   - docker:dind
 
@@ -25,8 +23,8 @@ build_image:
   image: ruby:2.2
   script:
     - curl -Lo /tmp/docker.tgz https://get.docker.com/builds/Linux/x86_64/docker-17.05.0-ce.tgz && tar -xf /tmp/docker.tgz -C /usr/local && rm /tmp/docker.tgz && export PATH=/usr/local/docker:$PATH && export DOCKER_HOST=tcp://docker:2375
-    - export | grep DOCKER || true
-    - docker build -t $IMAGE .
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+    - docker pull $CI_REGISTRY_IMAGE:latest && docker build --cache-from $CI_REGISTRY_IMAGE:latest -t $IMAGE .
     - |
       REV=$(git describe --always --tags)
       if [ "$CI_COMMIT_REF_NAME" != master ]; then
@@ -34,21 +32,9 @@ build_image:
       fi
       docker tag $IMAGE $CI_REGISTRY_IMAGE:$REV
       docker tag $IMAGE $CI_REGISTRY_IMAGE:latest
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
     - docker push $IMAGE
     - docker push $CI_REGISTRY_IMAGE:$REV
-  tags:
-    - docker
-
-push_image_as_latest:
-  stage: deploy
-  image: docker
-  script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
     - docker push $CI_REGISTRY_IMAGE:latest
-  when: manual
-  dependencies:
-    - build_image
   tags:
     - docker
 
