@@ -136,10 +136,16 @@ class D3mTa2(object):
             os.makedirs(os.path.join(self.storage, 'workflows'))
         if not os.path.exists(os.path.join(self.storage, 'persist')):
             os.makedirs(os.path.join(self.storage, 'persist'))
-        self.logs_root = os.path.abspath(logs_root)
+        if logs_root is not None:
+            self.logs_root = os.path.abspath(logs_root)
+        else:
+            self.logs_root = None
         if self.logs_root and not os.path.exists(self.logs_root):
             os.makedirs(self.logs_root)
-        self.executables_root = os.path.abspath(executables_root)
+        if executables_root:
+            self.executables_root = os.path.abspath(executables_root)
+        else:
+            self.executables_root = None
         if self.executables_root and not os.path.exists(self.executables_root):
             os.makedirs(self.executables_root)
         self.sessions = {}
