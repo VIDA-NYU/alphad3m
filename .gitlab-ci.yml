@@ -1,0 +1,165 @@
+stages:
+  - build
+  - test
+  - deploy
+  - eval_setup
+  - eval_train
+  - eval_validate_train
+  - eval_test
+  - eval_validate_results
+
+variables:
+  DOCKER_DRIVER: overlay2
+  EVAL_REGISTRY_IMAGE: registry.gitlab.com/vida-nyu/d3m/ta2/nist-validation-image
+  EVAL_DATA: o_185 # options o_185, r_32:
+  EVAL_TAGGED_IMAGE: $EVAL_REGISTRY_IMAGE:latest
+  IMAGE: $CI_REGISTRY_IMAGE:git-$CI_COMMIT_SHA
+  GIT_SUBMODULE_STRATEGY: recursive
+
+services:
+  - docker:dind
+
+build_image:
+  stage: build
+  image: ruby:2.2
+  script:
+    - curl -Lo /tmp/docker.tgz https://get.docker.com/builds/Linux/x86_64/docker-17.05.0-ce.tgz && tar -xf /tmp/docker.tgz -C /usr/local && rm /tmp/docker.tgz && export PATH=/usr/local/docker:$PATH && export DOCKER_HOST=tcp://docker:2375
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+    - docker pull $CI_REGISTRY_IMAGE:latest && docker build --cache-from $CI_REGISTRY_IMAGE:latest -t $IMAGE .
+    - |
+      REV=$(git describe --always --tags)
+      if [ "$CI_COMMIT_REF_NAME" != master ]; then
+        REV="$CI_COMMIT_REF_NAME-$REV"
+      fi
+      docker tag $IMAGE $CI_REGISTRY_IMAGE:$REV
+      docker tag $IMAGE $CI_REGISTRY_IMAGE:latest
+    - docker push $IMAGE
+    - docker push $CI_REGISTRY_IMAGE:$REV
+    - docker push $CI_REGISTRY_IMAGE:latest
+  tags:
+    - docker
+
+eval_prepare_train:
+  stage: eval_setup
+  image: $EVAL_TAGGED_IMAGE
+  script:
+    - cd $CI_PROJECT_DIR
+    - mkdir Eval
+    - cp -R /$EVAL_DATA/Eval_Train/* Eval/
+    - cp -R /Eval_Train/* Eval
+  when: manual
+  dependencies:
+    - build_image
+  allow_failure: false
+  artifacts:
+    paths:
+      - Eval
+    expire_in: 1hr
+  tags:
+    - docker
+
+eval_train:
+  stage: eval_train
+  image: $IMAGE
+  script:
+    - cd $CI_PROJECT_DIR
+    - sed -i "s@####@$CI_PROJECT_DIR@" Eval/config.json
+    - mkdir Eval/Outputs
+    - mkdir Eval/Outputs/Logs
+    - mkdir Eval/Outputs/Executables
+    - mkdir Eval/Temp
+    - ta2_search Eval/config.json
+  when: on_success
+  dependencies:
+    - eval_prepare_train
+  artifacts:
+    paths:
+      - Eval/Outputs/Executables
+      - Eval/Outputs/Logs
+      - Eval/Temp
+    expire_in: 1hr
+  tags:
+    - docker
+
+eval_validate_train_logs:
+  stage: eval_validate_train
+  image: $EVAL_TAGGED_IMAGE
+  script:
+    - cd $CI_PROJECT_DIR
+    - python /validate_logs.py $CI_PROJECT_DIR/Eval/Outputs/Logs
+  when: on_success
+  dependencies:
+    - eval_train
+  tags:
+    - docker
+
+eval_validate_executables:
+  stage: eval_validate_train
+  image: $EVAL_TAGGED_IMAGE
+  script:
+    - cd $CI_PROJECT_DIR
+    - python /validate_executables.py $CI_PROJECT_DIR/Eval/Outputs/Logs $CI_PROJECT_DIR/Eval/Outputs/Executables $CI_PROJECT_DIR/Eval
+  when: on_success
+  dependencies:
+    - eval_train
+  artifacts:
+    paths:
+      - Eval/execs_list.csv
+      - Eval/Outputs/Executables
+    expire_in: 1hr
+  tags:
+    - docker
+
+eval_prepare_test:
+  stage: eval_validate_train
+  image: $EVAL_TAGGED_IMAGE
+  script:
+    - cd $CI_PROJECT_DIR
+    - cp -R /$EVAL_DATA/Eval_Test/* Eval/
+    - cp -R /Eval_Test/* Eval/
+  when: on_success
+  artifacts:
+    paths:
+      - Eval
+    expire_in: 1hr
+  dependencies:
+    - eval_train
+  tags:
+    - docker
+
+eval_run_test_execs:
+  stage: eval_test
+  image: $IMAGE
+  script:
+    - cd $CI_PROJECT_DIR
+    - sed -i "s@####@$CI_PROJECT_DIR@" Eval/config.json
+    - mkdir Eval/Outputs/Results
+    - exec_list(){ cat Eval/execs_list.csv; }
+    - exec_rank(){ echo $1 | cut -f1 -d, -; }
+    - exec_name(){ echo $1 | cut -f2 -d, -; }
+    - run_exec(){ sed "s/##/$( exec_rank $1 )/" Eval/config.json > "Eval/config_$( exec_rank $1 ).json"; "$( exec_name $1 )" "Eval/config_$( exec_rank $1 ).json"; }
+    - for list in $(exec_list); do run_exec $list; done
+  when: on_success
+  dependencies:
+    - eval_validate_executables
+    - eval_prepare_test
+    - eval_train
+  artifacts:
+    paths:
+      - Eval/Outputs/Results
+    expire_in: 1hr
+  tags:
+    - docker
+
+eval_validate_results:
+  stage: eval_validate_results
+  image: $EVAL_TAGGED_IMAGE
+  script:
+    - cd $CI_PROJECT_DIR
+    - python /validate_results.py $CI_PROJECT_DIR/Eval/Outputs/Results $CI_PROJECT_DIR/Eval/problemSchema.json
+  when: on_success
+  dependencies:
+    - eval_prepare_train
+    - eval_run_test_execs
+  tags:
+    - docker
