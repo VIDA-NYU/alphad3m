@@ -1,5 +1,4 @@
 import csv
-from itertools import izip
 import json
 import logging
 import os
@@ -91,7 +90,7 @@ def test(vt_file, dataset, persist_dir, results_path):
     if result.errors:
         logger.error("Errors running pipeline:\n%s",
                      '\n'.join('%d: %s' % p
-                               for p in result.errors.iteritems()))
+                               for p in result.errors.items()))
         sys.exit(1)
 
     output = get_module(vt_pipeline, 'test_targets').id
@@ -107,5 +106,5 @@ def test(vt_file, dataset, persist_dir, results_path):
         writer = csv.writer(fp)
         writer.writerow(['d3mIndex', column_name])
 
-        for i, o in izip(data['testData']['index'], output):
+        for i, o in zip(data['testData']['index'], output):
             writer.writerow([i, o])

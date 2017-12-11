@@ -4,7 +4,7 @@ import json
 import logging
 import multiprocessing
 import os
-from Queue import Empty, Queue
+from queue import Empty, Queue
 import shutil
 import stat
 import sys
@@ -53,7 +53,7 @@ class Session(Observable):
             logger.info("Session %s: training done", self.id)
 
             # Rank pipelines
-            pipelines = [pipeline for pipeline in self.pipelines.itervalues()
+            pipelines = [pipeline for pipeline in self.pipelines.values()
                          if pipeline.trained]
             metric = None
             for pipeline in pipelines:
@@ -77,7 +77,7 @@ class Session(Observable):
 
     def write_logs(self):
         written = 0
-        for pipeline in self.pipelines.itervalues():
+        for pipeline in self.pipelines.values():
             if not pipeline.trained:
                 continue
             filename = os.path.join(self._logs_dir, pipeline.id + '.json')
@@ -193,10 +193,10 @@ class D3mTa2(object):
                 pass
 
         logger.info("Generated %d pipelines",
-                    sum(1 for pipeline in session.pipelines.itervalues()
+                    sum(1 for pipeline in session.pipelines.values()
                         if pipeline.trained))
 
-        for pipeline in session.pipelines.itervalues():
+        for pipeline in session.pipelines.values():
             if pipeline.trained:
                 self.write_executable(pipeline)
 
@@ -308,7 +308,7 @@ class D3mTa2(object):
         while True:
             # Wait for a process to be done
             remove = []
-            for session, pipeline, proc in running_pipelines.itervalues():
+            for session, pipeline, proc in running_pipelines.values():
                 if not proc.is_alive():
                     logger.info("Pipeline training process done, returned %d",
                                 proc.exitcode)
@@ -708,7 +708,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         metric=self.metric2grpc[m],
                         value=s,
                     )
-                    for m, s in pipeline.scores.iteritems()
+                    for m, s in pipeline.scores.items()
                     if m in self.metric2grpc
                 ]
                 yield pb_core.PipelineCreateResult(
@@ -773,7 +773,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             )
         session = self._app.sessions[sessioncontext.session_id]
         with session.lock:
-            pipelines = session.pipelines.keys()
+            pipelines = list(session.pipelines)
         return pb_core.PipelineListResult(
             response_info=pb_core.Response(
                 status=pb_core.Status(code=pb_core.OK),

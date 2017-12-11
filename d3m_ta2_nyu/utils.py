@@ -41,7 +41,7 @@ class Observable(object):
 
     def notify(self, event, **kwargs):
         with self.lock:
-            for observer in self.__observers.itervalues():
+            for observer in self.__observers.values():
                 try:
                     observer(event, **kwargs)
                 except Exception:

@@ -100,7 +100,7 @@ def _read_file(data_schema, filename, data_type,
 
     if out['image']:
         # Create column names for the image data and append to existing column names
-        data_column_names = data_column_names + range(0, result_data.shape[1])
+        data_column_names.extend(range(0, result_data.shape[1]))
     data_frame = pandas.DataFrame(data=result_data, columns=data_column_names, index=data_index)
 
     out['columns'] = data_column_names

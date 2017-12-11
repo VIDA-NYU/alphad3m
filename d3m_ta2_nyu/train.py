@@ -108,7 +108,7 @@ def train(vt_file, pipeline, dataset, persist_dir, msg_queue):
         if result.errors:
             logger.error("Errors running pipeline:\n%s",
                          '\n'.join('%d: %s' % p
-                                   for p in result.errors.iteritems()))
+                                   for p in result.errors.items()))
             sys.exit(1)
 
         predicted_results = get_module(vt_pipeline, 'test_targets').id
@@ -133,7 +133,7 @@ def train(vt_file, pipeline, dataset, persist_dir, msg_queue):
 
     # Aggregate results over the folds
     scores = dict((metric, numpy.mean(values))
-                  for metric, values in scores.iteritems())
+                  for metric, values in scores.items())
     msg_queue.put((pipeline.id, 'scores', scores))
 
     # Training step - run pipeline on full training_data,
@@ -175,5 +175,5 @@ def train(vt_file, pipeline, dataset, persist_dir, msg_queue):
     if result.errors:
         logger.error("Errors running pipeline:\n%s",
                      '\n'.join('%d: %s' % p
-                               for p in result.errors.iteritems()))
+                               for p in result.errors.items()))
         sys.exit(1)
