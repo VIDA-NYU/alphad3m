@@ -11,7 +11,11 @@ req = [
     'grpcio',
     'SQLAlchemy',
     'scikit-learn',
-    'scikit-image']
+    'scikit-image',
+    'scikit-learn==0.19',
+    'pandas>=0.20.1',
+    'dsbox-datacleaning==0.1.3',
+    'dsbox-dataprofiling==0.1.4']
 setup(name='d3m_ta2_nyu',
       version='0.1',
       packages=['d3m_ta2_nyu'],
