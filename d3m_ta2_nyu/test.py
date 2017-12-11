@@ -10,7 +10,7 @@ from vistrails.core.modules.module_registry import get_module_registry
 from vistrails.core.utils import DummyView
 from vistrails.core.vistrail.controller import VistrailController
 
-from d3m_ta2_vistrails.common import read_dataset
+from d3m_ta2_nyu.common import read_dataset
 
 
 logger = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ def test(vt_file, dataset, persist_dir, results_path):
         DummyView(),  # view
         None,  # custom_aliases
         None,  # custom_params
-        "Executing pipeline from d3m_ta2_vistrails.train",  # reason
+        "Executing pipeline from d3m_ta2_nyu.train",  # reason
         sinks,  # sinks
         None,  # extra_info
     ]])

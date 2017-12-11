@@ -17,7 +17,7 @@ RUN /usr/src/app/venv/bin/pip install backports.ssl-match-hostname certifi docut
     printf "#!/bin/sh\n\n/usr/src/app/venv/bin/ta2_serve \"\$@\"\n" >/usr/local/bin/ta2_serve && \
     chmod +x /usr/local/bin/ta2_serve
 RUN /usr/src/app/venv/bin/pip install 'pandas>=0.20.1' 'langdetect>=1.0.7' dsbox-datacleaning==0.1.3 dsbox-dataprofiling==0.1.4
-COPY d3m_ta2 /usr/src/app/d3m_ta2
+COPY d3m_ta2_nyu /usr/src/app/d3m_ta2_nyu
 COPY setup.py /usr/src/app/setup.py
 RUN /usr/src/app/venv/bin/pip install -e /usr/src/app
 

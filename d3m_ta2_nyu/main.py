@@ -17,17 +17,17 @@ from vistrails.core.db.locator import BaseLocator, UntitledLocator
 from vistrails.core.modules.module_registry import get_module_registry
 from vistrails.core.vistrail.controller import VistrailController
 
-from d3m_ta2_vistrails import __version__
-from d3m_ta2_vistrails.common import SCORES_FROM_SCHEMA, \
-    SCORES_RANKING_ORDER, TASKS_FROM_SCHEMA
-from d3m_ta2_vistrails.names import name
-import d3m_ta2_vistrails.proto.core_pb2 as pb_core
-import d3m_ta2_vistrails.proto.core_pb2_grpc as pb_core_grpc
-import d3m_ta2_vistrails.proto.dataflow_ext_pb2 as pb_dataflow
-import d3m_ta2_vistrails.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
-from d3m_ta2_vistrails.test import test
-from d3m_ta2_vistrails.train import train
-from d3m_ta2_vistrails.utils import Observable, synchronized
+from d3m_ta2_nyu import __version__
+from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
+    TASKS_FROM_SCHEMA
+from d3m_ta2_nyu.names import name
+import d3m_ta2_nyu.proto.core_pb2 as pb_core
+import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
+import d3m_ta2_nyu.proto.dataflow_ext_pb2 as pb_dataflow
+import d3m_ta2_nyu.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
+from d3m_ta2_nyu.test import test
+from d3m_ta2_nyu.train import train
+from d3m_ta2_nyu.utils import Observable, synchronized
 
 
 logger = logging.getLogger(__name__)
@@ -373,7 +373,7 @@ class D3mTa2(object):
             fp.write('#!/bin/sh\n\n'
                      'echo "Running pipeline {pipeline_id}..." >&2\n'
                      '{python} -c '
-                     '"from d3m_ta2_vistrails.main import main_test; '
+                     '"from d3m_ta2_nyu.main import main_test; '
                      'main_test()" {pipeline_id} "$@"\n'.format(
                          pipeline_id=pipeline.id,
                          python=sys.executable))

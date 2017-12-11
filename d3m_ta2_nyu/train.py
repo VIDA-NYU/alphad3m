@@ -9,7 +9,7 @@ from vistrails.core.modules.module_registry import get_module_registry
 from vistrails.core.utils import DummyView
 from vistrails.core.vistrail.controller import VistrailController
 
-from d3m_ta2_vistrails.common import SCORES_TO_SKLEARN, read_dataset
+from d3m_ta2_nyu.common import SCORES_TO_SKLEARN, read_dataset
 
 
 logger = logging.getLogger(__name__)
@@ -99,7 +99,7 @@ def train(vt_file, pipeline, dataset, persist_dir, msg_queue):
             DummyView(),  # view
             None,  # custom_aliases
             None,  # custom_params
-            "Scoring pipeline from d3m_ta2_vistrails.train",  # reason
+            "Scoring pipeline from d3m_ta2_nyu.train",  # reason
             sinks,  # sinks
             None,  # extra_info
         ]])
@@ -166,7 +166,7 @@ def train(vt_file, pipeline, dataset, persist_dir, msg_queue):
         DummyView(),  # view
         None,  # custom_aliases
         None,  # custom_params
-        "Training pipeline from d3m_ta2_vistrails.train",  # reason
+        "Training pipeline from d3m_ta2_nyu.train",  # reason
         sinks,  # sinks
         None,  # extra_info
     ]])
