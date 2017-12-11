@@ -9,6 +9,7 @@ os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
 req = [
     'grpcio',
+    'SQLAlchemy',
     'scikit-learn',
     'scikit-image']
 setup(name='d3m_ta2_nyu',
