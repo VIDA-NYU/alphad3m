@@ -10,16 +10,11 @@ import stat
 import sys
 import threading
 import time
-import vistrails.core.application
-from vistrails.core.db.action import create_action
-import vistrails.core.db.io
-from vistrails.core.db.locator import BaseLocator, UntitledLocator
-from vistrails.core.modules.module_registry import get_module_registry
-from vistrails.core.vistrail.controller import VistrailController
 
 from d3m_ta2_nyu import __version__
 from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
     TASKS_FROM_SCHEMA
+from d3m_ta2_nyu import database
 from d3m_ta2_nyu.names import name
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
@@ -31,6 +26,9 @@ from d3m_ta2_nyu.utils import Observable, synchronized
 
 
 logger = logging.getLogger(__name__)
+
+
+engine, db_session = database.connect()
 
 
 vistrails_app = None
@@ -917,10 +915,18 @@ class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
             yield
 
 
-def main_search():
+def setup():
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
+
+    if not engine.dialect.has_table(engine.connect(), 'pipelines'):
+        logger.warning("The tables don't seem to exist; creating")
+        database.Base.create_all(bind=engine)
+
+
+def main_search():
+    setup()
 
     if len(sys.argv) != 2:
         sys.stderr.write(
@@ -942,9 +948,7 @@ def main_search():
 
 
 def main_serve():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
+    setup()
 
     if len(sys.argv) not in (1, 2):
         sys.stderr.write(
@@ -974,9 +978,7 @@ def main_serve():
 
 
 def main_test():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
+    setup()
 
     if len(sys.argv) != 3:
         sys.exit(1)
