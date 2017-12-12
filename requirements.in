@@ -1,5 +1,5 @@
 -e git+https://gitlab.com/datadrivendiscovery/metadata.git@85484f832f41d8c6b26f92be9447e64b94dc30bb#egg=d3m_metadata
 -e git+https://gitlab.com/datadrivendiscovery/primitive-interfaces.git@3aa93be5601923419c493a64ecff2752b7fe2cca#egg=primitive_interfaces
-cerberus==1.1
 -e git+https://github.com/mitar/pytypes.git@4b984c7c96acced1d0d08d9bfc18795ad512f94f#egg=pytypes
 -e git+https://gitlab.com/datadrivendiscovery/d3m.git@9df6571e0080bf824127024ce533653f1e17ae70#egg=d3m
+#-e git+https://gitlab.com/datadrivendiscovery/common-primitives.git@3920f26bdb1bd105524fa6f349c29a1736725a18#egg=common_primitives
