@@ -12,10 +12,10 @@ RUN apt-get update -yy && \
 #RUN apt-get install -yy build-essential libncursesw5-dev libreadline6-dev libssl-dev libgdbm-dev libc6-dev libsqlite3-dev tk-dev libbz2-dev zlib1g-dev
 
 WORKDIR /usr/src/app
-RUN python3 -m virtualenv -p python3.6 --system-site-packages /usr/src/app/venv && . /usr/src/app/venv/bin/activate
-RUN /usr/src/app/venv/bin/pip install -U certifi pip pip-tools
+RUN python3 -m virtualenv -p python3.6 --system-site-packages /usr/src/app/venv && . /usr/src/app/venv/bin/activate && /usr/src/app/venv/bin/pip install -U certifi pip
+RUN /usr/src/app/venv/bin/pip install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp36-cp36m-linux_x86_64.whl
 COPY requirements.txt /usr/src/app/requirements.txt
-RUN /usr/src/app/venv/bin/pip-sync requirements.txt
+RUN /usr/src/app/venv/bin/pip install -r requirements.txt
 COPY d3m_ta2_nyu /usr/src/app/d3m_ta2_nyu
 COPY setup.py /usr/src/app/setup.py
 RUN /usr/src/app/venv/bin/pip install --no-deps -e /usr/src/app
