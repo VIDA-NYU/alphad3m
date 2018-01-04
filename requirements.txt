@@ -53,3 +53,4 @@ typing==3.6.2
 tzlocal==1.5.1
 urllib3==1.22
 webcolors==1.7
+-e git+https://github.com/byu-dml/metalearn.git#egg=metalearn
