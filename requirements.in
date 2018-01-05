@@ -2,3 +2,4 @@
 -e git+https://gitlab.com/datadrivendiscovery/primitive-interfaces.git@c4601750f2f999ee9b234a17dd948f7ef2271fca#egg=primitive_interfaces
 -e git+https://gitlab.com/datadrivendiscovery/d3m.git@3e1b8b96295de6f671004dad99dfb57c42e2f223#egg=d3m
 -e git+https://gitlab.com/datadrivendiscovery/common-primitives.git@617e116a4e0a839df4b049c3cb48dfff14d2a8b8#egg=common_primitives
+-e git+https://github.com/byu-dml/metalearn.git@e7f3ee28437141ef86bcabf93366c7b41e0cec6d#egg=metalearn
