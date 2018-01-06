@@ -1,3 +1,6 @@
+"""Some utilities specific to the D3M project.
+"""
+
 import json
 import logging
 import math

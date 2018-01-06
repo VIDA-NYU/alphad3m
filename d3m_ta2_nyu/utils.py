@@ -1,3 +1,6 @@
+"""Various utilities that are not specific to D3M.
+"""
+
 import contextlib
 import functools
 import logging

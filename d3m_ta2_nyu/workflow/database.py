@@ -1,3 +1,6 @@
+"""The SQLAlchemy models we use to persist data.
+"""
+
 import enum
 import logging
 import os
@@ -8,6 +11,11 @@ from sqlalchemy.sql import functions
 from sqlalchemy.types import Boolean, DateTime, Enum, Float, String
 import uuid
 
+from d3m_ta2_nyu.sql_uuid import UUID
+
+
+logger = logging.getLogger(__name__)
+
 
 Base = declarative_base()
 
@@ -15,7 +23,7 @@ Base = declarative_base()
 class Pipeline(Base):
     __tablename__ = 'pipelines'
 
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID, primary_key=True, default=uuid.uuid4)
     origin = Column(String, nullable=False)
     created_date = Column(DateTime, nullable=False,
                           server_default=functions.now())
@@ -25,7 +33,7 @@ class Pipeline(Base):
 class PipelineModule(Base):
     __tablename__ = 'pipeline_modules'
 
-    id = Column(String, primary_key=True)
+    id = Column(UUID, primary_key=True, default=uuid.uuid4)
     package = Column(String, ForeignKey('modules.package'), nullable=False)
     version = Column(String, ForeignKey('modules.version'), nullable=False)
     module_name = Column(String, ForeignKey('modules.name'), nullable=False)
@@ -43,13 +51,13 @@ class Module(Base):
 class PipelineConnection(Base):
     __tablename__ = 'pipeline_connections'
 
-    from_module_id = Column(String, ForeignKey('pipeline_modules.id'),
+    from_module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
                             primary_key=True)
     from_output_name = Column(String, primary_key=True)
     from_module = relationship('Module', foreign_keys=['from_module_id',
                                                        'from_output_name'])
 
-    to_module_id = Column(String, ForeignKey('pipeline_modules.id'),
+    to_module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
                           primary_key=True)
     to_input_name = Column(String, primary_key=True)
     to_module = relationship('Module', foreign_keys=['to_module_id',
@@ -59,7 +67,7 @@ class PipelineConnection(Base):
 class PipelineParameter(Base):
     __tablename__ = 'pipeline_parameters'
 
-    module_id = Column(String, ForeignKey('pipeline_modules.id'),
+    module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
                        primary_key=True)
     name = Column(String, primary_key=True)
     value = Column(String, nullable=True)
@@ -68,8 +76,8 @@ class PipelineParameter(Base):
 class CrossValidation(Base):
     __tablename__ = 'cross_validations'
 
-    id = Column(String, primary_key=True)
-    pipeline_id = Column(String, ForeignKey('pipelines.id'), nullable=False)
+    id = Column(UUID, primary_key=True, default=uuid.uuid4)
+    pipeline_id = Column(UUID, ForeignKey('pipelines.id'), nullable=False)
     pipeline = relationship('Pipeline')
     date = Column(DateTime, nullable=False)
 
@@ -77,7 +85,7 @@ class CrossValidation(Base):
 class CrossValidationScore(Base):
     __tablename__ = 'cross_validation_scores'
 
-    cross_validation_id = Column(String, ForeignKey('cross_validations.id'),
+    cross_validation_id = Column(UUID, ForeignKey('cross_validations.id'),
                                  primary_key=True)
     cross_validation = relationship('CrossValidation', backref='scores')
     metric = Column(String, primary_key=True)
@@ -92,8 +100,8 @@ class RunType(enum.Enum):
 class Run(Base):
     __tablename__ = 'runs'
 
-    id = Column(String, primary_key=True)
-    pipeline_id = Column(String, ForeignKey('pipelines.id'), nullable=False)
+    id = Column(UUID, primary_key=True, default=uuid.uuid4)
+    pipeline_id = Column(UUID, ForeignKey('pipelines.id'), nullable=False)
     pipeline = relationship('Pipeline')
     date = Column(DateTime, nullable=False)
     reason = Column(String, nullable=False)
@@ -104,9 +112,9 @@ class Run(Base):
 class Input(Base):
     __tablename__ = 'inputs'
 
-    run_id = Column(String, ForeignKey('runs.id'), primary_key=True)
+    run_id = Column(UUID, ForeignKey('runs.id'), primary_key=True)
     run = relationship('Run')
-    module_id = Column(String, ForeignKey('pipeline_modules.id'),
+    module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
                        primary_key=True)
     output_name = Column(String, primary_key=True, nullable=True)
     hash = Column(String, nullable=False)
@@ -115,9 +123,9 @@ class Input(Base):
 class Output(Base):
     __tablename__ = 'outputs'
 
-    run_id = Column(String, ForeignKey('runs.id'), primary_key=True)
+    run_id = Column(UUID, ForeignKey('runs.id'), primary_key=True)
     run = relationship('Run')
-    module_id = Column(String, ForeignKey('pipeline_modules.id'),
+    module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
                        primary_key=True)
     output_name = Column(String, primary_key=True, nullable=True)
     hash = Column(String, nullable=False)
@@ -143,6 +151,10 @@ def connect(url=None):
             raise EnvironmentError("No SQL database selected; please set "
                                    "SQLITE_FILE or POSTGRES_HOST")
     engine = create_engine(url, echo=False)
+
+    if not engine.dialect.has_table(engine.connect(), 'pipelines'):
+        logger.warning("The tables don't seem to exist; creating")
+        Base.metadata.create_all(bind=engine)
 
     return engine, scoped_session(sessionmaker(bind=engine,
                                                autocommit=False,
