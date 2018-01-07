@@ -20,6 +20,14 @@ logger = logging.getLogger(__name__)
 Base = declarative_base()
 
 
+class Module(Base):
+    __tablename__ = 'modules'
+
+    package = Column(String, primary_key=True)
+    version = Column(String, primary_key=True)
+    name = Column(String, primary_key=True)
+
+
 class Pipeline(Base):
     __tablename__ = 'pipelines'
 
@@ -28,6 +36,8 @@ class Pipeline(Base):
     created_date = Column(DateTime, nullable=False,
                           server_default=functions.now())
     task = Column(String, nullable=True)
+    parameters = relationship('PipelineParameter', lazy='joined')
+    runs = relationship('Run')
 
 
 class PipelineModule(Base):
@@ -37,15 +47,13 @@ class PipelineModule(Base):
     package = Column(String, ForeignKey('modules.package'), nullable=False)
     version = Column(String, ForeignKey('modules.version'), nullable=False)
     module_name = Column(String, ForeignKey('modules.name'), nullable=False)
-    module = relationship('Module')
-
-
-class Module(Base):
-    __tablename__ = 'modules'
-
-    package = Column(String, primary_key=True)
-    version = Column(String, primary_key=True)
-    name = Column(String, primary_key=True)
+    module = relationship('Module', lazy='joined')
+    connections_from = relationship(
+        'PipelineConnection',
+        remote_side='pipeline_connections.from_module')
+    connections_to = relationship(
+        'PipelineConnection',
+        remote_side='pipeline_connections.to_module')
 
 
 class PipelineConnection(Base):
@@ -54,14 +62,14 @@ class PipelineConnection(Base):
     from_module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
                             primary_key=True)
     from_output_name = Column(String, primary_key=True)
-    from_module = relationship('Module', foreign_keys=['from_module_id',
-                                                       'from_output_name'])
+    from_module = relationship('PipelineModule',
+                               foreign_keys=['from_module_id'])
 
     to_module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
                           primary_key=True)
     to_input_name = Column(String, primary_key=True)
-    to_module = relationship('Module', foreign_keys=['to_module_id',
-                                                     'to_input_name'])
+    to_module = relationship('PipelineModule',
+                             foreign_keys=['to_module_id'])
 
 
 class PipelineParameter(Base):
@@ -71,6 +79,7 @@ class PipelineParameter(Base):
                        primary_key=True)
     name = Column(String, primary_key=True)
     value = Column(String, nullable=True)
+    module = relationship('PipelineModule', lazy='joined')
 
 
 class CrossValidation(Base):
@@ -80,6 +89,7 @@ class CrossValidation(Base):
     pipeline_id = Column(UUID, ForeignKey('pipelines.id'), nullable=False)
     pipeline = relationship('Pipeline')
     date = Column(DateTime, nullable=False)
+    scores = relationship('CrossValidationScore', lazy='joined')
 
 
 class CrossValidationScore(Base):
@@ -87,7 +97,7 @@ class CrossValidationScore(Base):
 
     cross_validation_id = Column(UUID, ForeignKey('cross_validations.id'),
                                  primary_key=True)
-    cross_validation = relationship('CrossValidation', backref='scores')
+    cross_validation = relationship('CrossValidation')
     metric = Column(String, primary_key=True)
     value = Column(Float, nullable=False)
 
@@ -107,6 +117,8 @@ class Run(Base):
     reason = Column(String, nullable=False)
     type = Column(Enum(RunType))
     special = Column(Boolean, nullable=False, default=False)
+    inputs = relationship('Input')
+    outputs = relationship('Output')
 
 
 class Input(Base):
@@ -127,6 +139,7 @@ class Output(Base):
     run = relationship('Run')
     module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
                        primary_key=True)
+    module = relationship('PipelineModule')
     output_name = Column(String, primary_key=True, nullable=True)
     hash = Column(String, nullable=False)
 
