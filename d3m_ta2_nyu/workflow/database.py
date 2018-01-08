@@ -4,9 +4,9 @@
 import enum
 import logging
 import os
-from sqlalchemy import Column, ForeignKey, create_engine
+from sqlalchemy import Column, ForeignKey, create_engine, func, not_, select
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, scoped_session, sessionmaker
+from sqlalchemy.orm import column_property, relationship, sessionmaker
 from sqlalchemy.sql import functions
 from sqlalchemy.types import Boolean, DateTime, Enum, Float, String
 import uuid
@@ -37,6 +37,8 @@ class Pipeline(Base):
                           server_default=functions.now())
     task = Column(String, nullable=True)
     parameters = relationship('PipelineParameter', lazy='joined')
+    modules = relationship('PipelineModule')
+    connections = relationship('PipelineConnection')
     runs = relationship('Run')
 
 
@@ -44,6 +46,8 @@ class PipelineModule(Base):
     __tablename__ = 'pipeline_modules'
 
     id = Column(UUID, primary_key=True, default=uuid.uuid4)
+    pipeline_id = Column(UUID, ForeignKey('pipelines.id'))
+    pipeline = relationship(Pipeline)
     package = Column(String, ForeignKey('modules.package'), nullable=False)
     version = Column(String, ForeignKey('modules.version'), nullable=False)
     module_name = Column(String, ForeignKey('modules.name'), nullable=False)
@@ -61,15 +65,15 @@ class PipelineConnection(Base):
 
     from_module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
                             primary_key=True)
-    from_output_name = Column(String, primary_key=True)
     from_module = relationship('PipelineModule',
                                foreign_keys=['from_module_id'])
+    from_output_name = Column(String, primary_key=True)
 
     to_module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
                           primary_key=True)
-    to_input_name = Column(String, primary_key=True)
     to_module = relationship('PipelineModule',
                              foreign_keys=['to_module_id'])
+    to_input_name = Column(String, primary_key=True)
 
 
 class PipelineParameter(Base):
@@ -144,6 +148,17 @@ class Output(Base):
     hash = Column(String, nullable=False)
 
 
+# Trained true iff there's a Run with special=False and type=TRAINING
+Pipeline.trained = column_property(
+    select(
+        [func.count(Run.id)]
+    ).where((Run.pipeline_id == Pipeline.id) &
+            (not_(Run.special)) &
+            (Run.type == RunType.TRAINING))
+    .as_scalar() != 0
+)
+
+
 def connect(url=None):
     """Connect to the database using an environment variable.
     """
@@ -169,6 +184,6 @@ def connect(url=None):
         logger.warning("The tables don't seem to exist; creating")
         Base.metadata.create_all(bind=engine)
 
-    return engine, scoped_session(sessionmaker(bind=engine,
-                                               autocommit=False,
-                                               autoflush=False))
+    return engine, sessionmaker(bind=engine,
+                                autocommit=False,
+                                autoflush=False)

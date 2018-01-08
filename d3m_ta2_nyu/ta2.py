@@ -12,13 +12,15 @@ import multiprocessing
 import os
 from queue import Empty, Queue
 import shutil
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 import stat
 import sys
 import threading
 import time
+import uuid
 
-from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
-    TASKS_FROM_SCHEMA
+from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, TASKS_FROM_SCHEMA
 from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
@@ -28,10 +30,13 @@ from d3m_ta2_nyu.utils import Observable
 from d3m_ta2_nyu.workflow import database
 
 
+MAX_RUNNING_PROCESSES = 2
+
+
 logger = logging.getLogger(__name__)
 
 
-engine, db_session = database.connect()
+engine, DBSession = database.connect()
 
 
 class Session(Observable):
@@ -39,72 +44,62 @@ class Session(Observable):
 
     This is a TA3 session in which pipelines are created.
     """
-    def __init__(self, id, logs_dir, problem_id):
+    def __init__(self, logs_dir, problem_id):
         Observable.__init__(self)
-        self.id = id
+        self.id = uuid.uuid4()
         self._logs_dir = logs_dir
         self._problem_id = problem_id
-        self.pipelines = {}
+        self.pipelines = set()
         self.training = False
         self.pipelines_training = set()
+        self.metric = None
 
     def check_status(self):
         if self.training and not self.pipelines_training:
             self.training = False
             logger.info("Session %s: training done", self.id)
 
-            # Rank pipelines
-            pipelines = [pipeline for pipeline in self.pipelines.values()
-                         if pipeline.trained]
-            metric = None
-            for pipeline in pipelines:
-                if pipeline.metrics:
-                    metric = pipeline.metrics[0]
-                    break
-            if metric:
-                logger.info("Ranking %d pipelines using %s...",
-                            len(pipelines), metric)
-                def rank(pipeline):
-                    order = SCORES_RANKING_ORDER[metric]
-                    if metric not in pipeline.scores:
-                        return 9.0e99
-                    return pipeline.scores.get(metric, 0) * order
-                for i, pipeline in enumerate(sorted(pipelines, key=rank)):
-                    pipeline.rank = i + 1
-                    logger.info("  %d: %s", i + 1, pipeline.id)
-
             self.write_logs()
             self.notify('done_training')
 
     def write_logs(self):
+        if self.metric is None:
+            logger.error("Can't write logs for session, metric is not set!")
+            return
+
         written = 0
-        for pipeline in self.pipelines.values():
-            if not pipeline.trained:
-                continue
-            filename = os.path.join(self._logs_dir, pipeline.id + '.json')
-            obj = {
-                'problem_id': self._problem_id,
-                'pipeline_rank': pipeline.rank,
-                'name': pipeline.id,
-                'primitives': pipeline.primitives,
-            }
-            with open(filename, 'w') as fp:
-                json.dump(obj, fp)
-            written += 1
-        logger.info("Wrote %d log files", written)
-
-
-class Pipeline(object):
-    trained = False
-    metrics = []
-
-    def __init__(self, primitives=None):
-        self.id = name()
-        self.scores = {}
-        self.rank = 0
-        self.primitives = []
-        if primitives is not None:
-            self.primitives = list(primitives)
+        db = DBSession()
+        try:
+            q = (
+                db.query(database.CrossValidation)
+                .options(joinedload(database.CrossValidation.pipeline),
+                         joinedload(database.Pipeline.modules))
+                .filter(database.Pipeline.id.in_(self.pipelines))
+                .filter(database.Pipeline.trained != 0)
+                .order_by(
+                    select([database.CrossValidationScore.value])
+                    .where(database.CrossValidationScore.cross_validation_id ==
+                           database.CrossValidation.id)
+                    .where(database.CrossValidationScore.metric == self.metric)
+                    .as_scalar()
+                    .desc()
+                )
+            ).all()
+            for i, crossval in enumerate(q):
+                pipeline = crossval.pipeline
+                filename = os.path.join(self._logs_dir, pipeline.id + '.json')
+                obj = {
+                    'problem_id': self._problem_id,
+                    'pipeline_rank': i + 1,
+                    'name': pipeline.id,
+                    'primitives': [module.module_name
+                                   for module in pipeline.modules],
+                }
+                with open(filename, 'w') as fp:
+                    json.dump(obj, fp)
+                written += 1
+        finally:
+            db.close()
 
 
 class D3mTa2(object):
@@ -131,10 +126,10 @@ class D3mTa2(object):
         if self.executables_root and not os.path.exists(self.executables_root):
             os.makedirs(self.executables_root)
         self.sessions = {}
-        self._next_session = 0
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
         self._run_queue = Queue()
-        self._run_thread = threading.Thread(target=self._pipeline_running_thread)
+        self._run_thread = threading.Thread(
+            target=self._pipeline_running_thread)
         self._run_thread.setDaemon(True)
         self._run_thread.start()
 
@@ -167,7 +162,8 @@ class D3mTa2(object):
                     dataset, task, metric)
 
         # Create pipelines
-        session = Session('commandline', self.logs_root, self.problem_id)
+        session = Session(self.logs_root, self.problem_id)
+        session.metric = metric
         self.sessions[session.id] = session
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
@@ -176,13 +172,23 @@ class D3mTa2(object):
             while queue.get(True)[0] != 'done_training':
                 pass
 
-        logger.info("Generated %d pipelines",
-                    sum(1 for pipeline in session.pipelines.values()
-                        if pipeline.trained))
+        db = DBSession()
+        try:
+            pipelines = (
+                db.query(database.Pipeline)
+                .filter(database.Pipeline.trained)
+                .options(joinedload(database.Pipeline.modules),
+                         joinedload(database.Pipeline.connections))
+            ).all()
 
-        for pipeline in session.pipelines.values():
-            if pipeline.trained:
-                self.write_executable(pipeline)
+            logger.info("Generated %d pipelines",
+                        len(pipelines))
+
+            for pipeline in pipelines:
+                if pipeline.trained:
+                    self.write_executable(pipeline)
+        finally:
+            db.close()
 
     def run_test(self, dataset, pipeline_id, results_path):
         vt_file = os.path.join(self.storage,
@@ -211,11 +217,9 @@ class D3mTa2(object):
             time.sleep(60)
 
     def new_session(self):
-        session = '%d' % self._next_session
-        self._next_session += 1
-        self.sessions[session] = Session(session,
-                                         self.logs_root, self.problem_id)
-        return session
+        session = Session(self.logs_root, self.problem_id)
+        self.sessions[session.id] = session
+        return session.id
 
     def finish_session(self, session_id):
         session = self.sessions.pop(session_id)
@@ -225,24 +229,36 @@ class D3mTa2(object):
         if pipeline_id not in self.sessions[session_id].pipelines:
             raise KeyError("No such pipeline ID for session")
 
-        filename = os.path.join(self.storage,
-                                'workflows',
-                                pipeline_id + '.vt')
-
-        # copied from VistrailsApplicationInterface#open_vistrail()
-        locator = BaseLocator.from_url(filename)
-        loaded_objs = vistrails.core.db.io.load_vistrail(locator)
-        controller = VistrailController(loaded_objs[0], locator,
-                                        *loaded_objs[1:])
-        controller.select_latest_version()
-        return controller
+        db = DBSession()
+        try:
+            return (
+                db.query(database.Pipeline)
+                .filter(database.Pipeline.id == pipeline_id)
+                .options(joinedload(database.Pipeline.modules),
+                         joinedload(database.Pipeline.connections))
+            ).one_or_none()
+        finally:
+            db.close()
 
     def build_pipelines(self, session_id, task, dataset, metrics):
+        if not metrics:
+            raise ValueError("no metrics")
         self.executor.submit(self._build_pipelines,
                              session_id, task, dataset, metrics)
 
+    # Runs in a worker thread from executor
     def _build_pipelines(self, session_id, task, dataset, metrics):
         session = self.sessions[session_id]
+        with session.lock:
+            if session.metric != metrics[0]:
+                if session.metric is not None:
+                    old = 'from %s ' % session.metric
+                else:
+                    old = ''
+                session.metric = metrics[0]
+                logger.info("Set metric to %s %s(for session %s)",
+                            metrics[0], old, session_id)
+
         logger.info("Creating pipelines...")
         session.training = True
         for template in self.TEMPLATES.get(task, []):
@@ -253,40 +269,31 @@ class D3mTa2(object):
             else:
                 tpl_func = template
             try:
-                pipeline = self._build_pipeline_from_template(session,
-                                                              tpl_func)
-                pipeline.metrics = metrics
+                pipeline_id = self._build_pipeline_from_template(session,
+                                                                 tpl_func)
             except Exception:
                 logger.exception("Error building pipeline from %r",
                                  template)
             else:
-                logger.info("Created pipeline %s", pipeline.id)
-                session.pipelines_training.add(pipeline.id)
-                self._run_queue.put((session, pipeline, dataset))
+                logger.info("Created pipeline %s", pipeline_id)
+                session.pipelines_training.add(pipeline_id)
+                self._run_queue.put((session, pipeline_id, dataset))
         logger.info("Pipeline creation completed")
         session.check_status()
 
     def _build_pipeline_from_template(self, session, template):
         # Create workflow from a template
-        controller, pipeline = template(self)
+        pipeline = template(self)
 
-        # Save it to disk
-        locator = BaseLocator.from_url(os.path.join(self.storage,
-                                                    'workflows',
-                                                    pipeline.id + '.vt'))
-        controller.flush_delayed_actions()
-        controller.write_vistrail(locator)
-
-        # Add it to the database
+        # Add it to the session
         with session.lock:
-            session.pipelines[pipeline.id] = pipeline
+            session.pipelines.add(pipeline.id)
         session.notify('new_pipeline', pipeline_id=pipeline.id)
 
-        return pipeline
+        return pipeline.id
 
     # Runs in a background thread
     def _pipeline_running_thread(self):
-        MAX_RUNNING_PROCESSES = 2
         running_pipelines = {}
         msg_queue = multiprocessing.Queue()
         while True:
@@ -301,7 +308,8 @@ class D3mTa2(object):
                         session.notify('training_success',
                                        pipeline_id=pipeline.id)
                     else:
-                        session.notify('training_error', pipeline_id=pipeline.id)
+                        session.notify('training_error',
+                                       pipeline_id=pipeline.id)
                     session.pipelines_training.discard(pipeline.id)
                     session.check_status()
                     remove.append(pipeline.id)
@@ -363,28 +371,6 @@ class D3mTa2(object):
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
 
-    def _new_controller(self):
-        # Copied from VistrailsApplicationInterface#open_vistrail()
-        locator = UntitledLocator()
-        loaded_objs = vistrails.core.db.io.load_vistrail(locator)
-        controller = VistrailController(loaded_objs[0], locator,
-                                        *loaded_objs[1:])
-        controller.select_latest_version()
-        return controller
-
-    def _load_template(self, name):
-        # Copied from VistrailsApplicationInterface#open_vistrail()
-        locator = BaseLocator.from_url(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         '..',
-                         'pipelines',
-                         name))
-        loaded_objs = vistrails.core.db.io.load_vistrail(locator)
-        controller = VistrailController(loaded_objs[0], locator,
-                                        *loaded_objs[1:])
-        controller.select_latest_version()
-        return controller
-
     @staticmethod
     def _replace_module(controller, ops, old_module_id, new_module):
         ops.append(('add', new_module))
@@ -424,38 +410,51 @@ class D3mTa2(object):
                     return module
         return None
 
-    def _classification_template(self, classifier_name, primitive):
-        from vistrails.core.modules.utils import parse_descriptor_string
+    @staticmethod
+    def _classification_template(classifier):
+        db = DBSession()
 
-        controller = self._load_template('classification.xml')
-        ops = []
+        pipeline = database.Pipeline()
 
-        # Replace the classifier module
-        module = self._get_module(controller.current_pipeline, 'Classifier')
-        if module is None:
-            raise ValueError("Couldn't find Classifier module in "
-                             "classification template")
+        def make_module(package, version, name):
+            module = (
+                db.query(database.Module)
+                .filter(database.Module.package == package)
+                .filter(database.Module.version == version)
+                .filter(database.Module.name == name)
+            ).one()
+            if module is None:
+                module = database.Module(package=package,
+                                         version=version,
+                                         name=name)
+            pipeline_module = database.PipelineModule(module=module,
+                                                      pipeline=pipeline)
+            db.add(pipeline_module)
+            return pipeline_module
 
-        mod_identifier, mod_name, mod_namespace = parse_descriptor_string(
-            classifier_name,
-            'org.vistrails.vistrails.sklearn')
-        new_module = controller.create_module(
-            mod_identifier,
-            mod_name,
-            namespace=mod_namespace)
-        self._replace_module(controller, ops,
-                             module.id, new_module)
+        def connect(from_module, to_module,
+                    from_output='data', to_input='data'):
+            db.add(database.PipelineConnection(from_module=from_module,
+                                               to_module=to_module,
+                                               from_output_name=from_output,
+                                               to_input_name=to_input))
 
-        primitives = [
-            'dsbox.datapreprocessing.cleaner.Encoder',
-            'dsbox.datapreprocessing.cleaner.Imputation'
-        ] + [primitive]
+        try:
+            data = make_module('data', '0.0', 'load_dataset')
+            imputer = make_module('primitives', '0.0', 'imputer')
+            encoder = make_module('primitives', '0.0', 'encoder')
+            classifier = make_module('sklearn-builtin', '0.0', classifier)
 
-        action = create_action(ops)
-        controller.add_new_action(action)
-        version = controller.perform_action(action)
-        controller.change_selected_version(version)
-        return controller, Pipeline(primitives)
+            connect(data, imputer)
+            connect(imputer, encoder)
+            connect(encoder, classifier)
+
+            db.add(pipeline)
+            db.commit()
+        finally:
+            db.close()
+
+        return pipeline
 
     TEMPLATES = {
         'CLASSIFICATION': [

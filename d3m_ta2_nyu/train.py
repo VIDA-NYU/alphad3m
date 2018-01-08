@@ -2,12 +2,6 @@ import logging
 import numpy
 import sys
 import time
-import vistrails.core.db.io
-from vistrails.core.db.locator import BaseLocator
-from vistrails.core.interpreter.default import get_default_interpreter
-from vistrails.core.modules.module_registry import get_module_registry
-from vistrails.core.utils import DummyView
-from vistrails.core.vistrail.controller import VistrailController
 
 from d3m_ta2_nyu.common import SCORES_TO_SKLEARN, read_dataset
 
