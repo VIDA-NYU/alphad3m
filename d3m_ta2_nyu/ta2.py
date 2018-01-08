@@ -185,8 +185,7 @@ class D3mTa2(object):
                         len(pipelines))
 
             for pipeline in pipelines:
-                if pipeline.trained:
-                    self.write_executable(pipeline)
+                self.write_executable(pipeline)
         finally:
             db.close()
 
