@@ -1,4 +1,5 @@
 import importlib
+import pickle
 
 
 def get_class(name):
@@ -15,16 +16,15 @@ def _targets(*, global_inputs):
 
 
 def _sklearn_wrapper(klass):
-    def wrapper(*, module_inputs, global_inputs, interpreter):
+    def wrapper(*, module_inputs, global_inputs):
         if global_inputs['run_type'] == 'train':
             # Create the classifier
             classifier = klass()
             # Train it
             classifier.fit(module_inputs['data'], module_inputs['targets'])
-            # TODO: save trained object
+            return {'classifier': pickle.dumps(classifier)}
         elif global_inputs['run_type'] == 'test':
-            # TODO: load trained object
-            classifier = None
+            classifier = pickle.loads(module_inputs['classifier'])
             # Transform data
             predictions = classifier.predict(module_inputs['data'])
             return {'predictions': predictions}
@@ -34,32 +34,58 @@ def _sklearn_wrapper(klass):
     return wrapper
 
 
-def _primitive_wrapper(klass):
-    def wrapper(*, module_inputs, global_inputs, interpreter):
+def _persisted_primitive_wrapper(klass):
+    def wrapper(*, module_inputs, global_inputs):
+        # Find the hyperparams class
+        import typing
+        hyperparams_class = typing.get_type_hints(klass.__init__)['hyperparams']
+
         if global_inputs['run_type'] == 'train':
-            # Find the hyperparams class
-            import typing
-            hp_class = typing.get_type_hints(klass.__init__)['hyperparams']
             # Create the primitive with default hyperparams
-            hp = hp_class.defaults()
-            primitive = klass(hyperparams=hp)
+            hyperparams = hyperparams_class.defaults()
+            primitive = klass(hyperparams=hyperparams)
             # Train the primitive
             primitive.set_training_data(inputs=module_inputs['data'])
             primitive.fit()
-            # TODO: save trained primitive
             # Transform data
             results = primitive.produce(inputs=module_inputs['data'])
             assert results.has_finished
-            return {'data': results.value}
+
+            # Break down the primitive into pickleable structures
+            hyperparams = dict(primitive.hyperparams)
+            params = primitive.get_params()
+
+            return {'data': results.value,
+                    'primitive_hyperparams': pickle.dumps(hyperparams),
+                    'primitive_params': pickle.dumps(params)}
         elif global_inputs['run_type'] == 'test':
-            # TODO: load trained primitive
-            primitive = None
+            # Load back the primitive
+            hyperparams = pickle.loads(module_inputs['primitive_hyperparams'])
+            params = pickle.loads(module_inputs['primitive_params'])
+            primitive = klass(hyperparams=hyperparams_class(hyperparams))
+            primitive.set_params(params)
             # Transform data
             results = primitive.produce(inputs=module_inputs['data'])
             assert results.has_finished
             return {'data': results.value}
         else:
             raise ValueError("Global 'run_type' not set")
+
+    return wrapper
+
+
+def _simple_primitive_wrapper(klass):
+    def wrapper(*, module_inputs):
+        # Find the hyperparams class
+        import typing
+        hp_class = typing.get_type_hints(klass.__init__)['hyperparams']
+        # Create the primitive with default hyperparams
+        hp = hp_class.defaults()
+        primitive = klass(hyperparams=hp)
+        # Transform data
+        results = primitive.produce(inputs=module_inputs['data'])
+        assert results.has_finished
+        return {'data': results.value}
 
     return wrapper
 
@@ -70,8 +96,13 @@ def _loader_sklearn(module):
 
 
 def _loader_primitives(module):
+    from primitive_interfaces.transformer import TransformerPrimitiveBase
+
     klass = get_class(module.name)
-    return _primitive_wrapper(klass)
+    if issubclass(klass, TransformerPrimitiveBase):
+        return _simple_primitive_wrapper(klass)
+    else:
+        return _persisted_primitive_wrapper(klass)
 
 
 _loaders = {'sklearn-builtin': _loader_sklearn,

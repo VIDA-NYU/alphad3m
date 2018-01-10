@@ -78,5 +78,9 @@ def execute_workflow(DBSession, pipeline_id, module_loader, reason,
                 raise RuntimeError("Couldn't execute every module")
             for mod_id in executed:
                 to_execute.remove(mod_id)
+
+        # TODO: record input and output
+
+        db.commit()
     finally:
         db.close()
