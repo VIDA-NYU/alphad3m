@@ -400,7 +400,8 @@ class D3mTa2(object):
                                                to_input_name=to_input))
 
         try:
-            data = make_module('data', '0.0', 'load_dataset')
+            data = make_module('data', '0.0', 'data')
+            targets = make_module('data', '0.0', 'targets')
             imputer = make_module('primitives', '0.0', 'imputer')
             encoder = make_module('primitives', '0.0', 'encoder')
             classifier = make_module('sklearn-builtin', '0.0', classifier)
@@ -408,6 +409,7 @@ class D3mTa2(object):
             connect(data, imputer)
             connect(imputer, encoder)
             connect(encoder, classifier)
+            connect(targets, classifier, 'targets', 'targets')
 
             db.add(pipeline)
             db.commit()

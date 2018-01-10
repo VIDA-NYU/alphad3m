@@ -107,7 +107,7 @@ class CrossValidationScore(Base):
 
 
 class RunType(enum.Enum):
-    TRAINING = 1
+    TRAIN = 1
     TEST = 2
 
 
