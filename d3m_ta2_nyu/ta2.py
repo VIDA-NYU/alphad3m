@@ -36,15 +36,12 @@ MAX_RUNNING_PROCESSES = 2
 logger = logging.getLogger(__name__)
 
 
-engine, DBSession = database.connect()
-
-
 class Session(Observable):
     """A session, in the GRPC meaning.
 
     This is a TA3 session in which pipelines are created.
     """
-    def __init__(self, logs_dir, problem_id):
+    def __init__(self, logs_dir, problem_id, DBSession):
         Observable.__init__(self)
         self.id = uuid.uuid4()
         self._logs_dir = logs_dir
@@ -53,6 +50,7 @@ class Session(Observable):
         self.training = False
         self.pipelines_training = set()
         self.metric = None
+        self.DBSession = DBSession
 
     def check_status(self):
         if self.training and not self.pipelines_training:
@@ -68,7 +66,7 @@ class Session(Observable):
             return
 
         written = 0
-        db = DBSession()
+        db = self.DBSession()
         try:
             q = (
                 db.query(database.CrossValidation)
@@ -125,6 +123,9 @@ class D3mTa2(object):
             self.executables_root = None
         if self.executables_root and not os.path.exists(self.executables_root):
             os.makedirs(self.executables_root)
+
+        self.dbengine, self.DBSession = database.connect()
+
         self.sessions = {}
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
         self._run_queue = Queue()
@@ -162,7 +163,7 @@ class D3mTa2(object):
                     dataset, task, metric)
 
         # Create pipelines
-        session = Session(self.logs_root, self.problem_id)
+        session = Session(self.logs_root, self.problem_id, self.DBSession)
         session.metric = metric
         self.sessions[session.id] = session
         queue = Queue()
@@ -172,7 +173,7 @@ class D3mTa2(object):
             while queue.get(True)[0] != 'done_training':
                 pass
 
-        db = DBSession()
+        db = self.DBSession()
         try:
             pipelines = (
                 db.query(database.Pipeline)
@@ -216,7 +217,7 @@ class D3mTa2(object):
             time.sleep(60)
 
     def new_session(self):
-        session = Session(self.logs_root, self.problem_id)
+        session = Session(self.logs_root, self.problem_id, self.DBSession)
         self.sessions[session.id] = session
         return session.id
 
@@ -228,7 +229,7 @@ class D3mTa2(object):
         if pipeline_id not in self.sessions[session_id].pipelines:
             raise KeyError("No such pipeline ID for session")
 
-        db = DBSession()
+        db = self.DBSession()
         try:
             return (
                 db.query(database.Pipeline)
@@ -370,9 +371,8 @@ class D3mTa2(object):
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
 
-    @staticmethod
-    def _classification_template(classifier):
-        db = DBSession()
+    def _classification_template(self, classifier):
+        db = self.DBSession()
 
         pipeline = database.Pipeline()
 
