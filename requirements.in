@@ -1,5 +1,10 @@
--e git+https://gitlab.com/datadrivendiscovery/metadata.git@602ad963b1602ac8b3f0e50b7b093c3ef3101f65#egg=d3m_types
--e git+https://gitlab.com/datadrivendiscovery/primitive-interfaces.git@c4601750f2f999ee9b234a17dd948f7ef2271fca#egg=primitive_interfaces
--e git+https://gitlab.com/datadrivendiscovery/d3m.git@3e1b8b96295de6f671004dad99dfb57c42e2f223#egg=d3m
--e git+https://gitlab.com/datadrivendiscovery/common-primitives.git@617e116a4e0a839df4b049c3cb48dfff14d2a8b8#egg=common_primitives
+-e git+https://github.com/Stewori/pytypes.git@3fb6266b5fbdd6913f92357c36ec478f02812644#egg=pytypes-1.0b3.post11
+-e git+https://gitlab.com/datadrivendiscovery/metadata.git@de9d3dea0fffb1040c423bb1f84b15d15c1476e8#egg=d3m_metadata
+-e git+https://gitlab.com/datadrivendiscovery/primitive-interfaces.git@d900bbf93747f0dc6fa3f0116a9a041d6a506b43#egg=primitive_interfaces
+-e git+https://gitlab.com/datadrivendiscovery/d3m.git@9e4cd16dcac2d06894e201ba7384b82a42bf81eb#egg=d3m
+#-e git+https://gitlab.com/datadrivendiscovery/common-primitives.git@617e116a4e0a839df4b049c3cb48dfff14d2a8b8#egg=common_primitives
 -e git+https://github.com/byu-dml/metalearn.git@e7f3ee28437141ef86bcabf93366c7b41e0cec6d#egg=metalearn
+tensorflow
+keras
+-e git+https://github.com/usc-isi-i2/dsbox-cleaning.git@bb6cbf6864215b07c040ac2c42cb1101ee4bc9a9#egg=dsbox-datacleaning
+ipykernel
