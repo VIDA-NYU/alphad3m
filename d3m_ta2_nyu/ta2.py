@@ -402,8 +402,12 @@ class D3mTa2(object):
         try:
             data = make_module('data', '0.0', 'data')
             targets = make_module('data', '0.0', 'targets')
-            imputer = make_module('primitives', '0.0', 'imputer')
-            encoder = make_module('primitives', '0.0', 'encoder')
+            imputer = make_module(
+                'primitives', '0.0',
+                'dsbox.datapreprocessing.cleaner.KnnImputation')
+            encoder = make_module(
+                'primitives', '0.0',
+                'dsbox.datapreprocessing.cleaner.Encoder')
             classifier = make_module('sklearn-builtin', '0.0', classifier)
 
             connect(data, imputer)
