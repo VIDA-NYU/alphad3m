@@ -12,10 +12,12 @@ def _data(*, global_inputs):
 
 
 def _targets(*, global_inputs):
-    return global_inputs['targets']
+    return global_inputs.get('targets')
 
 
-def _sklearn_wrapper(klass):
+def _sklearn(module):
+    klass = get_class(module.name)
+
     def wrapper(*, module_inputs, global_inputs):
         if global_inputs['run_type'] == 'train':
             # Create the classifier
@@ -34,7 +36,7 @@ def _sklearn_wrapper(klass):
     return wrapper
 
 
-def _persisted_primitive_wrapper(klass):
+def _persisted_primitive(klass):
     def wrapper(*, module_inputs, global_inputs):
         # Find the hyperparams class
         import typing
@@ -74,7 +76,7 @@ def _persisted_primitive_wrapper(klass):
     return wrapper
 
 
-def _simple_primitive_wrapper(klass):
+def _simple_primitive(klass):
     def wrapper(*, module_inputs):
         # Find the hyperparams class
         import typing
@@ -90,22 +92,17 @@ def _simple_primitive_wrapper(klass):
     return wrapper
 
 
-def _loader_sklearn(module):
-    klass = get_class(module.name)
-    return _sklearn_wrapper(klass)
-
-
 def _loader_primitives(module):
     from primitive_interfaces.transformer import TransformerPrimitiveBase
 
     klass = get_class(module.name)
     if issubclass(klass, TransformerPrimitiveBase):
-        return _simple_primitive_wrapper(klass)
+        return _simple_primitive(klass)
     else:
-        return _persisted_primitive_wrapper(klass)
+        return _persisted_primitive(klass)
 
 
-_loaders = {'sklearn-builtin': _loader_sklearn,
+_loaders = {'sklearn-builtin': _sklearn,
             'primitives': _loader_primitives,
             'data': {'data': _data, 'targets': _targets}.get}
 

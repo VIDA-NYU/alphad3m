@@ -10,32 +10,10 @@ from d3m_ta2_nyu.common import read_dataset
 logger = logging.getLogger(__name__)
 
 
-# FIXME: Duplicate code
-def get_module(pipeline, label):
-    for module in pipeline.module_list:
-        if '__desc__' in module.db_annotations_key_index:
-            name = module.get_annotation_by_key('__desc__').value
-            if name == label:
-                return module
-    return None
-
-
-def test(vt_file, dataset, persist_dir, results_path):
+def test(pipeline_id, dataset, results_path):
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
-
-    from userpackages.simple_persist import configuration as persist_config
-    from userpackages.simple_persist.init import Internal
-
-    # Load file
-    # Copied from VistrailsApplicationInterface#open_vistrail()
-    locator = BaseLocator.from_url(vt_file)
-    loaded_objs = vistrails.core.db.io.load_vistrail(locator)
-    controller = VistrailController(loaded_objs[0], locator,
-                                    *loaded_objs[1:])
-    controller.select_latest_version()
-    vt_pipeline = controller.current_pipeline.do_copy()
 
     # Load data
     try:

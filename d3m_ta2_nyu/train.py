@@ -9,17 +9,7 @@ from d3m_ta2_nyu.common import SCORES_TO_SKLEARN, read_dataset
 logger = logging.getLogger(__name__)
 
 
-# FIXME: Duplicate code
-def get_module(pipeline, label):
-    for module in pipeline.module_list:
-        if '__desc__' in module.db_annotations_key_index:
-            name = module.get_annotation_by_key('__desc__').value
-            if name == label:
-                return module
-    return None
-
-
-def train(vt_file, pipeline, dataset, persist_dir, msg_queue):
+def train(pipeline_id, metrics, dataset, msg_queue):
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
@@ -30,20 +20,6 @@ def train(vt_file, pipeline, dataset, persist_dir, msg_queue):
 
     logger.info("About to run training pipeline, file=%r, dataset=%r",
                 vt_file, dataset)
-
-    from userpackages.simple_persist import configuration as persist_config
-    from userpackages.simple_persist.init import Internal
-
-    interpreter = get_default_interpreter()
-
-    # Load file
-    # Copied from VistrailsApplicationInterface#open_vistrail()
-    locator = BaseLocator.from_url(vt_file)
-    loaded_objs = vistrails.core.db.io.load_vistrail(locator)
-    controller = VistrailController(loaded_objs[0], locator,
-                                    *loaded_objs[1:])
-    controller.select_latest_version()
-    vt_pipeline = controller.current_pipeline
 
     # Load data
     data = read_dataset(dataset)
@@ -60,7 +36,7 @@ def train(vt_file, pipeline, dataset, persist_dir, msg_queue):
     for i in range(FOLDS):
         logger.info("Scoring round %d/%d", i + 1, FOLDS)
 
-        msg_queue.put((pipeline.id, 'progress', (i + 1.0) / TOTAL_PROGRESS))
+        msg_queue.put((pipeline_id, 'progress', (i + 1.0) / TOTAL_PROGRESS))
 
         # Do the split
         random_sample = numpy.random.rand(len(data_frame)) < SPLIT_RATIO
@@ -112,7 +88,7 @@ def train(vt_file, pipeline, dataset, persist_dir, msg_queue):
         run_time = time.time() - start_time
 
         # Compute score
-        for metric in pipeline.metrics:
+        for metric in metrics:
             # Special case
             if metric == 'EXECUTION_TIME':
                 scores.setdefault(metric, []).append(run_time)
@@ -123,20 +99,17 @@ def train(vt_file, pipeline, dataset, persist_dir, msg_queue):
 
         interpreter.flush()
 
-    msg_queue.put((pipeline.id, 'progress', (FOLDS + 1.0) / TOTAL_PROGRESS))
+    msg_queue.put((pipeline_id, 'progress', (FOLDS + 1.0) / TOTAL_PROGRESS))
 
     # Aggregate results over the folds
     scores = dict((metric, numpy.mean(values))
                   for metric, values in scores.items())
-    msg_queue.put((pipeline.id, 'scores', scores))
+    msg_queue.put((pipeline_id, 'scores', scores))
 
     # Training step - run pipeline on full training_data,
     # sink = classifier-sink (the Persist downstream of the classifier),
     # Persist module set to write
     logger.info("Scoring done, running training on full data")
-
-    # Persist trained primitives
-    persist_config.file_store = persist_dir
 
     # Set input to Internal modules
     Internal.values = {
