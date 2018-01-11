@@ -3,30 +3,42 @@ import numpy
 import sys
 import time
 
-from d3m_ta2_nyu.common import SCORES_TO_SKLEARN, read_dataset
+from d3mds import D3MDS
+
+from d3m_ta2_nyu.common import SCORES_TO_SKLEARN
+from d3m_ta2_nyu.utils import with_db
+from d3m_ta2_nyu.workflow import database
+from d3m_ta2_nyu.workflow.execute import execute_train, execute_test
 
 
 logger = logging.getLogger(__name__)
 
 
-def train(pipeline_id, metrics, dataset, msg_queue):
+engine, DBSession = database.connect()
+
+
+FOLDS = 3
+SPLIT_RATIO = 0.25
+
+
+@with_db(DBSession)
+def train(pipeline_id, metrics, dataset, problem, msg_queue, db):
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
+    max_progress = FOLDS + 2.0
 
-    FOLDS = 3
-    SPLIT_RATIO = 0.25
-    TOTAL_PROGRESS = FOLDS + 2.0
-
-    logger.info("About to run training pipeline, file=%r, dataset=%r",
-                vt_file, dataset)
+    logger.info("About to run training pipeline, id=%s, dataset=%r",
+                pipeline_id, dataset)
 
     # Load data
-    data = read_dataset(dataset)
-    logger.info("Loaded dataset, columns: %r", data['trainData']['columns'])
+    ds = D3MDS(dataset, problem)
+    logger.info("Loaded dataset, columns: %r",
+                ", ".join(col['colName']
+                          for col in ds.dataset.get_learning_data_columns()))
 
-    data_frame = data['trainData']['frame']
-    targets = data['trainTargets']['list']
+    data = ds.get_train_data()
+    targets = ds.get_train_targets()
 
     # Scoring step - make folds, run them through the pipeline one by one
     # (set both training_data and test_data),
@@ -36,56 +48,40 @@ def train(pipeline_id, metrics, dataset, msg_queue):
     for i in range(FOLDS):
         logger.info("Scoring round %d/%d", i + 1, FOLDS)
 
-        msg_queue.put((pipeline_id, 'progress', (i + 1.0) / TOTAL_PROGRESS))
+        msg_queue.put((pipeline_id, 'progress', (i + 1.0) / max_progress))
 
         # Do the split
-        random_sample = numpy.random.rand(len(data_frame)) < SPLIT_RATIO
+        random_sample = numpy.random.rand(len(data)) < SPLIT_RATIO
 
-        train_data_split = data_frame[random_sample]
-        test_data_split = data_frame[~random_sample]
+        train_data_split = data[random_sample]
+        test_data_split = data[~random_sample]
 
         train_target_split = targets[random_sample]
         test_target_split = targets[~random_sample]
 
-        # Don't persist anything
-        persist_config.file_store = None
-
-        # Set input to Internal modules
-        Internal.values = {
-            get_module(vt_pipeline, 'training_data').id: train_data_split,
-            get_module(vt_pipeline, 'training_targets').id: train_target_split,
-            get_module(vt_pipeline, 'test_data').id: test_data_split,
-        }
-
-        # Select the sink
-        sinks = [get_module(vt_pipeline, 'test_targets').id]
-
         start_time = time.time()
 
-        results, changed = controller.execute_workflow_list([[
-            controller.locator,  # locator
-            controller.current_version,  # version
-            vt_pipeline,  # pipeline
-            DummyView(),  # view
-            None,  # custom_aliases
-            None,  # custom_params
-            "Scoring pipeline from d3m_ta2_nyu.train",  # reason
-            sinks,  # sinks
-            None,  # extra_info
-        ]])
-        result, = results
-
-        if result.errors:
-            logger.error("Errors running pipeline:\n%s",
-                         '\n'.join('%d: %s' % p
-                                   for p in result.errors.items()))
+        # Run training
+        try:
+            train_run, outputs = execute_train(
+                db, pipeline_id, train_data_split, train_target_split,
+                crossval=True)
+        except Exception:
+            logger.exception("Error runnin training on fold")
             sys.exit(1)
 
-        predicted_results = get_module(vt_pipeline, 'test_targets').id
-        predicted_results = result.objects[predicted_results]
-        predicted_results = predicted_results.get_input('InternalPipe')
+        # Run prediction
+        try:
+            test_run, outputs = execute_test(
+                db, pipeline_id, test_data_split,
+                crossval=True, from_training_run_id=train_run)
+        except Exception:
+            logger.exception("Error running testing on fold")
+            sys.exit(1)
 
         run_time = time.time() - start_time
+
+        predictions = next(iter(outputs.values()))
 
         # Compute score
         for metric in metrics:
@@ -95,11 +91,9 @@ def train(pipeline_id, metrics, dataset, msg_queue):
             else:
                 score_func = SCORES_TO_SKLEARN[metric]
                 scores.setdefault(metric, []).append(
-                    score_func(test_target_split, predicted_results))
+                    score_func(test_target_split, predictions))
 
-        interpreter.flush()
-
-    msg_queue.put((pipeline_id, 'progress', (FOLDS + 1.0) / TOTAL_PROGRESS))
+    msg_queue.put((pipeline_id, 'progress', (FOLDS + 1.0) / max_progress))
 
     # Aggregate results over the folds
     scores = dict((metric, numpy.mean(values))
@@ -111,36 +105,10 @@ def train(pipeline_id, metrics, dataset, msg_queue):
     # Persist module set to write
     logger.info("Scoring done, running training on full data")
 
-    # Set input to Internal modules
-    Internal.values = {
-        get_module(vt_pipeline, 'training_data').id: data_frame,
-        get_module(vt_pipeline, 'training_targets').id: targets,
-    }
-
-    # Select the sink: all the Persist modules
-    registry = get_module_registry()
-    descr = registry.get_descriptor_by_name('org.vistrails.vistrails.persist',
-                                            'Persist')
-    sinks = []
-    for module in vt_pipeline.module_list:
-        if module.module_descriptor == descr:
-            sinks.append(module.id)
-
-    results, changed = controller.execute_workflow_list([[
-        controller.locator,  # locator
-        controller.current_version,  # version
-        vt_pipeline,  # pipeline
-        DummyView(),  # view
-        None,  # custom_aliases
-        None,  # custom_params
-        "Training pipeline from d3m_ta2_nyu.train",  # reason
-        sinks,  # sinks
-        None,  # extra_info
-    ]])
-    result, = results
-
-    if result.errors:
-        logger.error("Errors running pipeline:\n%s",
-                     '\n'.join('%d: %s' % p
-                               for p in result.errors.items()))
+    try:
+        execute_train(db, pipeline_id, data, targets)
+    except Exception:
+        logger.exception("Error running training on full data")
         sys.exit(1)
+
+    db.commit()

@@ -4,7 +4,8 @@
 import enum
 import logging
 import os
-from sqlalchemy import Column, ForeignKey, create_engine, func, not_, select
+from sqlalchemy import Column, ForeignKey, create_engine, func, not_, select, \
+    Binary
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import column_property, relationship, sessionmaker
 from sqlalchemy.sql import functions
@@ -132,8 +133,9 @@ class Input(Base):
     run = relationship('Run')
     module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
                        primary_key=True)
-    output_name = Column(String, primary_key=True, nullable=True)
-    hash = Column(String, nullable=False)
+    module = relationship('PipelineModule')
+    input_name = Column(String, primary_key=True, nullable=True)
+    value = Column(Binary, nullable=False)
 
 
 class Output(Base):
@@ -145,7 +147,7 @@ class Output(Base):
                        primary_key=True)
     module = relationship('PipelineModule')
     output_name = Column(String, primary_key=True, nullable=True)
-    hash = Column(String, nullable=False)
+    value = Column(Binary, nullable=False)
 
 
 # Trained true iff there's a Run with special=False and type=TRAINING
