@@ -96,12 +96,13 @@ def train(pipeline_id, metrics, dataset, problem, msg_queue, db):
     msg_queue.put((pipeline_id, 'progress', (FOLDS + 1.0) / max_progress))
 
     # Aggregate results over the folds
-    scores = dict((metric, numpy.mean(values))
-                  for metric, values in scores.items())
-    msg_queue.put((pipeline_id, 'scores', scores))
+    scores = [database.CrossValidationScore(metric=metric,
+                                            value=numpy.mean(values))
+              for metric, values in scores.items()]
+    crossval = database.CrossValidation(pipeline_id=pipeline_id, scores=scores)
+    db.add(crossval)
 
     # Training step - run pipeline on full training_data,
-    # sink = classifier-sink (the Persist downstream of the classifier),
     # Persist module set to write
     logger.info("Scoring done, running training on full data")
 

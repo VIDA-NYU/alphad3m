@@ -299,59 +299,49 @@ class D3mTa2(object):
         while True:
             # Wait for a process to be done
             remove = []
-            for session, pipeline, proc in running_pipelines.values():
+            for pipeline_id, (session, proc) in running_pipelines.items():
                 if not proc.is_alive():
-                    logger.info("Pipeline training process done, returned %d",
-                                proc.exitcode)
+                    logger.info("Pipeline training process done, returned %d "
+                                "(pipeline: %s)",
+                                proc.exitcode, pipeline_id)
                     if proc.exitcode == 0:
-                        pipeline.trained = True
                         session.notify('training_success',
-                                       pipeline_id=pipeline.id)
+                                       pipeline_id=pipeline_id)
                     else:
                         session.notify('training_error',
-                                       pipeline_id=pipeline.id)
-                    session.pipelines_training.discard(pipeline.id)
+                                       pipeline_id=pipeline_id)
+                    session.pipelines_training.discard(pipeline_id)
                     session.check_status()
-                    remove.append(pipeline.id)
+                    remove.append(pipeline_id)
             for id in remove:
                 del running_pipelines[id]
 
             if len(running_pipelines) < MAX_RUNNING_PROCESSES:
                 try:
-                    session, pipeline, dataset = self._run_queue.get(False)
+                    session, pipeline_id, dataset = self._run_queue.get(False)
                 except Empty:
                     pass
                 else:
-                    logger.info("Running training pipeline for %s", pipeline.id)
-                    filename = os.path.join(self.storage, 'workflows',
-                                            pipeline.id + '.vt')
-                    persist_dir = os.path.join(self.storage, 'persist',
-                                               pipeline.id)
-                    if not os.path.exists(persist_dir):
-                        os.makedirs(persist_dir)
-                    shutil.copyfile(
-                        os.path.join(dataset, 'dataSchema.json'),
-                        os.path.join(persist_dir, 'dataSchema.json'))
-                    proc = multiprocessing.Process(target=train,
-                                                   args=(filename, pipeline,
-                                                         dataset, persist_dir,
-                                                         msg_queue))
+                    logger.info("Running training pipeline for %s",
+                                pipeline_id)
+                    proc = multiprocessing.Process(
+                        target=train,
+                        args=(pipeline_id, session.metrics,
+                              dataset, session.problem, msg_queue))
                     proc.start()
-                    running_pipelines[pipeline.id] = session, pipeline, proc
-                    session.notify('training_start', pipeline_id=pipeline.id)
+                    running_pipelines[pipeline_id] = session, proc
+                    session.notify('training_start', pipeline_id=pipeline_id)
 
             try:
                 pipeline_id, msg, arg = msg_queue.get(timeout=3)
             except Empty:
                 pass
             else:
-                session, pipeline, proc = running_pipelines[pipeline_id]
+                session, proc = running_pipelines[pipeline_id]
                 if msg == 'progress':
                     # TODO: Report progress
                     logger.info("Training pipeline %s: %.0f%%",
                                 pipeline_id, arg * 100)
-                elif msg == 'scores':
-                    pipeline.scores = arg
                 else:
                     logger.error("Unexpected message from training process %s",
                                  msg)
