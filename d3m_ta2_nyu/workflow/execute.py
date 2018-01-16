@@ -49,6 +49,7 @@ class Cache(object):
                     .filter(database.Output.output_name == key)
                 ).one().value
             logger.info("Cache: %s get %s", self.module.id, key)
+            return value
         except NoResultFound:
             logger.warning("Cache: %s MISS %s", self.module.id, key)
             raise KeyError(key)
@@ -149,7 +150,8 @@ def execute(db, pipeline, module_loader, reason,
     # Create a run
     run = database.Run(pipeline_id=pipeline.id,
                        reason=reason,
-                       special=special)
+                       special=special,
+                       type=run_type)
     logger.info("Created run %s", run.id)
 
     if cache is None:

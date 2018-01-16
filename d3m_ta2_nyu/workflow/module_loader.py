@@ -58,8 +58,8 @@ def _persisted_primitive(klass):
             hyperparams = dict(primitive.hyperparams)
             params = primitive.get_params()
 
-            cache.store('primitive_hyperparams', pickle.dumps(hyperparams))
-            cache.store('primitive_params', pickle.dumps(params))
+            cache.store('hyperparams', pickle.dumps(hyperparams))
+            cache.store('params', pickle.dumps(params))
 
             return {'data': results.value}
         elif global_inputs['run_type'] == 'test':
@@ -67,7 +67,7 @@ def _persisted_primitive(klass):
             hyperparams = pickle.loads(cache.get('hyperparams'))
             params = pickle.loads(cache.get('params'))
             primitive = klass(hyperparams=hyperparams_class(hyperparams))
-            primitive.set_params(params)
+            primitive.set_params(params=params)
             # Transform data
             results = primitive.produce(inputs=module_inputs['data'])
             assert results.has_finished

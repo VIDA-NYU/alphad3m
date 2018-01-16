@@ -92,13 +92,17 @@ class Session(Observable):
             ).all()
             for i, crossval in enumerate(q):
                 pipeline = crossval.pipeline
-                filename = os.path.join(self._logs_dir, pipeline.id + '.json')
+                filename = os.path.join(self._logs_dir,
+                                        str(pipeline.id) + '.json')
                 obj = {
                     'problem_id': problem_id,
                     'pipeline_rank': i + 1,
-                    'name': pipeline.id,
-                    'primitives': [module.module_name
-                                   for module in pipeline.modules],
+                    'name': str(pipeline.id),
+                    'primitives': [
+                        module.name
+                        for module in pipeline.modules
+                        if module.package in ('primitives', 'sklearn-builtin')
+                    ],
                 }
                 with open(filename, 'w') as fp:
                     json.dump(obj, fp)
@@ -115,8 +119,6 @@ class D3mTa2(object):
         self.storage = os.path.abspath(storage_root)
         if not os.path.exists(self.storage):
             os.makedirs(self.storage)
-        if not os.path.exists(os.path.join(self.storage, 'workflows')):
-            os.makedirs(os.path.join(self.storage, 'workflows'))
         if logs_root is not None:
             self.logs_root = os.path.abspath(logs_root)
         else:
@@ -357,14 +359,14 @@ class D3mTa2(object):
 
     def write_executable(self, pipeline, filename=None):
         if filename is None:
-            filename = os.path.join(self.executables_root, pipeline.id)
+            filename = os.path.join(self.executables_root, str(pipeline.id))
         with open(filename, 'w') as fp:
             fp.write('#!/bin/sh\n\n'
                      'echo "Running pipeline {pipeline_id}..." >&2\n'
                      '{python} -c '
                      '"from d3m_ta2_nyu.main import main_test; '
                      'main_test()" {pipeline_id} "$@"\n'.format(
-                         pipeline_id=pipeline.id,
+                         pipeline_id=str(pipeline.id),
                          python=sys.executable))
         st = os.stat(filename)
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
@@ -374,7 +376,7 @@ class D3mTa2(object):
         db = self.DBSession()
 
         pipeline = database.Pipeline(
-            origin="classification_template(classifier=%s, problemID=%r)" % (
+            origin="classification_template(classifier=%s, problemID=%s)" % (
                 classifier, self.problem_id))
 
         def make_module(package, version, name):

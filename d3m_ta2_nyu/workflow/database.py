@@ -84,7 +84,8 @@ class CrossValidation(UuidMixin, Base):
 
     pipeline_id = Column(UUID, ForeignKey('pipelines.id'), nullable=False)
     pipeline = relationship('Pipeline')
-    date = Column(DateTime, nullable=False)
+    date = Column(DateTime, nullable=False,
+                  server_default=functions.now())
     scores = relationship('CrossValidationScore', lazy='joined')
 
 
@@ -111,7 +112,7 @@ class Run(UuidMixin, Base):
     date = Column(DateTime, nullable=False,
                   server_default=functions.now())
     reason = Column(String, nullable=False)
-    type = Column(Enum(RunType))
+    type = Column(Enum(RunType), nullable=False)
     special = Column(Boolean, nullable=False, default=False)
     inputs = relationship('Input')
     outputs = relationship('Output')

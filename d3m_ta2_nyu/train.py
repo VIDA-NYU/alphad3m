@@ -80,7 +80,7 @@ def train(pipeline_id, metrics, dataset, problem, msg_queue, db):
 
         run_time = time.time() - start_time
 
-        predictions = next(iter(outputs.values()))
+        predictions = next(iter(outputs.values()))['predictions']
 
         # Compute score
         for metric in metrics:
