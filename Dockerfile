@@ -9,7 +9,7 @@ RUN apt-get update -yy && \
     apt-get clean
 
 # Required by NIST to build Python in our image, apparently needed for their evaluation process (?)
-#RUN apt-get install -yy build-essential libncursesw5-dev libreadline6-dev libssl-dev libgdbm-dev libc6-dev libsqlite3-dev tk-dev libbz2-dev zlib1g-dev
+RUN apt-get install -yy build-essential libncursesw5-dev libreadline6-dev libssl-dev libgdbm-dev libc6-dev libsqlite3-dev tk-dev libbz2-dev zlib1g-dev
 
 WORKDIR /usr/src/app
 RUN python3 -m virtualenv -p python3.6 --system-site-packages /usr/src/app/venv && . /usr/src/app/venv/bin/activate && /usr/src/app/venv/bin/pip install -U certifi pip
