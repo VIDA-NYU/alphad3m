@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import sys
+import uuid
 
 from d3m_ta2_nyu.ta2 import D3mTa2
 
@@ -84,5 +85,5 @@ def main_test():
         ta2.run_test(
             dataset=config['test_data_root'],
             problem=config['problem_root'],
-            pipeline_id=sys.argv[1],
-            results_path=config['results_path'])
+            pipeline_id=uuid.UUID(hex=sys.argv[1]),
+            results_root=config['results_root'])

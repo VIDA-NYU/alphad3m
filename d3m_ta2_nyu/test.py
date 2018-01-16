@@ -32,7 +32,7 @@ def test(pipeline_id, dataset, problem, results_path, db):
         logger.exception("Error running testing")
         sys.exit(1)
 
-    predictions = next(iter(outputs.values()))
+    predictions = next(iter(outputs.values()))['predictions']
 
     with open(results_path, 'w') as fp:
         writer = csv.writer(fp)

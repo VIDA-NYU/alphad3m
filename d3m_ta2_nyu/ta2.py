@@ -197,12 +197,17 @@ class D3mTa2(object):
         finally:
             db.close()
 
-    def run_test(self, dataset, problem, pipeline_id, results_path):
+    def run_test(self, dataset, problem, pipeline_id, results_root):
         logger.info("About to run test")
         self.problem = problem
         with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
             problem_json = json.load(fp)
         self.problem_id = problem_json['about']['problemID']
+        if not os.path.exists(results_root):
+            os.makedirs(results_root)
+        results_path = os.path.join(
+            results_root,
+            problem_json['expectedOutputs']['predictionsFile'])
         test(pipeline_id, dataset, problem, results_path,
              db_filename=self.db_filename)
 

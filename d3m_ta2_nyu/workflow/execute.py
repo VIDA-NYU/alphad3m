@@ -42,9 +42,9 @@ class Cache(object):
             else:
                 value = (
                     self.db.query(database.Output)
-                    .filter(not_(database.Output.run.special))
-                    .filter(database.Output.run.pipeline_id ==
-                            self.run.pipeline_id)
+                    .filter(not_(database.Output.run.has(special=True)))
+                    .filter(database.Output.run.has(pipeline_id=
+                            self.run.pipeline_id))
                     .filter(database.Output.module_id == self.module.id)
                     .filter(database.Output.output_name == key)
                 ).one().value
