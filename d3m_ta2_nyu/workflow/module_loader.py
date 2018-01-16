@@ -7,11 +7,11 @@ def get_class(name):
     return getattr(importlib.import_module(package), classname)
 
 
-def _data(*, global_inputs):
+def _data(*, global_inputs, **kwargs):
     return global_inputs['data']
 
 
-def _targets(*, global_inputs):
+def _targets(*, global_inputs, **kwargs):
     return global_inputs.get('targets')
 
 
@@ -110,4 +110,4 @@ _loaders = {'sklearn-builtin': _sklearn,
 
 
 def loader(package, version, name):
-    _loaders[package](name)
+    return _loaders[package](name)

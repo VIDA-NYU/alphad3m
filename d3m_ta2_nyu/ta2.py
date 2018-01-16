@@ -41,15 +41,15 @@ class Session(Observable):
 
     This is a TA3 session in which pipelines are created.
     """
-    def __init__(self, logs_dir, problem_id, DBSession):
+    def __init__(self, logs_dir, problem, DBSession):
         Observable.__init__(self)
         self.id = uuid.uuid4()
         self._logs_dir = logs_dir
-        self._problem_id = problem_id
+        self.problem = problem
         self.pipelines = set()
         self.training = False
         self.pipelines_training = set()
-        self.metric = None
+        self.metrics = []
         self.DBSession = DBSession
 
     def check_status(self):
@@ -61,24 +61,32 @@ class Session(Observable):
             self.notify('done_training')
 
     def write_logs(self):
-        if self.metric is None:
-            logger.error("Can't write logs for session, metric is not set!")
+        if not self.metrics:
+            logger.error("Can't write logs for session, no metric is set!")
             return
+        metric = self.metrics[0]
+
+        try:
+            with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
+                problem_id = json.load(fp)['about']['problemID']
+        except (IOError, KeyError):
+            logger.error("Error reading problemID from problem JSON")
+            problem_id = 'problem_id_unset'
 
         written = 0
         db = self.DBSession()
         try:
             q = (
                 db.query(database.CrossValidation)
-                .options(joinedload(database.CrossValidation.pipeline),
-                         joinedload(database.Pipeline.modules))
+                .options(joinedload(database.CrossValidation.pipeline)
+                         .joinedload(database.Pipeline.modules))
                 .filter(database.Pipeline.id.in_(self.pipelines))
                 .filter(database.Pipeline.trained != 0)
                 .order_by(
                     select([database.CrossValidationScore.value])
                     .where(database.CrossValidationScore.cross_validation_id ==
                            database.CrossValidation.id)
-                    .where(database.CrossValidationScore.metric == self.metric)
+                    .where(database.CrossValidationScore.metric == metric)
                     .as_scalar()
                     .desc()
                 )
@@ -87,7 +95,7 @@ class Session(Observable):
                 pipeline = crossval.pipeline
                 filename = os.path.join(self._logs_dir, pipeline.id + '.json')
                 obj = {
-                    'problem_id': self._problem_id,
+                    'problem_id': problem_id,
                     'pipeline_rank': i + 1,
                     'name': pipeline.id,
                     'primitives': [module.module_name
@@ -104,13 +112,12 @@ class D3mTa2(object):
     def __init__(self, storage_root,
                  logs_root=None, executables_root=None):
         self.problem_id = 'problem_id_unset'
+        self.problem = None
         self.storage = os.path.abspath(storage_root)
         if not os.path.exists(self.storage):
             os.makedirs(self.storage)
         if not os.path.exists(os.path.join(self.storage, 'workflows')):
             os.makedirs(os.path.join(self.storage, 'workflows'))
-        if not os.path.exists(os.path.join(self.storage, 'persist')):
-            os.makedirs(os.path.join(self.storage, 'persist'))
         if logs_root is not None:
             self.logs_root = os.path.abspath(logs_root)
         else:
@@ -124,7 +131,8 @@ class D3mTa2(object):
         if self.executables_root and not os.path.exists(self.executables_root):
             os.makedirs(self.executables_root)
 
-        self.dbengine, self.DBSession = database.connect()
+        self.db_filename = os.path.join(self.storage, 'db.sqlite3')
+        self.dbengine, self.DBSession = database.connect(self.db_filename)
 
         self.sessions = {}
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
@@ -136,17 +144,11 @@ class D3mTa2(object):
 
     def run_search(self, dataset, problem):
         # Read problem
-        with open(problem) as fp:
+        self.problem = problem
+        with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
             problem_json = json.load(fp)
-        self.problem_id = problem_json['problemId']
-        if len(problem_json['datasets']) > 1:
-            logger.error("Problem schema lists multiple datasets!")
-            sys.exit(1)
-        if problem_json['datasets'] != [dataset]:
-            logger.error("Configuration and problem disagree on dataset! "
-                         "Using configuration.\n"
-                         "%r != %r", dataset, problem_json['datasets'])
-        task = problem_json['taskType']
+        self.problem_id = problem_json['about']['problemID']
+        task = problem_json['about']['taskType']
         if task not in TASKS_FROM_SCHEMA:
             logger.error("Unknown task %r", task)
             sys.exit(1)
@@ -154,22 +156,26 @@ class D3mTa2(object):
         if task not in ('CLASSIFICATION', 'REGRESSION'):  # TODO
             logger.error("Unsupported task %s requested", task)
             sys.exit(1)
-        metric = problem_json['metric']
-        if metric not in SCORES_FROM_SCHEMA:
-            logger.error("Unknown metric %r", metric)
-            sys.exit(1)
-        metric = SCORES_FROM_SCHEMA[metric]
-        logger.info("Dataset: %s, task: %s, metric: %s",
-                    dataset, task, metric)
+        metrics = []
+        for metric in problem_json['inputs']['performanceMetrics']:
+            metric = metric['metric']
+            try:
+                metric = SCORES_FROM_SCHEMA[metric]
+            except KeyError:
+                logger.error("Unknown metric %r", metric)
+                sys.exit(1)
+            metrics.append(metric)
+        logger.info("Dataset: %s, task: %s, metrics: %s",
+                    dataset, task, ", ".join(metrics))
 
         # Create pipelines
-        session = Session(self.logs_root, self.problem_id, self.DBSession)
-        session.metric = metric
+        session = Session(self.logs_root, self.problem, self.DBSession)
+        session.metrics = metrics
         self.sessions[session.id] = session
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             self.build_pipelines(session.id, task, dataset,
-                                 [metric])
+                                 metrics)
             while queue.get(True)[0] != 'done_training':
                 pass
 
@@ -190,14 +196,11 @@ class D3mTa2(object):
         finally:
             db.close()
 
-    def run_test(self, dataset, pipeline_id, results_path):
-        vt_file = os.path.join(self.storage,
-                               'workflows',
-                               pipeline_id + '.vt')
-        persist_dir = os.path.join(self.storage, 'persist',
-                                   pipeline_id)
+    def run_test(self, dataset, problem, pipeline_id, results_path):
         logger.info("About to run test")
-        test(vt_file, dataset, persist_dir, results_path)
+        self.problem = problem
+        test(pipeline_id, dataset, problem, results_path,
+             db_filename=self.db_filename)
 
     def run_server(self, problem_id, port=None):
         self.problem_id = problem_id
@@ -217,7 +220,7 @@ class D3mTa2(object):
             time.sleep(60)
 
     def new_session(self):
-        session = Session(self.logs_root, self.problem_id, self.DBSession)
+        session = Session(self.logs_root, self.problem, self.DBSession)
         self.sessions[session.id] = session
         return session.id
 
@@ -250,14 +253,14 @@ class D3mTa2(object):
     def _build_pipelines(self, session_id, task, dataset, metrics):
         session = self.sessions[session_id]
         with session.lock:
-            if session.metric != metrics[0]:
-                if session.metric is not None:
-                    old = 'from %s ' % session.metric
+            if session.metrics != metrics:
+                if session.metrics:
+                    old = 'from %s ' % ', '.join(session.metrics)
                 else:
                     old = ''
-                session.metric = metrics[0]
-                logger.info("Set metric to %s %s(for session %s)",
-                            metrics[0], old, session_id)
+                session.metrics = metrics
+                logger.info("Set metrics to %s %s(for session %s)",
+                            metrics, old, session_id)
 
         logger.info("Creating pipelines...")
         session.training = True
@@ -283,14 +286,14 @@ class D3mTa2(object):
 
     def _build_pipeline_from_template(self, session, template):
         # Create workflow from a template
-        pipeline = template(self)
+        pipeline_id = template(self)
 
         # Add it to the session
         with session.lock:
-            session.pipelines.add(pipeline.id)
-        session.notify('new_pipeline', pipeline_id=pipeline.id)
+            session.pipelines.add(pipeline_id)
+        session.notify('new_pipeline', pipeline_id=pipeline_id)
 
-        return pipeline.id
+        return pipeline_id
 
     # Runs in a background thread
     def _pipeline_running_thread(self):
@@ -327,7 +330,8 @@ class D3mTa2(object):
                     proc = multiprocessing.Process(
                         target=train,
                         args=(pipeline_id, session.metrics,
-                              dataset, session.problem, msg_queue))
+                              dataset, session.problem, msg_queue),
+                        kwargs={'db_filename': self.db_filename})
                     proc.start()
                     running_pipelines[pipeline_id] = session, proc
                     session.notify('training_start', pipeline_id=pipeline_id)
@@ -364,7 +368,8 @@ class D3mTa2(object):
     def _classification_template(self, classifier):
         db = self.DBSession()
 
-        pipeline = database.Pipeline()
+        pipeline = database.Pipeline(
+            origin="classification_template(classifier=%s)" % classifier)
 
         def make_module(package, version, name):
             pipeline_module = database.PipelineModule(
@@ -385,7 +390,7 @@ class D3mTa2(object):
             targets = make_module('data', '0.0', 'targets')
             imputer = make_module(
                 'primitives', '0.0',
-                'dsbox.datapreprocessing.cleaner.KnnImputation')
+                'dsbox.datapreprocessing.cleaner.KNNImputation')
             encoder = make_module(
                 'primitives', '0.0',
                 'dsbox.datapreprocessing.cleaner.Encoder')
@@ -398,36 +403,35 @@ class D3mTa2(object):
 
             db.add(pipeline)
             db.commit()
+            return pipeline.id
         finally:
             db.close()
 
-        return pipeline
-
     TEMPLATES = {
         'CLASSIFICATION': [
-            (_classification_template, 'classifiers|LinearSVC',
+            (_classification_template,
              'sklearn.svm.classes.LinearSVC'),
-            (_classification_template, 'classifiers|KNeighborsClassifier',
+            (_classification_template,
              'sklearn.neighbors.classification.KNeighborsClassifier'),
-            (_classification_template, 'classifiers|DecisionTreeClassifier',
+            (_classification_template,
              'sklearn.tree.tree.DecisionTreeClassifier'),
-            (_classification_template, 'classifiers|MultinomialNB',
+            (_classification_template,
              'sklearn.naive_bayes.MultinomialNB'),
-            (_classification_template, 'classifiers|RandomForestClassifier',
+            (_classification_template,
              'sklearn.ensemble.forest.RandomForestClassifier'),
-            (_classification_template, 'classifiers|LogisticRegression',
+            (_classification_template,
              'sklearn.linear_model.logistic.LogisticRegression'),
         ],
         'REGRESSION': [
-            (_classification_template, 'regressors|LinearRegression',
+            (_classification_template,
              'sklearn.linear_model.base.LinearRegression'),
-            (_classification_template, 'regressors|BayesianRidge',
+            (_classification_template,
              'sklearn.linear_model.bayes.BayesianRidge'),
-            (_classification_template, 'regressors|LassoCV',
+            (_classification_template,
              'sklearn.linear_model.coordinate_descent.LassoCV'),
-            (_classification_template, 'regressors|Ridge',
+            (_classification_template,
              'sklearn.linear_model.ridge.Ridge'),
-            (_classification_template, 'regressors|Lars',
+            (_classification_template,
              'sklearn.linear_model.least_angle.Lars'),
         ],
     }

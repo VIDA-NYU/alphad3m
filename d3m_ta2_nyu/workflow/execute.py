@@ -4,6 +4,7 @@
 import logging
 from sqlalchemy import not_
 from sqlalchemy.orm import joinedload
+from uuid import UUID
 
 from . import database
 from . import module_loader
@@ -53,7 +54,7 @@ def cache_from_run(from_run_id):
 
 
 def get_pipeline(db, pipeline):
-    if isinstance(pipeline, str):
+    if isinstance(pipeline, UUID):
         # Load the pipeline
         pipeline = (
             db.query(database.Pipeline)
@@ -124,9 +125,11 @@ def execute(db, pipeline, module_loader, reason,
     dependencies = {mod.id: set() for mod in pipeline.modules}
     dependents = {mod.id: set() for mod in pipeline.modules}
     for module in pipeline.modules:
-        modules[module.id] = module, module_loader(module.package,
-                                                   module.version,
-                                                   module.name)
+        function = module_loader(module.package, module.version, module.name)
+        if function is None:
+            raise TypeError("Module loader returned None for (%r, %r, %r)" % (
+                            module.package, module.version, module.name))
+        modules[module.id] = module, function
 
         for conn in module.connections_to:
             dependencies[module.id].add(conn.from_module_id)
@@ -142,15 +145,11 @@ def execute(db, pipeline, module_loader, reason,
                        special=special)
     logger.info("Created run %s", run.id)
 
-    global_inputs = {
-        'run_type': run_type,
-    }
-
     if cache is None:
         cache = Cache
 
     # Execute
-    outputs = []
+    outputs = {}
     while to_execute:
         executed = []
         for mod_id in to_execute:

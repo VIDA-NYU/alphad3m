@@ -39,8 +39,8 @@ def main_search():
             logs_root=config['pipeline_logs_root'],
             executables_root=config['executables_root'])
         ta2.run_search(
-            dataset=os.path.dirname(config['dataset_schema']),
-            problem=config['problem_schema'])
+            dataset=config['training_data_root'],
+            problem=os.path.dirname(config['problem_schema']))
 
 
 def main_serve():
@@ -85,5 +85,6 @@ def main_test():
             storage_root=config['temp_storage_root'])
         ta2.run_test(
             dataset=config['test_data_root'],
+            problem=config['problem_root'],
             pipeline_id=sys.argv[1],
             results_path=config['results_path'])

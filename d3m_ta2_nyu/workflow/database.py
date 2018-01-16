@@ -2,8 +2,8 @@
 """
 
 import enum
+import functools
 import logging
-import os
 from sqlalchemy import Column, ForeignKey, create_engine, func, not_, select, \
     Binary
 from sqlalchemy.ext.declarative import declarative_base
@@ -44,38 +44,42 @@ class PipelineModule(Base):
     package = Column(String, nullable=False)
     version = Column(String, nullable=False)
     name = Column(String, nullable=False)
-    connections_from = relationship(
-        'PipelineConnection',
-        remote_side='pipeline_connections.from_module')
-    connections_to = relationship(
-        'PipelineConnection',
-        remote_side='pipeline_connections.to_module')
+    #connections_from = relationship('PipelineConnection')
+    #connections_to = relationship('PipelineConnection')
 
 
 class PipelineConnection(Base):
     __tablename__ = 'pipeline_connections'
 
+    pipeline_id = Column(UUID, ForeignKey('pipelines.id'))
+    pipeline = relationship(Pipeline)
+
     from_module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
                             primary_key=True)
     from_module = relationship('PipelineModule',
-                               foreign_keys=['from_module_id'])
+                               foreign_keys=[from_module_id],
+                               backref='connections_from')
     from_output_name = Column(String, primary_key=True)
 
     to_module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
                           primary_key=True)
     to_module = relationship('PipelineModule',
-                             foreign_keys=['to_module_id'])
+                             foreign_keys=[to_module_id],
+                             backref='connections_to')
     to_input_name = Column(String, primary_key=True)
 
 
 class PipelineParameter(Base):
     __tablename__ = 'pipeline_parameters'
 
+    pipeline_id = Column(UUID, ForeignKey('pipelines.id'))
+    pipeline = relationship(Pipeline)
+
     module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
                        primary_key=True)
+    module = relationship('PipelineModule', lazy='joined')
     name = Column(String, primary_key=True)
     value = Column(String, nullable=True)
-    module = relationship('PipelineModule', lazy='joined')
 
 
 class CrossValidation(Base):
@@ -141,36 +145,22 @@ class Output(Base):
     value = Column(Binary, nullable=False)
 
 
-# Trained true iff there's a Run with special=False and type=TRAINING
+# Trained true iff there's a Run with special=False and type=TRAIN
 Pipeline.trained = column_property(
     select(
         [func.count(Run.id)]
     ).where((Run.pipeline_id == Pipeline.id) &
             (not_(Run.special)) &
-            (Run.type == RunType.TRAINING))
+            (Run.type == RunType.TRAIN))
     .as_scalar() != 0
 )
 
 
-def connect(url=None):
+def connect(filename):
     """Connect to the database using an environment variable.
     """
-    logging.info("Connecting to SQL database")
-    if url is None:
-        if 'POSTGRES_HOST' in os.environ and 'SQLITE_FILE' in os.environ:
-            raise EnvironmentError("Both POSTGRES_HOST and SQLITE_FILE are set")
-        elif 'POSTGRES_HOST' in os.environ:
-            url = 'postgresql://{user}:{password}@{host}/{database}'.format(
-                user=os.environ.get('POSTGRES_USER', 'postgres'),
-                password=os.environ.get('POSTGRES_PASSWORD', ''),
-                host=os.environ['POSTGRES_HOST'],
-                database=os.environ.get('POSTGRES_DB', 'ta2'),
-            )
-        elif 'SQLITE_FILE' in os.environ:
-            url = 'sqlite:///{0}'.format(os.environ['SQLITE_FILE'])
-        else:
-            raise EnvironmentError("No SQL database selected; please set "
-                                   "SQLITE_FILE or POSTGRES_HOST")
+    logger.info("Connecting to SQL database")
+    url = 'sqlite:///{0}'.format(filename)
     engine = create_engine(url, echo=False)
 
     if not engine.dialect.has_table(engine.connect(), 'pipelines'):
@@ -180,3 +170,15 @@ def connect(url=None):
     return engine, sessionmaker(bind=engine,
                                 autocommit=False,
                                 autoflush=False)
+
+
+def with_db(wrapped):
+    @functools.wraps(wrapped)
+    def wrapper(*args, db_filename=None, **kwargs):
+        engine, DBSession = connect(db_filename)
+        db = DBSession()
+        try:
+            return wrapped(*args, **kwargs, db=db)
+        finally:
+            db.close()
+    return wrapper

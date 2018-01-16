@@ -6,7 +6,6 @@ import time
 from d3mds import D3MDS
 
 from d3m_ta2_nyu.common import SCORES_TO_SKLEARN
-from d3m_ta2_nyu.utils import with_db
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.execute import execute_train, execute_test
 
@@ -14,22 +13,20 @@ from d3m_ta2_nyu.workflow.execute import execute_train, execute_test
 logger = logging.getLogger(__name__)
 
 
-engine, DBSession = database.connect()
-
-
 FOLDS = 3
 SPLIT_RATIO = 0.25
 
 
-@with_db(DBSession)
+@database.with_db
 def train(pipeline_id, metrics, dataset, problem, msg_queue, db):
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
     max_progress = FOLDS + 2.0
 
-    logger.info("About to run training pipeline, id=%s, dataset=%r",
-                pipeline_id, dataset)
+    logger.info("About to run training pipeline, id=%s, dataset=%r, "
+                "problem=%r",
+                pipeline_id, dataset, problem)
 
     # Load data
     ds = D3MDS(dataset, problem)
@@ -67,7 +64,7 @@ def train(pipeline_id, metrics, dataset, problem, msg_queue, db):
                 db, pipeline_id, train_data_split, train_target_split,
                 crossval=True)
         except Exception:
-            logger.exception("Error runnin training on fold")
+            logger.exception("Error running training on fold")
             sys.exit(1)
 
         # Run prediction

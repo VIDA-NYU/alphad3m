@@ -49,16 +49,3 @@ class Observable(object):
                     observer(event, **kwargs)
                 except Exception:
                     logging.exception("Error in observer")
-
-
-def with_db(DBSession):
-    def inner(wrapped):
-        @functools.wraps(wrapped)
-        def wrapper(*args, **kwargs):
-            db = DBSession()
-            try:
-                return wrapped(*args, **kwargs, db=db)
-            finally:
-                db.close()
-        return wrapper
-    return inner
