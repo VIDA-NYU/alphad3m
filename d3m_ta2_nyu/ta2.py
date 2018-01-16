@@ -198,11 +198,17 @@ class D3mTa2(object):
     def run_test(self, dataset, problem, pipeline_id, results_path):
         logger.info("About to run test")
         self.problem = problem
+        with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
+            problem_json = json.load(fp)
+        self.problem_id = problem_json['about']['problemID']
         test(pipeline_id, dataset, problem, results_path,
              db_filename=self.db_filename)
 
-    def run_server(self, problem_id, port=None):
-        self.problem_id = problem_id
+    def run_server(self, problem, port=None):
+        self.problem = problem
+        with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
+            problem_json = json.load(fp)
+        self.problem_id = problem_json['about']['problemID']
         if not port:
             port = 50051
         core_rpc = grpc_server.CoreService(self)

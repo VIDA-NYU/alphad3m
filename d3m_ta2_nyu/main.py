@@ -40,7 +40,7 @@ def main_search():
             executables_root=config['executables_root'])
         ta2.run_search(
             dataset=config['training_data_root'],
-            problem=os.path.dirname(config['problem_schema']))
+            problem=config['problem_root'])
 
 
 def main_serve():
@@ -64,13 +64,11 @@ def main_serve():
         port = None
         if len(sys.argv) == 2:
             port = int(sys.argv[1])
-        with open(config['problem_schema']) as fp:
-            problem_id = json.load(fp)['problemId']
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
             logs_root=config['pipeline_logs_root'],
             executables_root=config['executables_root'])
-        ta2.run_server(problem_id, port)
+        ta2.run_server(config['problem_root'], port)
 
 
 def main_test():
