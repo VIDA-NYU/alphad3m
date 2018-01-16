@@ -29,7 +29,7 @@ from d3m_ta2_nyu.utils import Observable
 from d3m_ta2_nyu.workflow import database
 
 
-MAX_RUNNING_PROCESSES = 2
+MAX_RUNNING_PROCESSES = 1
 
 
 logger = logging.getLogger(__name__)

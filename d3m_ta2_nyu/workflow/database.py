@@ -158,7 +158,7 @@ def connect(filename):
     """
     logger.info("Connecting to SQL database")
     url = 'sqlite:///{0}'.format(filename)
-    engine = create_engine(url, echo=False)
+    engine = create_engine(url, echo=True)
 
     if not engine.dialect.has_table(engine.connect(), 'pipelines'):
         logger.warning("The tables don't seem to exist; creating")
