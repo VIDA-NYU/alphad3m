@@ -1,11 +1,11 @@
 {
     "temp_storage_root": "/d3m/tmp/storage",
-    "pipeline_logs_root": "/d3m/tmp/logs",
     "executables_root": "/d3m/tmp/executables",
     "dataset_schema": "/d3m/data/LL0_21_car/LL0_21_car_dataset/datasetDoc.json",
     "problem_schema": "/d3m/data/LL0_21_car/LL0_21_car_problem/problemDoc.json",
-    "training_data_root": "/d3m/data/LL0_21_car/LL0_21_car_dataset",
+    "test_data_root": "/d3m/data/LL0_21_car/LL0_21_car_dataset",
     "problem_root": "/d3m/data/LL0_21_car/LL0_21_car_problem",
+    "results_root": "/d3m/tmp/results",
     "timeout": "30",
     "cpus": "2",
     "ram": "5Gi"
