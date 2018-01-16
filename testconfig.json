@@ -1,7 +1,0 @@
-{
-    "temp_storage_root": "/tmp/ta2",
-    "pipeline_logs_root": "/tmp/ta2/logs",
-    "executables_root": "/tmp/ta2/executables",
-    "dataset_schema": "/data/o_185/data/dataSchema.json",
-    "problem_schema": "/data/o_185/problemSchema.json"
-}
