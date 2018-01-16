@@ -15,8 +15,8 @@ def _targets(*, global_inputs):
     return global_inputs.get('targets')
 
 
-def _sklearn(module):
-    klass = get_class(module.name)
+def _sklearn(name):
+    klass = get_class(name)
 
     def wrapper(*, module_inputs, global_inputs, cache, **kwargs):
         if global_inputs['run_type'] == 'train':
@@ -94,10 +94,10 @@ def _simple_primitive(klass):
     return wrapper
 
 
-def _loader_primitives(module):
+def _loader_primitives(name):
     from primitive_interfaces.transformer import TransformerPrimitiveBase
 
-    klass = get_class(module.name)
+    klass = get_class(name)
     if issubclass(klass, TransformerPrimitiveBase):
         return _simple_primitive(klass)
     else:
@@ -109,5 +109,5 @@ _loaders = {'sklearn-builtin': _sklearn,
             'data': {'data': _data, 'targets': _targets}.get}
 
 
-def loader(module):
-    _loaders[module.package](module)
+def loader(package, version, name):
+    _loaders[package](name)

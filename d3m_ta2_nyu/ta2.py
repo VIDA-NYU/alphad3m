@@ -367,18 +367,9 @@ class D3mTa2(object):
         pipeline = database.Pipeline()
 
         def make_module(package, version, name):
-            module = (
-                db.query(database.Module)
-                .filter(database.Module.package == package)
-                .filter(database.Module.version == version)
-                .filter(database.Module.name == name)
-            ).one()
-            if module is None:
-                module = database.Module(package=package,
-                                         version=version,
-                                         name=name)
-            pipeline_module = database.PipelineModule(module=module,
-                                                      pipeline=pipeline)
+            pipeline_module = database.PipelineModule(
+                pipeline=pipeline,
+                package=package, version=version, name=name)
             db.add(pipeline_module)
             return pipeline_module
 

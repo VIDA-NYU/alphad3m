@@ -124,7 +124,9 @@ def execute(db, pipeline, module_loader, reason,
     dependencies = {mod.id: set() for mod in pipeline.modules}
     dependents = {mod.id: set() for mod in pipeline.modules}
     for module in pipeline.modules:
-        modules[module.id] = module.module, module_loader(module.module)
+        modules[module.id] = module, module_loader(module.package,
+                                                   module.version,
+                                                   module.name)
 
         for conn in module.connections_to:
             dependencies[module.id].add(conn.from_module_id)

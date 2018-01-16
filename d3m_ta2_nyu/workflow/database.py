@@ -21,14 +21,6 @@ logger = logging.getLogger(__name__)
 Base = declarative_base()
 
 
-class Module(Base):
-    __tablename__ = 'modules'
-
-    package = Column(String, primary_key=True)
-    version = Column(String, primary_key=True)
-    name = Column(String, primary_key=True)
-
-
 class Pipeline(Base):
     __tablename__ = 'pipelines'
 
@@ -49,10 +41,9 @@ class PipelineModule(Base):
     id = Column(UUID, primary_key=True, default=uuid.uuid4)
     pipeline_id = Column(UUID, ForeignKey('pipelines.id'))
     pipeline = relationship(Pipeline)
-    package = Column(String, ForeignKey('modules.package'), nullable=False)
-    version = Column(String, ForeignKey('modules.version'), nullable=False)
-    module_name = Column(String, ForeignKey('modules.name'), nullable=False)
-    module = relationship('Module', lazy='joined')
+    package = Column(String, nullable=False)
+    version = Column(String, nullable=False)
+    name = Column(String, nullable=False)
     connections_from = relationship(
         'PipelineConnection',
         remote_side='pipeline_connections.from_module')
