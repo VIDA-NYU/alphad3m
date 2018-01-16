@@ -374,7 +374,8 @@ class D3mTa2(object):
         db = self.DBSession()
 
         pipeline = database.Pipeline(
-            origin="classification_template(classifier=%s)" % classifier)
+            origin="classification_template(classifier=%s, problemID=%r)" % (
+                classifier, self.problem_id))
 
         def make_module(package, version, name):
             pipeline_module = database.PipelineModule(
