@@ -8,11 +8,11 @@ def get_class(name):
 
 
 def _data(*, global_inputs, **kwargs):
-    return global_inputs['data']
+    return {'data': global_inputs['data']}
 
 
 def _targets(*, global_inputs, **kwargs):
-    return global_inputs.get('targets')
+    return {'targets': global_inputs.get('targets')}
 
 
 def _sklearn(name):

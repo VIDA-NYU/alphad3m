@@ -4,6 +4,7 @@
 import logging
 from sqlalchemy import not_
 from sqlalchemy.orm import joinedload
+from sqlalchemy.orm.exc import NoResultFound
 from uuid import UUID
 
 from . import database
@@ -25,26 +26,32 @@ class Cache(object):
             raise TypeError("Cache expected bytes, not '%s'" % type(value))
         logger.info("Cache: %s recording %s", self.module.id, key)
         self.db.add(database.Output(run=self.run, module=self.module,
-                                   output_name=key, value=value))
+                                    output_name=key, value=value))
 
     def get(self, key):
         # TODO: record Input?
-        if self.from_run_id is not None:
-            return (
-                self.db.query(database.Output)
-                    .filter(database.Output.run_id == self.from_run_id)
+        value = None
+        try:
+            if self.from_run_id is not None:
+                value = (
+                    self.db.query(database.Output)
+                        .filter(database.Output.run_id == self.from_run_id)
+                        .filter(database.Output.module_id == self.module.id)
+                        .filter(database.Output.output_name == key)
+                ).one().value
+            else:
+                value = (
+                    self.db.query(database.Output)
+                    .filter(not_(database.Output.run.special))
+                    .filter(database.Output.run.pipeline_id ==
+                            self.run.pipeline_id)
                     .filter(database.Output.module_id == self.module.id)
                     .filter(database.Output.output_name == key)
-            ).one().value
-        else:
-            return (
-                self.db.query(database.Output)
-                .filter(not_(database.Output.run.special))
-                .filter(database.Output.run.pipeline_id ==
-                        self.run.pipeline_id)
-                .filter(database.Output.module_id == self.module.id)
-                .filter(database.Output.output_name == key)
-            ).one().value
+                ).one().value
+            logger.info("Cache: %s get %s", self.module.id, key)
+        except NoResultFound:
+            logger.warning("Cache: %s MISS %s", self.module.id, key)
+            raise KeyError(key)
 
 
 def cache_from_run(from_run_id):
@@ -171,7 +178,7 @@ def execute(db, pipeline, module_loader, reason,
                 outputs[mod_id] = function(
                     module_inputs=module_inputs,
                     global_inputs=global_inputs,
-                    cache=cache(db, pipeline, module),
+                    cache=cache(db, run, module),
                 )
             except Exception:
                 logger.exception("Got exception running module %s",
@@ -192,5 +199,7 @@ def execute(db, pipeline, module_loader, reason,
             global_outputs[mod_id] = outputs[mod_id]
     if len(global_outputs) > 1:
         logger.warning("More than one sinks (%d)", len(global_outputs))
+
+    db.flush()
 
     return run.id, global_outputs

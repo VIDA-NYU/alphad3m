@@ -11,7 +11,6 @@ import logging
 import multiprocessing
 import os
 from queue import Empty, Queue
-import shutil
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 import stat

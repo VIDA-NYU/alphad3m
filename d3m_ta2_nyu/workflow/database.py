@@ -10,9 +10,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import column_property, relationship, sessionmaker
 from sqlalchemy.sql import functions
 from sqlalchemy.types import Boolean, DateTime, Enum, Float, String
-import uuid
 
-from d3m_ta2_nyu.sql_uuid import UUID
+from d3m_ta2_nyu.sql_uuid import UUID, UuidMixin
 
 
 logger = logging.getLogger(__name__)
@@ -21,10 +20,9 @@ logger = logging.getLogger(__name__)
 Base = declarative_base()
 
 
-class Pipeline(Base):
+class Pipeline(UuidMixin, Base):
     __tablename__ = 'pipelines'
 
-    id = Column(UUID, primary_key=True, default=uuid.uuid4)
     origin = Column(String, nullable=False)
     created_date = Column(DateTime, nullable=False,
                           server_default=functions.now())
@@ -35,10 +33,9 @@ class Pipeline(Base):
     runs = relationship('Run')
 
 
-class PipelineModule(Base):
+class PipelineModule(UuidMixin, Base):
     __tablename__ = 'pipeline_modules'
 
-    id = Column(UUID, primary_key=True, default=uuid.uuid4)
     pipeline_id = Column(UUID, ForeignKey('pipelines.id'))
     pipeline = relationship(Pipeline)
     package = Column(String, nullable=False)
@@ -82,10 +79,9 @@ class PipelineParameter(Base):
     value = Column(String, nullable=True)
 
 
-class CrossValidation(Base):
+class CrossValidation(UuidMixin, Base):
     __tablename__ = 'cross_validations'
 
-    id = Column(UUID, primary_key=True, default=uuid.uuid4)
     pipeline_id = Column(UUID, ForeignKey('pipelines.id'), nullable=False)
     pipeline = relationship('Pipeline')
     date = Column(DateTime, nullable=False)
@@ -107,13 +103,13 @@ class RunType(enum.Enum):
     TEST = 2
 
 
-class Run(Base):
+class Run(UuidMixin, Base):
     __tablename__ = 'runs'
 
-    id = Column(UUID, primary_key=True, default=uuid.uuid4)
     pipeline_id = Column(UUID, ForeignKey('pipelines.id'), nullable=False)
     pipeline = relationship('Pipeline')
-    date = Column(DateTime, nullable=False)
+    date = Column(DateTime, nullable=False,
+                  server_default=functions.now())
     reason = Column(String, nullable=False)
     type = Column(Enum(RunType))
     special = Column(Boolean, nullable=False, default=False)

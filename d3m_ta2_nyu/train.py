@@ -59,6 +59,7 @@ def train(pipeline_id, metrics, dataset, problem, msg_queue, db):
         start_time = time.time()
 
         # Run training
+        logger.info("Training on fold")
         try:
             train_run, outputs = execute_train(
                 db, pipeline_id, train_data_split, train_target_split,
@@ -66,8 +67,10 @@ def train(pipeline_id, metrics, dataset, problem, msg_queue, db):
         except Exception:
             logger.exception("Error running training on fold")
             sys.exit(1)
+        assert train_run is not None
 
         # Run prediction
+        logger.info("Testing on fold")
         try:
             test_run, outputs = execute_test(
                 db, pipeline_id, test_data_split,

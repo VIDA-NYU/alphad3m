@@ -1,3 +1,4 @@
+from sqlalchemy import Column
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 import uuid
@@ -40,3 +41,17 @@ class UUID(TypeDecorator):
             if not isinstance(value, uuid.UUID):
                 value = uuid.UUID(value)
             return value
+
+
+class UuidMixin(object):
+    """A mixin that adds a UUID column and sets it at construction time.
+
+    Using the ``default=`` keyword on the Column would only set the attribute
+    at insert time.
+    """
+    id = Column(UUID, primary_key=True, default=uuid.uuid4)
+
+    def __init__(self, **kwargs):
+        super(UuidMixin, self).__init__(**kwargs)
+        if 'id' not in kwargs:
+            self.id = uuid.uuid4()
