@@ -54,14 +54,24 @@ def main_serve():
             "        Runs in server mode, waiting for a TA3 to connect on the "
             "given port\n"
             "        (default: 50051)\n"
-            "        The configuration file is read from $CONFIG_JSON_PATH\n")
-        sys.exit(1)
-    elif 'CONFIG_JSON_PATH' not in os.environ:
-        sys.stderr.write("CONFIG_JSON_PATH is not set!\n")
+            "        The configuration file is read from $CONFIG_JSON_PATH\n"
+            "        Alternatively, the JSON *contents* can be read from "
+            "$JSON_CONFIG\n")
         sys.exit(1)
     else:
-        with open(os.environ['CONFIG_JSON_PATH']) as config_file:
-            config = json.load(config_file)
+        if 'CONFIG_JSON_PATH' in os.environ:
+            if 'JSON_CONFIG' in os.environ:
+                logger.warning("Both $CONFIG_JSON_PATH and $JSON_CONFIG are "
+                               "set, preferring $CONFIG_JSON_PATH")
+            with open(os.environ['CONFIG_JSON_PATH']) as config_file:
+                config = json.load(config_file)
+        elif 'JSON_CONFIG' in os.environ:
+            config = json.loads(os.environ['JSON_CONFIG'])
+        else:
+            logger.critical("Neither $CONFIG_JSON_PATH nor $JSON_CONFIG are "
+                            "set!")
+            sys.exit(1)
+
         port = None
         if len(sys.argv) == 2:
             port = int(sys.argv[1])
