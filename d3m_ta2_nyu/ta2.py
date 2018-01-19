@@ -202,6 +202,50 @@ class D3mTa2(object):
         finally:
             db.close()
 
+    def run_pipeline(self, pipeline_id, dataset, problem):
+        """Train and score a single pipeline.
+
+        This is used to test the pipeline synthesis code.
+        """
+        # Read problem
+        self.problem = problem
+        with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
+            problem_json = json.load(fp)
+        self.problem_id = problem_json['about']['problemID']
+        metrics = []
+        for metric in problem_json['inputs']['performanceMetrics']:
+            metric = metric['metric']
+            try:
+                metric = SCORES_FROM_SCHEMA[metric]
+            except KeyError:
+                logger.error("Unknown metric %r", metric)
+                sys.exit(1)
+            metrics.append(metric)
+        logger.info("Running single pipeline, dataset: %s, metrics:%s",
+                    dataset, ", ".join(metrics))
+
+        # Create session
+        session = Session(self.logs_root, self.problem, self.DBSession)
+        session.metrics = metrics
+        self.sessions[session.id] = session
+        queue = Queue()
+        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+            session.pipelines_training.add(pipeline_id)
+            self._run_queue.put((session, pipeline_id, dataset))
+            while queue.get(True)[0] != 'done_training':
+                pass
+
+        db = self.DBSession()
+        try:
+            scores = (
+                db.query(database.CrossValidationScore)
+                .options(joinedload(database.CrossValidationScore.cross_validation))
+                .filter(database.CrossValidationScore.cross_validation.has(pipeline_id=pipeline_id))
+            ).all()
+            return {s.metric: s.value for s in scores}
+        finally:
+            db.close()
+
     def run_test(self, dataset, problem, pipeline_id, results_root):
         """Run a previously trained pipeline.
 
