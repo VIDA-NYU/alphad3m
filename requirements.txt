@@ -22,7 +22,8 @@ fastcache==1.0.2
 frozendict==1.2
 gitdb2==2.0.3
 GitPython==2.1.8
-grpcio==1.8.3
+grpcio==1.8.4
+grpcio-tools==1.8.4
 h5py==2.7.1
 html5lib==0.9999999
 idna==2.6

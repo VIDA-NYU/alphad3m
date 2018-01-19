@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 
 
 class CoreService(pb_core_grpc.CoreServicer):
-    grpc2metric = dict((k, v) for v, k in pb_core.Metric.items()
+    grpc2metric = dict((k, v) for v, k in pb_core.PerformanceMetric.items()
                        if k != pb_core.METRIC_UNDEFINED)
-    metric2grpc = dict(pb_core.Metric.items())
+    metric2grpc = dict(pb_core.PerformanceMetric.items())
     grpc2task = dict((k, v) for v, k in pb_core.TaskType.items()
                      if k != pb_core.TASK_TYPE_UNDEFINED)
 
@@ -66,7 +66,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 )
             )
             return
-        train_features = request.train_features
+        dataset = request.dataset
         task = request.task
         if task not in self.grpc2task:
             logger.error("Got unknown task %r", task)
@@ -94,7 +94,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             return
         task_subtype = request.task_subtype
         task_description = request.task_description
-        output = request.output
         metrics = request.metrics
         if any(m not in self.grpc2metric for m in metrics):
             logger.warning("Got metrics that we don't know about: %s",
@@ -113,22 +112,9 @@ class CoreService(pb_core_grpc.CoreServicer):
                 ),
             )
             return
-        target_features = request.target_features
+        predict_features = request.predict_features
         max_pipelines = request.max_pipelines
 
-        # FIXME: Handle the actual list of training features
-        dataset = set(feat.data_uri for feat in train_features)
-        if len(dataset) != 1:
-            yield pb_core.PipelineCreateResult(
-                response_info=pb_core.Response(
-                    status=pb_core.Status(
-                        code=pb_core.INVALID_ARGUMENT,
-                        details="Please only use a single training dataset",
-                    ),
-                ),
-            )
-            return
-        dataset, = dataset
         if dataset.startswith('file:///'):
             dataset = dataset[7:]
 
@@ -198,10 +184,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     ),
                     progress_info=pb_core.SUBMITTED,
                     pipeline_id=pipeline_id,
-                    pipeline_info=pb_core.Pipeline(
-                        # FIXME: OutputType
-                        output=pb_core.CLASS_LABEL,
-                    ),
+                    pipeline_info=pb_core.Pipeline(),
                 )
             elif event == 'training_start':
                 pipeline_id = kwargs['pipeline_id']
@@ -234,7 +217,6 @@ class CoreService(pb_core_grpc.CoreServicer):
                     progress_info=pb_core.COMPLETED,
                     pipeline_id=pipeline_id,
                     pipeline_info=pb_core.Pipeline(
-                        output=pb_core.CLASS_LABEL,
                         scores=scores,
                     ),
                 )
@@ -328,6 +310,9 @@ class CoreService(pb_core_grpc.CoreServicer):
         return pb_core.Response(
             status=pb_core.Status(code=pb_core.OK)
         )
+
+    def SetProblemDoc(self, request, context):
+        raise NotImplementedError  # TODO: SetProblemDoc
 
 
 class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
