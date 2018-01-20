@@ -2,7 +2,7 @@
 """
 
 import logging
-from sqlalchemy import not_
+from sqlalchemy import not_, select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm.exc import NoResultFound
 from uuid import UUID
@@ -30,24 +30,30 @@ class Cache(object):
 
     def get(self, key):
         # TODO: record Input?
-        value = None
         try:
             if self.from_run_id is not None:
+                # Get Output from the given run with the correct module and key
                 value = (
                     self.db.query(database.Output)
-                        .filter(database.Output.run_id == self.from_run_id)
-                        .filter(database.Output.module_id == self.module.id)
-                        .filter(database.Output.output_name == key)
-                ).one().value
-            else:
-                value = (
-                    self.db.query(database.Output)
-                    .filter(not_(database.Output.run.has(special=True)))
-                    .filter(database.Output.run.has(pipeline_id=
-                            self.run.pipeline_id))
+                    .filter(database.Output.run_id == self.from_run_id)
                     .filter(database.Output.module_id == self.module.id)
                     .filter(database.Output.output_name == key)
                 ).one().value
+            else:
+                # Get Output with the correct module and key from the most
+                # recent Run that has it
+                value = (
+                    self.db.query(database.Output)
+                    .filter(database.Output.module_id == self.module.id)
+                    .filter(database.Output.output_name == key)
+                    .join(database.Output.run)
+                    .filter(database.Run.pipeline_id == self.run.pipeline_id)
+                    .filter(database.Run.special == True)
+                    .order_by(database.Run.date.desc())
+                ).first()
+                if value is None:
+                    raise NoResultFound
+                value = value.value
             logger.info("Cache: %s get %s", self.module.id, key)
             return value
         except NoResultFound:
