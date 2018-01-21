@@ -144,6 +144,11 @@ class D3mTa2(object):
         self._run_thread.start()
 
     def run_search(self, dataset, problem):
+        """Run the search phase: create pipelines, train and score them.
+
+        This is called by the ``ta2_search`` executable, it is part of the
+        evaluation.
+        """
         # Read problem
         self.problem = problem
         with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
@@ -198,6 +203,11 @@ class D3mTa2(object):
             db.close()
 
     def run_test(self, dataset, problem, pipeline_id, results_root):
+        """Run a previously trained pipeline.
+
+        This is called by the generated executables, it is part of the
+        evaluation.
+        """
         logger.info("About to run test")
         self.problem = problem
         with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
@@ -212,6 +222,11 @@ class D3mTa2(object):
              db_filename=self.db_filename)
 
     def run_server(self, problem, port=None):
+        """Spin up the gRPC server to receive requests from a TA3 system.
+
+        This is called by the ``ta2_serve`` executable. It is part of the
+        TA2+TA3 evaluation.
+        """
         self.problem = problem
         with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
             problem_json = json.load(fp)

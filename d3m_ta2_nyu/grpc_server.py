@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 
 
 class CoreService(pb_core_grpc.CoreServicer):
-    grpc2metric = dict((k, v) for v, k in pb_core.Metric.items()
+    grpc2metric = dict((k, v) for v, k in pb_core.PerformanceMetric.items()
                        if k != pb_core.METRIC_UNDEFINED)
-    metric2grpc = dict(pb_core.Metric.items())
+    metric2grpc = dict(pb_core.PerformanceMetric.items())
     grpc2task = dict((k, v) for v, k in pb_core.TaskType.items()
                      if k != pb_core.TASK_TYPE_UNDEFINED)
 
@@ -66,7 +66,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 )
             )
             return
-        train_features = request.train_features
+        dataset = request.dataset
         task = request.task
         if task not in self.grpc2task:
             logger.error("Got unknown task %r", task)
@@ -94,7 +94,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             return
         task_subtype = request.task_subtype
         task_description = request.task_description
-        output = request.output
         metrics = request.metrics
         if any(m not in self.grpc2metric for m in metrics):
             logger.warning("Got metrics that we don't know about: %s",
@@ -113,22 +112,9 @@ class CoreService(pb_core_grpc.CoreServicer):
                 ),
             )
             return
-        target_features = request.target_features
+        predict_features = request.predict_features
         max_pipelines = request.max_pipelines
 
-        # FIXME: Handle the actual list of training features
-        dataset = set(feat.data_uri for feat in train_features)
-        if len(dataset) != 1:
-            yield pb_core.PipelineCreateResult(
-                response_info=pb_core.Response(
-                    status=pb_core.Status(
-                        code=pb_core.INVALID_ARGUMENT,
-                        details="Please only use a single training dataset",
-                    ),
-                ),
-            )
-            return
-        dataset, = dataset
         if dataset.startswith('file:///'):
             dataset = dataset[7:]
 
@@ -198,10 +184,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     ),
                     progress_info=pb_core.SUBMITTED,
                     pipeline_id=pipeline_id,
-                    pipeline_info=pb_core.Pipeline(
-                        # FIXME: OutputType
-                        output=pb_core.CLASS_LABEL,
-                    ),
+                    pipeline_info=pb_core.Pipeline(),
                 )
             elif event == 'training_start':
                 pipeline_id = kwargs['pipeline_id']
@@ -234,7 +217,6 @@ class CoreService(pb_core_grpc.CoreServicer):
                     progress_info=pb_core.COMPLETED,
                     pipeline_id=pipeline_id,
                     pipeline_info=pb_core.Pipeline(
-                        output=pb_core.CLASS_LABEL,
                         scores=scores,
                     ),
                 )
@@ -329,101 +311,10 @@ class CoreService(pb_core_grpc.CoreServicer):
             status=pb_core.Status(code=pb_core.OK)
         )
 
+    def SetProblemDoc(self, request, context):
+        raise NotImplementedError  # TODO: SetProblemDoc
+
 
 class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
     def __init__(self, app):
         self._app = app
-
-    def DescribeDataflow(self, request, context):
-        sessioncontext = request.context
-        assert sessioncontext.session_id in self._app.sessions
-        pipeline_id = request.pipeline_id
-
-        # We want to hide Persist modules, which are pass-through modules used
-        # to transfer state between train & test
-        registry = get_module_registry()
-        descr_persist = registry.get_descriptor_by_name(
-            'org.vistrails.vistrails.persist',
-            'Persist')
-        persist_modules = {}
-
-        # Build description from VisTrails workflow
-        controller = self._app.get_workflow(sessioncontext.session_id,
-                                            pipeline_id)
-        vt_pipeline = controller.current_pipeline
-        modules = []
-        for vt_module in vt_pipeline.module_list:
-            if vt_module.module_descriptor == descr_persist:
-                persist_modules[vt_module.id] = None
-                continue
-
-            functions = dict((func.name, func.params[0].strValue)
-                             for func in vt_module.functions
-                             if len(func.params) == 1)
-            inputs = []
-            for port in vt_module.destinationPorts():
-                port_desc = dict(name=port.name,
-                                 type=port.sigstring)
-                if port.name in functions:
-                    port_desc['value'] = functions[port.name]
-                elif port.optional:
-                    continue  # Skip unset optional ports
-                port_desc = pb_dataflow.DataflowDescription.Input(**port_desc)
-                inputs.append(port_desc)
-            outputs = [
-                pb_dataflow.DataflowDescription.Output(
-                    name=port.name,
-                    type=port.sigstring,
-                )
-                for port in vt_module.sourcePorts()
-            ]
-
-            label = vt_module.module_descriptor.name
-            if '__desc__' in vt_module.db_annotations_key_index:
-                label = vt_module.get_annotation_by_key('__desc__').value
-
-            modules.append(pb_dataflow.DataflowDescription.Module(
-                id='%d' % vt_module.id,
-                type=vt_module.module_descriptor.sigstring,
-                label=label,
-                inputs=inputs,
-                outputs=outputs,
-            ))
-
-        # Find upstream connections of Persist modules
-        for vt_connection in vt_pipeline.connection_list:
-            dest_mod_id = vt_connection.destination.moduleId
-            if dest_mod_id in persist_modules:
-                persist_modules[dest_mod_id] = vt_connection.source
-
-        connections = []
-        for vt_connection in vt_pipeline.connection_list:
-            if vt_connection.destination.moduleId in persist_modules:
-                continue
-
-            # Connect over the Persist modules
-            source = vt_connection.source
-            if source.moduleId in persist_modules:
-                source = persist_modules[source.moduleId]
-
-            connections.append(pb_dataflow.DataflowDescription.Connection(
-                from_module_id='%d' % source.moduleId,
-                from_output_name=source.name,
-                to_module_id='%d' % vt_connection.destination.moduleId,
-                to_input_name=vt_connection.destination.name,
-            ))
-
-        return pb_dataflow.DataflowDescription(
-            pipeline_id=pipeline_id,
-            modules=modules,
-            connections=connections,
-        )
-
-    def GetDataflowResults(self, request, context):
-        sessioncontext = request.context
-        assert sessioncontext.session_id in self._app.sessions
-        pipeline_id = request.pipeline_id
-
-        # TODO: GetDataflowResults
-        if False:
-            yield

@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='data_ext.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\x0e\x64\x61ta_ext.proto\x1a\ncore.proto\"B\n\x0b\x46\x65\x61tureData\x12\x1e\n\x0c\x66rom_feature\x18\x01 \x03(\x0b\x32\x08.Feature\x12\x13\n\x0b\x64\x61taset_uri\x18\x02 \x01(\t\"V\n\x12\x41\x64\x64\x46\x65\x61turesRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x1e\n\x08\x66\x65\x61tures\x18\x02 \x03(\x0b\x32\x0c.FeatureData\"U\n\x15RemoveFeaturesRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x1a\n\x08\x66\x65\x61tures\x18\x02 \x03(\x0b\x32\x08.Feature\"-\n\x06Sample\x12\x11\n\tsample_id\x18\x01 \x01(\t\x12\x10\n\x08\x64\x61ta_uri\x18\x02 \x01(\t\"?\n\nSampleData\x12\x1c\n\x0b\x66rom_sample\x18\x01 \x03(\x0b\x32\x07.Sample\x12\x13\n\x0b\x64\x61taset_uri\x18\x02 \x01(\t\"S\n\x11\x41\x64\x64SamplesRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x1c\n\x07samples\x18\x02 \x03(\x0b\x32\x0b.SampleData\"U\n\x14RemoveSamplesRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x1b\n\nsample_ids\x18\x02 \x03(\x0b\x32\x07.Sample\"\\\n\x0fReplacementData\x12\r\n\x05value\x18\x01 \x01(\t\x12\x12\n\nfeature_id\x18\x02 \x01(\t\x12\x11\n\tsample_id\x18\x03 \x01(\t\x12\x13\n\x0b\x64\x61taset_uri\x18\x04 \x01(\t\"^\n\x12ReplaceDataRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12&\n\x0creplacements\x18\x02 \x03(\x0b\x32\x10.ReplacementData\"l\n\x12MaterializeRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x1a\n\x12source_dataset_uri\x18\x02 \x01(\t\x12\x18\n\x10\x64\x65st_dataset_uri\x18\x03 \x01(\t\"\x8b\x01\n\x1bTrainValidationSplitRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x10\n\x08val_size\x18\x02 \x01(\x02\x12\x0c\n\x04seed\x18\x03 \x01(\x05\x12\x15\n\ris_validation\x18\x04 \x01(\x08\x12\x13\n\x0b\x64\x61taset_uri\x18\x05 \x01(\t\"$\n\rRevertRequest\x12\x13\n\x0b\x64\x61taset_uri\x18\x01 \x01(\t2\xa1\x03\n\x07\x44\x61taExt\x12/\n\x0b\x41\x64\x64\x46\x65\x61tures\x12\x13.AddFeaturesRequest\x1a\t.Response\"\x00\x12\x35\n\x0eRemoveFeatures\x12\x16.RemoveFeaturesRequest\x1a\t.Response\"\x00\x12-\n\nAddSamples\x12\x12.AddSamplesRequest\x1a\t.Response\"\x00\x12\x33\n\rRemoveSamples\x12\x15.RemoveSamplesRequest\x1a\t.Response\"\x00\x12/\n\x0bReplaceData\x12\x13.ReplaceDataRequest\x1a\t.Response\"\x00\x12/\n\x0bMaterialize\x12\x13.MaterializeRequest\x1a\t.Response\"\x00\x12\x41\n\x14TrainValidationSplit\x12\x1c.TrainValidationSplitRequest\x1a\t.Response\"\x00\x12%\n\x06Revert\x12\x0e.RevertRequest\x1a\t.Response\"\x00\x42\nZ\x08pipelineb\x06proto3')
+  serialized_pb=_b('\n\x0e\x64\x61ta_ext.proto\x1a\ncore.proto\"K\n\x0b\x46\x65\x61tureData\x12\x1e\n\x0c\x66rom_feature\x18\x01 \x01(\x0b\x32\x08.Feature\x12\x1c\n\nto_feature\x18\x02 \x01(\x0b\x32\x08.Feature\"\x88\x01\n\x12\x41\x64\x64\x46\x65\x61turesRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x18\n\x10\x66rom_dataset_uri\x18\x02 \x01(\t\x12\x16\n\x0eto_dataset_uri\x18\x03 \x01(\t\x12\x1e\n\x08\x66\x65\x61tures\x18\x04 \x03(\x0b\x32\x0c.FeatureData\"j\n\x15RemoveFeaturesRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x13\n\x0b\x64\x61taset_uri\x18\x02 \x01(\t\x12\x1a\n\x08\x66\x65\x61tures\x18\x03 \x03(\x0b\x32\x08.Feature\"\xad\x01\n\x11\x41\x64\x64SamplesRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x18\n\x10\x66rom_dataset_uri\x18\x02 \x01(\t\x12\x18\n\x10\x66rom_resource_id\x18\x03 \x01(\t\x12\x16\n\x0eto_dataset_uri\x18\x04 \x01(\t\x12\x16\n\x0eto_resource_id\x18\x05 \x01(\t\x12\x12\n\nsample_ids\x18\x06 \x03(\t\"v\n\x14RemoveSamplesRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x13\n\x0b\x64\x61taset_uri\x18\x02 \x01(\t\x12\x13\n\x0bresource_id\x18\x03 \x01(\t\x12\x12\n\nsample_ids\x18\x04 \x03(\t\"N\n\x0fReplacementData\x12\x19\n\x07\x66\x65\x61ture\x18\x01 \x01(\x0b\x32\x08.Feature\x12\x11\n\tsample_id\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"s\n\x12ReplaceDataRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x13\n\x0b\x64\x61taset_uri\x18\x02 \x01(\t\x12&\n\x0creplacements\x18\x03 \x03(\x0b\x32\x10.ReplacementData\"l\n\x12MaterializeRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x1a\n\x12source_dataset_uri\x18\x02 \x01(\t\x12\x18\n\x10\x64\x65st_dataset_uri\x18\x03 \x01(\t\"\x8b\x01\n\x1bTrainValidationSplitRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x10\n\x08val_size\x18\x02 \x01(\x02\x12\x0c\n\x04seed\x18\x03 \x01(\x05\x12\x15\n\ris_validation\x18\x04 \x01(\x08\x12\x13\n\x0b\x64\x61taset_uri\x18\x05 \x01(\t\"$\n\rRevertRequest\x12\x13\n\x0b\x64\x61taset_uri\x18\x01 \x01(\t2\xa1\x03\n\x07\x44\x61taExt\x12/\n\x0b\x41\x64\x64\x46\x65\x61tures\x12\x13.AddFeaturesRequest\x1a\t.Response\"\x00\x12\x35\n\x0eRemoveFeatures\x12\x16.RemoveFeaturesRequest\x1a\t.Response\"\x00\x12-\n\nAddSamples\x12\x12.AddSamplesRequest\x1a\t.Response\"\x00\x12\x33\n\rRemoveSamples\x12\x15.RemoveSamplesRequest\x1a\t.Response\"\x00\x12/\n\x0bReplaceData\x12\x13.ReplaceDataRequest\x1a\t.Response\"\x00\x12/\n\x0bMaterialize\x12\x13.MaterializeRequest\x1a\t.Response\"\x00\x12\x41\n\x14TrainValidationSplit\x12\x1c.TrainValidationSplitRequest\x1a\t.Response\"\x00\x12%\n\x06Revert\x12\x0e.RevertRequest\x1a\t.Response\"\x00\x42\nZ\x08pipelineb\x06proto3')
   ,
   dependencies=[core__pb2.DESCRIPTOR,])
 
@@ -36,18 +36,18 @@ _FEATUREDATA = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='from_feature', full_name='FeatureData.from_feature', index=0,
-      number=1, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='dataset_uri', full_name='FeatureData.dataset_uri', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
+      name='to_feature', full_name='FeatureData.to_feature', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -61,7 +61,7 @@ _FEATUREDATA = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=30,
-  serialized_end=96,
+  serialized_end=105,
 )
 
 
@@ -78,14 +78,28 @@ _ADDFEATURESREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='features', full_name='AddFeaturesRequest.features', index=1,
-      number=2, type=11, cpp_type=10, label=3,
+      name='from_dataset_uri', full_name='AddFeaturesRequest.from_dataset_uri', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='to_dataset_uri', full_name='AddFeaturesRequest.to_dataset_uri', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='features', full_name='AddFeaturesRequest.features', index=3,
+      number=4, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -98,8 +112,8 @@ _ADDFEATURESREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=98,
-  serialized_end=184,
+  serialized_start=108,
+  serialized_end=244,
 )
 
 
@@ -116,90 +130,21 @@ _REMOVEFEATURESREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='features', full_name='RemoveFeaturesRequest.features', index=1,
-      number=2, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=186,
-  serialized_end=271,
-)
-
-
-_SAMPLE = _descriptor.Descriptor(
-  name='Sample',
-  full_name='Sample',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='sample_id', full_name='Sample.sample_id', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='data_uri', full_name='Sample.data_uri', index=1,
+      name='dataset_uri', full_name='RemoveFeaturesRequest.dataset_uri', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=273,
-  serialized_end=318,
-)
-
-
-_SAMPLEDATA = _descriptor.Descriptor(
-  name='SampleData',
-  full_name='SampleData',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='from_sample', full_name='SampleData.from_sample', index=0,
-      number=1, type=11, cpp_type=10, label=3,
+      name='features', full_name='RemoveFeaturesRequest.features', index=2,
+      number=3, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='dataset_uri', full_name='SampleData.dataset_uri', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -212,8 +157,8 @@ _SAMPLEDATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=320,
-  serialized_end=383,
+  serialized_start=246,
+  serialized_end=352,
 )
 
 
@@ -230,14 +175,42 @@ _ADDSAMPLESREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='samples', full_name='AddSamplesRequest.samples', index=1,
-      number=2, type=11, cpp_type=10, label=3,
+      name='from_dataset_uri', full_name='AddSamplesRequest.from_dataset_uri', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='from_resource_id', full_name='AddSamplesRequest.from_resource_id', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='to_dataset_uri', full_name='AddSamplesRequest.to_dataset_uri', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='to_resource_id', full_name='AddSamplesRequest.to_resource_id', index=4,
+      number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='sample_ids', full_name='AddSamplesRequest.sample_ids', index=5,
+      number=6, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -250,8 +223,8 @@ _ADDSAMPLESREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=385,
-  serialized_end=468,
+  serialized_start=355,
+  serialized_end=528,
 )
 
 
@@ -268,14 +241,28 @@ _REMOVESAMPLESREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='sample_ids', full_name='RemoveSamplesRequest.sample_ids', index=1,
-      number=2, type=11, cpp_type=10, label=3,
+      name='dataset_uri', full_name='RemoveSamplesRequest.dataset_uri', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='resource_id', full_name='RemoveSamplesRequest.resource_id', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='sample_ids', full_name='RemoveSamplesRequest.sample_ids', index=3,
+      number=4, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -288,8 +275,8 @@ _REMOVESAMPLESREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=470,
-  serialized_end=555,
+  serialized_start=530,
+  serialized_end=648,
 )
 
 
@@ -301,33 +288,26 @@ _REPLACEMENTDATA = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='value', full_name='ReplacementData.value', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
+      name='feature', full_name='ReplacementData.feature', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='feature_id', full_name='ReplacementData.feature_id', index=1,
+      name='sample_id', full_name='ReplacementData.sample_id', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='sample_id', full_name='ReplacementData.sample_id', index=2,
+      name='value', full_name='ReplacementData.value', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='dataset_uri', full_name='ReplacementData.dataset_uri', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -340,8 +320,8 @@ _REPLACEMENTDATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=557,
-  serialized_end=649,
+  serialized_start=650,
+  serialized_end=728,
 )
 
 
@@ -358,14 +338,21 @@ _REPLACEDATAREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='replacements', full_name='ReplaceDataRequest.replacements', index=1,
-      number=2, type=11, cpp_type=10, label=3,
+      name='dataset_uri', full_name='ReplaceDataRequest.dataset_uri', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='replacements', full_name='ReplaceDataRequest.replacements', index=2,
+      number=3, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -378,8 +365,8 @@ _REPLACEDATAREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=651,
-  serialized_end=745,
+  serialized_start=730,
+  serialized_end=845,
 )
 
 
@@ -396,21 +383,21 @@ _MATERIALIZEREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='source_dataset_uri', full_name='MaterializeRequest.source_dataset_uri', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='dest_dataset_uri', full_name='MaterializeRequest.dest_dataset_uri', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -423,8 +410,8 @@ _MATERIALIZEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=747,
-  serialized_end=855,
+  serialized_start=847,
+  serialized_end=955,
 )
 
 
@@ -441,35 +428,35 @@ _TRAINVALIDATIONSPLITREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='val_size', full_name='TrainValidationSplitRequest.val_size', index=1,
       number=2, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='seed', full_name='TrainValidationSplitRequest.seed', index=2,
       number=3, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='is_validation', full_name='TrainValidationSplitRequest.is_validation', index=3,
       number=4, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='dataset_uri', full_name='TrainValidationSplitRequest.dataset_uri', index=4,
       number=5, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -482,8 +469,8 @@ _TRAINVALIDATIONSPLITREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=858,
-  serialized_end=997,
+  serialized_start=958,
+  serialized_end=1097,
 )
 
 
@@ -500,7 +487,7 @@ _REVERTREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -513,20 +500,19 @@ _REVERTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=999,
-  serialized_end=1035,
+  serialized_start=1099,
+  serialized_end=1135,
 )
 
 _FEATUREDATA.fields_by_name['from_feature'].message_type = core__pb2._FEATURE
+_FEATUREDATA.fields_by_name['to_feature'].message_type = core__pb2._FEATURE
 _ADDFEATURESREQUEST.fields_by_name['context'].message_type = core__pb2._SESSIONCONTEXT
 _ADDFEATURESREQUEST.fields_by_name['features'].message_type = _FEATUREDATA
 _REMOVEFEATURESREQUEST.fields_by_name['context'].message_type = core__pb2._SESSIONCONTEXT
 _REMOVEFEATURESREQUEST.fields_by_name['features'].message_type = core__pb2._FEATURE
-_SAMPLEDATA.fields_by_name['from_sample'].message_type = _SAMPLE
 _ADDSAMPLESREQUEST.fields_by_name['context'].message_type = core__pb2._SESSIONCONTEXT
-_ADDSAMPLESREQUEST.fields_by_name['samples'].message_type = _SAMPLEDATA
 _REMOVESAMPLESREQUEST.fields_by_name['context'].message_type = core__pb2._SESSIONCONTEXT
-_REMOVESAMPLESREQUEST.fields_by_name['sample_ids'].message_type = _SAMPLE
+_REPLACEMENTDATA.fields_by_name['feature'].message_type = core__pb2._FEATURE
 _REPLACEDATAREQUEST.fields_by_name['context'].message_type = core__pb2._SESSIONCONTEXT
 _REPLACEDATAREQUEST.fields_by_name['replacements'].message_type = _REPLACEMENTDATA
 _MATERIALIZEREQUEST.fields_by_name['context'].message_type = core__pb2._SESSIONCONTEXT
@@ -534,8 +520,6 @@ _TRAINVALIDATIONSPLITREQUEST.fields_by_name['context'].message_type = core__pb2.
 DESCRIPTOR.message_types_by_name['FeatureData'] = _FEATUREDATA
 DESCRIPTOR.message_types_by_name['AddFeaturesRequest'] = _ADDFEATURESREQUEST
 DESCRIPTOR.message_types_by_name['RemoveFeaturesRequest'] = _REMOVEFEATURESREQUEST
-DESCRIPTOR.message_types_by_name['Sample'] = _SAMPLE
-DESCRIPTOR.message_types_by_name['SampleData'] = _SAMPLEDATA
 DESCRIPTOR.message_types_by_name['AddSamplesRequest'] = _ADDSAMPLESREQUEST
 DESCRIPTOR.message_types_by_name['RemoveSamplesRequest'] = _REMOVESAMPLESREQUEST
 DESCRIPTOR.message_types_by_name['ReplacementData'] = _REPLACEMENTDATA
@@ -565,20 +549,6 @@ RemoveFeaturesRequest = _reflection.GeneratedProtocolMessageType('RemoveFeatures
   # @@protoc_insertion_point(class_scope:RemoveFeaturesRequest)
   ))
 _sym_db.RegisterMessage(RemoveFeaturesRequest)
-
-Sample = _reflection.GeneratedProtocolMessageType('Sample', (_message.Message,), dict(
-  DESCRIPTOR = _SAMPLE,
-  __module__ = 'data_ext_pb2'
-  # @@protoc_insertion_point(class_scope:Sample)
-  ))
-_sym_db.RegisterMessage(Sample)
-
-SampleData = _reflection.GeneratedProtocolMessageType('SampleData', (_message.Message,), dict(
-  DESCRIPTOR = _SAMPLEDATA,
-  __module__ = 'data_ext_pb2'
-  # @@protoc_insertion_point(class_scope:SampleData)
-  ))
-_sym_db.RegisterMessage(SampleData)
 
 AddSamplesRequest = _reflection.GeneratedProtocolMessageType('AddSamplesRequest', (_message.Message,), dict(
   DESCRIPTOR = _ADDSAMPLESREQUEST,
@@ -639,8 +609,8 @@ _DATAEXT = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=1038,
-  serialized_end=1455,
+  serialized_start=1138,
+  serialized_end=1555,
   methods=[
   _descriptor.MethodDescriptor(
     name='AddFeatures',
@@ -719,350 +689,4 @@ _sym_db.RegisterServiceDescriptor(_DATAEXT)
 
 DESCRIPTOR.services_by_name['DataExt'] = _DATAEXT
 
-try:
-  # THESE ELEMENTS WILL BE DEPRECATED.
-  # Please use the generated *_pb2_grpc.py files instead.
-  import grpc
-  from grpc.beta import implementations as beta_implementations
-  from grpc.beta import interfaces as beta_interfaces
-  from grpc.framework.common import cardinality
-  from grpc.framework.interfaces.face import utilities as face_utilities
-
-
-  class DataExtStub(object):
-    # missing associated documentation comment in .proto file
-    pass
-
-    def __init__(self, channel):
-      """Constructor.
-
-      Args:
-        channel: A grpc.Channel.
-      """
-      self.AddFeatures = channel.unary_unary(
-          '/DataExt/AddFeatures',
-          request_serializer=AddFeaturesRequest.SerializeToString,
-          response_deserializer=core__pb2.Response.FromString,
-          )
-      self.RemoveFeatures = channel.unary_unary(
-          '/DataExt/RemoveFeatures',
-          request_serializer=RemoveFeaturesRequest.SerializeToString,
-          response_deserializer=core__pb2.Response.FromString,
-          )
-      self.AddSamples = channel.unary_unary(
-          '/DataExt/AddSamples',
-          request_serializer=AddSamplesRequest.SerializeToString,
-          response_deserializer=core__pb2.Response.FromString,
-          )
-      self.RemoveSamples = channel.unary_unary(
-          '/DataExt/RemoveSamples',
-          request_serializer=RemoveSamplesRequest.SerializeToString,
-          response_deserializer=core__pb2.Response.FromString,
-          )
-      self.ReplaceData = channel.unary_unary(
-          '/DataExt/ReplaceData',
-          request_serializer=ReplaceDataRequest.SerializeToString,
-          response_deserializer=core__pb2.Response.FromString,
-          )
-      self.Materialize = channel.unary_unary(
-          '/DataExt/Materialize',
-          request_serializer=MaterializeRequest.SerializeToString,
-          response_deserializer=core__pb2.Response.FromString,
-          )
-      self.TrainValidationSplit = channel.unary_unary(
-          '/DataExt/TrainValidationSplit',
-          request_serializer=TrainValidationSplitRequest.SerializeToString,
-          response_deserializer=core__pb2.Response.FromString,
-          )
-      self.Revert = channel.unary_unary(
-          '/DataExt/Revert',
-          request_serializer=RevertRequest.SerializeToString,
-          response_deserializer=core__pb2.Response.FromString,
-          )
-
-
-  class DataExtServicer(object):
-    # missing associated documentation comment in .proto file
-    pass
-
-    def AddFeatures(self, request, context):
-      """Add and remove features to/from datasets
-      """
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def RemoveFeatures(self, request, context):
-      # missing associated documentation comment in .proto file
-      pass
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def AddSamples(self, request, context):
-      """Add and remove records (rows) to/from datasets
-      """
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def RemoveSamples(self, request, context):
-      # missing associated documentation comment in .proto file
-      pass
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def ReplaceData(self, request, context):
-      """Replace individual data points in a set
-      """
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def Materialize(self, request, context):
-      """Persist the dataset with modifications applied for future use
-      """
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def TrainValidationSplit(self, request, context):
-      """Deterministic split of a dataset into training a validation
-      Filters out all but validation records or training records depending on is_validation
-      """
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def Revert(self, request, context):
-      """Revert the dataset to the original state
-      """
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-
-  def add_DataExtServicer_to_server(servicer, server):
-    rpc_method_handlers = {
-        'AddFeatures': grpc.unary_unary_rpc_method_handler(
-            servicer.AddFeatures,
-            request_deserializer=AddFeaturesRequest.FromString,
-            response_serializer=core__pb2.Response.SerializeToString,
-        ),
-        'RemoveFeatures': grpc.unary_unary_rpc_method_handler(
-            servicer.RemoveFeatures,
-            request_deserializer=RemoveFeaturesRequest.FromString,
-            response_serializer=core__pb2.Response.SerializeToString,
-        ),
-        'AddSamples': grpc.unary_unary_rpc_method_handler(
-            servicer.AddSamples,
-            request_deserializer=AddSamplesRequest.FromString,
-            response_serializer=core__pb2.Response.SerializeToString,
-        ),
-        'RemoveSamples': grpc.unary_unary_rpc_method_handler(
-            servicer.RemoveSamples,
-            request_deserializer=RemoveSamplesRequest.FromString,
-            response_serializer=core__pb2.Response.SerializeToString,
-        ),
-        'ReplaceData': grpc.unary_unary_rpc_method_handler(
-            servicer.ReplaceData,
-            request_deserializer=ReplaceDataRequest.FromString,
-            response_serializer=core__pb2.Response.SerializeToString,
-        ),
-        'Materialize': grpc.unary_unary_rpc_method_handler(
-            servicer.Materialize,
-            request_deserializer=MaterializeRequest.FromString,
-            response_serializer=core__pb2.Response.SerializeToString,
-        ),
-        'TrainValidationSplit': grpc.unary_unary_rpc_method_handler(
-            servicer.TrainValidationSplit,
-            request_deserializer=TrainValidationSplitRequest.FromString,
-            response_serializer=core__pb2.Response.SerializeToString,
-        ),
-        'Revert': grpc.unary_unary_rpc_method_handler(
-            servicer.Revert,
-            request_deserializer=RevertRequest.FromString,
-            response_serializer=core__pb2.Response.SerializeToString,
-        ),
-    }
-    generic_handler = grpc.method_handlers_generic_handler(
-        'DataExt', rpc_method_handlers)
-    server.add_generic_rpc_handlers((generic_handler,))
-
-
-  class BetaDataExtServicer(object):
-    """The Beta API is deprecated for 0.15.0 and later.
-
-    It is recommended to use the GA API (classes and functions in this
-    file not marked beta) for all further purposes. This class was generated
-    only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0."""
-    # missing associated documentation comment in .proto file
-    pass
-    def AddFeatures(self, request, context):
-      """Add and remove features to/from datasets
-      """
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def RemoveFeatures(self, request, context):
-      # missing associated documentation comment in .proto file
-      pass
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def AddSamples(self, request, context):
-      """Add and remove records (rows) to/from datasets
-      """
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def RemoveSamples(self, request, context):
-      # missing associated documentation comment in .proto file
-      pass
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def ReplaceData(self, request, context):
-      """Replace individual data points in a set
-      """
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def Materialize(self, request, context):
-      """Persist the dataset with modifications applied for future use
-      """
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def TrainValidationSplit(self, request, context):
-      """Deterministic split of a dataset into training a validation
-      Filters out all but validation records or training records depending on is_validation
-      """
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def Revert(self, request, context):
-      """Revert the dataset to the original state
-      """
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-
-
-  class BetaDataExtStub(object):
-    """The Beta API is deprecated for 0.15.0 and later.
-
-    It is recommended to use the GA API (classes and functions in this
-    file not marked beta) for all further purposes. This class was generated
-    only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0."""
-    # missing associated documentation comment in .proto file
-    pass
-    def AddFeatures(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      """Add and remove features to/from datasets
-      """
-      raise NotImplementedError()
-    AddFeatures.future = None
-    def RemoveFeatures(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      # missing associated documentation comment in .proto file
-      pass
-      raise NotImplementedError()
-    RemoveFeatures.future = None
-    def AddSamples(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      """Add and remove records (rows) to/from datasets
-      """
-      raise NotImplementedError()
-    AddSamples.future = None
-    def RemoveSamples(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      # missing associated documentation comment in .proto file
-      pass
-      raise NotImplementedError()
-    RemoveSamples.future = None
-    def ReplaceData(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      """Replace individual data points in a set
-      """
-      raise NotImplementedError()
-    ReplaceData.future = None
-    def Materialize(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      """Persist the dataset with modifications applied for future use
-      """
-      raise NotImplementedError()
-    Materialize.future = None
-    def TrainValidationSplit(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      """Deterministic split of a dataset into training a validation
-      Filters out all but validation records or training records depending on is_validation
-      """
-      raise NotImplementedError()
-    TrainValidationSplit.future = None
-    def Revert(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      """Revert the dataset to the original state
-      """
-      raise NotImplementedError()
-    Revert.future = None
-
-
-  def beta_create_DataExt_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
-    """The Beta API is deprecated for 0.15.0 and later.
-
-    It is recommended to use the GA API (classes and functions in this
-    file not marked beta) for all further purposes. This function was
-    generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
-    request_deserializers = {
-      ('DataExt', 'AddFeatures'): AddFeaturesRequest.FromString,
-      ('DataExt', 'AddSamples'): AddSamplesRequest.FromString,
-      ('DataExt', 'Materialize'): MaterializeRequest.FromString,
-      ('DataExt', 'RemoveFeatures'): RemoveFeaturesRequest.FromString,
-      ('DataExt', 'RemoveSamples'): RemoveSamplesRequest.FromString,
-      ('DataExt', 'ReplaceData'): ReplaceDataRequest.FromString,
-      ('DataExt', 'Revert'): RevertRequest.FromString,
-      ('DataExt', 'TrainValidationSplit'): TrainValidationSplitRequest.FromString,
-    }
-    response_serializers = {
-      ('DataExt', 'AddFeatures'): core__pb2.Response.SerializeToString,
-      ('DataExt', 'AddSamples'): core__pb2.Response.SerializeToString,
-      ('DataExt', 'Materialize'): core__pb2.Response.SerializeToString,
-      ('DataExt', 'RemoveFeatures'): core__pb2.Response.SerializeToString,
-      ('DataExt', 'RemoveSamples'): core__pb2.Response.SerializeToString,
-      ('DataExt', 'ReplaceData'): core__pb2.Response.SerializeToString,
-      ('DataExt', 'Revert'): core__pb2.Response.SerializeToString,
-      ('DataExt', 'TrainValidationSplit'): core__pb2.Response.SerializeToString,
-    }
-    method_implementations = {
-      ('DataExt', 'AddFeatures'): face_utilities.unary_unary_inline(servicer.AddFeatures),
-      ('DataExt', 'AddSamples'): face_utilities.unary_unary_inline(servicer.AddSamples),
-      ('DataExt', 'Materialize'): face_utilities.unary_unary_inline(servicer.Materialize),
-      ('DataExt', 'RemoveFeatures'): face_utilities.unary_unary_inline(servicer.RemoveFeatures),
-      ('DataExt', 'RemoveSamples'): face_utilities.unary_unary_inline(servicer.RemoveSamples),
-      ('DataExt', 'ReplaceData'): face_utilities.unary_unary_inline(servicer.ReplaceData),
-      ('DataExt', 'Revert'): face_utilities.unary_unary_inline(servicer.Revert),
-      ('DataExt', 'TrainValidationSplit'): face_utilities.unary_unary_inline(servicer.TrainValidationSplit),
-    }
-    server_options = beta_implementations.server_options(request_deserializers=request_deserializers, response_serializers=response_serializers, thread_pool=pool, thread_pool_size=pool_size, default_timeout=default_timeout, maximum_timeout=maximum_timeout)
-    return beta_implementations.server(method_implementations, options=server_options)
-
-
-  def beta_create_DataExt_stub(channel, host=None, metadata_transformer=None, pool=None, pool_size=None):
-    """The Beta API is deprecated for 0.15.0 and later.
-
-    It is recommended to use the GA API (classes and functions in this
-    file not marked beta) for all further purposes. This function was
-    generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
-    request_serializers = {
-      ('DataExt', 'AddFeatures'): AddFeaturesRequest.SerializeToString,
-      ('DataExt', 'AddSamples'): AddSamplesRequest.SerializeToString,
-      ('DataExt', 'Materialize'): MaterializeRequest.SerializeToString,
-      ('DataExt', 'RemoveFeatures'): RemoveFeaturesRequest.SerializeToString,
-      ('DataExt', 'RemoveSamples'): RemoveSamplesRequest.SerializeToString,
-      ('DataExt', 'ReplaceData'): ReplaceDataRequest.SerializeToString,
-      ('DataExt', 'Revert'): RevertRequest.SerializeToString,
-      ('DataExt', 'TrainValidationSplit'): TrainValidationSplitRequest.SerializeToString,
-    }
-    response_deserializers = {
-      ('DataExt', 'AddFeatures'): core__pb2.Response.FromString,
-      ('DataExt', 'AddSamples'): core__pb2.Response.FromString,
-      ('DataExt', 'Materialize'): core__pb2.Response.FromString,
-      ('DataExt', 'RemoveFeatures'): core__pb2.Response.FromString,
-      ('DataExt', 'RemoveSamples'): core__pb2.Response.FromString,
-      ('DataExt', 'ReplaceData'): core__pb2.Response.FromString,
-      ('DataExt', 'Revert'): core__pb2.Response.FromString,
-      ('DataExt', 'TrainValidationSplit'): core__pb2.Response.FromString,
-    }
-    cardinalities = {
-      'AddFeatures': cardinality.Cardinality.UNARY_UNARY,
-      'AddSamples': cardinality.Cardinality.UNARY_UNARY,
-      'Materialize': cardinality.Cardinality.UNARY_UNARY,
-      'RemoveFeatures': cardinality.Cardinality.UNARY_UNARY,
-      'RemoveSamples': cardinality.Cardinality.UNARY_UNARY,
-      'ReplaceData': cardinality.Cardinality.UNARY_UNARY,
-      'Revert': cardinality.Cardinality.UNARY_UNARY,
-      'TrainValidationSplit': cardinality.Cardinality.UNARY_UNARY,
-    }
-    stub_options = beta_implementations.stub_options(host=host, metadata_transformer=metadata_transformer, request_serializers=request_serializers, response_deserializers=response_deserializers, thread_pool=pool, thread_pool_size=pool_size)
-    return beta_implementations.dynamic_stub(channel, 'DataExt', cardinalities, options=stub_options)
-except ImportError:
-  pass
 # @@protoc_insertion_point(module_scope)

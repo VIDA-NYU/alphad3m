@@ -213,11 +213,12 @@ SCORES_RANKING_ORDER = dict(
 TASKS_FROM_SCHEMA = {
     'classification': 'CLASSIFICATION',
     'regression': 'REGRESSION',
-    'similarityMatching': 'SIMILARITY_MATCHING',
+    'clustering': 'CLUSTERING',
     'linkPrediction': 'LINK_PREDICTION',
     'vertexNomination': 'VERTEX_NOMINATION',
     'communityDetection': 'COMMUNITY_DETECTION',
+    #'': 'GRAPH_CLUSTERING',
     'graphMatching': 'GRAPH_MATCHING',
-    'timeseriesForecasting': 'TIMESERIES_FORECASTING',
+    'timeSeriesForecasting': 'TIME_SERIES_FORECASTING',
     'collaborativeFiltering': 'COLLABORATIVE_FILTERING',
 }
