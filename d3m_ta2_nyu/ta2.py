@@ -237,10 +237,16 @@ class D3mTa2(object):
 
         db = self.DBSession()
         try:
+            # Find most recent cross-validation
+            crossval_id = (
+                select([database.CrossValidation.id])
+                .where(database.CrossValidation.pipeline_id == pipeline_id)
+                .order_by(database.CrossValidation.date.desc())
+            ).as_scalar()
+            # Get scores from that cross-validation
             scores = (
                 db.query(database.CrossValidationScore)
-                .options(joinedload(database.CrossValidationScore.cross_validation))
-                .filter(database.CrossValidationScore.cross_validation.has(pipeline_id=pipeline_id))
+                .filter(database.CrossValidationScore.cross_validation_id == crossval_id)
             ).all()
             return {s.metric: s.value for s in scores}
         finally:
