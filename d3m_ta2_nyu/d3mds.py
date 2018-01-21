@@ -63,7 +63,7 @@ class D3MDataset(object):
             if problem is None:
                 raise RuntimeError('asking for learningData for a split, but the problem is not given')
             splitsdf = problem.get_datasplits(view)
-            df = df.iloc[splitsdf.index]
+            df = df.loc[splitsdf.index]
             return df
 
     def get_learning_data_columns(self):
