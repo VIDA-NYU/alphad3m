@@ -6,7 +6,8 @@ leave this module.
 """
 
 import logging
-from queue import  Queue
+from queue import Queue
+from uuid import UUID
 
 from . import __version__
 
@@ -41,16 +42,15 @@ class CoreService(pb_core_grpc.CoreServicer):
             ),
             user_agent='nyu_ta2 %s' % __version__,
             version=version,
-            context=pb_core.SessionContext(session_id=session_id),
+            context=pb_core.SessionContext(session_id=str(session_id)),
         )
 
     def EndSession(self, request, context):
-        if request.session_id in self._app.sessions:
+        session_id = UUID(hex=request.session_id)
+        if session_id in self._app.sessions:
             status = pb_core.OK
             self._app.finish_session(request.session_id)
-            logger.info("Session terminated: %s", request.session_id)
-        elif request.session_id < self._app._next_session:
-            status = pb_core.SESSION_ENDED
+            logger.info("Session terminated: %s", session_id)
         else:
             status = pb_core.SESSION_UNKNOWN
         return pb_core.Response(
@@ -58,8 +58,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         )
 
     def CreatePipelines(self, request, context):
-        sessioncontext = request.context
-        if sessioncontext.session_id not in self._app.sessions:
+        session_id = UUID(hex=request.context.session_id)
+        if session_id not in self._app.sessions:
             yield pb_core.PipelineCreateResult(
                 response_info=pb_core.Response(
                     status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
@@ -120,22 +120,21 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         logger.info("Got CreatePipelines request, session=%s, task=%s, "
                     "dataset=%s, metrics=%s, ",
-                    sessioncontext.session_id, task,
+                    session_id, task,
                     dataset, ", ".join(metrics))
 
         queue = Queue()
-        session = self._app.sessions[sessioncontext.session_id]
+        session = self._app.sessions[session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            self._app.build_pipelines(sessioncontext.session_id, task, dataset,
-                                      metrics)
+            self._app.build_pipelines(session_id, task, dataset, metrics)
 
             for msg in self._pipelinecreateresult_stream(context, queue,
                                                          session):
                 yield msg
 
     def GetCreatePipelineResults(self, request, context):
-        sessioncontext = request.context
-        if sessioncontext.session_id not in self._app.sessions:
+        session_id = UUID(hex=request.context.session_id)
+        if session_id not in self._app.sessions:
             yield pb_core.PipelineCreateResult(
                 response_info=pb_core.Response(
                     status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
@@ -145,10 +144,10 @@ class CoreService(pb_core_grpc.CoreServicer):
         pipeline_ids = request.pipeline_ids
 
         logger.info("Got GetCreatePipelineResults request, session=%s",
-                    sessioncontext.session_id)
+                    session_id)
 
         queue = Queue()
-        session = self._app.sessions[sessioncontext.session_id]
+        session = self._app.sessions[session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             for msg in self._pipelinecreateresult_stream(context, queue,
                                                          session,
@@ -241,8 +240,8 @@ class CoreService(pb_core_grpc.CoreServicer):
                              event)
 
     def ExecutePipeline(self, request, context):
-        sessioncontext = request.context
-        if sessioncontext.session_id not in self._app.sessions:
+        session_id = UUID(hex=request.context.session_id)
+        if session_id not in self._app.sessions:
             yield pb_core.PipelineExecuteResult(
                 response_info=pb_core.Response(
                     status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
@@ -251,8 +250,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             return
         pipeline_id = request.pipeline_id
 
-        logger.info("Got ExecutePipeline request, session=%s",
-                    sessioncontext.session_id)
+        logger.info("Got ExecutePipeline request, session=%s", session_id)
 
         # TODO: ExecutePipeline
         yield pb_core.PipelineExecuteResult(
@@ -264,12 +262,12 @@ class CoreService(pb_core_grpc.CoreServicer):
         )
 
     def ListPipelines(self, request, context):
-        sessioncontext = request.context
-        if sessioncontext.session_id not in self._app.sessions:
+        session_id = UUID(hex=request.context.session_id)
+        if session_id not in self._app.sessions:
             return pb_core.PipelineListResult(
                 status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
             )
-        session = self._app.sessions[sessioncontext.session_id]
+        session = self._app.sessions[session_id]
         with session.lock:
             pipelines = list(session.pipelines)
         return pb_core.PipelineListResult(
@@ -283,12 +281,12 @@ class CoreService(pb_core_grpc.CoreServicer):
         raise NotImplementedError  # TODO: GetExecutePipelineResults
 
     def ExportPipeline(self, request, context):
-        sessioncontext = request.context
-        if sessioncontext.session_id not in self._app.sessions:
+        session_id = UUID(hex=request.context.session_id)
+        if session_id not in self._app.sessions:
             return pb_core.Response(
                 status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
             )
-        session = self._app.sessions[sessioncontext.session_id]
+        session = self._app.sessions[session_id]
         with session.lock:
             if request.pipeline_id not in session.pipelines:
                 return pb_core.Response(
