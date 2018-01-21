@@ -230,6 +230,7 @@ class D3mTa2(object):
         self.sessions[session.id] = session
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+            session.training = True
             session.pipelines_training.add(pipeline_id)
             self._run_queue.put((session, pipeline_id, dataset))
             while queue.get(True)[0] != 'done_training':
