@@ -66,7 +66,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 )
             )
             return
-        dataset = request.dataset
+        dataset = request.dataset_uri
         task = request.task
         if task not in self.grpc2task:
             logger.error("Got unknown task %r", task)
@@ -112,7 +112,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 ),
             )
             return
-        predict_features = request.predict_features
+        target_features = request.target_features
         max_pipelines = request.max_pipelines
 
         if dataset.startswith('file:///'):
