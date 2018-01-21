@@ -141,7 +141,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 ),
             )
             return
-        pipeline_ids = request.pipeline_ids
+        pipeline_ids = [UUID(hex=i) for i in request.pipeline_ids]
 
         logger.info("Got GetCreatePipelineResults request, session=%s",
                     session_id)
@@ -182,7 +182,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         status=pb_core.Status(code=pb_core.OK),
                     ),
                     progress_info=pb_core.SUBMITTED,
-                    pipeline_id=pipeline_id,
+                    pipeline_id=str(pipeline_id),
                     pipeline_info=pb_core.Pipeline(),
                 )
             elif event == 'training_start':
@@ -194,7 +194,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         status=pb_core.Status(code=pb_core.OK),
                     ),
                     progress_info=pb_core.RUNNING,
-                    pipeline_id=pipeline_id,
+                    pipeline_id=str(pipeline_id),
                 )
             elif event == 'training_success':
                 pipeline_id = kwargs['pipeline_id']
@@ -214,7 +214,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         status=pb_core.Status(code=pb_core.OK),
                     ),
                     progress_info=pb_core.COMPLETED,
-                    pipeline_id=pipeline_id,
+                    pipeline_id=str(pipeline_id),
                     pipeline_info=pb_core.Pipeline(
                         scores=scores,
                     ),
@@ -231,7 +231,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         ),
                     ),
                     progress_info=pb_core.ERRORED,
-                    pipeline_id=pipeline_id,
+                    pipeline_id=str(pipeline_id),
                 )
             elif event == 'done_training':
                 break
@@ -248,7 +248,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 ),
             )
             return
-        pipeline_id = request.pipeline_id
+        pipeline_id = UUID(hex=request.pipeline_id)
 
         logger.info("Got ExecutePipeline request, session=%s", session_id)
 
@@ -258,7 +258,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 status=pb_core.Status(code=pb_core.OK),
             ),
             progress_info=pb_core.COMPLETED,
-            pipeline_id=pipeline_id,
+            pipeline_id=str(pipeline_id),
         )
 
     def ListPipelines(self, request, context):
@@ -274,7 +274,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             response_info=pb_core.Response(
                 status=pb_core.Status(code=pb_core.OK),
             ),
-            pipeline_ids=pipelines,
+            pipeline_ids=[str(i) for i in pipelines],
         )
 
     def GetExecutePipelineResults(self, request, context):
@@ -287,14 +287,15 @@ class CoreService(pb_core_grpc.CoreServicer):
                 status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
             )
         session = self._app.sessions[session_id]
+        pipeline_id = UUID(hex=request.pipeline_id)
         with session.lock:
-            if request.pipeline_id not in session.pipelines:
+            if pipeline_id not in session.pipelines:
                 return pb_core.Response(
                     status=pb_core.Status(
                         code=pb_core.INVALID_ARGUMENT,
                         details="No such pipeline"),
                 )
-            pipeline = session.pipelines[request.pipeline_id]
+            pipeline = session.pipelines[pipeline_id]
             if not pipeline.trained:
                 return pb_core.Response(
                     status=pb_core.Status(
