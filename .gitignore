@@ -49,3 +49,6 @@ desktop.ini
 
 # Vagrant
 .vagrant
+
+# alphazero
+/d3m_ta2_nyu/alphazero_pipeline_generator/temp
