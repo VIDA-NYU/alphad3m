@@ -18,7 +18,7 @@ def test(pipeline_id, dataset, problem, results_path, db):
 
     # Load data
     ds = D3MDS(dataset, problem)
-    logger.info("Loaded dataset, columns: %r",
+    logger.info("Loaded dataset, columns: %s",
                 ", ".join(col['colName']
                           for col in ds.dataset.get_learning_data_columns()))
 
