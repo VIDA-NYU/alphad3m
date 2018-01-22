@@ -3,6 +3,8 @@ import numpy
 import sys
 import time
 
+from sqlalchemy.orm import joinedload
+
 from d3m_ta2_nyu.common import SCORES_TO_SKLEARN
 from d3m_ta2_nyu.d3mds import D3MDS
 from d3m_ta2_nyu.workflow import database
@@ -78,12 +80,10 @@ def cross_validation(pipeline, metrics, data, targets, progress, db):
 
 
 @database.with_db
-def train(pipeline_id, metrics, dataset, problem, msg_queue, db):
+def tune(pipeline_id, metrics, dataset, problem, msg_queue, db):
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
-    max_progress = FOLDS + 2.0
-
     logger.info("About to run training pipeline, id=%s, dataset=%r, "
                 "problem=%r",
                 pipeline_id, dataset, problem)
@@ -97,26 +97,65 @@ def train(pipeline_id, metrics, dataset, problem, msg_queue, db):
     data = ds.get_train_data()
     targets = ds.get_train_targets()
 
+    # Load pipeline from database
+    pipeline = (
+        db.query(database.Pipeline)
+        .filter(database.Pipeline.id == pipeline_id)
+        .options(joinedload(database.Pipeline.modules),
+                 joinedload(database.Pipeline.connections))
+    ).one()
+
+    # TODO: Get list of hyperparameters present in pipeline
+
+    tuning = HyperparameterTuning(list_of_hyperparameters)
+
+    def evaluate(hyperparameter_configuration):
+        # TODO: Set hyperparameters in db
+
+        scores = cross_validation(
+            pipeline, metrics, data, targets,
+            lambda i: None,
+            db)
+
+        # Don't store those runs
+        db.rollback()
+
+        return scores[metrics[0]]
+
+    # Run tuning, gets best configuration
+    hyperparameter_configuration = tuning.tune(evaluate)
+
+    # Duplicate pipeline in database
+    new_pipeline = database.duplicate_pipeline(
+        db, pipeline,
+        "Hyperparameter tuning from pipeline %s" % pipeline_id)
+
+    # TODO: Set hyperparameters
+
+    db.flush()
+
     # Scoring step - make folds, run them through the pipeline one by one
     # (set both training_data and test_data),
     # get predictions from OutputPort to get cross validation scores
     scores = cross_validation(
-        pipeline_id, metrics, data, targets,
-        lambda i: msg_queue.put((pipeline_id, 'progress',
-                                 (i + 1.0) / max_progress)),
+        new_pipeline, metrics, data, targets,
+        lambda i: None,
         db)
     scores = [database.CrossValidationScore(metric=metric,
                                             value=numpy.mean(values))
               for metric, values in scores.items()]
-    crossval = database.CrossValidation(pipeline_id=pipeline_id, scores=scores)
+    crossval = database.CrossValidation(pipeline_id=new_pipeline.id,
+                                        scores=scores)
     db.add(crossval)
 
     # Training step - run pipeline on full training_data,
     # Persist module set to write
-    logger.info("Scoring done, running training on full data")
+    logger.info("Tuning done, generated new pipeline %s. "
+                "Running training on full data",
+                new_pipeline.id)
 
     try:
-        execute_train(db, pipeline_id, data, targets)
+        execute_train(db, new_pipeline, data, targets)
     except Exception:
         logger.exception("Error running training on full data")
         sys.exit(1)

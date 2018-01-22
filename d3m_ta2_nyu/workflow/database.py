@@ -1,6 +1,7 @@
 """The SQLAlchemy models we use to persist data.
 """
 
+import copy
 import enum
 import functools
 import logging
@@ -179,3 +180,50 @@ def with_db(wrapped):
         finally:
             db.close()
     return wrapper
+
+
+def _duplicate(db, obj, replace={}):
+    obj = copy.copy(obj)
+    del obj.id
+    for k, v in replace.items():
+        if isinstance(v, dict):
+            old_v = getattr(obj, k)
+            v = v[old_v]
+        setattr(obj, k, v)
+    db.add(obj)
+    return obj
+
+
+def _duplicate_list(db, lst, replace={}):
+    return [_duplicate(db, obj, replace) for obj in lst]
+
+
+def duplicate_pipeline(db, pipeline, origin):
+    """Duplicates a Pipeline.
+
+    This creates a new Pipeline with new modules/parameters/connections. They
+    all get new IDs.
+    """
+    new_pipeline = Pipeline(
+        origin=origin,
+        task=pipeline.task,
+    )
+
+    modules = {}
+    for module in pipeline.modules:
+        new_module = _duplicate(db, module,
+                                dict(pipeline_id=new_pipeline.id))
+        modules[module.id] = new_module.id
+
+    _duplicate_list(db, pipeline.parameters,
+                    dict(pipeline_id=new_pipeline.id,
+                         module_id=modules))
+    _duplicate_list(db, pipeline.parameters,
+               dict(pipeline_id=new_pipeline.id,
+                    module_id=modules))
+    _duplicate_list(db, pipeline.parameters,
+               dict(pipeline_id=new_pipeline.id,
+                    from_module_id=modules,
+                    to_module_id=modules))
+
+    return new_pipeline
