@@ -217,7 +217,7 @@ TASKS_FROM_SCHEMA = {
     'linkPrediction': 'LINK_PREDICTION',
     'vertexNomination': 'VERTEX_NOMINATION',
     'communityDetection': 'COMMUNITY_DETECTION',
-    #'': 'GRAPH_CLUSTERING',
+    'graphClustering': 'GRAPH_CLUSTERING',
     'graphMatching': 'GRAPH_MATCHING',
     'timeSeriesForecasting': 'TIME_SERIES_FORECASTING',
     'collaborativeFiltering': 'COLLABORATIVE_FILTERING',
