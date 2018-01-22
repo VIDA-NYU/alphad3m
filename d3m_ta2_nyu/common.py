@@ -173,6 +173,8 @@ SCORES_TO_SKLEARN = dict(
     # FIXME: ROOT_MEAN_SQUARED_ERROR_AVG // sum(mean_squared_error_list)/len(mean_squared_error_list)
     # FIXME: MEAN_ABSOLUTE_ERROR // sklearn.metrics.mean_absolute_error
     R_SQUARED=sklearn.metrics.r2_score,
+    # FIXME: NORMALIZED_MUTUAL_INFORMATION
+    # FIXME: JACCARD_SIMILARITY_SCORE
     EXECUTION_TIME=None,
 )
 
@@ -191,6 +193,7 @@ SCORES_FROM_SCHEMA = {
     'rSquared': 'R_SQUARED',
     'normalizedMutualInformation': 'NORMALIZED_MUTUAL_INFORMATION',
     'jaccardSimilarityScore': 'JACCARD_SIMILARITY_SCORE',
+    #'precisionAtTopK': None,
 }
 
 # 1 if lower values of that metric indicate a better classifier, -1 otherwise
