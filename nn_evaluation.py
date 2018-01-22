@@ -4,6 +4,7 @@
 import os
 import tempfile
 
+from d3m_ta2_nyu.main import setup_logging
 from d3m_ta2_nyu.ta2 import D3mTa2
 from d3m_ta2_nyu.workflow import database
 
@@ -15,8 +16,12 @@ ta2 = D3mTa2(storage_root=storage,
              executables_root=os.path.join(storage, 'executables'))
 
 
+setup_logging()
+
+
 def evaluate_pipeline_from_strings(strings, origin,
-                                   dataset, problem):
+                                   dataset, problem,
+                                   metric=None):
     """Translate the pipeline, add it to the database, and evaluate it.
 
     Example::
@@ -36,6 +41,8 @@ def evaluate_pipeline_from_strings(strings, origin,
         "Created by neural network"
     :param dataset: Path to the D3M dataset to use when running the pipeline
     :param problem: Path to the D3M problem to use when running the pipeline
+    :param metric: The name of the metric to use (same name used in problem
+        schema) or None to use the first metric defined in the problem
     :return: A dict of scores, for example ``{'F1': 0.5, 'ROC_AUC': 1.0}``
     """
 
@@ -88,4 +95,5 @@ def evaluate_pipeline_from_strings(strings, origin,
         db.close()
 
     # Evaluate the pipeline
-    return ta2.run_pipeline(pipeline_id, dataset, problem)
+    return ta2.run_pipeline(pipeline_id, dataset, problem,
+                            metric=metric)

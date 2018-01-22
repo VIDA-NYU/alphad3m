@@ -202,7 +202,7 @@ class D3mTa2(object):
         finally:
             db.close()
 
-    def run_pipeline(self, pipeline_id, dataset, problem):
+    def run_pipeline(self, pipeline_id, dataset, problem, metric=None):
         """Train and score a single pipeline.
 
         This is used to test the pipeline synthesis code.
@@ -212,21 +212,27 @@ class D3mTa2(object):
         with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
             problem_json = json.load(fp)
         self.problem_id = problem_json['about']['problemID']
-        metrics = []
-        for metric in problem_json['inputs']['performanceMetrics']:
-            metric = metric['metric']
+
+        if metric is not None:
             try:
                 metric = SCORES_FROM_SCHEMA[metric]
             except KeyError:
-                logger.error("Unknown metric %r", metric)
-                sys.exit(1)
-            metrics.append(metric)
-        logger.info("Running single pipeline, dataset: %s, metrics:%s",
-                    dataset, ", ".join(metrics))
+                raise ValueError("Unknown metric %r" % metric)
+        else:
+            if not problem_json['inputs']['performanceMetrics']:
+                raise ValueError("Problem has no metric")
+            metric = problem_json['inputs']['performanceMetrics'][0]['metric']
+            try:
+                metric = SCORES_FROM_SCHEMA[metric]
+            except KeyError:
+                raise ValueError("Unknown metric %r", metric)
+
+        logger.info("Running single pipeline, dataset: %s, metric: %s",
+                    dataset, metric)
 
         # Create session
         session = Session(self.logs_root, self.problem, self.DBSession)
-        session.metrics = metrics
+        session.metrics = [metric]
         self.sessions[session.id] = session
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
@@ -249,7 +255,14 @@ class D3mTa2(object):
                 db.query(database.CrossValidationScore)
                 .filter(database.CrossValidationScore.cross_validation_id == crossval_id)
             ).all()
-            return {s.metric: s.value for s in scores}
+            for score in scores:
+                if score.metric == metric:
+                    logger.info("Evaluation result: %s -> %r",
+                                metric, score.value)
+                    return score.value
+            logger.info("Didn't get the requested metric from "
+                        "cross-validation")
+            return None
         finally:
             db.close()
 
