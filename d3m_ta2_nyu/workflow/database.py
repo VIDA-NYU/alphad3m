@@ -36,7 +36,7 @@ class Pipeline(UuidMixin, Base):
 class PipelineModule(UuidMixin, Base):
     __tablename__ = 'pipeline_modules'
 
-    pipeline_id = Column(UUID, ForeignKey('pipelines.id'))
+    pipeline_id = Column(UUID, ForeignKey('pipelines.id'), nullable=False)
     pipeline = relationship(Pipeline)
     package = Column(String, nullable=False)
     version = Column(String, nullable=False)
@@ -48,7 +48,7 @@ class PipelineModule(UuidMixin, Base):
 class PipelineConnection(Base):
     __tablename__ = 'pipeline_connections'
 
-    pipeline_id = Column(UUID, ForeignKey('pipelines.id'))
+    pipeline_id = Column(UUID, ForeignKey('pipelines.id'), nullable=False)
     pipeline = relationship(Pipeline)
 
     from_module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
@@ -69,7 +69,7 @@ class PipelineConnection(Base):
 class PipelineParameter(Base):
     __tablename__ = 'pipeline_parameters'
 
-    pipeline_id = Column(UUID, ForeignKey('pipelines.id'))
+    pipeline_id = Column(UUID, ForeignKey('pipelines.id'), nullable=False)
     pipeline = relationship(Pipeline)
 
     module_id = Column(UUID, ForeignKey('pipeline_modules.id'),

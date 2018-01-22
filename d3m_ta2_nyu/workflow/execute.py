@@ -2,7 +2,6 @@
 """
 
 import logging
-from sqlalchemy import not_, select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm.exc import NoResultFound
 from uuid import UUID
