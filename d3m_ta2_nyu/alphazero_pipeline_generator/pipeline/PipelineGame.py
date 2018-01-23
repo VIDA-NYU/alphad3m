@@ -14,26 +14,25 @@ class PipelineGame(Game):
         self.args = args
         self.evaluations = {}
         problem_features = parse_problem_description(self.args['problem_path']+'/problemDoc.json')
-        print('\nPROBLEM FEATURES\n', problem_features)
-        metric = problem_features['problem']['performance_metrics'][0][0]
+        self.problem = problem_features['problem']['task_type'].unparse().upper()
         
     def getInitBoard(self):
         # return initial board (numpy board)
-        b = Board(self.n)
+        b = Board(self.n, self.problem)
         return b.pieces+b.previous_moves
 
     def getBoardSize(self):
         # (a,b) tuple
         return (self.n, self.n)
 
-    def getActionSize(self, problem='CLASSIFICATION'):
+    def getActionSize(self):
         # return number of actions
-        return len(Board.PRIMITIVES[problem].values())+1
+        return len(Board.PRIMITIVES[self.problem].values())+1
 
     def getNextState(self, board, player, action):
         # if player takes action on board, return next (board,player)
         # action must be a valid move
-        b = Board(self.n)
+        b = Board(self.n, self.problem)
         b.pieces = board[0:self.n]
         b.previous_moves = board[self.n:]
         b.execute_move(action, player)
@@ -41,7 +40,7 @@ class PipelineGame(Game):
 
     def getValidMoves(self, board, player):
         # return a fixed size binary vector
-        b = Board(self.n)
+        b = Board(self.n,self.problem)
         b.pieces = board[0:self.n]
         b.previous_moves = board[self.n:]
         legalMoves =  b.get_legal_moves()
@@ -55,13 +54,13 @@ class PipelineGame(Game):
         #     self.evaluations[primitive] = eval_val
         primitive = board[0:self.n][self.n-1][1]
         if primitive == 0:
-            return 0.6
+            return 0.0
         print('EVALUATE PIPELINE', primitive)
 
         eval_val = self.evaluations.get(primitive)
         if eval_val is None:
             pipeline = ['dsbox.datapreprocessing.cleaner.KNNImputation','dsbox.datapreprocessing.cleaner.Encoder']
-            for key, value in Board.PRIMITIVES['CLASSIFICATION'].items():
+            for key, value in Board.PRIMITIVES[self.problem].items():
                 if primitive == value:
                     pipeline.append(key)
             result = nn_evaluation.evaluate_pipeline_from_strings(pipeline, 'ALPHAZERO', self.args['dataset_path'], self.args['problem_path'])
@@ -72,7 +71,7 @@ class PipelineGame(Game):
     def getGameEnded(self, board, player, eval_val=None):
         # return 0 if not ended, 1 if x won, -1 if x lost
         # player = 1
-        b = Board(self.n)
+        b = Board(self.n, self.problem)
         b.pieces = board[0:self.n]
         b.previous_moves = board[self.n:]
         eval_val = self.getEvaluation(board)

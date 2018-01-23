@@ -47,7 +47,7 @@ class Board():
         self[0][1] = 1
         self[1][1] = 2
         self.previous_moves = [0]*len(self.PRIMITIVES[problem].values())
-        self.win_threshold = 0.65
+        self.win_threshold = 0.6
         self.problem = problem
         
     # add [][] indexer syntax to the Board
