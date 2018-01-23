@@ -2,6 +2,7 @@ from Coach import Coach
 from pipeline.PipelineGame import PipelineGame
 from pipeline.pytorch.NNet import NNetWrapper as nn
 
+import logging
 
 
 class PipelineGenerator:
@@ -36,6 +37,10 @@ class PipelineGenerator:
 
     
 if __name__=="__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
+
     pg = PipelineGenerator()
     dataset_path = '/Users/yamuna/D3M/data/LL0/LL0_21_car/LL0_21_car_dataset'
     problem_path = '/Users/yamuna/D3M/data/LL0/LL0_21_car/LL0_21_car_problem'
