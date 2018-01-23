@@ -22,20 +22,21 @@ class PipelineGenerator:
     })
     
     def createPipelines(self, dataset_path, problem_path):
-        args['dataset_path'] = dataset_path
-        args['problem_path'] = problem_path
-        g = PipelineGame(3, args)
+        self.args['dataset_path'] = dataset_path
+        self.args['problem_path'] = problem_path
+        self.args['metric'] = problem_path        
+        g = PipelineGame(3, self.args)
         nnet = nn(g)
         
-        if args.get('load_model'):
-            nnet.load_checkpoint(args.get('load_folder_file')[0], args.get('load_folder_file')[1])
+        if self.args.get('load_model'):
+            nnet.load_checkpoint(self.args.get('load_folder_file')[0], self.args.get('load_folder_file')[1])
             
-        c = Coach(g, nnet, args)
+        c = Coach(g, nnet, self.args)
         c.learn()
 
     
 if __name__=="__main__":
     pg = PipelineGenerator()
-    dataset_path = '/media/data/yamuna/D3M/data/LL0/LL0_21_car/LL0_21_car_dataset'
-    problen_path = '/media/data/yamuna/D3M/data/LL0/LL0_21_car/LL0_21_car_problem'
-    ps.createPipelines(dataset_path, problem_path)
+    dataset_path = '/Users/yamuna/D3M/data/LL0/LL0_21_car/LL0_21_car_dataset'
+    problem_path = '/Users/yamuna/D3M/data/LL0/LL0_21_car/LL0_21_car_problem'
+    pg.createPipelines(dataset_path, problem_path)
