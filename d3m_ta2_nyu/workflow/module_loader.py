@@ -20,8 +20,12 @@ def _sklearn(name):
 
     def wrapper(*, module_inputs, global_inputs, cache, **kwargs):
         if global_inputs['run_type'] == 'train':
-            # Create the classifier
-            classifier = klass()
+            # Get classifier from module parameter
+            if 'hyperparams' in module_inputs:
+                classifier = pickle.loads(module_inputs['hyperparams'])
+            # Use default hyperparameters
+            else:
+                classifier = klass()
             # Train it
             classifier.fit(module_inputs['data'], module_inputs['targets'])
             cache.store('classifier', pickle.dumps(classifier))
@@ -43,9 +47,16 @@ def _persisted_primitive(klass):
         import typing
         hyperparams_class = typing.get_type_hints(klass.__init__)['hyperparams']
 
-        if global_inputs['run_type'] == 'train':
-            # Create the primitive with default hyperparams
+        # Get hyperparameters from module parameter
+        if 'hyperparams' in module_inputs:
+            hyperparams = pickle.loads(module_inputs['hyperparams'])
+            hyperparams = hyperparams_class(hyperparams)
+        # Use default hyperparams
+        else:
             hyperparams = hyperparams_class.defaults()
+
+        if global_inputs['run_type'] == 'train':
+            # Create the primitive
             primitive = klass(hyperparams=hyperparams)
             # Train the primitive
             primitive.set_training_data(inputs=module_inputs['data'])
@@ -54,19 +65,15 @@ def _persisted_primitive(klass):
             results = primitive.produce(inputs=module_inputs['data'])
             assert results.has_finished
 
-            # Break down the primitive into pickleable structures
-            hyperparams = dict(primitive.hyperparams)
+            # Persist the parameters
             params = primitive.get_params()
-
-            cache.store('hyperparams', pickle.dumps(hyperparams))
             cache.store('params', pickle.dumps(params))
 
             return {'data': results.value}
         elif global_inputs['run_type'] == 'test':
             # Load back the primitive
-            hyperparams = pickle.loads(cache.get('hyperparams'))
             params = pickle.loads(cache.get('params'))
-            primitive = klass(hyperparams=hyperparams_class(hyperparams))
+            primitive = klass(hyperparams=hyperparams)
             primitive.set_params(params=params)
             # Transform data
             results = primitive.produce(inputs=module_inputs['data'])
@@ -82,10 +89,18 @@ def _simple_primitive(klass):
     def wrapper(*, module_inputs, **kwargs):
         # Find the hyperparams class
         import typing
-        hp_class = typing.get_type_hints(klass.__init__)['hyperparams']
-        # Create the primitive with default hyperparams
-        hp = hp_class.defaults()
-        primitive = klass(hyperparams=hp)
+        hyperparams_class = typing.get_type_hints(klass.__init__)['hyperparams']
+
+        # Get hyperparameters from module parameter
+        if 'hyperparams' in module_inputs:
+            hyperparams = pickle.loads(module_inputs['hyperparams'])
+            hyperparams = hyperparams_class(hyperparams)
+        # Use default hyperparams
+        else:
+            hyperparams = hyperparams_class.defaults()
+
+        # Create the primitive
+        primitive = klass(hyperparams=hyperparams)
         # Transform data
         results = primitive.produce(inputs=module_inputs['data'])
         assert results.has_finished
