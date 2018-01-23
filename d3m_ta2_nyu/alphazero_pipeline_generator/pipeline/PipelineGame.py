@@ -5,10 +5,12 @@ from Game import Game
 from .PipelineLogic import Board
 import numpy as np
 from random import uniform
+import nn_evaluation 
 
 class PipelineGame(Game):
-    def __init__(self, n):
+    def __init__(self, n, args=None):
         self.n = n
+        self.args = args
         self.evaluations = {}
         
     def getInitBoard(self):
@@ -42,11 +44,18 @@ class PipelineGame(Game):
         return np.array(legalMoves)
 
     def getEvaluation(self, board):
-        primitive = np.array(board[0:self.n]).tostring()
-        eval_val = self.evaluations.get(primitive)
-        if eval_val is None:
-            eval_val = uniform(0.7, 0.9)
-            self.evaluations[primitive] = eval_val
+        # primitive = np.array(board[0:self.n]).tostring()
+        # eval_val = self.evaluations.get(primitive)
+        # if eval_val is None:
+        #     eval_val = uniform(0.7, 0.9)
+        #     self.evaluations[primitive] = eval_val
+        primitive = board[0:self.n][self.n-1][1]
+        print('EVALUATE PIPELINE', primitive)
+        pipeline = ['dsbox.datapreprocessing.cleaner.KNNImputation','dsbox.datapreprocessing.cleaner.Encoder']
+        for key, value in Board.PRIMITIVES['CLASSIFICATION'].items():
+            if primitive == value:
+                pipeline.append(key)
+        nn_evaluation.evaluate_pipeline_from_strings(pipeline, 'ALPHAZERO', self.args['dataset_path'], self.args['problem_path']) 
         return eval_val
     
     def getGameEnded(self, board, player, eval_val=None):

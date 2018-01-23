@@ -14,10 +14,10 @@ class Board():
     PRIMITIVES_DECODE = ['None', 'E', 'I', 'S', 'K', 'D','NB', 'T', 'LO', 'LI', 'BR', 'L', 'R', 'LA']
     PRIMITIVES = {
         'ENCODER':{
-            'sklearn.preprocessing.OneHotEncoder': 1
+            'dsbox.datapreprocessing.cleaner.Encoder': 1
         },
         'IMPUTATION': {
-            'sklearn.preprocessing.Imputer': 2
+            'dsbox.datapreprocessing.cleaner.KNNImputation': 2
         },
         'CLASSIFICATION': {
             'sklearn.svm.classes.LinearSVC': 3,
