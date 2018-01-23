@@ -175,15 +175,17 @@ def execute(db, pipeline, module_loader, reason,
                         mod_id, module.package, module.name)
 
             # Build inputs
-            module_inputs = dict(module_inputs.get(mod_id, {}))
+            # Input override passed to execute()
+            inputs = dict(module_inputs.get(mod_id, {}))
+            # Output from connected upstream modules
             for conn in module.connections_to:
-                if conn.to_input_name not in module_inputs:
-                    module_inputs[conn.to_input_name] = \
+                if conn.to_input_name not in inputs:
+                    inputs[conn.to_input_name] = \
                         outputs[conn.from_module_id][conn.from_output_name]
 
             try:
                 outputs[mod_id] = function(
-                    module_inputs=module_inputs,
+                    module_inputs=inputs,
                     global_inputs=global_inputs,
                     cache=cache(db, run, module),
                 )
