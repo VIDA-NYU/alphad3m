@@ -15,6 +15,7 @@ class PipelineGame(Game):
         self.evaluations = {}
         problem_features = parse_problem_description(self.args['problem_path']+'/problemDoc.json')
         print('\nPROBLEM FEATURES\n', problem_features)
+        metric = problem_features['problem']['performance_metrics'][0][0]
         
     def getInitBoard(self):
         # return initial board (numpy board)
