@@ -5,7 +5,8 @@ from Game import Game
 from .PipelineLogic import Board
 import numpy as np
 from random import uniform
-import nn_evaluation 
+import nn_evaluation
+#from metadata.d3m_metadata import parse_problem_description
 
 class PipelineGame(Game):
     def __init__(self, n, args=None):
@@ -13,7 +14,7 @@ class PipelineGame(Game):
         self.args = args
         self.evaluations = {}
         
-    def getInitBoard(self):
+     def getInitBoard(self):
         # return initial board (numpy board)
         b = Board(self.n)
         return b.pieces+b.previous_moves
@@ -24,9 +25,7 @@ class PipelineGame(Game):
 
     def getActionSize(self, problem='CLASSIFICATION'):
         # return number of actions
-        return len(Board.PRIMITIVES[problem].values())+1
-
-    def getNextState(self, board, player, action):
+        return len(Board.PRIMITIVES[problem].values())
         # if player takes action on board, return next (board,player)
         # action must be a valid move
         b = Board(self.n)
@@ -50,12 +49,19 @@ class PipelineGame(Game):
         #     eval_val = uniform(0.7, 0.9)
         #     self.evaluations[primitive] = eval_val
         primitive = board[0:self.n][self.n-1][1]
+        if primitive == 0:
+            return 0
         print('EVALUATE PIPELINE', primitive)
-        pipeline = ['dsbox.datapreprocessing.cleaner.KNNImputation','dsbox.datapreprocessing.cleaner.Encoder']
-        for key, value in Board.PRIMITIVES['CLASSIFICATION'].items():
-            if primitive == value:
-                pipeline.append(key)
-        nn_evaluation.evaluate_pipeline_from_strings(pipeline, 'ALPHAZERO', self.args['dataset_path'], self.args['problem_path']) 
+
+        eval_val = self.evaluations.get(primitive)
+        if eval_val is None:
+            pipeline = ['dsbox.datapreprocessing.cleaner.KNNImputation','dsbox.datapreprocessing.cleaner.Encoder']
+            for key, value in Board.PRIMITIVES['CLASSIFICATION'].items():
+                if primitive == value:
+                    pipeline.append(key)
+            result = nn_evaluation.evaluate_pipeline_from_strings(pipeline, 'ALPHAZERO', self.args['dataset_path'], self.args['problem_path'])
+            eval_val = result['F1_MACRO']
+            self.evaluations[primitive] = eval_val
         return eval_val
     
     def getGameEnded(self, board, player, eval_val=None):
