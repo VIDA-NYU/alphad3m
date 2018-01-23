@@ -142,13 +142,17 @@ def execute(db, pipeline, module_loader, reason,
         if function is None:
             raise TypeError("Module loader returned None for (%r, %r, %r)" % (
                             module.package, module.version, module.name))
-        modules[module.id] = module, function
+        modules[module.id] = module, function, {}
 
         for conn in module.connections_to:
             dependencies[module.id].add(conn.from_module_id)
             dependents[conn.from_module_id].add(module.id)
 
     logger.info("Loaded %d modules", len(modules))
+
+    # Load the parameters
+    for parameter in pipeline.parameters:
+        modules[parameter.module_id][2][parameter.name] = parameter.value
 
     to_execute = set(modules)
 
@@ -170,20 +174,26 @@ def execute(db, pipeline, module_loader, reason,
             if not all(dep in outputs for dep in dependencies[mod_id]):
                 continue
 
-            module, function = modules[mod_id]
-            logger.info("Executing module %s (%s %s)",
-                        mod_id, module.package, module.name)
+            module, function, parameters = modules[mod_id]
 
             # Build inputs
-            module_inputs = dict(module_inputs.get(mod_id, {}))
+            # Input override passed to execute()
+            inputs = dict(module_inputs.get(mod_id, {}))
+            # Pipeline parameters from database
+            inputs.update(parameters)
+            # Output from connected upstream modules
             for conn in module.connections_to:
-                if conn.to_input_name not in module_inputs:
-                    module_inputs[conn.to_input_name] = \
+                if conn.to_input_name not in inputs:
+                    inputs[conn.to_input_name] = \
                         outputs[conn.from_module_id][conn.from_output_name]
 
+            # Now run the module
+            logger.info("Executing module %s (%s %s), inputs: %s",
+                        mod_id, module.package, module.name,
+                        ", ".join(inputs.keys()))
             try:
                 outputs[mod_id] = function(
-                    module_inputs=module_inputs,
+                    module_inputs=inputs,
                     global_inputs=global_inputs,
                     cache=cache(db, run, module),
                 )
