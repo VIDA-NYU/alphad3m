@@ -19,8 +19,7 @@ class Arena():
         """
         self.player1 = player1
         self.player2 = player2
-        self.game = copy.deepcopy(game)
-        self.game_copy = game
+        self.game = game
         self.display = display
 
     def playGame(self, verbose=False):
@@ -34,7 +33,6 @@ class Arena():
         curPlayer = 1
         board = self.game.getInitBoard()
         it = 0
-        #print('PLAY GAME PREVIOUS MOVES ', self.game.previous_moves)
         while self.game.getGameEnded(board, curPlayer)==0 and it < 100:
             it+=1
             print('ITERATION ', it)
@@ -44,8 +42,6 @@ class Arena():
                 self.display(board)
             action = players[curPlayer+1](self.game.getCanonicalForm(board, curPlayer))
             #print('ACTION ', action)
-            self.game.evaluations=self.game_copy.evaluations
-            self.game_copy.clearPrevMoves()
             valids = self.game.getValidMoves(self.game.getCanonicalForm(board, curPlayer),1)
 
             #print('VALIDS ', valids)

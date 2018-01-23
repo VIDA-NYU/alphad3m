@@ -60,7 +60,9 @@ class NNetWrapper(NeuralNet):
 
             while batch_idx < int(len(examples)/batch_size):
                 sample_ids = np.random.randint(len(examples), size=batch_size)
+                #print('SAMPLE IDS ', sample_ids, ' ', examples[0])
                 boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
+                boards = [board[0:self.board_y] for board in boards]
                 #print('\n\nBOARDS\n', boards)
                 boards = torch.FloatTensor(np.array(boards).astype(np.float64))
                 target_pis = torch.FloatTensor(np.array(pis))
@@ -117,7 +119,7 @@ class NNetWrapper(NeuralNet):
         start = time.time()
 
         # preparing input
-        board = torch.FloatTensor(board)
+        board = torch.FloatTensor(board[0:self.board_y])
         if args.get('cuda'): board = board.contiguous().cuda()
         board = Variable(board, volatile=True)
         board = board.view(1, self.board_x, self.board_y)

@@ -29,8 +29,8 @@ class MCTS():
             probs: a policy vector where the probability of the ith action is
                    proportional to Nsa[(s,a)]**(1./temp)
         """
-        #print('MCTS PREVIOUS MOVES ', self.game.previous_moves)
         for i in range(self.args.get('numMCTSSims')):
+            #print('RESTART SEARCH SIM ', i)
             self.search(canonicalBoard, problem)
 
         s = self.game.stringRepresentation(canonicalBoard)
@@ -42,7 +42,6 @@ class MCTS():
             probs[bestA]=1
             return probs
 
-        #print('\n\n\nCOUNTS \n', counts)
         counts = [x**(1./temp) for x in counts]
         if np.sum(counts) == 0:
             probs = [1/(len(counts)-1)]*len(counts)
@@ -79,14 +78,13 @@ class MCTS():
             # terminal node
             #Clear all previous moves
             self.prev_moves = []
-            self.game.getGameEnded(canonicalBoard, 1)
             return -self.Es[s]
 
         #print('CANONICAL BOARD\n', canonicalBoard)
 
         if s not in self.Ps:
             # leaf node
-            #print('self not in self.Ps')
+            #print('s not in self.Ps')
             self.Ps[s], v = self.nnet.predict(canonicalBoard)
             valids = self.game.getValidMoves(canonicalBoard, 1)
             #print('VALIDS\n', valids)
@@ -98,7 +96,7 @@ class MCTS():
             self.Ns[s] = 0
             return -v
         # else:
-        #     print('self in self.Ps')    
+        #     print('s in self.Ps')    
 
         valids = self.Vs[s]
         #print('VALIDS\n', valids)
@@ -126,18 +124,17 @@ class MCTS():
         #print('BEST_ACT\n', a, ' ', self.prev_moves)
         if a in self.prev_moves:
             return -1
-        
         #Append action to previous moves
         self.prev_moves.append(a)
+
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
-        #print('NEXT STATE\n', next_s)
-        # if next_s[2][1] == canonicalBoard[2][1]:
-        #     print('NEXT IS SAME AS CANONICAL')
-        #     return -1
-        #print('NEXT PLAYER\n', next_player)
+
+        #print('NEXT STATE')
+        self.game.display(next_s)
+
         next_s = self.game.getCanonicalForm(next_s, next_player)
 
-        #print('RECURSION WITH NEXT STATE')
+        #print('NEXT STATE SEARCH RECURSION')
         v = self.search(next_s)
 
         if (s,a) in self.Qsa:

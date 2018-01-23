@@ -33,12 +33,6 @@ class Game():
         """
         pass
 
-    def clearPrevMoves(self):
-        """
-        Perform any state reset required
-        """
-        pass
-    
     def getNextState(self, board, player, action):
         """
         Input:

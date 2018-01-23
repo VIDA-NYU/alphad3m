@@ -10,8 +10,6 @@ x is the column, y is the row.
 
 import numpy as np
 
-
-
 class Board():
     PRIMITIVES_DECODE = ['None', 'E', 'I', 'S', 'K', 'D','NB', 'T', 'LO', 'LI', 'BR', 'L', 'R', 'LA']
     PRIMITIVES = {
@@ -48,7 +46,7 @@ class Board():
             self.pieces[i] = [0] * self.n
         self[0][1] = 1
         self[1][1] = 2
-        self.previous_moves = []
+        self.previous_moves = [0]*len(self.PRIMITIVES[problem].values())
         self.win_threshold = 0.8
         self.problem = problem
         
@@ -59,21 +57,17 @@ class Board():
     def findWin(self, player, eval_val=None):
         """Find win of the given color in row, column, or diagonal
         (1 for x, -1 for o)"""
-        #print('IN FINDWIN ', self.pieces, ' ', self[2][0], ' ', eval_val >= self.win_threshold)
-        if self[2][1] == 0:
+        if self[self.n-1][1] == 0:
             return False
         return eval_val >= self.win_threshold
 
     def get_legal_moves(self, problem='CLASSIFICATION'):
         """Returns all the legal moves.
         """
-        valid_moves = [0]*(len(self.PRIMITIVES[problem].values())+1)
-        count = 0
+        valid_moves = [1]*(len(self.PRIMITIVES[problem].values()))+[0]
         #print('PREVIOUS MOVES ', self.previous_moves)
-        for primitive in self.PRIMITIVES[problem].values():
-            if primitive not in self.previous_moves:
-                valid_moves[count] = 1
-            count += 1
+        valid_moves = np.bitwise_xor(self.previous_moves+[0], valid_moves)
+        #print('VALID MOVES ', valid_moves)
         if np.sum(valid_moves) == 0:
             valid_moves[-1] = 1
         return valid_moves
@@ -81,10 +75,10 @@ class Board():
     def has_legal_moves(self, problem='CLASSIFICATION'):
         return len(self.previous_moves) < len(self.PRIMITIVES[problem].values())
 
-    def getMove(self, action):
+    def _getMove(self, action):
         return [val for val in Board.PRIMITIVES[self.problem].values()][action]
     
-    def execute_move(self, move, player):
+    def execute_move(self, action, player):
         """Perform the given move on the board;
         color gives the color of the piece to play (1=x,-1=o)
         """
@@ -94,7 +88,6 @@ class Board():
         # print(self[x][y],color)
         x = 2
         y = 1
-        self[x][y] = move
-        if not move in self.previous_moves:
-            self.previous_moves.append(move)
+        self[x][y] = self._getMove(action)
+        self.previous_moves[action] = 1
 
