@@ -6,15 +6,17 @@ from .PipelineLogic import Board
 import numpy as np
 from random import uniform
 import nn_evaluation
-#from metadata.d3m_metadata import parse_problem_description
+from d3m_metadata.problem import parse_problem_description
 
 class PipelineGame(Game):
     def __init__(self, n, args=None):
         self.n = n
         self.args = args
         self.evaluations = {}
+        problem_features = parse_problem_description(self.args['problem_path']+'/problemDoc.json')
+        print('\nPROBLEM FEATURES\n', problem_features)
         
-     def getInitBoard(self):
+    def getInitBoard(self):
         # return initial board (numpy board)
         b = Board(self.n)
         return b.pieces+b.previous_moves
@@ -25,7 +27,9 @@ class PipelineGame(Game):
 
     def getActionSize(self, problem='CLASSIFICATION'):
         # return number of actions
-        return len(Board.PRIMITIVES[problem].values())
+        return len(Board.PRIMITIVES[problem].values())+1
+
+    def getNextState(self, board, player, action):
         # if player takes action on board, return next (board,player)
         # action must be a valid move
         b = Board(self.n)
@@ -50,7 +54,7 @@ class PipelineGame(Game):
         #     self.evaluations[primitive] = eval_val
         primitive = board[0:self.n][self.n-1][1]
         if primitive == 0:
-            return 0
+            return 0.6
         print('EVALUATE PIPELINE', primitive)
 
         eval_val = self.evaluations.get(primitive)
