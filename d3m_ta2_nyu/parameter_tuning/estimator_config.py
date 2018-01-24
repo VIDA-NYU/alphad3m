@@ -73,7 +73,7 @@ def decision_tree_config(cs):
 	splitter = CategoricalHyperparameter("splitter", ['best', 'random'], default_value='best')
 	max_depth = UniformIntegerHyperparameter("max_depth", 1, 10, default_value=None)
 	min_samples_split = UniformFloatHyperparameter("min_samples_split", 0.1, 0.9, default_value=0.1)
-	min_samples_leaf = UniformFloatHyperparameter("min_samples_leaf", 0.1, 0.9, default_value=0.1)
+	min_samples_leaf = UniformFloatHyperparameter("min_samples_leaf", 0.1, 0.5, default_value=0.1)
 	max_features = UniformFloatHyperparameter("max_features", 0.1, 0.9, default_value=0.1) 
 	presort = UniformIntegerHyperparameter("presort", 0, 1, default_value=0)
 	cs.add_hyperparameters([criterion,splitter,max_depth,min_samples_split, min_samples_leaf,max_features,presort])
