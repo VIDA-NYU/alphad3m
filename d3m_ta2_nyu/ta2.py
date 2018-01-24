@@ -20,7 +20,8 @@ import threading
 import time
 import uuid
 
-from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, TASKS_FROM_SCHEMA
+from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
+    TASKS_FROM_SCHEMA
 from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
@@ -191,17 +192,27 @@ class D3mTa2(object):
 
         db = self.DBSession()
         try:
+            crossval_score = (
+                select([database.CrossValidationScore.value])
+                .where(database.CrossValidationScore.cross_validation_id ==
+                       database.CrossValidation.id)
+                .where(database.CrossValidationScore.metric == metrics[0])
+                .as_scalar()
+            )
+            if SCORES_RANKING_ORDER[metrics[0]] == -1:
+                crossval_score = crossval_score.desc()
             pipelines = (
                 db.query(database.Pipeline)
                 .filter(database.Pipeline.trained)
                 .options(joinedload(database.Pipeline.modules),
                          joinedload(database.Pipeline.connections))
+                .order_by(crossval_score)
             ).all()
 
             logger.info("Generated %d pipelines",
                         len(pipelines))
 
-            for pipeline in pipelines:
+            for pipeline in itertools.islice(pipelines, 20):
                 self.write_executable(pipeline)
         finally:
             db.close()
