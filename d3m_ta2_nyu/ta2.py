@@ -119,6 +119,9 @@ class D3mTa2(object):
         self.storage = os.path.abspath(storage_root)
         if not os.path.exists(self.storage):
             os.makedirs(self.storage)
+        self.predictions_root = os.path.join(self.storage, 'tmp_predictions')
+        if not os.path.exists(self.predictions_root):
+            os.mkdir(self.predictions_root)
         if logs_root is not None:
             self.logs_root = os.path.abspath(logs_root)
         else:
@@ -399,8 +402,11 @@ class D3mTa2(object):
                                 "(pipeline: %s)",
                                 proc.exitcode, pipeline_id)
                     if proc.exitcode == 0:
+                        results = os.path.join(self.predictions_root,
+                                               '%s.csv' % pipeline_id)
                         session.notify('training_success',
-                                       pipeline_id=pipeline_id)
+                                       pipeline_id=pipeline_id,
+                                       predict_result=results)
                     else:
                         session.notify('training_error',
                                        pipeline_id=pipeline_id)
@@ -418,10 +424,12 @@ class D3mTa2(object):
                 else:
                     logger.info("Running training pipeline for %s",
                                 pipeline_id)
+                    results = os.path.join(self.predictions_root,
+                                           '%s.csv' % pipeline_id)
                     proc = multiprocessing.Process(
                         target=train,
                         args=(pipeline_id, session.metrics,
-                              dataset, session.problem, msg_queue),
+                              dataset, session.problem, results, msg_queue),
                         kwargs={'db_filename': self.db_filename})
                     proc.start()
                     running_pipelines[pipeline_id] = session, proc
