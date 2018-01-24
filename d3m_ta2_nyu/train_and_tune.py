@@ -7,7 +7,7 @@ import pickle
 
 from sqlalchemy.orm import joinedload
 
-from d3m_ta2_nyu.common import SCORES_TO_SKLEARN
+from d3m_ta2_nyu.common import SCORES_TO_SKLEARN, SCORES_RANKING_ORDER
 from d3m_ta2_nyu.d3mds import D3MDS
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.execute import execute_train, execute_test
@@ -135,7 +135,7 @@ def tune(pipeline_id, metrics, dataset, problem, msg_queue, db):
         # Don't store those runs
         db.rollback()
 
-        return scores[metrics[0]]
+        return scores[metrics[0]] * SCORES_RANKING_ORDER[metrics[0]]
 
     # Run tuning, gets best configuration
     hyperparameter_configuration = tuning.tune(evaluate)
