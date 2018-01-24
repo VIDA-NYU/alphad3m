@@ -6,6 +6,7 @@ back to this process via a Queue.
 
 from concurrent import futures
 import grpc
+import itertools
 import json
 import logging
 import multiprocessing
@@ -19,7 +20,8 @@ import threading
 import time
 import uuid
 
-from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, TASKS_FROM_SCHEMA
+from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
+    TASKS_FROM_SCHEMA
 from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
@@ -119,6 +121,9 @@ class D3mTa2(object):
         self.storage = os.path.abspath(storage_root)
         if not os.path.exists(self.storage):
             os.makedirs(self.storage)
+        self.predictions_root = os.path.join(self.storage, 'tmp_predictions')
+        if not os.path.exists(self.predictions_root):
+            os.mkdir(self.predictions_root)
         if logs_root is not None:
             self.logs_root = os.path.abspath(logs_root)
         else:
@@ -187,17 +192,27 @@ class D3mTa2(object):
 
         db = self.DBSession()
         try:
+            crossval_score = (
+                select([database.CrossValidationScore.value])
+                .where(database.CrossValidationScore.cross_validation_id ==
+                       database.CrossValidation.id)
+                .where(database.CrossValidationScore.metric == metrics[0])
+                .as_scalar()
+            )
+            if SCORES_RANKING_ORDER[metrics[0]] == -1:
+                crossval_score = crossval_score.desc()
             pipelines = (
                 db.query(database.Pipeline)
                 .filter(database.Pipeline.trained)
                 .options(joinedload(database.Pipeline.modules),
                          joinedload(database.Pipeline.connections))
+                .order_by(crossval_score)
             ).all()
 
             logger.info("Generated %d pipelines",
                         len(pipelines))
 
-            for pipeline in pipelines:
+            for pipeline in itertools.islice(pipelines, 20):
                 self.write_executable(pipeline)
         finally:
             db.close()
@@ -363,28 +378,25 @@ class D3mTa2(object):
             else:
                 tpl_func = template
             try:
-                pipeline_id = self._build_pipeline_from_template(session,
-                                                                 tpl_func)
+                self._build_pipeline_from_template(session, tpl_func, dataset)
             except Exception:
                 logger.exception("Error building pipeline from %r",
                                  template)
-            else:
-                logger.info("Created pipeline %s", pipeline_id)
-                session.pipelines_training.add(pipeline_id)
-                self._run_queue.put((session, pipeline_id, dataset))
         logger.info("Pipeline creation completed")
         session.check_status()
 
-    def _build_pipeline_from_template(self, session, template):
+    def _build_pipeline_from_template(self, session, template, dataset):
         # Create workflow from a template
         pipeline_id = template(self)
 
         # Add it to the session
         with session.lock:
             session.pipelines.add(pipeline_id)
-        session.notify('new_pipeline', pipeline_id=pipeline_id)
+            session.pipelines_training.add(pipeline_id)
 
-        return pipeline_id
+        logger.info("Created pipeline %s", pipeline_id)
+        self._run_queue.put((session, pipeline_id, dataset))
+        session.notify('new_pipeline', pipeline_ids=pipeline_id)
 
     # Runs in a background thread
     def _pipeline_running_thread(self):
@@ -399,8 +411,11 @@ class D3mTa2(object):
                                 "(pipeline: %s)",
                                 proc.exitcode, pipeline_id)
                     if proc.exitcode == 0:
+                        results = os.path.join(self.predictions_root,
+                                               '%s.csv' % pipeline_id)
                         session.notify('training_success',
-                                       pipeline_id=pipeline_id)
+                                       pipeline_id=pipeline_id,
+                                       predict_result=results)
                     else:
                         session.notify('training_error',
                                        pipeline_id=pipeline_id)
@@ -418,10 +433,12 @@ class D3mTa2(object):
                 else:
                     logger.info("Running training pipeline for %s",
                                 pipeline_id)
+                    results = os.path.join(self.predictions_root,
+                                           '%s.csv' % pipeline_id)
                     proc = multiprocessing.Process(
                         target=tune,
                         args=(pipeline_id, session.metrics,
-                              dataset, session.problem, msg_queue),
+                              dataset, session.problem, results, msg_queue),
                         kwargs={'db_filename': self.db_filename})
                     proc.start()
                     running_pipelines[pipeline_id] = session, proc
@@ -432,7 +449,6 @@ class D3mTa2(object):
             except Empty:
                 pass
             else:
-                session, proc = running_pipelines[pipeline_id]
                 if msg == 'progress':
                     # TODO: Report progress
                     logger.info("Training pipeline %s: %.0f%%",
@@ -456,12 +472,13 @@ class D3mTa2(object):
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
 
-    def _classification_template(self, classifier):
+    def _classification_template(self, imputer, encoder, classifier):
         db = self.DBSession()
 
         pipeline = database.Pipeline(
-            origin="classification_template(classifier=%s, problemID=%s)" % (
-                classifier, self.problem_id))
+            origin="classification_template(imputer=%s, encoder=%s, "
+                   "classifier=%s, problemID=%s)" % (
+                       imputer, encoder, classifier, self.problem_id))
 
         def make_module(package, version, name):
             pipeline_module = database.PipelineModule(
@@ -481,17 +498,23 @@ class D3mTa2(object):
         try:
             data = make_module('data', '0.0', 'data')
             targets = make_module('data', '0.0', 'targets')
-            imputer = make_module(
-                'primitives', '0.0',
-                'dsbox.datapreprocessing.cleaner.KNNImputation')
-            encoder = make_module(
-                'primitives', '0.0',
-                'dsbox.datapreprocessing.cleaner.Encoder')
-            classifier = make_module('sklearn-builtin', '0.0', classifier)
 
-            connect(data, imputer)
-            connect(imputer, encoder)
-            connect(encoder, classifier)
+            if imputer is not None:
+                imputer = make_module(
+                    'primitives', '0.0',
+                    imputer)
+                connect(data, imputer)
+                data = imputer
+
+            if encoder is not None:
+                encoder = make_module(
+                    'primitives', '0.0',
+                    encoder)
+                connect(data, encoder)
+                data = encoder
+
+            classifier = make_module('sklearn-builtin', '0.0', classifier)
+            connect(data, classifier)
             connect(targets, classifier, 'targets', 'targets')
 
             db.add(pipeline)
@@ -501,30 +524,37 @@ class D3mTa2(object):
             db.close()
 
     TEMPLATES = {
-        'CLASSIFICATION': [
-            (_classification_template,
-             'sklearn.svm.classes.LinearSVC'),
-            (_classification_template,
-             'sklearn.neighbors.classification.KNeighborsClassifier'),
-            (_classification_template,
-             'sklearn.tree.tree.DecisionTreeClassifier'),
-            (_classification_template,
-             'sklearn.naive_bayes.MultinomialNB'),
-            (_classification_template,
-             'sklearn.ensemble.forest.RandomForestClassifier'),
-            (_classification_template,
-             'sklearn.linear_model.logistic.LogisticRegression'),
-        ],
-        'REGRESSION': [
-            (_classification_template,
-             'sklearn.linear_model.base.LinearRegression'),
-            (_classification_template,
-             'sklearn.linear_model.bayes.BayesianRidge'),
-            (_classification_template,
-             'sklearn.linear_model.coordinate_descent.LassoCV'),
-            (_classification_template,
-             'sklearn.linear_model.ridge.Ridge'),
-            (_classification_template,
-             'sklearn.linear_model.least_angle.Lars'),
-        ],
+        'CLASSIFICATION': list(itertools.product(
+            [_classification_template],
+            [
+                None,
+                'dsbox.datapreprocessing.cleaner.KNNImputation',
+                'dsbox.datapreprocessing.cleaner.MeanImputation',
+            ],
+            [None, 'dsbox.datapreprocessing.cleaner.Encoder'],
+            [
+                'sklearn.svm.classes.LinearSVC',
+                'sklearn.neighbors.classification.KNeighborsClassifier',
+                'sklearn.tree.tree.DecisionTreeClassifier',
+                'sklearn.naive_bayes.MultinomialNB',
+                'sklearn.ensemble.forest.RandomForestClassifier',
+                'sklearn.linear_model.logistic.LogisticRegression'
+            ],
+        )),
+        'REGRESSION': list(itertools.product(
+            [_classification_template],
+            [
+                None,
+                'dsbox.datapreprocessing.cleaner.KNNImputation',
+                'dsbox.datapreprocessing.cleaner.MeanImputation',
+            ],
+            [None, 'dsbox.datapreprocessing.cleaner.Encoder'],
+            [
+                'sklearn.linear_model.base.LinearRegression',
+                'sklearn.linear_model.bayes.BayesianRidge',
+                'sklearn.linear_model.coordinate_descent.LassoCV',
+                'sklearn.linear_model.ridge.Ridge',
+                'sklearn.linear_model.least_angle.Lars',
+            ],
+        )),
     }

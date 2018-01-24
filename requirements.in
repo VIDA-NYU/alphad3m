@@ -6,5 +6,5 @@
 -e git+https://github.com/byu-dml/metalearn.git@e7f3ee28437141ef86bcabf93366c7b41e0cec6d#egg=metalearn
 tensorflow
 keras
--e git+https://github.com/usc-isi-i2/dsbox-cleaning.git@bb6cbf6864215b07c040ac2c42cb1101ee4bc9a9#egg=dsbox-datacleaning
+-e git+https://github.com/usc-isi-i2/dsbox-cleaning.git@8fed51ea59925c74be76b000deb7300d08f3d4b5#egg=dsbox-datacleaning
 ipykernel

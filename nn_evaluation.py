@@ -60,7 +60,8 @@ def evaluate_pipeline_from_strings(strings, origin,
 
     def connect(from_module, to_module,
                 from_output='data', to_input='data'):
-        db.add(database.PipelineConnection(from_module=from_module,
+        db.add(database.PipelineConnection(pipeline=pipeline,
+                                           from_module=from_module,
                                            to_module=to_module,
                                            from_output_name=from_output,
                                            to_input_name=to_input))

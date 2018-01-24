@@ -1,3 +1,4 @@
+import csv
 import logging
 import numpy
 import sys
@@ -12,12 +13,28 @@ from d3m_ta2_nyu.workflow.execute import execute_train, execute_test
 logger = logging.getLogger(__name__)
 
 
-FOLDS = 3
-SPLIT_RATIO = 0.25
+FOLDS = 4
 
 
 def cross_validation(pipeline, metrics, data, targets, progress, db):
     scores = {}
+
+    # For a given idx, ``random_sample[idx]`` indicates which fold will use
+    # ``data[idx]`` as test row. All the other ones will use it as a train row.
+    # data          = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    # random_sample = [0, 0, 0, 1, 1, 1, 2, 2, 2]
+    # train_split0  = [         3, 4, 5, 6, 7, 8]
+    # train_split1  = [0, 1, 2,          6, 7, 8]
+    # train_split2  = [0, 1, 2, 3, 4, 5         ]
+    # test_split0   = [0, 1, 2                  ]
+    # test_split1   = [         3, 4, 5         ]
+    # test_split2   = [                  6, 7, 8]
+    random_sample = numpy.repeat(numpy.arange(FOLDS),
+                                 ((len(data) - 1) // FOLDS) + 1)
+    numpy.random.shuffle(random_sample)
+    random_sample = random_sample[:len(data)]
+
+    all_predictions = []
 
     for i in range(FOLDS):
         logger.info("Scoring round %d/%d", i + 1, FOLDS)
@@ -25,13 +42,11 @@ def cross_validation(pipeline, metrics, data, targets, progress, db):
         progress(i)
 
         # Do the split
-        random_sample = numpy.random.rand(len(data)) < SPLIT_RATIO
+        train_data_split = data[random_sample != i]
+        test_data_split = data[random_sample == i]
 
-        train_data_split = data[random_sample]
-        test_data_split = data[~random_sample]
-
-        train_target_split = targets[random_sample]
-        test_target_split = targets[~random_sample]
+        train_target_split = targets[random_sample != i]
+        test_target_split = targets[random_sample == i]
 
         start_time = time.time()
 
@@ -70,15 +85,21 @@ def cross_validation(pipeline, metrics, data, targets, progress, db):
                 scores.setdefault(metric, []).append(
                     score_func(test_target_split, predictions))
 
+        # Store predictions
+        all_predictions.append(predictions)
+
     progress(FOLDS)
 
     # Aggregate results over the folds
-    return {metric: numpy.mean(values)
-            for metric, values in scores.items()}
+    return (
+        {metric: numpy.mean(values)
+         for metric, values in scores.items()},
+        numpy.concatenate(all_predictions)
+    )
 
 
 @database.with_db
-def train(pipeline_id, metrics, dataset, problem, msg_queue, db):
+def train(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
@@ -100,16 +121,26 @@ def train(pipeline_id, metrics, dataset, problem, msg_queue, db):
     # Scoring step - make folds, run them through the pipeline one by one
     # (set both training_data and test_data),
     # get predictions from OutputPort to get cross validation scores
-    scores = cross_validation(
+    scores, predictions = cross_validation(
         pipeline_id, metrics, data, targets,
         lambda i: msg_queue.put((pipeline_id, 'progress',
                                  (i + 1.0) / max_progress)),
         db)
+
+    # Store scores
     scores = [database.CrossValidationScore(metric=metric,
                                             value=numpy.mean(values))
               for metric, values in scores.items()]
     crossval = database.CrossValidation(pipeline_id=pipeline_id, scores=scores)
     db.add(crossval)
+
+    # Store predictions
+    with open(results_path, 'w') as fp:
+        writer = csv.writer(fp)
+        writer.writerow(['d3mIndex', ds.problem.get_targets()[0]['colName']])
+
+        for i, o in zip(data.index, predictions):
+            writer.writerow([i, o])
 
     # Training step - run pipeline on full training_data,
     # Persist module set to write

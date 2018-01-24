@@ -1,5 +1,4 @@
 *.py[co]
-.DS_Store
 
 # Packages
 *.egg
@@ -30,6 +29,23 @@ nosetests.xml
 
 # PyCharm
 .idea
+
+# ViM
+.*.swp
+
+# Emacs
+\#*#
+
+# OS files
+.DS_Store
+desktop.ini
+
+# Archives
+*.tar
+*.tar.gz
+*.tar.bz2
+*.zip
+*.whl
 
 # Vagrant
 .vagrant
