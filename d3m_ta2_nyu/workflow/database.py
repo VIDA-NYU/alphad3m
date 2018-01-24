@@ -1,16 +1,15 @@
 """The SQLAlchemy models we use to persist data.
 """
 
-import copy
 import enum
 import functools
 import logging
 from sqlalchemy import Column, ForeignKey, create_engine, func, not_, select, \
-    Binary
+    inspect
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import column_property, relationship, sessionmaker
 from sqlalchemy.sql import functions
-from sqlalchemy.types import Boolean, DateTime, Enum, Float, String
+from sqlalchemy.types import Binary, Boolean, DateTime, Enum, Float, String
 
 from d3m_ta2_nyu.sql_uuid import UUID, UuidMixin
 
@@ -183,15 +182,21 @@ def with_db(wrapped):
 
 
 def _duplicate(db, obj, replace={}):
-    obj = copy.copy(obj)
-    del obj.id
-    for k, v in replace.items():
-        if isinstance(v, dict):
-            old_v = getattr(obj, k)
-            v = v[old_v]
-        setattr(obj, k, v)
-    db.add(obj)
-    return obj
+    new_obj = type(obj)()
+    mapper = inspect(type(obj))
+    for k, col in mapper.columns.items():
+        if k in replace:
+            v = replace[k]
+            if isinstance(v, dict):
+                old_v = getattr(obj, k)
+                v = v[old_v]
+        elif k != 'id':
+            v = getattr(obj, k)
+        else:
+            continue
+        setattr(new_obj, k, v)
+    db.add(new_obj)
+    return new_obj
 
 
 def _duplicate_list(db, lst, replace={}):
@@ -208,6 +213,7 @@ def duplicate_pipeline(db, pipeline, origin):
         origin=origin,
         task=pipeline.task,
     )
+    db.add(new_pipeline)
 
     modules = {}
     for module in pipeline.modules:
@@ -218,12 +224,10 @@ def duplicate_pipeline(db, pipeline, origin):
     _duplicate_list(db, pipeline.parameters,
                     dict(pipeline_id=new_pipeline.id,
                          module_id=modules))
-    _duplicate_list(db, pipeline.parameters,
-               dict(pipeline_id=new_pipeline.id,
-                    module_id=modules))
-    _duplicate_list(db, pipeline.parameters,
-               dict(pipeline_id=new_pipeline.id,
-                    from_module_id=modules,
-                    to_module_id=modules))
+    _duplicate_list(db, pipeline.connections,
+                    dict(pipeline_id=new_pipeline.id,
+                         from_module_id=modules,
+                         to_module_id=modules))
 
+    db.flush()
     return new_pipeline
