@@ -198,6 +198,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 )
             elif event == 'training_success':
                 pipeline_id = kwargs['pipeline_id']
+                predictions = kwargs.get('predict_result', None)
                 if not pipeline_filter(pipeline_id):
                     continue
                 pipeline = session.pipelines[pipeline_id]
@@ -217,6 +218,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     pipeline_id=str(pipeline_id),
                     pipeline_info=pb_core.Pipeline(
                         scores=scores,
+                        predict_result_uri='file://{}'.format(predictions),
                     ),
                 )
             elif event == 'training_error':

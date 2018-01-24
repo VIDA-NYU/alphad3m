@@ -402,8 +402,11 @@ class D3mTa2(object):
                                 "(pipeline: %s)",
                                 proc.exitcode, pipeline_id)
                     if proc.exitcode == 0:
+                        results = os.path.join(self.predictions_root,
+                                               '%s.csv' % pipeline_id)
                         session.notify('training_success',
-                                       pipeline_id=pipeline_id)
+                                       pipeline_id=pipeline_id,
+                                       predict_result=results)
                     else:
                         session.notify('training_error',
                                        pipeline_id=pipeline_id)
