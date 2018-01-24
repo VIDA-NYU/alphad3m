@@ -35,7 +35,7 @@ build_image:
       docker tag $IMAGE $CI_REGISTRY_IMAGE:latest
     - docker push $IMAGE
     - docker push $CI_REGISTRY_IMAGE:$REV
-    - docker push $CI_REGISTRY_IMAGE:latest
+    - if [ "$CI_COMMIT_REF_NAME" = master ]; then docker push $CI_REGISTRY_IMAGE:latest; fi
   tags:
     - docker
 
