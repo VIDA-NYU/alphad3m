@@ -378,28 +378,25 @@ class D3mTa2(object):
             else:
                 tpl_func = template
             try:
-                pipeline_id = self._build_pipeline_from_template(session,
-                                                                 tpl_func)
+                self._build_pipeline_from_template(session, tpl_func, dataset)
             except Exception:
                 logger.exception("Error building pipeline from %r",
                                  template)
-            else:
-                logger.info("Created pipeline %s", pipeline_id)
-                session.pipelines_training.add(pipeline_id)
-                self._run_queue.put((session, pipeline_id, dataset))
         logger.info("Pipeline creation completed")
         session.check_status()
 
-    def _build_pipeline_from_template(self, session, template):
+    def _build_pipeline_from_template(self, session, template, dataset):
         # Create workflow from a template
         pipeline_id = template(self)
 
         # Add it to the session
         with session.lock:
             session.pipelines.add(pipeline_id)
-        session.notify('new_pipeline', pipeline_id=pipeline_id)
+            session.pipelines_training.add(pipeline_id)
 
-        return pipeline_id
+        logger.info("Created pipeline %s", pipeline_id)
+        self._run_queue.put((session, pipeline_id, dataset))
+        session.notify('new_pipeline', pipeline_ids=pipeline_id)
 
     # Runs in a background thread
     def _pipeline_running_thread(self):
@@ -452,7 +449,6 @@ class D3mTa2(object):
             except Empty:
                 pass
             else:
-                session, proc = running_pipelines[pipeline_id]
                 if msg == 'progress':
                     # TODO: Report progress
                     logger.info("Training pipeline %s: %.0f%%",
