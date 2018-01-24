@@ -3,12 +3,16 @@ import numpy
 import sys
 import time
 
+
 from sqlalchemy.orm import joinedload
 
 from d3m_ta2_nyu.common import SCORES_TO_SKLEARN
 from d3m_ta2_nyu.d3mds import D3MDS
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.execute import execute_train, execute_test
+from d3m_ta2_nyu.parameter_tuning.estimator_config import ESTIMATORS
+from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, estimator_from_cfg
+
 
 
 logger = logging.getLogger(__name__)
@@ -105,13 +109,23 @@ def tune(pipeline_id, metrics, dataset, problem, msg_queue, db):
                  joinedload(database.Pipeline.connections))
     ).one()
 
-    # TODO: Get list of hyperparameters present in pipeline
+    # TODO: tune all modules, not only the estimator
+    estimator_module = None
+    for module in pipeline.modules:
+        if module.name in ESTIMATORS.keys():
+            estimator_module = module
 
-    tuning = HyperparameterTuning(list_of_hyperparameters)
+    tuning = HyperparameterTuning(estimator_module.name)
 
     def evaluate(hyperparameter_configuration):
-        # TODO: Set hyperparameters in db
-
+        estimator = estimator_from_cfg(hyperparameter_configuration)
+        db.add(database.PipelineParameter(
+                            pipeline=pipeline,
+                            module_id=estimator_module.id,
+                            name='hyperparams',
+                            value=pickle.dumps(estimator), 
+                        )
+            )
         scores = cross_validation(
             pipeline, metrics, data, targets,
             lambda i: None,
@@ -130,7 +144,20 @@ def tune(pipeline_id, metrics, dataset, problem, msg_queue, db):
         db, pipeline,
         "Hyperparameter tuning from pipeline %s" % pipeline_id)
 
-    # TODO: Set hyperparameters
+    # TODO: tune all modules, not only the estimator
+    estimator_module = None
+    for module in new_pipeline.modules:
+        if module.name in ESTIMATORS.keys():
+            estimator_module = module
+
+    estimator = estimator_from_cfg(hyperparameter_configuration)
+    db.add(database.PipelineParameter(
+                        pipeline=new_pipeline,
+                        module_id=estimator_module.id,
+                        name='hyperparams',
+                        value=pickle.dumps(estimator), 
+                    )
+            )
 
     db.flush()
 

@@ -24,7 +24,7 @@ from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
 from d3m_ta2_nyu.test import test
-from d3m_ta2_nyu.train import train
+from d3m_ta2_nyu.train_and_tune import tune
 from d3m_ta2_nyu.utils import Observable
 from d3m_ta2_nyu.workflow import database
 
@@ -419,7 +419,7 @@ class D3mTa2(object):
                     logger.info("Running training pipeline for %s",
                                 pipeline_id)
                     proc = multiprocessing.Process(
-                        target=train,
+                        target=tune,
                         args=(pipeline_id, session.metrics,
                               dataset, session.problem, msg_queue),
                         kwargs={'db_filename': self.db_filename})

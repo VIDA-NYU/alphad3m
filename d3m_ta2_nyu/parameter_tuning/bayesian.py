@@ -18,16 +18,13 @@ from smac.tae.execute_func import ExecuteTAFuncDict
 from smac.scenario.scenario import Scenario
 from smac.facade.smac_facade import SMAC
 
-from estimator_config import ESTIMATORS
+from d3m_ta2_nyu.parameter_tuning.estimator_config import ESTIMATORS
 
-
-# We load the iris-dataset (a widely used benchmark)
-iris = datasets.load_iris()
-data = iris.data
-target = iris.target
-
-# We define a classifier to tune the hyperparameters, currently only svm and Random Forest are accepted
-
+def cfg_from_estimator(estimator):
+	# Build Configuration Space which defines all parameters and their ranges
+	cs = ConfigurationSpace()
+	ESTIMATORS[estimator](cs)
+	return cs
 
 def cfg_from_pipeline(pipeline):
 	# Build Configuration Space which defines all parameters and their ranges
@@ -41,6 +38,29 @@ def estimator_from_cfg(cfg):
 	EstimatorClass = getattr(importlib.import_module(estimator[:estimator.rfind('.')]), estimator[estimator.rfind('.') + 1:])
 	clf = EstimatorClass(**cfg)
 	return clf
+
+
+class HyperparameterTuning(object):
+	def __init__(self,estimator):
+		self.cs = cfg_from_estimator(estimator) 
+		
+
+	def tune(self,runner):
+		# Scenario object
+		scenario = Scenario({"run_obj": "quality",   # we optimize quality (alternatively runtime)
+	                     "runcount-limit": 100,  # maximum function evaluations
+	                     "cs": self.cs,               # configuration space
+	                     "deterministic": "true"
+	                     })
+		smac = SMAC(scenario=scenario, rng=np.random.RandomState(42),
+	        tae_runner=runner)
+
+		return smac.optimize()
+
+
+
+
+
 
 def main(pipeline, data,target):
 
@@ -78,6 +98,11 @@ def main(pipeline, data,target):
 
 	print("Optimized Value: %.2f" % (inc_value))
 
+
+# We load the iris-dataset (a widely used benchmark)
+iris = datasets.load_iris()
+data = iris.data
+target = iris.target
 
 pipeline = {}
 #only testing classifiers for now
