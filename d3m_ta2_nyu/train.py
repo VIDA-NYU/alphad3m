@@ -12,12 +12,26 @@ from d3m_ta2_nyu.workflow.execute import execute_train, execute_test
 logger = logging.getLogger(__name__)
 
 
-FOLDS = 3
-SPLIT_RATIO = 0.25
+FOLDS = 4
 
 
 def cross_validation(pipeline, metrics, data, targets, progress, db):
     scores = {}
+
+    # For a given idx, ``random_sample[idx]`` indicates which fold will use
+    # ``data[idx]`` as test row. All the other ones will use it as a train row.
+    # data          = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    # random_sample = [0, 0, 0, 1, 1, 1, 2, 2, 2]
+    # train_split0  = [         3, 4, 5, 6, 7, 8]
+    # train_split1  = [0, 1, 2,          6, 7, 8]
+    # train_split2  = [0, 1, 2, 3, 4, 5         ]
+    # test_split0   = [0, 1, 2                  ]
+    # test_split1   = [         3, 4, 5         ]
+    # test_split2   = [                  6, 7, 8]
+    random_sample = numpy.repeat(numpy.arange(FOLDS),
+                                 ((len(data) - 1) // FOLDS) + 1)
+    numpy.random.shuffle(random_sample)
+    random_sample = random_sample[:len(data)]
 
     for i in range(FOLDS):
         logger.info("Scoring round %d/%d", i + 1, FOLDS)
@@ -25,13 +39,11 @@ def cross_validation(pipeline, metrics, data, targets, progress, db):
         progress(i)
 
         # Do the split
-        random_sample = numpy.random.rand(len(data)) < SPLIT_RATIO
+        train_data_split = data[random_sample != i]
+        test_data_split = data[random_sample == i]
 
-        train_data_split = data[random_sample]
-        test_data_split = data[~random_sample]
-
-        train_target_split = targets[random_sample]
-        test_target_split = targets[~random_sample]
+        train_target_split = targets[random_sample != i]
+        test_target_split = targets[random_sample == i]
 
         start_time = time.time()
 
