@@ -13,8 +13,7 @@ dateparser==0.6.0
 decorator==4.1.2
 dill==0.2.7.1
 downhill==0.4.0
--e git+https://github.com/usc-isi-i2/dsbox-cleaning.git@bb6cbf6864215b07c040ac2c42cb1101ee4bc9a9#egg=dsbox-datacleaning
-dsbox-dataprofiling==0.3.0
+-e git+https://github.com/usc-isi-i2/dsbox-cleaning.git@9797ddf4d88b1e45b1dc3caabfd68e9e4fa81f79#egg=dsbox_datacleaning
 ecos==2.0.5
 enum34==1.1.6
 fancyimpute==0.3.0
