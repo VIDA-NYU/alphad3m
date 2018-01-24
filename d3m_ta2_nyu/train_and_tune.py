@@ -2,6 +2,7 @@ import logging
 import numpy
 import sys
 import time
+import pickle
 
 
 from sqlalchemy.orm import joinedload
@@ -118,7 +119,7 @@ def tune(pipeline_id, metrics, dataset, problem, msg_queue, db):
     tuning = HyperparameterTuning(estimator_module.name)
 
     def evaluate(hyperparameter_configuration):
-        estimator = estimator_from_cfg(hyperparameter_configuration)
+        estimator = estimator_from_cfg(hyperparameter_configuration,estimator_module.name)
         db.add(database.PipelineParameter(
                             pipeline=pipeline,
                             module_id=estimator_module.id,
@@ -150,7 +151,7 @@ def tune(pipeline_id, metrics, dataset, problem, msg_queue, db):
         if module.name in ESTIMATORS.keys():
             estimator_module = module
 
-    estimator = estimator_from_cfg(hyperparameter_configuration)
+    estimator = estimator_from_cfg(hyperparameter_configuration,estimator_module.name)
     db.add(database.PipelineParameter(
                         pipeline=new_pipeline,
                         module_id=estimator_module.id,
