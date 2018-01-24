@@ -6,6 +6,7 @@ back to this process via a Queue.
 
 from concurrent import futures
 import grpc
+import itertools
 import json
 import logging
 import multiprocessing
@@ -464,12 +465,13 @@ class D3mTa2(object):
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
 
-    def _classification_template(self, classifier):
+    def _classification_template(self, imputer, encoder, classifier):
         db = self.DBSession()
 
         pipeline = database.Pipeline(
-            origin="classification_template(classifier=%s, problemID=%s)" % (
-                classifier, self.problem_id))
+            origin="classification_template(imputer=%s, encoder=%s, "
+                   "classifier=%s, problemID=%s)" % (
+                       imputer, encoder, classifier, self.problem_id))
 
         def make_module(package, version, name):
             pipeline_module = database.PipelineModule(
@@ -489,17 +491,23 @@ class D3mTa2(object):
         try:
             data = make_module('data', '0.0', 'data')
             targets = make_module('data', '0.0', 'targets')
-            imputer = make_module(
-                'primitives', '0.0',
-                'dsbox.datapreprocessing.cleaner.KNNImputation')
-            encoder = make_module(
-                'primitives', '0.0',
-                'dsbox.datapreprocessing.cleaner.Encoder')
-            classifier = make_module('sklearn-builtin', '0.0', classifier)
 
-            connect(data, imputer)
-            connect(imputer, encoder)
-            connect(encoder, classifier)
+            if imputer is not None:
+                imputer = make_module(
+                    'primitives', '0.0',
+                    imputer)
+                connect(data, imputer)
+                data = imputer
+
+            if encoder is not None:
+                encoder = make_module(
+                    'primitives', '0.0',
+                    encoder)
+                connect(data, encoder)
+                data = encoder
+
+            classifier = make_module('sklearn-builtin', '0.0', classifier)
+            connect(data, classifier)
             connect(targets, classifier, 'targets', 'targets')
 
             db.add(pipeline)
@@ -509,30 +517,37 @@ class D3mTa2(object):
             db.close()
 
     TEMPLATES = {
-        'CLASSIFICATION': [
-            (_classification_template,
-             'sklearn.svm.classes.LinearSVC'),
-            (_classification_template,
-             'sklearn.neighbors.classification.KNeighborsClassifier'),
-            (_classification_template,
-             'sklearn.tree.tree.DecisionTreeClassifier'),
-            (_classification_template,
-             'sklearn.naive_bayes.MultinomialNB'),
-            (_classification_template,
-             'sklearn.ensemble.forest.RandomForestClassifier'),
-            (_classification_template,
-             'sklearn.linear_model.logistic.LogisticRegression'),
-        ],
-        'REGRESSION': [
-            (_classification_template,
-             'sklearn.linear_model.base.LinearRegression'),
-            (_classification_template,
-             'sklearn.linear_model.bayes.BayesianRidge'),
-            (_classification_template,
-             'sklearn.linear_model.coordinate_descent.LassoCV'),
-            (_classification_template,
-             'sklearn.linear_model.ridge.Ridge'),
-            (_classification_template,
-             'sklearn.linear_model.least_angle.Lars'),
-        ],
+        'CLASSIFICATION': list(itertools.product(
+            [_classification_template],
+            [
+                None,
+                'dsbox.datapreprocessing.cleaner.KNNImputation',
+                'dsbox.datapreprocessing.cleaner.MeanImputation',
+            ],
+            [None, 'dsbox.datapreprocessing.cleaner.Encoder'],
+            [
+                'sklearn.svm.classes.LinearSVC',
+                'sklearn.neighbors.classification.KNeighborsClassifier',
+                'sklearn.tree.tree.DecisionTreeClassifier',
+                'sklearn.naive_bayes.MultinomialNB',
+                'sklearn.ensemble.forest.RandomForestClassifier',
+                'sklearn.linear_model.logistic.LogisticRegression'
+            ],
+        )),
+        'REGRESSION': list(itertools.product(
+            [_classification_template],
+            [
+                None,
+                'dsbox.datapreprocessing.cleaner.KNNImputation',
+                'dsbox.datapreprocessing.cleaner.MeanImputation',
+            ],
+            [None, 'dsbox.datapreprocessing.cleaner.Encoder'],
+            [
+                'sklearn.linear_model.base.LinearRegression',
+                'sklearn.linear_model.bayes.BayesianRidge',
+                'sklearn.linear_model.coordinate_descent.LassoCV',
+                'sklearn.linear_model.ridge.Ridge',
+                'sklearn.linear_model.least_angle.Lars',
+            ],
+        )),
     }
