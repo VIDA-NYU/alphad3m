@@ -77,6 +77,15 @@ class Board():
 
     def _getMove(self, action):
         return [val for val in Board.PRIMITIVES[self.problem].values()][action]
+
+    @classmethod
+    def getPrimitives(cls, problem='CLASSIFICATION'):
+        return cls.PRIMITIVES[problem]
+
+    @classmethod
+    def getPrimitive(cls, piece):
+        return cls.PRIMITIVES_DECODE[piece]
+
     
     def execute_move(self, action, player):
         """Perform the given move on the board;

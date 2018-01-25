@@ -27,7 +27,7 @@ class PipelineGame(Game):
 
     def getActionSize(self):
         # return number of actions
-        return len(Board.PRIMITIVES[self.problem].values())+1
+        return len(Board.getPrimitives(self.problem).values())+1
 
     def getNextState(self, board, player, action):
         # if player takes action on board, return next (board,player)
@@ -47,11 +47,6 @@ class PipelineGame(Game):
         return np.array(legalMoves)
 
     def getEvaluation(self, board):
-        # primitive = np.array(board[0:self.n]).tostring()
-        # eval_val = self.evaluations.get(primitive)
-        # if eval_val is None:
-        #     eval_val = uniform(0.7, 0.9)
-        #     self.evaluations[primitive] = eval_val
         primitive = board[0:self.n][self.n-1][1]
         if primitive == 0:
             return 0.0
@@ -60,11 +55,10 @@ class PipelineGame(Game):
         eval_val = self.evaluations.get(primitive)
         if eval_val is None:
             pipeline = ['dsbox.datapreprocessing.cleaner.KNNImputation','dsbox.datapreprocessing.cleaner.Encoder']
-            for key, value in Board.PRIMITIVES[self.problem].items():
+            for key, value in Board.getPrimitives(self.problem).items():
                 if primitive == value:
                     pipeline.append(key)
-            result = nn_evaluation.evaluate_pipeline_from_strings(pipeline, 'ALPHAZERO', self.args['dataset_path'], self.args['problem_path'])
-            eval_val = result['F1_MACRO']
+            eval_val = nn_evaluation.evaluate_pipeline_from_strings(pipeline, 'ALPHAZERO', self.args['dataset_path'], self.args['problem_path'])
             self.evaluations[primitive] = eval_val
         return eval_val
     
@@ -108,7 +102,7 @@ class PipelineGame(Game):
             print(y, "|",end="")    # print the row #
             for x in range(n):
                 piece = board[y][x]    # get the piece to print
-                if piece != 0: print(Board.PRIMITIVES_DECODE[piece]+" ",end="")
+                if piece != 0: print(Board.getPrimitive(piece)+" ",end="")
                 else:
                     if x==n:
                         print("-",end="")
