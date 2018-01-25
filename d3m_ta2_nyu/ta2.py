@@ -396,7 +396,7 @@ class D3mTa2(object):
 
         logger.info("Created pipeline %s", pipeline_id)
         self._run_queue.put((session, pipeline_id, dataset))
-        session.notify('new_pipeline', pipeline_ids=pipeline_id)
+        session.notify('new_pipeline', pipeline_id=pipeline_id)
 
     # Runs in a background thread
     def _pipeline_running_thread(self):
