@@ -24,4 +24,6 @@ RUN printf "#!/bin/sh\n\n/usr/src/app/venv/bin/ta2_search \"\$@\"\n" >/usr/local
     printf "#!/bin/sh\n\n/usr/src/app/venv/bin/ta2_serve \"\$@\"\n" >/usr/local/bin/ta2_serve && \
     chmod +x /usr/local/bin/ta2_serve
 
+CMD "ta2_serve"
+
 EXPOSE 50051
