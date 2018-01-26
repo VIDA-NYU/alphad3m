@@ -103,6 +103,11 @@ def train(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
+
+    if msg_queue is not None:
+        signal = msg_queue.put
+    else:
+        signal = lambda m: None
     max_progress = FOLDS + 2.0
 
     logger.info("About to run training pipeline, id=%s, dataset=%r, "
@@ -123,8 +128,7 @@ def train(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
     # get predictions from OutputPort to get cross validation scores
     scores, predictions = cross_validation(
         pipeline_id, metrics, data, targets,
-        lambda i: msg_queue.put((pipeline_id, 'progress',
-                                 (i + 1.0) / max_progress)),
+        lambda i: signal((pipeline_id, 'progress', (i + 1.0) / max_progress)),
         db)
 
     # Store scores

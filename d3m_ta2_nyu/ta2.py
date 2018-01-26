@@ -15,6 +15,7 @@ from queue import Empty, Queue
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 import stat
+import subprocess
 import sys
 import threading
 import time
@@ -26,7 +27,6 @@ from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
 from d3m_ta2_nyu.test import test
-from d3m_ta2_nyu.train import train
 from d3m_ta2_nyu.utils import Observable
 from d3m_ta2_nyu.workflow import database
 
@@ -406,11 +406,11 @@ class D3mTa2(object):
             # Wait for a process to be done
             remove = []
             for pipeline_id, (session, proc) in running_pipelines.items():
-                if not proc.is_alive():
+                if proc.poll() is not None:
                     logger.info("Pipeline training process done, returned %d "
                                 "(pipeline: %s)",
-                                proc.exitcode, pipeline_id)
-                    if proc.exitcode == 0:
+                                proc.returncode, pipeline_id)
+                    if proc.returncode == 0:
                         results = os.path.join(self.predictions_root,
                                                '%s.csv' % pipeline_id)
                         session.notify('training_success',
@@ -435,12 +435,29 @@ class D3mTa2(object):
                                 pipeline_id)
                     results = os.path.join(self.predictions_root,
                                            '%s.csv' % pipeline_id)
-                    proc = multiprocessing.Process(
-                        target=train,
-                        args=(pipeline_id, session.metrics,
-                              dataset, session.problem, results, msg_queue),
-                        kwargs={'db_filename': self.db_filename})
-                    proc.start()
+                    # FIXME: We can't use multiprocessing here because it
+                    # crashes grpc
+                    # https://github.com/grpc/grpc/issues/12455
+                    # If changing this back, update poll() and returncode to
+                    # is_alive() and exitcode above.
+                    #proc = multiprocessing.Process(
+                    #    target=train,
+                    #    args=(pipeline_id, session.metrics,
+                    #          dataset, session.problem, results, msg_queue),
+                    #    kwargs={'db_filename': self.db_filename})
+                    #proc.start()
+                    proc = subprocess.Popen(
+                        [sys.executable,
+                         '-c',
+                         'import uuid; from d3m_ta2_nyu.train import train; '
+                         'train(uuid.UUID(hex=%r), %r, %r, %r, %r, '
+                         'None, db_filename=%r)' % (
+                             pipeline_id.hex, session.metrics,
+                             dataset, session.problem, results,
+                             self.db_filename,
+                         )
+                        ]
+                    )
                     running_pipelines[pipeline_id] = session, proc
                     session.notify('training_start', pipeline_id=pipeline_id)
 
