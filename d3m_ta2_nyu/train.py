@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 FOLDS = 4
+RANDOM = 65682867  # The most random of all numbers
 
 
 def cross_validation(pipeline, metrics, data, targets, progress, db):
@@ -31,7 +32,7 @@ def cross_validation(pipeline, metrics, data, targets, progress, db):
     # test_split2   = [                  6, 7, 8]
     random_sample = numpy.repeat(numpy.arange(FOLDS),
                                  ((len(data) - 1) // FOLDS) + 1)
-    numpy.random.shuffle(random_sample)
+    numpy.random.RandomState(seed=RANDOM).shuffle(random_sample)
     random_sample = random_sample[:len(data)]
 
     all_predictions = []
