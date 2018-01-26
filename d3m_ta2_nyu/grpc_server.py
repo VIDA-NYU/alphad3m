@@ -67,6 +67,18 @@ class CoreService(pb_core_grpc.CoreServicer):
             )
             return
         dataset = request.dataset_uri
+        if not dataset.endswith('datasetDoc.json'):
+            logger.error("Dataset is not in D3M format: %s", dataset)
+            yield pb_core.PipelineCreateResult(
+                response_info=pb_core.Response(
+                    status=pb_core.Status(
+                        code=pb_core.INVALID_ARGUMENT,
+                        details="Unknown task",
+                    ),
+                ),
+            )
+            return
+        dataset = dataset[:-15]
         task = request.task
         if task not in self.grpc2task:
             logger.error("Got unknown task %r", task)
