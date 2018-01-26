@@ -311,7 +311,7 @@ class D3mTa2(object):
             problem_json = json.load(fp)
         self.problem_id = problem_json['about']['problemID']
         if not port:
-            port = 50051
+            port = 45042
         core_rpc = grpc_server.CoreService(self)
         dataflow_rpc = grpc_server.DataflowService(self)
         server = grpc.server(self.executor)
