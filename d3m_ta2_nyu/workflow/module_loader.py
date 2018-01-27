@@ -1,4 +1,5 @@
 import importlib
+import pandas
 import pickle
 
 
@@ -13,6 +14,18 @@ def _data(*, global_inputs, **kwargs):
 
 def _targets(*, global_inputs, **kwargs):
     return {'targets': global_inputs.get('targets')}
+
+
+def _get_columns(*, module_inputs, **kwargs):
+    columns = pickle.loads(module_inputs['columns'][0])
+    data = module_inputs['data'][0]
+    # We have to -1 because column 0 is the index to pandas
+    return {'data': data.iloc[:, [e - 1 for e in columns]]}
+
+
+def _merge_columns(*, module_inputs, **kwargs):
+    data = module_inputs['data']
+    return {'data': pandas.concat(data, axis=1)}
 
 
 def _sklearn(name):
@@ -122,7 +135,9 @@ def _loader_primitives(name):
 
 _loaders = {'sklearn-builtin': _sklearn,
             'primitives': _loader_primitives,
-            'data': {'data': _data, 'targets': _targets}.get}
+            'data': {'data': _data, 'targets': _targets,
+                     'get_columns': _get_columns,
+                     'merge_columns': _merge_columns}.get}
 
 
 def loader(package, version, name):
