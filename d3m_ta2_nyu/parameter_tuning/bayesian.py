@@ -1,4 +1,5 @@
 import numpy as np
+import typing
 # Import ConfigSpace and different types of parameters
 from smac.configspace import ConfigurationSpace
 from smac.facade.smac_facade import SMAC
@@ -28,6 +29,20 @@ def estimator_from_cfg(cfg, name):
     EstimatorClass = get_class(name)
     clf = EstimatorClass(**cfg)
     return clf
+
+
+def primitive_from_cfg(cfg, name):
+    cfg = {k: cfg[k] for k in cfg if cfg[k] is not None}
+    print(str(cfg))
+    PrimitiveClass = get_class(name)
+    HyperparameterClass = typing.get_type_hints(PrimitiveClass.__init__)['hyperparams']
+    hyperparameter_config = HyperparameterClass.configuration
+    for key in hyperparameter_config:
+        if key not in cfg:
+            cfg[key] = hyperparameter_config[key].default
+    hy = HyperparameterClass(**cfg)
+    primitive = PrimitiveClass(hyperparams=hy)
+    return primitive
 
 
 class HyperparameterTuning(object):
