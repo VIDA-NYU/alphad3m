@@ -22,6 +22,8 @@ import threading
 import time
 import uuid
 
+from . import __version__
+
 from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
     TASKS_FROM_SCHEMA
 from d3m_ta2_nyu.d3mds import D3MDataset
@@ -150,6 +152,8 @@ class D3mTa2(object):
         self._run_thread.setDaemon(True)
         self._run_thread.start()
 
+        logger.info("TA2 started, version=%s", __version__)
+
     def run_search(self, dataset, problem):
         """Run the search phase: create pipelines, train and score them.
 
@@ -270,7 +274,8 @@ class D3mTa2(object):
             # Get scores from that cross-validation
             scores = (
                 db.query(database.CrossValidationScore)
-                .filter(database.CrossValidationScore.cross_validation_id == crossval_id)
+                .filter(database.CrossValidationScore.cross_validation_id ==
+                        crossval_id)
             ).all()
             for score in scores:
                 if score.metric == metric:
@@ -348,6 +353,28 @@ class D3mTa2(object):
                 .options(joinedload(database.Pipeline.modules),
                          joinedload(database.Pipeline.connections))
             ).one_or_none()
+        finally:
+            db.close()
+
+    def get_pipeline_scores(self, session_id, pipeline_id):
+        if pipeline_id not in self.sessions[session_id].pipelines:
+            raise KeyError("No such pipeline ID for session")
+
+        db = self.DBSession()
+        try:
+            # Find most recent cross-validation
+            crossval_id = (
+                select([database.CrossValidation.id])
+                .where(database.CrossValidation.pipeline_id == pipeline_id)
+                .order_by(database.CrossValidation.date.desc())
+            ).as_scalar()
+            # Get scores from that cross-validation
+            scores = (
+                db.query(database.CrossValidationScore)
+                .filter(database.CrossValidationScore.cross_validation_id ==
+                        crossval_id)
+            ).all()
+            return {score.metric: score.value for score in scores}
         finally:
             db.close()
 
@@ -433,12 +460,13 @@ class D3mTa2(object):
                 except Empty:
                     pass
                 else:
-                    logger.info("Running training pipeline for %s",
-                                pipeline_id)
+                    logger.info("Running training pipeline for %s "
+                                "(session %s has %d pipelines left to train)",
+                                pipeline_id, session.id,
+                                len(session.pipelines_training))
                     results = os.path.join(self.predictions_root,
                                            '%s.csv' % pipeline_id)
-                    # FIXME: We can't use multiprocessing here because it
-                    # crashes grpc
+                    # FIXME: Can't use multiprocessing here because of gRPC bug
                     # https://github.com/grpc/grpc/issues/12455
                     # If changing this back, update poll() and returncode to
                     # is_alive() and exitcode above.

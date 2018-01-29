@@ -213,13 +213,13 @@ class CoreService(pb_core_grpc.CoreServicer):
                 predictions = kwargs.get('predict_result', None)
                 if not pipeline_filter(pipeline_id):
                     continue
-                pipeline = session.pipelines[pipeline_id]
+                scores = self._app.get_pipeline_scores(pipeline_id)
                 scores = [
                     pb_core.Score(
                         metric=self.metric2grpc[m],
                         value=s,
                     )
-                    for m, s in pipeline.scores.items()
+                    for m, s in scores.items()
                     if m in self.metric2grpc
                 ]
                 yield pb_core.PipelineCreateResult(
