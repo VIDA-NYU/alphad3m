@@ -1,5 +1,4 @@
 import typing
-from smac.configspace import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, \
      UniformFloatHyperparameter, UniformIntegerHyperparameter, \
      NormalFloatHyperparameter, FloatHyperparameter, IntegerHyperparameter
