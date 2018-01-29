@@ -14,7 +14,8 @@ req = [
     'scikit-image',
     'scikit-learn',
     'pandas',
-    'dsbox-datacleaning']
+    'dsbox-datacleaning',
+    'smac']
 setup(name='d3m_ta2_nyu',
       version='0.1',
       packages=['d3m_ta2_nyu'],
