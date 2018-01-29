@@ -11,8 +11,8 @@ stages:
 variables:
   DOCKER_DRIVER: overlay2
   EVAL_REGISTRY_IMAGE: registry.gitlab.com/vida-nyu/d3m/ta2/nist-validation-image
-  EVAL_DATA: o_185 # options o_185, r_32:
-  EVAL_TAGGED_IMAGE: $EVAL_REGISTRY_IMAGE:latest
+  EVAL_DATA: 185_baseball
+  EVAL_TAGGED_IMAGE: $EVAL_REGISTRY_IMAGE:january
   IMAGE: $CI_REGISTRY_IMAGE:git-$CI_COMMIT_SHA
   GIT_SUBMODULE_STRATEGY: recursive
 
@@ -156,7 +156,7 @@ eval_validate_results:
   image: $EVAL_TAGGED_IMAGE
   script:
     - cd $CI_PROJECT_DIR
-    - python /validate_results.py $CI_PROJECT_DIR/Eval/Outputs/Results $CI_PROJECT_DIR/Eval/problemSchema.json
+    - python /validate_results.py $CI_PROJECT_DIR/Eval/Outputs/Results $CI_PROJECT_DIR/Eval/problem_TRAIN/problemDoc.json
   when: on_success
   dependencies:
     - eval_prepare_train

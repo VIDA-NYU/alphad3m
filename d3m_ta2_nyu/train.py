@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 FOLDS = 4
+RANDOM = 65682867  # The most random of all numbers
 
 
 def cross_validation(pipeline, metrics, data, targets, progress, db):
@@ -31,7 +32,7 @@ def cross_validation(pipeline, metrics, data, targets, progress, db):
     # test_split2   = [                  6, 7, 8]
     random_sample = numpy.repeat(numpy.arange(FOLDS),
                                  ((len(data) - 1) // FOLDS) + 1)
-    numpy.random.shuffle(random_sample)
+    numpy.random.RandomState(seed=RANDOM).shuffle(random_sample)
     random_sample = random_sample[:len(data)]
 
     all_predictions = []
@@ -103,6 +104,11 @@ def train(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
+
+    if msg_queue is not None:
+        signal = msg_queue.put
+    else:
+        signal = lambda m: None
     max_progress = FOLDS + 2.0
 
     logger.info("About to run training pipeline, id=%s, dataset=%r, "
@@ -123,9 +129,10 @@ def train(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
     # get predictions from OutputPort to get cross validation scores
     scores, predictions = cross_validation(
         pipeline_id, metrics, data, targets,
-        lambda i: msg_queue.put((pipeline_id, 'progress',
-                                 (i + 1.0) / max_progress)),
+        lambda i: signal((pipeline_id, 'progress', (i + 1.0) / max_progress)),
         db)
+    logger.info("Scoring done: %s", ", ".join("%s=%s" % s
+                                              for s in scores.items()))
 
     # Store scores
     scores = [database.CrossValidationScore(metric=metric,
@@ -144,7 +151,7 @@ def train(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
 
     # Training step - run pipeline on full training_data,
     # Persist module set to write
-    logger.info("Scoring done, running training on full data")
+    logger.info("Running training on full data")
 
     try:
         execute_train(db, pipeline_id, data, targets)

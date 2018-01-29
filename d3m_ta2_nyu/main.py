@@ -53,7 +53,7 @@ def main_serve():
             "    ta2_serve [port_number]\n"
             "        Runs in server mode, waiting for a TA3 to connect on the "
             "given port\n"
-            "        (default: 50051)\n"
+            "        (default: 45042)\n"
             "        The configuration file is read from $CONFIG_JSON_PATH\n"
             "        Alternatively, the JSON *contents* can be read from "
             "$JSON_CONFIG\n")
