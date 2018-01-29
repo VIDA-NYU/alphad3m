@@ -274,7 +274,8 @@ class D3mTa2(object):
             # Get scores from that cross-validation
             scores = (
                 db.query(database.CrossValidationScore)
-                .filter(database.CrossValidationScore.cross_validation_id == crossval_id)
+                .filter(database.CrossValidationScore.cross_validation_id ==
+                        crossval_id)
             ).all()
             for score in scores:
                 if score.metric == metric:
@@ -352,6 +353,28 @@ class D3mTa2(object):
                 .options(joinedload(database.Pipeline.modules),
                          joinedload(database.Pipeline.connections))
             ).one_or_none()
+        finally:
+            db.close()
+
+    def get_pipeline_scores(self, session_id, pipeline_id):
+        if pipeline_id not in self.sessions[session_id].pipelines:
+            raise KeyError("No such pipeline ID for session")
+
+        db = self.DBSession()
+        try:
+            # Find most recent cross-validation
+            crossval_id = (
+                select([database.CrossValidation.id])
+                .where(database.CrossValidation.pipeline_id == pipeline_id)
+                .order_by(database.CrossValidation.date.desc())
+            ).as_scalar()
+            # Get scores from that cross-validation
+            scores = (
+                db.query(database.CrossValidationScore)
+                .filter(database.CrossValidationScore.cross_validation_id ==
+                        crossval_id)
+            ).all()
+            return {score.metric: score.value for score in scores}
         finally:
             db.close()
 
