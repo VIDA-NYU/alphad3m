@@ -22,6 +22,8 @@ import threading
 import time
 import uuid
 
+from . import __version__
+
 from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
     TASKS_FROM_SCHEMA
 from d3m_ta2_nyu.d3mds import D3MDataset
@@ -149,6 +151,8 @@ class D3mTa2(object):
             target=self._pipeline_running_thread)
         self._run_thread.setDaemon(True)
         self._run_thread.start()
+
+        logger.info("TA2 started, version=%s", __version__)
 
     def run_search(self, dataset, problem):
         """Run the search phase: create pipelines, train and score them.
@@ -433,12 +437,13 @@ class D3mTa2(object):
                 except Empty:
                     pass
                 else:
-                    logger.info("Running training pipeline for %s",
-                                pipeline_id)
+                    logger.info("Running training pipeline for %s "
+                                "(session %s has %d pipelines left to train)",
+                                pipeline_id, session.id,
+                                len(session.pipelines_training))
                     results = os.path.join(self.predictions_root,
                                            '%s.csv' % pipeline_id)
-                    # FIXME: We can't use multiprocessing here because it
-                    # crashes grpc
+                    # FIXME: Can't use multiprocessing here because of gRPC bug
                     # https://github.com/grpc/grpc/issues/12455
                     # If changing this back, update poll() and returncode to
                     # is_alive() and exitcode above.
