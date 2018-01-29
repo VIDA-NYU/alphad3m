@@ -62,7 +62,7 @@ class NNetWrapper(NeuralNet):
                 sample_ids = np.random.randint(len(examples), size=batch_size)
                 #print('SAMPLE IDS ', sample_ids, ' ', examples[0])
                 boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
-                boards = [board[0:self.board_y] for board in boards]
+                boards = [board[0:self.board_x] for board in boards]
                 #print('\n\nBOARDS\n', boards)
                 boards = torch.FloatTensor(np.array(boards).astype(np.float64))
                 target_pis = torch.FloatTensor(np.array(pis))
@@ -119,7 +119,8 @@ class NNetWrapper(NeuralNet):
         start = time.time()
 
         # preparing input
-        board = torch.FloatTensor(board[0:self.board_y])
+        board = torch.from_numpy(np.array(board[0:self.board_x], dtype='f')).cuda().double() if args.get('cuda') else torch.from_numpy(np.array(board[0:self.board_x], dtype='f'))
+        #board = torch.FloatTensor(board[0:self.board_x])
         if args.get('cuda'): board = board.contiguous().cuda()
         board = Variable(board, volatile=True)
         board = board.view(1, self.board_x, self.board_y)
@@ -127,7 +128,7 @@ class NNetWrapper(NeuralNet):
         self.nnet.eval()
         pi, v = self.nnet(board)
 
-        #print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
+        print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
         return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0]
 
     def loss_pi(self, targets, outputs):

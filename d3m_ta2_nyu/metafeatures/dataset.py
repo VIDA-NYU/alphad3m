@@ -1,8 +1,5 @@
 import os
-import pprint
-from json import loads, dumps
 import pandas as pd
-import numpy as np
 from metalearn.metafeatures.simple_metafeatures import SimpleMetafeatures
 from metalearn.metafeatures.statistical_metafeatures import StatisticalMetafeatures
 from metalearn.metafeatures.information_theoretic_metafeatures import InformationTheoreticMetafeatures
@@ -10,7 +7,7 @@ from metalearn.metafeatures.information_theoretic_metafeatures import Informatio
 def load_dataframe(df):
     df.fillna(method='ffill', inplace=True)
     X = df.values[:,0:-1]
-    Y = df.values[:,-1].astype('str')
+    Y = df.filter([df.keys()[-1]]).astype('str').values.flatten()
     attributes = []
     for i in range(0,len(X[0])):
         attributes.append((df.keys()[i],str(type(X[0][i]))))

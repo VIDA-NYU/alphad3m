@@ -36,18 +36,19 @@ class Board():
         },
     }
 
-    def __init__(self, n=3, problem='CLASSIFICATION'):
+    def __init__(self, n=3, problem='CLASSIFICATION', win_threshold=0.6):
         "Set up initial board configuration."
 
         self.n = n
+        self.m = 3
         # Create the empty board array.
         self.pieces = [None] * self.n
         for i in range(self.n):
-            self.pieces[i] = [0] * self.n
+            self.pieces[i] = [0] * self.m
         self[0][1] = 1
         self[1][1] = 2
         self.previous_moves = [0]*len(self.PRIMITIVES[problem].values())
-        self.win_threshold = 0.6
+        self.win_threshold = win_threshold
         self.problem = problem
         
     # add [][] indexer syntax to the Board
@@ -57,8 +58,15 @@ class Board():
     def findWin(self, player, eval_val=None):
         """Find win of the given color in row, column, or diagonal
         (1 for x, -1 for o)"""
-        if self[self.n-1][1] == 0:
+        if self[self.m-1][1] == 0:
             return False
+        if eval_val == float('inf'):
+            return False
+
+        #print('\n\nPLAYER ', player)
+        #print('EVAL', eval_val)
+        #print('WIN THRESHOLD ', self.win_threshold)
+        #print('FIND WIN ', eval_val >= self.win_threshold)
         return eval_val >= self.win_threshold
 
     def get_legal_moves(self, problem='CLASSIFICATION'):

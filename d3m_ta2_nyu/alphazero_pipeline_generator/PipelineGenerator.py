@@ -19,7 +19,7 @@ class PipelineGenerator:
         
         'checkpoint': './temp/',
         'load_model': False,
-        'load_folder_file': ('/dev/models/8x100x50','best.pth.tar')
+        'load_folder_file': ('./temp/','best.pth.tar')
     })
     
     def createPipelines(self, dataset_path, problem_path):
@@ -44,4 +44,11 @@ if __name__=="__main__":
     pg = PipelineGenerator()
     dataset_path = '/Users/yamuna/D3M/data/LL0/LL0_21_car/LL0_21_car_dataset'
     problem_path = '/Users/yamuna/D3M/data/LL0/LL0_21_car/LL0_21_car_problem'
+    #dataset_path = '/Users/yamuna/D3M/data/LL0/LL0_22_mfeat_zernike/LL0_22_mfeat_zernike_dataset'
+    #problem_path = '/Users/yamuna/D3M/data/LL0/LL0_22_mfeat_zernike/LL0_22_mfeat_zernike_problem'
+    #dataset_path = '/Users/yamuna/D3M/data/LL0/LL0_1530_volcanoes_a4/LL0_1530_volcanoes_a4_dataset'
+    #problem_path = '/Users/yamuna/D3M/data/LL0/LL0_1530_volcanoes_a4/LL0_1530_volcanoes_a4_problem'
+
+    #dataset_path = '/Users/yamuna/D3M/data/185_baseball/185_baseball_dataset'
+    #problem_path = '/Users/yamuna/D3M/data/185_baseball/185_baseball_problem'
     pg.createPipelines(dataset_path, problem_path)
