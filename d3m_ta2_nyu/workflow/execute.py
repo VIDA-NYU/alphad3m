@@ -178,7 +178,7 @@ def execute(db, pipeline, module_loader, reason,
 
             # Build inputs
             # Input override passed to execute()
-            inputs = {k: [v] for k, v in module_inputs.items()}
+            inputs = {k: [v] for k, v in module_inputs.get(mod_id, {}).items()}
             # Pipeline parameters from database
             for k, v in parameters.items():
                 inputs.setdefault(k, []).append(v)
