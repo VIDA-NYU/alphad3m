@@ -131,6 +131,8 @@ def train(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
         pipeline_id, metrics, data, targets,
         lambda i: signal((pipeline_id, 'progress', (i + 1.0) / max_progress)),
         db)
+    logger.info("Scoring done: %s", ", ".join("%s=%s" % s
+                                              for s in scores.items()))
 
     # Store scores
     scores = [database.CrossValidationScore(metric=metric,
@@ -149,7 +151,7 @@ def train(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
 
     # Training step - run pipeline on full training_data,
     # Persist module set to write
-    logger.info("Scoring done, running training on full data")
+    logger.info("Running training on full data")
 
     try:
         execute_train(db, pipeline_id, data, targets)

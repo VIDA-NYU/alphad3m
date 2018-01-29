@@ -11,6 +11,7 @@ import json
 import logging
 import multiprocessing
 import os
+import pickle
 from queue import Empty, Queue
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
@@ -23,6 +24,7 @@ import uuid
 
 from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
     TASKS_FROM_SCHEMA
+from d3m_ta2_nyu.d3mds import D3MDataset
 from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
@@ -374,7 +376,7 @@ class D3mTa2(object):
             logger.info("Creating pipeline from %r", template)
             if isinstance(template, (list, tuple)):
                 func, args = template[0], template[1:]
-                tpl_func = lambda s: func(s, *args)
+                tpl_func = lambda s, **kw: func(s, *args, **kw)
             else:
                 tpl_func = template
             try:
@@ -387,7 +389,7 @@ class D3mTa2(object):
 
     def _build_pipeline_from_template(self, session, template, dataset):
         # Create workflow from a template
-        pipeline_id = template(self)
+        pipeline_id = template(self, dataset=dataset)
 
         # Add it to the session
         with session.lock:
@@ -489,13 +491,27 @@ class D3mTa2(object):
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
 
-    def _classification_template(self, imputer, encoder, classifier):
+    def _classification_template(self, imputer_cat, imputer_num, encoder,
+                                 classifier, dataset):
         db = self.DBSession()
 
         pipeline = database.Pipeline(
-            origin="classification_template(imputer=%s, encoder=%s, "
-                   "classifier=%s, problemID=%s)" % (
-                       imputer, encoder, classifier, self.problem_id))
+            origin="classification_template(imputer_cat=%s, imputer_num=%s, "
+                   "encoder=%s, classifier=%s, problemID=%s)" % (
+                       imputer_cat, imputer_num, encoder, classifier,
+                       self.problem_id))
+
+        ds = D3MDataset(dataset)
+        columns = ds.get_learning_data_columns()
+        # colType one of: integer, real, string, boolean, categorical, dateTime
+        categorical = [c['colIndex']
+                       for c in columns
+                       if ('attribute' in c['role'] and
+                           c['colType'] not in ['integer', 'real'])]
+        numerical = [c['colIndex']
+                     for c in columns
+                     if ('attribute' in c['role'] and
+                         c['colType'] in ['integer', 'real'])]
 
         def make_module(package, version, name):
             pipeline_module = database.PipelineModule(
@@ -503,6 +519,15 @@ class D3mTa2(object):
                 package=package, version=version, name=name)
             db.add(pipeline_module)
             return pipeline_module
+
+        def make_data_module(name):
+            return make_module('data','0.0', name)
+
+        def make_primitive_module(name):
+            if name.startswith('sklearn'):
+                return make_module('sklearn-builtin', '0.0', name)
+            else:
+                return make_module('primitives', '0.0', name)
 
         def connect(from_module, to_module,
                     from_output='data', to_input='data'):
@@ -513,24 +538,64 @@ class D3mTa2(object):
                                                to_input_name=to_input))
 
         try:
-            data = make_module('data', '0.0', 'data')
-            targets = make_module('data', '0.0', 'targets')
+            data = make_data_module('data')
+            targets = make_data_module('targets')
 
-            if imputer is not None:
-                imputer = make_module(
-                    'primitives', '0.0',
-                    imputer)
-                connect(data, imputer)
-                data = imputer
+            # If we have to split the data for imputation
+            if (categorical and numerical and
+                    (imputer_cat or imputer_num or encoder)):
+                # Split the data
+                data_cat = make_data_module('get_columns')
+                db.add(database.PipelineParameter(
+                    pipeline=pipeline, module=data_cat,
+                    name='columns', value=pickle.dumps(categorical),
+                ))
+                connect(data, data_cat)
 
-            if encoder is not None:
-                encoder = make_module(
-                    'primitives', '0.0',
-                    encoder)
-                connect(data, encoder)
-                data = encoder
+                data_num = make_data_module('get_columns')
+                db.add(database.PipelineParameter(
+                    pipeline=pipeline, module=data_num,
+                    name='columns', value=pickle.dumps(numerical),
+                ))
+                connect(data, data_num)
 
-            classifier = make_module('sklearn-builtin', '0.0', classifier)
+                # Add imputers
+                if imputer_cat:
+                    imputer_cat = make_primitive_module(imputer_cat)
+                    connect(data_cat, imputer_cat)
+                    data_cat = imputer_cat
+                if imputer_num:
+                    imputer_num = make_primitive_module(imputer_num)
+                    connect(data_num, imputer_num)
+                    data_num = imputer_num
+
+                # Add encoder
+                if encoder:
+                    encoder = make_primitive_module(encoder)
+                    connect(data_cat, encoder)
+                    data_cat = encoder
+
+                # Merge data
+                data = make_data_module('merge_columns')
+                connect(data_cat, data)
+                connect(data_num, data)
+            # If we don't have to split
+            else:
+                if categorical and (imputer_cat or encoder):
+                    if imputer_cat:
+                        imputer = make_primitive_module(imputer_cat)
+                        connect(data, imputer)
+                        data = imputer
+                    if encoder:
+                        encoder = make_primitive_module(encoder)
+                        connect(data, encoder)
+                        data = encoder
+                elif numerical and imputer_num:
+                    imputer = make_primitive_module(imputer_num)
+                    connect(data, imputer)
+                    data = imputer
+
+            classifier = make_primitive_module(classifier)
             connect(data, classifier)
             connect(targets, classifier, 'targets', 'targets')
 
@@ -543,12 +608,21 @@ class D3mTa2(object):
     TEMPLATES = {
         'CLASSIFICATION': list(itertools.product(
             [_classification_template],
+            # Imputer for categorical data
+            [None],
+            # Imputer for numerical data
             [
                 None,
                 'dsbox.datapreprocessing.cleaner.KNNImputation',
-                'dsbox.datapreprocessing.cleaner.MeanImputation',
+                'sklearn.preprocessing.Imputer',
             ],
-            [None, 'dsbox.datapreprocessing.cleaner.Encoder'],
+            # Encoder for categorical data
+            [
+                None,
+                'dsbox.datapreprocessing.cleaner.Encoder',
+                'sklearn.preprocessing.LabelBinarizer',
+            ],
+            # Classifier
             [
                 'sklearn.svm.classes.LinearSVC',
                 'sklearn.neighbors.classification.KNeighborsClassifier',
@@ -560,12 +634,21 @@ class D3mTa2(object):
         )),
         'REGRESSION': list(itertools.product(
             [_classification_template],
+            # Imputer for categorical data
+            [None],
+            # Imputer for numerical data
             [
                 None,
                 'dsbox.datapreprocessing.cleaner.KNNImputation',
-                'dsbox.datapreprocessing.cleaner.MeanImputation',
+                'sklearn.preprocessing.Imputer',
             ],
-            [None, 'dsbox.datapreprocessing.cleaner.Encoder'],
+            # Encoder for categorical data
+            [
+                None,
+                'dsbox.datapreprocessing.cleaner.Encoder',
+                'sklearn.preprocessing.LabelBinarizer',
+            ],
+            # Classifier
             [
                 'sklearn.linear_model.base.LinearRegression',
                 'sklearn.linear_model.bayes.BayesianRidge',
