@@ -57,6 +57,39 @@ class Session(Observable):
         self.metrics = []
         self.DBSession = DBSession
 
+    def add_training_pipeline(self, pipeline_id):
+        with self.lock:
+            self.training = True
+            self.pipelines.add(pipeline_id)
+            self.pipelines_training.add(pipeline_id)
+
+    def pipeline_training_done(self, pipeline_id):
+        with self.lock:
+            self.pipelines_training.discard(pipeline_id)
+            self.check_status()
+
+    def _get_top_pipelines(self, db, metric, limit=None):
+        crossval_score = (
+            select([database.CrossValidationScore.value])
+            .where(database.CrossValidationScore.cross_validation_id ==
+                   database.CrossValidation.id)
+            .where(database.CrossValidationScore.metric == metric)
+            .as_scalar()
+        )
+        if SCORES_RANKING_ORDER[metric] == -1:
+            crossval_score = crossval_score.desc()
+        q = (
+            db.query(database.CrossValidation)
+            .options(joinedload(database.CrossValidation.pipeline)
+                     .joinedload(database.Pipeline.modules))
+            .filter(database.Pipeline.id.in_(self.pipelines))
+            .filter(database.Pipeline.trained != 0)
+            .order_by(crossval_score)
+        )
+        if limit is not None:
+            q = q.limit(limit)
+        return [crossval.pipeline for crossval in q.all()]
+
     def check_status(self):
         if self.training and not self.pipelines_training:
             self.training = False
@@ -259,8 +292,7 @@ class D3mTa2(object):
         self.sessions[session.id] = session
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            session.training = True
-            session.pipelines_training.add(pipeline_id)
+            session.add_training_pipeline(pipeline_id)
             self._run_queue.put((session, pipeline_id, dataset))
             while queue.get(True)[0] != 'done_training':
                 pass
@@ -421,9 +453,7 @@ class D3mTa2(object):
         pipeline_id = template(self, dataset=dataset)
 
         # Add it to the session
-        with session.lock:
-            session.pipelines.add(pipeline_id)
-            session.pipelines_training.add(pipeline_id)
+        session.add_training_pipeline(pipeline_id)
 
         logger.info("Created pipeline %s", pipeline_id)
         self._run_queue.put((session, pipeline_id, dataset))
@@ -450,8 +480,7 @@ class D3mTa2(object):
                     else:
                         session.notify('training_error',
                                        pipeline_id=pipeline_id)
-                    session.pipelines_training.discard(pipeline_id)
-                    session.check_status()
+                    session.pipeline_training_done(pipeline_id)
                     remove.append(pipeline_id)
             for id in remove:
                 del running_pipelines[id]
