@@ -214,7 +214,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 predictions = kwargs.get('predict_result', None)
                 if not pipeline_filter(pipeline_id):
                     continue
-                scores = self._app.get_pipeline_scores(pipeline_id)
+                scores = self._app.get_pipeline_scores(session.id, pipeline_id)
                 scores = [
                     pb_core.Score(
                         metric=self.metric2grpc[m],
