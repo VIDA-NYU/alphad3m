@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 FOLDS = 4
 RANDOM = 65682867  # The most random of all numbers
 
+MAX_SAMPLE = 1000
+
 
 def cross_validation(pipeline, metrics, data, targets, progress, db):
     scores = {}
@@ -121,6 +123,15 @@ def tune(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
 
     data = ds.get_train_data()
     targets = ds.get_train_targets()
+
+    if len(data) > MAX_SAMPLE:
+        # Sample the dataset to stay reasonably fast
+        logger.info("Sampling down data from %d to %d", len(data), MAX_SAMPLE)
+        sample = numpy.concatenate([numpy.repeat(True, MAX_SAMPLE),
+                                    numpy.repeat(False, len(data) - MAX_SAMPLE)])
+        numpy.random.RandomState(seed=RANDOM).shuffle(sample)
+        data = data[sample]
+        targets = targets[sample]
 
     # Load pipeline from database
     pipeline = (
