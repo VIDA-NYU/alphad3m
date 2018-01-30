@@ -679,7 +679,6 @@ class D3mTa2(object):
             ],
             # Encoder for categorical data
             [
-                None,
                 'dsbox.datapreprocessing.cleaner.Encoder',
                 'sklearn.preprocessing.LabelBinarizer',
             ],
