@@ -6,6 +6,7 @@ leave this module.
 """
 
 import logging
+import os
 from queue import Queue
 from uuid import UUID
 
@@ -309,7 +310,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         code=pb_core.INVALID_ARGUMENT,
                         details="No such pipeline"),
                 )
-            pipeline = session.pipelines[pipeline_id]
+            pipeline = self._app.get_workflow(session_id, pipeline_id)
             if not pipeline.trained:
                 return pb_core.Response(
                     status=pb_core.Status(
@@ -319,6 +320,13 @@ class CoreService(pb_core_grpc.CoreServicer):
             uri = request.pipeline_exec_uri
             if uri.startswith('file:///'):
                 uri = uri[7:]
+            if os.path.splitext(os.path.basename(uri))[0] != pipeline_id:
+                logger.warning("Got ExportPipeline request with "
+                               "pipeline_exec_uri which doesn't match the "
+                               "pipeline ID! This means the executable will "
+                               "not match the log file.")
+                logger.warning("pipeline_id=%r pipeline_exec_uri=%r",
+                               pipeline_id, request.pipeline_exec_uri)
             self._app.write_executable(pipeline, filename=uri)
         return pb_core.Response(
             status=pb_core.Status(code=pb_core.OK)
