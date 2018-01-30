@@ -52,7 +52,7 @@ class HyperparameterTuning(object):
     def tune(self, runner):
         # Scenario object
         scenario = Scenario({"run_obj": "quality",  # we optimize quality (alternatively runtime)
-                             "runcount-limit": 10,  # maximum function evaluations
+                             "runcount-limit": 100,  # maximum function evaluations
                              "cs": self.cs,  # configuration space
                              "deterministic": "true",
                              "output_dir": "/tmp/"
