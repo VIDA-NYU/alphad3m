@@ -320,7 +320,9 @@ class CoreService(pb_core_grpc.CoreServicer):
             uri = request.pipeline_exec_uri
             if uri.startswith('file:///'):
                 uri = uri[7:]
-            if os.path.splitext(os.path.basename(uri))[0] != pipeline_id:
+            if not uri:
+                uri = None
+            elif os.path.splitext(os.path.basename(uri))[0] != pipeline_id:
                 logger.warning("Got ExportPipeline request with "
                                "pipeline_exec_uri which doesn't match the "
                                "pipeline ID! This means the executable will "

@@ -505,7 +505,7 @@ class D3mTa2(object):
                                  msg)
 
     def write_executable(self, pipeline, filename=None):
-        if filename is None:
+        if not filename:
             filename = os.path.join(self.executables_root, str(pipeline.id))
         with open(filename, 'w') as fp:
             fp.write('#!/bin/sh\n\n'
