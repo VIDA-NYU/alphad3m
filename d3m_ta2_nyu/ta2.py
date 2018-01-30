@@ -91,12 +91,13 @@ class Session(Observable):
         return [crossval.pipeline for crossval in q.all()]
 
     def check_status(self):
-        if self.training and not self.pipelines_training:
-            self.training = False
-            logger.info("Session %s: training done", self.id)
+        with self.lock:
+            if self.training and not self.pipelines_training:
+                self.training = False
+                logger.info("Session %s: training done", self.id)
 
-            self.write_logs()
-            self.notify('done_training')
+                self.write_logs()
+                self.notify('done_training')
 
     def write_logs(self):
         if not self.metrics:
@@ -431,22 +432,23 @@ class D3mTa2(object):
                 logger.info("Set metrics to %s %s(for session %s)",
                             metrics, old, session_id)
 
-        logger.info("Creating pipelines...")
-        session.training = True
-        for template in self.TEMPLATES.get(task, []):
-            logger.info("Creating pipeline from %r", template)
-            if isinstance(template, (list, tuple)):
-                func, args = template[0], template[1:]
-                tpl_func = lambda s, **kw: func(s, *args, **kw)
-            else:
-                tpl_func = template
-            try:
-                self._build_pipeline_from_template(session, tpl_func, dataset)
-            except Exception:
-                logger.exception("Error building pipeline from %r",
-                                 template)
-        logger.info("Pipeline creation completed")
-        session.check_status()
+            logger.info("Creating pipelines...")
+            session.training = True
+            for template in self.TEMPLATES.get(task, []):
+                logger.info("Creating pipeline from %r", template)
+                if isinstance(template, (list, tuple)):
+                    func, args = template[0], template[1:]
+                    tpl_func = lambda s, **kw: func(s, *args, **kw)
+                else:
+                    tpl_func = template
+                try:
+                    self._build_pipeline_from_template(session, tpl_func,
+                                                       dataset)
+                except Exception:
+                    logger.exception("Error building pipeline from %r",
+                                     template)
+            logger.info("Pipeline creation completed")
+            session.check_status()
 
     def _build_pipeline_from_template(self, session, template, dataset):
         # Create workflow from a template
