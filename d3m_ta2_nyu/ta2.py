@@ -140,6 +140,15 @@ class Session(Observable):
 class D3mTa2(object):
     def __init__(self, storage_root,
                  logs_root=None, executables_root=None):
+        if 'TA2_DEBUG_BE_FAST' in os.environ:
+            logger.warning("**************************************************"
+                           "*****")
+            logger.warning("***   DEBUG mode is on, will try fewer pipelines  "
+                           "  ***")
+            logger.warning("*** If this is not wanted, unset $TA2_DEBUG_BE_FAS"
+                           "T ***")
+            logger.warning("**************************************************"
+                           "*****")
         self.default_problem_id = 'problem_id_unset'
         self.default_problem = None
         self.storage = os.path.abspath(storage_root)
@@ -418,7 +427,10 @@ class D3mTa2(object):
 
             logger.info("Creating pipelines...")
             session.training = True
-            for template in self.TEMPLATES.get(task, []):
+            template_name = task
+            if 'TA2_DEBUG_BE_FAST' in os.environ:
+                template_name = 'DEBUG_' + task
+            for template in self.TEMPLATES.get(template_name, []):
                 logger.info("Creating pipeline from %r", template)
                 if isinstance(template, (list, tuple)):
                     func, args = template[0], template[1:]
@@ -674,6 +686,25 @@ class D3mTa2(object):
                 'sklearn.linear_model.logistic.LogisticRegression'
             ],
         )),
+        'DEBUG_CLASSIFICATION': list(itertools.product(
+            [_classification_template],
+            # Imputer for categorical data
+            [None],
+            # Imputer for numerical data
+            [
+                'sklearn.preprocessing.Imputer',
+            ],
+            # Encoder for categorical data
+            [
+                'dsbox.datapreprocessing.cleaner.Encoder',
+                'sklearn.preprocessing.LabelBinarizer',
+            ],
+            # Classifier
+            [
+                'sklearn.svm.classes.LinearSVC',
+                'sklearn.neighbors.classification.KNeighborsClassifier',
+            ],
+        )),
         'REGRESSION': list(itertools.product(
             [_classification_template],
             # Imputer for categorical data
@@ -697,6 +728,24 @@ class D3mTa2(object):
                 'sklearn.linear_model.coordinate_descent.LassoCV',
                 'sklearn.linear_model.ridge.Ridge',
                 'sklearn.linear_model.least_angle.Lars',
+            ],
+        )),
+        'DEBUG_REGRESSION': list(itertools.product(
+            [_classification_template],
+            # Imputer for categorical data
+            [None],
+            # Imputer for numerical data
+            [
+                'sklearn.preprocessing.Imputer',
+            ],
+            # Encoder for categorical data
+            [
+                'dsbox.datapreprocessing.cleaner.Encoder',
+                'sklearn.preprocessing.LabelBinarizer',
+            ],
+            # Classifier
+            [
+                'sklearn.linear_model.base.LinearRegression',
             ],
         )),
     }
