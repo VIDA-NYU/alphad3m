@@ -21,7 +21,7 @@ class Observable(object):
     def __init__(self):
         self.__observers = {}
         self.__next_key = 0
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
 
     def add_observer(self, observer):
         with self.lock:

@@ -6,6 +6,7 @@ leave this module.
 """
 
 import logging
+import os
 from queue import Queue
 from uuid import UUID
 
@@ -213,7 +214,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 predictions = kwargs.get('predict_result', None)
                 if not pipeline_filter(pipeline_id):
                     continue
-                scores = self._app.get_pipeline_scores(pipeline_id)
+                scores = self._app.get_pipeline_scores(session.id, pipeline_id)
                 scores = [
                     pb_core.Score(
                         metric=self.metric2grpc[m],
@@ -309,7 +310,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         code=pb_core.INVALID_ARGUMENT,
                         details="No such pipeline"),
                 )
-            pipeline = session.pipelines[pipeline_id]
+            pipeline = self._app.get_workflow(session_id, pipeline_id)
             if not pipeline.trained:
                 return pb_core.Response(
                     status=pb_core.Status(
@@ -319,6 +320,15 @@ class CoreService(pb_core_grpc.CoreServicer):
             uri = request.pipeline_exec_uri
             if uri.startswith('file:///'):
                 uri = uri[7:]
+            if not uri:
+                uri = None
+            elif os.path.splitext(os.path.basename(uri))[0] != pipeline_id:
+                logger.warning("Got ExportPipeline request with "
+                               "pipeline_exec_uri which doesn't match the "
+                               "pipeline ID! This means the executable will "
+                               "not match the log file.")
+                logger.warning("pipeline_id=%r pipeline_exec_uri=%r",
+                               pipeline_id, request.pipeline_exec_uri)
             self._app.write_executable(pipeline, filename=uri)
         return pb_core.Response(
             status=pb_core.Status(code=pb_core.OK)

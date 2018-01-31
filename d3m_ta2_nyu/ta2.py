@@ -46,24 +46,59 @@ class Session(Observable):
 
     This is a TA3 session in which pipelines are created.
     """
-    def __init__(self, logs_dir, problem, DBSession):
+    def __init__(self, logs_dir, problem, problem_id, DBSession):
         Observable.__init__(self)
         self.id = uuid.uuid4()
         self._logs_dir = logs_dir
         self.problem = problem
+        self.problem_id = problem_id
         self.pipelines = set()
         self.training = False
         self.pipelines_training = set()
         self.metrics = []
         self.DBSession = DBSession
 
-    def check_status(self):
-        if self.training and not self.pipelines_training:
-            self.training = False
-            logger.info("Session %s: training done", self.id)
+    def add_training_pipeline(self, pipeline_id):
+        with self.lock:
+            self.training = True
+            self.pipelines.add(pipeline_id)
+            self.pipelines_training.add(pipeline_id)
 
-            self.write_logs()
-            self.notify('done_training')
+    def pipeline_training_done(self, pipeline_id):
+        with self.lock:
+            self.pipelines_training.discard(pipeline_id)
+            self.check_status()
+
+    def _get_top_pipelines(self, db, metric, limit=None):
+        crossval_score = (
+            select([database.CrossValidationScore.value])
+            .where(database.CrossValidationScore.cross_validation_id ==
+                   database.CrossValidation.id)
+            .where(database.CrossValidationScore.metric == metric)
+            .as_scalar()
+        )
+        if SCORES_RANKING_ORDER[metric] == -1:
+            crossval_score = crossval_score.desc()
+        q = (
+            db.query(database.CrossValidation)
+            .options(joinedload(database.CrossValidation.pipeline)
+                     .joinedload(database.Pipeline.modules))
+            .filter(database.Pipeline.id.in_(self.pipelines))
+            .filter(database.Pipeline.trained != 0)
+            .order_by(crossval_score)
+        )
+        if limit is not None:
+            q = q.limit(limit)
+        return [crossval.pipeline for crossval in q.all()]
+
+    def check_status(self):
+        with self.lock:
+            if self.training and not self.pipelines_training:
+                self.training = False
+                logger.info("Session %s: training done", self.id)
+
+                self.write_logs()
+                self.notify('done_training')
 
     def write_logs(self):
         if not self.metrics:
@@ -81,23 +116,8 @@ class Session(Observable):
         written = 0
         db = self.DBSession()
         try:
-            q = (
-                db.query(database.CrossValidation)
-                .options(joinedload(database.CrossValidation.pipeline)
-                         .joinedload(database.Pipeline.modules))
-                .filter(database.Pipeline.id.in_(self.pipelines))
-                .filter(database.Pipeline.trained != 0)
-                .order_by(
-                    select([database.CrossValidationScore.value])
-                    .where(database.CrossValidationScore.cross_validation_id ==
-                           database.CrossValidation.id)
-                    .where(database.CrossValidationScore.metric == metric)
-                    .as_scalar()
-                    .desc()
-                )
-            ).all()
-            for i, crossval in enumerate(q):
-                pipeline = crossval.pipeline
+            pipelines = self._get_top_pipelines(db, metric)
+            for i, pipeline in enumerate(pipelines):
                 filename = os.path.join(self._logs_dir,
                                         str(pipeline.id) + '.json')
                 obj = {
@@ -120,8 +140,8 @@ class Session(Observable):
 class D3mTa2(object):
     def __init__(self, storage_root,
                  logs_root=None, executables_root=None):
-        self.problem_id = 'problem_id_unset'
-        self.problem = None
+        self.default_problem_id = 'problem_id_unset'
+        self.default_problem = None
         self.storage = os.path.abspath(storage_root)
         if not os.path.exists(self.storage):
             os.makedirs(self.storage)
@@ -161,10 +181,9 @@ class D3mTa2(object):
         evaluation.
         """
         # Read problem
-        self.problem = problem
-        with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
+        with open(os.path.join(problem, 'problemDoc.json')) as fp:
             problem_json = json.load(fp)
-        self.problem_id = problem_json['about']['problemID']
+        problem_id = problem_json['about']['problemID']
         task = problem_json['about']['taskType']
         if task not in TASKS_FROM_SCHEMA:
             logger.error("Unknown task %r", task)
@@ -186,7 +205,7 @@ class D3mTa2(object):
                     dataset, task, ", ".join(metrics))
 
         # Create pipelines
-        session = Session(self.logs_root, self.problem, self.DBSession)
+        session = Session(self.logs_root, problem, problem_id, self.DBSession)
         session.metrics = metrics
         self.sessions[session.id] = session
         queue = Queue()
@@ -229,10 +248,9 @@ class D3mTa2(object):
         This is used to test the pipeline synthesis code.
         """
         # Read problem
-        self.problem = problem
-        with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
+        with open(os.path.join(problem, 'problemDoc.json')) as fp:
             problem_json = json.load(fp)
-        self.problem_id = problem_json['about']['problemID']
+        problem_id = problem_json['about']['problemID']
 
         if metric is not None:
             try:
@@ -252,13 +270,12 @@ class D3mTa2(object):
                     dataset, metric)
 
         # Create session
-        session = Session(self.logs_root, self.problem, self.DBSession)
+        session = Session(self.logs_root, problem, problem_id, self.DBSession)
         session.metrics = [metric]
         self.sessions[session.id] = session
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            session.training = True
-            session.pipelines_training.add(pipeline_id)
+            session.add_training_pipeline(pipeline_id)
             self._run_queue.put((session, pipeline_id, dataset))
             while queue.get(True)[0] != 'done_training':
                 pass
@@ -295,10 +312,9 @@ class D3mTa2(object):
         evaluation.
         """
         logger.info("About to run test")
-        self.problem = problem
-        with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
+        with open(os.path.join(problem, 'problemDoc.json')) as fp:
             problem_json = json.load(fp)
-        self.problem_id = problem_json['about']['problemID']
+        problem_id = problem_json['about']['problemID']
         if not os.path.exists(results_root):
             os.makedirs(results_root)
         results_path = os.path.join(
@@ -313,10 +329,10 @@ class D3mTa2(object):
         This is called by the ``ta2_serve`` executable. It is part of the
         TA2+TA3 evaluation.
         """
-        self.problem = problem
-        with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
+        self.default_problem = problem
+        with open(os.path.join(problem, 'problemDoc.json')) as fp:
             problem_json = json.load(fp)
-        self.problem_id = problem_json['about']['problemID']
+        self.default_problem_id = problem_json['about']['problemID']
         if not port:
             port = 45042
         core_rpc = grpc_server.CoreService(self)
@@ -333,7 +349,10 @@ class D3mTa2(object):
             time.sleep(60)
 
     def new_session(self):
-        session = Session(self.logs_root, self.problem, self.DBSession)
+        if self.default_problem is None:
+            logger.error("Creating a session but no default problem is set!")
+        session = Session(self.logs_root, self.default_problem,
+                          self.default_problem_id, self.DBSession)
         self.sessions[session.id] = session
         return session.id
 
@@ -397,31 +416,30 @@ class D3mTa2(object):
                 logger.info("Set metrics to %s %s(for session %s)",
                             metrics, old, session_id)
 
-        logger.info("Creating pipelines...")
-        session.training = True
-        for template in self.TEMPLATES.get(task, []):
-            logger.info("Creating pipeline from %r", template)
-            if isinstance(template, (list, tuple)):
-                func, args = template[0], template[1:]
-                tpl_func = lambda s, **kw: func(s, *args, **kw)
-            else:
-                tpl_func = template
-            try:
-                self._build_pipeline_from_template(session, tpl_func, dataset)
-            except Exception:
-                logger.exception("Error building pipeline from %r",
-                                 template)
-        logger.info("Pipeline creation completed")
-        session.check_status()
+            logger.info("Creating pipelines...")
+            session.training = True
+            for template in self.TEMPLATES.get(task, []):
+                logger.info("Creating pipeline from %r", template)
+                if isinstance(template, (list, tuple)):
+                    func, args = template[0], template[1:]
+                    tpl_func = lambda s, **kw: func(s, *args, **kw)
+                else:
+                    tpl_func = template
+                try:
+                    self._build_pipeline_from_template(session, tpl_func,
+                                                       dataset)
+                except Exception:
+                    logger.exception("Error building pipeline from %r",
+                                     template)
+            logger.info("Pipeline creation completed")
+            session.check_status()
 
     def _build_pipeline_from_template(self, session, template, dataset):
         # Create workflow from a template
         pipeline_id = template(self, dataset=dataset)
 
         # Add it to the session
-        with session.lock:
-            session.pipelines.add(pipeline_id)
-            session.pipelines_training.add(pipeline_id)
+        session.add_training_pipeline(pipeline_id)
 
         logger.info("Created pipeline %s", pipeline_id)
         self._run_queue.put((session, pipeline_id, dataset))
@@ -448,8 +466,7 @@ class D3mTa2(object):
                     else:
                         session.notify('training_error',
                                        pipeline_id=pipeline_id)
-                    session.pipelines_training.discard(pipeline_id)
-                    session.check_status()
+                    session.pipeline_training_done(pipeline_id)
                     remove.append(pipeline_id)
             for id in remove:
                 del running_pipelines[id]
@@ -485,8 +502,7 @@ class D3mTa2(object):
                              pipeline_id.hex, session.metrics,
                              dataset, session.problem, results,
                              self.db_filename,
-                         )
-                        ]
+                         )]
                     )
                     running_pipelines[pipeline_id] = session, proc
                     session.notify('training_start', pipeline_id=pipeline_id)
@@ -505,7 +521,7 @@ class D3mTa2(object):
                                  msg)
 
     def write_executable(self, pipeline, filename=None):
-        if filename is None:
+        if not filename:
             filename = os.path.join(self.executables_root, str(pipeline.id))
         with open(filename, 'w') as fp:
             fp.write('#!/bin/sh\n\n'
@@ -525,9 +541,8 @@ class D3mTa2(object):
 
         pipeline = database.Pipeline(
             origin="classification_template(imputer_cat=%s, imputer_num=%s, "
-                   "encoder=%s, classifier=%s, problemID=%s)" % (
-                       imputer_cat, imputer_num, encoder, classifier,
-                       self.problem_id))
+                   "encoder=%s, classifier=%s)" % (
+                       imputer_cat, imputer_num, encoder, classifier))
 
         ds = D3MDataset(dataset)
         columns = ds.get_learning_data_columns()
@@ -646,7 +661,6 @@ class D3mTa2(object):
             ],
             # Encoder for categorical data
             [
-                None,
                 'dsbox.datapreprocessing.cleaner.Encoder',
                 'sklearn.preprocessing.LabelBinarizer',
             ],
