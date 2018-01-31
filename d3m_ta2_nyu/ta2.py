@@ -46,11 +46,12 @@ class Session(Observable):
 
     This is a TA3 session in which pipelines are created.
     """
-    def __init__(self, logs_dir, problem, DBSession):
+    def __init__(self, logs_dir, problem, problem_id, DBSession):
         Observable.__init__(self)
         self.id = uuid.uuid4()
         self._logs_dir = logs_dir
         self.problem = problem
+        self.problem_id = problem_id
         self.pipelines = set()
         self.training = False
         self.pipelines_training = set()
@@ -139,8 +140,8 @@ class Session(Observable):
 class D3mTa2(object):
     def __init__(self, storage_root,
                  logs_root=None, executables_root=None):
-        self.problem_id = 'problem_id_unset'
-        self.problem = None
+        self.default_problem_id = 'problem_id_unset'
+        self.default_problem = None
         self.storage = os.path.abspath(storage_root)
         if not os.path.exists(self.storage):
             os.makedirs(self.storage)
@@ -180,10 +181,9 @@ class D3mTa2(object):
         evaluation.
         """
         # Read problem
-        self.problem = problem
-        with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
+        with open(os.path.join(problem, 'problemDoc.json')) as fp:
             problem_json = json.load(fp)
-        self.problem_id = problem_json['about']['problemID']
+        problem_id = problem_json['about']['problemID']
         task = problem_json['about']['taskType']
         if task not in TASKS_FROM_SCHEMA:
             logger.error("Unknown task %r", task)
@@ -205,7 +205,7 @@ class D3mTa2(object):
                     dataset, task, ", ".join(metrics))
 
         # Create pipelines
-        session = Session(self.logs_root, self.problem, self.DBSession)
+        session = Session(self.logs_root, problem, problem_id, self.DBSession)
         session.metrics = metrics
         self.sessions[session.id] = session
         queue = Queue()
@@ -248,10 +248,9 @@ class D3mTa2(object):
         This is used to test the pipeline synthesis code.
         """
         # Read problem
-        self.problem = problem
-        with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
+        with open(os.path.join(problem, 'problemDoc.json')) as fp:
             problem_json = json.load(fp)
-        self.problem_id = problem_json['about']['problemID']
+        problem_id = problem_json['about']['problemID']
 
         if metric is not None:
             try:
@@ -271,7 +270,7 @@ class D3mTa2(object):
                     dataset, metric)
 
         # Create session
-        session = Session(self.logs_root, self.problem, self.DBSession)
+        session = Session(self.logs_root, problem, problem_id, self.DBSession)
         session.metrics = [metric]
         self.sessions[session.id] = session
         queue = Queue()
@@ -313,10 +312,9 @@ class D3mTa2(object):
         evaluation.
         """
         logger.info("About to run test")
-        self.problem = problem
-        with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
+        with open(os.path.join(problem, 'problemDoc.json')) as fp:
             problem_json = json.load(fp)
-        self.problem_id = problem_json['about']['problemID']
+        problem_id = problem_json['about']['problemID']
         if not os.path.exists(results_root):
             os.makedirs(results_root)
         results_path = os.path.join(
@@ -331,10 +329,10 @@ class D3mTa2(object):
         This is called by the ``ta2_serve`` executable. It is part of the
         TA2+TA3 evaluation.
         """
-        self.problem = problem
-        with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
+        self.default_problem = problem
+        with open(os.path.join(problem, 'problemDoc.json')) as fp:
             problem_json = json.load(fp)
-        self.problem_id = problem_json['about']['problemID']
+        self.default_problem_id = problem_json['about']['problemID']
         if not port:
             port = 45042
         core_rpc = grpc_server.CoreService(self)
@@ -351,7 +349,10 @@ class D3mTa2(object):
             time.sleep(60)
 
     def new_session(self):
-        session = Session(self.logs_root, self.problem, self.DBSession)
+        if self.default_problem is None:
+            logger.error("Creating a session but no default problem is set!")
+        session = Session(self.logs_root, self.default_problem,
+                          self.default_problem_id, self.DBSession)
         self.sessions[session.id] = session
         return session.id
 
@@ -501,8 +502,7 @@ class D3mTa2(object):
                              pipeline_id.hex, session.metrics,
                              dataset, session.problem, results,
                              self.db_filename,
-                         )
-                        ]
+                         )]
                     )
                     running_pipelines[pipeline_id] = session, proc
                     session.notify('training_start', pipeline_id=pipeline_id)
@@ -541,9 +541,8 @@ class D3mTa2(object):
 
         pipeline = database.Pipeline(
             origin="classification_template(imputer_cat=%s, imputer_num=%s, "
-                   "encoder=%s, classifier=%s, problemID=%s)" % (
-                       imputer_cat, imputer_num, encoder, classifier,
-                       self.problem_id))
+                   "encoder=%s, classifier=%s)" % (
+                       imputer_cat, imputer_num, encoder, classifier))
 
         ds = D3MDataset(dataset)
         columns = ds.get_learning_data_columns()
