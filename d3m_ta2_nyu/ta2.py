@@ -115,25 +115,8 @@ class Session(Observable):
         written = 0
         db = self.DBSession()
         try:
-            crossval_score = (
-                select([database.CrossValidationScore.value])
-                .where(database.CrossValidationScore.cross_validation_id ==
-                       database.CrossValidation.id)
-                .where(database.CrossValidationScore.metric == metric)
-                .as_scalar()
-            )
-            if SCORES_RANKING_ORDER[metric] == -1:
-                crossval_score = crossval_score.desc()
-            q = (
-                db.query(database.CrossValidation)
-                .options(joinedload(database.CrossValidation.pipeline)
-                         .joinedload(database.Pipeline.modules))
-                .filter(database.Pipeline.id.in_(self.pipelines))
-                .filter(database.Pipeline.trained != 0)
-                .order_by(crossval_score)
-            ).all()
-            for i, crossval in enumerate(q):
-                pipeline = crossval.pipeline
+            pipelines = self._get_top_pipelines(db, metric)
+            for i, pipeline in enumerate(pipelines):
                 filename = os.path.join(self._logs_dir,
                                         str(pipeline.id) + '.json')
                 obj = {
