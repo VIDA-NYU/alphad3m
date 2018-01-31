@@ -74,7 +74,7 @@ class PipelineParameter(Base):
 
     module_id = Column(UUID, ForeignKey('pipeline_modules.id'),
                        primary_key=True)
-    module = relationship('PipelineModule', lazy='joined')
+    module = relationship('PipelineModule')
     name = Column(String, primary_key=True)
     value = Column(String, nullable=True)
 

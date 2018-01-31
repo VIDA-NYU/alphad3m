@@ -69,7 +69,24 @@ class Session(Observable):
             self.pipelines_training.discard(pipeline_id)
             self.check_status()
 
-    def _get_top_pipelines(self, db, metric, limit=None):
+    def get_top_pipelines(self, db, metric, limit=None):
+        # SELECT pipelines.*
+        # FROM pipelines
+        # WHERE (
+        #     SELECT COUNT(runs.id)
+        #     FROM runs
+        #     WHERE runs.pipeline_id = pipelines.id AND
+        #         runs.special = 0 AND
+        #         runs.type = 'TRAIN'
+        # ) != 0
+        # ORDER BY (
+        #     SELECT cross_validation_scores.value
+        #     FROM cross_validation_scores
+        #     INNER JOIN cross_validation ON cross_validations.id =
+        #         cross_validation_scores.cross_validation_id
+        #     WHERE cross_validation_scores.metric = 'F1_MACRO' AND
+        #         cross_validations.pipeline_id = pipelines.id
+        # ) DESC;
         crossval_score = (
             select([database.CrossValidationScore.value])
             .where(database.CrossValidationScore.cross_validation_id ==
@@ -80,16 +97,16 @@ class Session(Observable):
         if SCORES_RANKING_ORDER[metric] == -1:
             crossval_score = crossval_score.desc()
         q = (
-            db.query(database.CrossValidation)
-            .options(joinedload(database.CrossValidation.pipeline)
-                     .joinedload(database.Pipeline.modules))
+            db.query(database.Pipeline)
             .filter(database.Pipeline.id.in_(self.pipelines))
-            .filter(database.Pipeline.trained != 0)
+            .filter(database.Pipeline.trained)
+            .options(joinedload(database.Pipeline.modules),
+                     joinedload(database.Pipeline.connections))
             .order_by(crossval_score)
         )
         if limit is not None:
             q = q.limit(limit)
-        return [crossval.pipeline for crossval in q.all()]
+        return q.all()
 
     def check_status(self):
         with self.lock:
@@ -116,7 +133,7 @@ class Session(Observable):
         written = 0
         db = self.DBSession()
         try:
-            pipelines = self._get_top_pipelines(db, metric)
+            pipelines = self.get_top_pipelines(db, metric)
             for i, pipeline in enumerate(pipelines):
                 filename = os.path.join(self._logs_dir,
                                         str(pipeline.id) + '.json')
@@ -226,22 +243,7 @@ class D3mTa2(object):
 
         db = self.DBSession()
         try:
-            crossval_score = (
-                select([database.CrossValidationScore.value])
-                .where(database.CrossValidationScore.cross_validation_id ==
-                       database.CrossValidation.id)
-                .where(database.CrossValidationScore.metric == metrics[0])
-                .as_scalar()
-            )
-            if SCORES_RANKING_ORDER[metrics[0]] == -1:
-                crossval_score = crossval_score.desc()
-            pipelines = (
-                db.query(database.Pipeline)
-                .filter(database.Pipeline.trained)
-                .options(joinedload(database.Pipeline.modules),
-                         joinedload(database.Pipeline.connections))
-                .order_by(crossval_score)
-            ).all()
+            pipelines = session.get_top_pipelines(db, metrics[0])
 
             logger.info("Generated %d pipelines",
                         len(pipelines))
