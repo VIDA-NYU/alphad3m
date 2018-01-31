@@ -154,39 +154,44 @@ def primitive_config(cs,primitive_name):
         config = HyperparameterClass.configuration
         parameter_list = []
         for p in config:
+            parameter_name = primitive_name + '|' + p
             if isinstance(config[p],Bounded):
                 lower = config[p].lower
                 upper = config[p].upper
                 default = config[p].default
                 if type(default) == int:
-                    cs_param = IntegerHyperparameter(p,lower,upper, default_value = default)
+                    cs_param = IntegerHyperparameter(parameter_name,lower,upper, default_value = default)
                 else:
-                    cs_param = FloatHyperparameter(p, lower, upper, default_value=default)
+                    cs_param = FloatHyperparameter(parameter_name, lower, upper, default_value=default)
                 parameter_list.append(cs_param)
             elif isinstance(config[p],Uniform):
                 lower = config[p].lower
                 upper = config[p].upper
                 default = config[p].default
-                cs_param = UniformFloatHyperparameter(p, lower, upper, default_value=default)
+                cs_param = UniformFloatHyperparameter(parameter_name, lower, upper, default_value=default)
                 parameter_list.append(cs_param)
             elif isinstance(config[p],UniformInt):
                 lower = config[p].lower
                 upper = config[p].upper
                 default = config[p].default
-                cs_param = UniformIntegerHyperparameter(p, lower, upper, default_value=default)
+                cs_param = UniformIntegerHyperparameter(parameter_name, lower, upper, default_value=default)
                 parameter_list.append(cs_param)
             elif isinstance(config[p],Normal):
                 lower = config[p].lower
                 upper = config[p].upper
                 default = config[p].default
-                cs_param = NormalFloatHyperparameter(p, lower, upper, default_value=default)
+                cs_param = NormalFloatHyperparameter(parameter_name, lower, upper, default_value=default)
                 parameter_list.append(cs_param)
             elif isinstance(config[p],Enumeration):
                 values = config[p].values
                 default = config[p].default
-                cs_param = CategoricalHyperparameter(p, values, default_value=default)
+                cs_param = CategoricalHyperparameter(parameter_name, values, default_value=default)
                 parameter_list.append(cs_param)
         cs.add_hyperparameters(parameter_list)
+
+
+
+
 
 
 
