@@ -332,17 +332,22 @@ class CoreService(pb_core_grpc.CoreServicer):
                     continue
                 results_path = kwargs['results_path']
                 if kwargs['success']:
-                    status, progress = pb_core.OK, pb_core.COMPLETED
+                    yield pb_core.PipelineExecuteResult(
+                        response_info=pb_core.Response(
+                            status=pb_core.Status(code=pb_core.OK),
+                        ),
+                        progress_info=pb_core.COMPLETED,
+                        pipeline_id=str(pipeline_id),
+                        result_uri='file://{}'.format(results_path),
+                    )
                 else:
-                    status, progress = pb_core.ABORTED, pb_core.ERRORED
-                yield pb_core.PipelineExecuteResult(
-                    response_info=pb_core.Response(
-                        status=pb_core.Status(code=status),
-                    ),
-                    progress_info=progress,
-                    pipeline_id=str(pipeline_id),
-                    result_uri='file://{}'.format(results_path),
-                )
+                    yield pb_core.PipelineExecuteResult(
+                        response_info=pb_core.Response(
+                            status=pb_core.Status(code=pb_core.ABORTED),
+                        ),
+                        progress_info=pb_core.ERRORED,
+                        pipeline_id=str(pipeline_id),
+                    )
                 break
 
     def ListPipelines(self, request, context):
