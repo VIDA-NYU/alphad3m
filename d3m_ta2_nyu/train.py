@@ -91,12 +91,18 @@ def cross_validation(pipeline, metrics, data, targets, progress, db):
 
     progress(FOLDS)
 
-    # Aggregate results over the folds
-    return (
-        {metric: numpy.mean(values)
-         for metric, values in scores.items()},
-        numpy.concatenate(all_predictions)
-    )
+    # Aggregate scores over the folds
+    scores = {metric: numpy.mean(values) for metric, values in scores.items()}
+
+    # Assemble predictions from each fold
+    # FIXME: This code is slow
+    positions = numpy.zeros(FOLDS, dtype=numpy.uint)
+    predictions = numpy.empty(len(data), dtype='O')
+    for i, r in enumerate(random_sample):
+        predictions[i] = all_predictions[r][positions[r]]
+        positions[r] += 1
+
+    return scores, predictions
 
 
 @database.with_db
