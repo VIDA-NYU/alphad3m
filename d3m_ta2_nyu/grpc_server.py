@@ -125,7 +125,9 @@ class CoreService(pb_core_grpc.CoreServicer):
                 ),
             )
             return
+        # TODO: Use TA3-provided features
         target_features = request.target_features
+        predict_features = request.predict_features
         max_pipelines = request.max_pipelines
 
         if dataset.startswith('file:///'):
