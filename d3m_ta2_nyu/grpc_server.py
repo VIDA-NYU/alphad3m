@@ -125,23 +125,25 @@ class CoreService(pb_core_grpc.CoreServicer):
                 ),
             )
             return
-        # TODO: Use TA3-provided features
-        target_features = request.target_features
-        predict_features = request.predict_features
+        target_features = [f.feature_name for f in request.target_features]
+        predict_features = [f.feature_name for f in request.predict_features]
         max_pipelines = request.max_pipelines
 
         if dataset.startswith('file:///'):
             dataset = dataset[7:]
 
         logger.info("Got CreatePipelines request, session=%s, task=%s, "
-                    "dataset=%s, metrics=%s, ",
+                    "dataset=%s, metrics=%s, "
+                    "target_features=%s, predict_features=%s",
                     session_id, task,
-                    dataset, ", ".join(metrics))
+                    dataset, ", ".join(metrics),
+                    ", ".join(target_features), ", ".join(predict_features))
 
         queue = Queue()
         session = self._app.sessions[session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            self._app.build_pipelines(session_id, task, dataset, metrics)
+            self._app.build_pipelines(session_id, task, dataset, metrics,
+                                      target_features, predict_features)
 
             yield from self._pipelinecreateresult_stream(context, queue,
                                                          session)

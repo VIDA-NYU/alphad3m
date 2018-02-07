@@ -613,24 +613,29 @@ class D3mTa2(object):
         finally:
             db.close()
 
-    def build_pipelines(self, session_id, task, dataset, metrics):
+    def build_pipelines(self, session_id, task, dataset, metrics,
+                        targets=None, attributes=None):
         if not metrics:
             raise ValueError("no metrics")
         if 'TA2_USE_TEMPLATES' in os.environ:
             self.executor.submit(self._build_pipelines_from_templates,
-                                 session_id, task, dataset, metrics)
+                                 session_id, task, dataset, metrics,
+                                 targets, attributes)
         else:
             self.executor.submit(self._build_pipelines_with_generator,
-                                 session_id, task, dataset, metrics)
+                                 session_id, task, dataset, metrics,
+                                 targets, attributes)
 
     # Runs in a worker thread from executor
-    def _build_pipelines_with_generator(self, session_id, task,
-                                        dataset, metrics):
+    def _build_pipelines_with_generator(self, session_id, task, dataset,
+                                        metrics, targets, attributes):
         """Generates pipelines for the session, using the generator process.
         """
         # Start AlphaD3M process
         session = self.sessions[session_id]
         with session.lock:
+            session.targets = targets
+            session.attributes = attributes
             if session.metrics != metrics:
                 if session.metrics:
                     old = 'from %s ' % ', '.join(session.metrics)
@@ -676,12 +681,14 @@ class D3mTa2(object):
         session.tune_when_ready()
 
     # Runs in a worker thread from executor
-    def _build_pipelines_from_templates(self, session_id, task,
-                                        dataset, metrics):
+    def _build_pipelines_from_templates(self, session_id, task, dataset,
+                                        metrics, targets, attributes):
         """Generates pipelines for the session, using templates.
         """
         session = self.sessions[session_id]
         with session.lock:
+            session.targets = targets
+            session.attributes = attributes
             if session.metrics != metrics:
                 if session.metrics:
                     old = 'from %s ' % ', '.join(session.metrics)
