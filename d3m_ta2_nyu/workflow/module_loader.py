@@ -20,7 +20,7 @@ def _get_columns(*, module_inputs, **kwargs):
     columns = pickle.loads(module_inputs['columns'][0])
     data = module_inputs['data'][0]
     # We have to -1 because column 0 is the index to pandas
-    return {'data': data.iloc[:, [e - 1 for e in columns]]}
+    return {'data': data[columns]}
 
 
 def _merge_columns(*, module_inputs, **kwargs):

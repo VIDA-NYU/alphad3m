@@ -563,11 +563,11 @@ class D3mTa2(object):
         ds = D3MDataset(dataset)
         columns = ds.get_learning_data_columns()
         # colType one of: integer, real, string, boolean, categorical, dateTime
-        categorical = [c['colIndex']
+        categorical = [c['colName']
                        for c in columns
                        if ('attribute' in c['role'] and
                            c['colType'] not in ['integer', 'real'])]
-        numerical = [c['colIndex']
+        numerical = [c['colName']
                      for c in columns
                      if ('attribute' in c['role'] and
                          c['colType'] in ['integer', 'real'])]
