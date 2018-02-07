@@ -41,7 +41,7 @@ def main_search():
             executables_root=config['executables_root'])
         ta2.run_search(
             dataset=config['training_data_root'],
-            problem=config['problem_root'])
+            problem_path=config['problem_root'])
 
 
 def main_serve():
@@ -98,6 +98,6 @@ def main_test():
             storage_root=config['temp_storage_root'])
         ta2.run_test(
             dataset=config['test_data_root'],
-            problem=config['problem_root'],
+            problem_path=config['problem_root'],
             pipeline_id=uuid.UUID(hex=sys.argv[1]),
             results_root=config['results_root'])
