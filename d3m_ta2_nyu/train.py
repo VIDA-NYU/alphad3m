@@ -1,4 +1,3 @@
-import csv
 import logging
 import numpy
 import pandas
@@ -81,10 +80,9 @@ def cross_validation(pipeline, metrics, data, targets, target_names,
                     score_func(test_target_split, predictions))
 
         # Store predictions
-        all_predictions.append(pandas.DataFrame(
-            data=predictions,
-            index=pandas.Series(data.index[test_split], name='d3mIndex'),
-            columns=target_names))
+        assert len(predictions.columns) == len(target_names)
+        predictions.columns = target_names
+        all_predictions.append(predictions)
 
     progress(FOLDS)
 
@@ -92,7 +90,7 @@ def cross_validation(pipeline, metrics, data, targets, target_names,
     scores = {metric: numpy.mean(values) for metric, values in scores.items()}
 
     # Assemble predictions from each fold
-    predictions = pandas.concat(all_predictions)
+    predictions = pandas.concat(all_predictions, axis=0)
 
     return scores, predictions
 
