@@ -669,20 +669,17 @@ class D3mTa2(object):
             [None],
             # Imputer for numerical data
             [
-                None,
                 'dsbox.datapreprocessing.cleaner.KNNImputation',
                 'sklearn.preprocessing.Imputer',
             ],
             # Encoder for categorical data
             [
-                'dsbox.datapreprocessing.cleaner.Encoder',
                 'sklearn.preprocessing.LabelBinarizer',
             ],
             # Classifier
             [
                 'sklearn.svm.classes.LinearSVC',
                 'sklearn.neighbors.classification.KNeighborsClassifier',
-                'sklearn.tree.tree.DecisionTreeClassifier',
                 'sklearn.naive_bayes.MultinomialNB',
                 'sklearn.ensemble.forest.RandomForestClassifier',
                 'sklearn.linear_model.logistic.LogisticRegression'
@@ -698,7 +695,6 @@ class D3mTa2(object):
             ],
             # Encoder for categorical data
             [
-                'dsbox.datapreprocessing.cleaner.Encoder',
                 'sklearn.preprocessing.LabelBinarizer',
             ],
             # Classifier
@@ -713,14 +709,11 @@ class D3mTa2(object):
             [None],
             # Imputer for numerical data
             [
-                None,
                 'dsbox.datapreprocessing.cleaner.KNNImputation',
                 'sklearn.preprocessing.Imputer',
             ],
             # Encoder for categorical data
             [
-                None,
-                'dsbox.datapreprocessing.cleaner.Encoder',
                 'sklearn.preprocessing.LabelBinarizer',
             ],
             # Classifier
@@ -738,11 +731,11 @@ class D3mTa2(object):
             [None],
             # Imputer for numerical data
             [
+                'dsbox.datapreprocessing.cleaner.KNNImputation',
                 'sklearn.preprocessing.Imputer',
             ],
             # Encoder for categorical data
             [
-                'dsbox.datapreprocessing.cleaner.Encoder',
                 'sklearn.preprocessing.LabelBinarizer',
             ],
             # Classifier
