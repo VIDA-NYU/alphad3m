@@ -1,7 +1,7 @@
 import logging
 import numpy
 import pandas
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, KFold
 import sys
 import time
 
@@ -19,11 +19,15 @@ RANDOM = 65682867  # The most random of all numbers
 
 
 def cross_validation(pipeline, metrics, data, targets, target_names,
-                     progress, db):
+                     stratified_folds, progress, db):
     scores = {}
 
-    splits = StratifiedKFold(n_splits=FOLDS, shuffle=True,
-                             random_state=RANDOM).split(data, targets)
+    if stratified_folds:
+        splits = StratifiedKFold(n_splits=FOLDS, shuffle=True,
+                                 random_state=RANDOM).split(data, targets)
+    else:
+        splits = KFold(n_splits=FOLDS, shuffle=True,
+                       random_state=RANDOM).split(data, targets)
 
     all_predictions = []
 
@@ -121,11 +125,14 @@ def train(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
     targets = ds.get_train_targets()
     target_names = [t['colName'] for t in ds.problem.get_targets()]
 
+    stratified_folds = \
+        ds.problem.prDoc['about']['taskType'] == 'classification'
+
     # Scoring step - make folds, run them through the pipeline one by one
     # (set both training_data and test_data),
     # get predictions from OutputPort to get cross validation scores
     scores, predictions = cross_validation(
-        pipeline_id, metrics, data, targets, target_names,
+        pipeline_id, metrics, data, targets, target_names, stratified_folds,
         lambda i: signal((pipeline_id, 'progress', (i + 1.0) / max_progress)),
         db)
     logger.info("Scoring done: %s", ", ".join("%s=%s" % s
