@@ -14,7 +14,7 @@ import os
 import pickle
 from queue import Empty, Queue
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import aliased, joinedload
 import stat
 import subprocess
 import sys
@@ -87,21 +87,23 @@ class Session(Observable):
         #     WHERE cross_validation_scores.metric = 'F1_MACRO' AND
         #         cross_validations.pipeline_id = pipelines.id
         # ) DESC;
+        pipeline = aliased(database.Pipeline)
         crossval_score = (
             select([database.CrossValidationScore.value])
             .where(database.CrossValidationScore.cross_validation_id ==
                    database.CrossValidation.id)
             .where(database.CrossValidationScore.metric == metric)
+            .where(database.CrossValidation.pipeline_id == pipeline.id)
             .as_scalar()
         )
         if SCORES_RANKING_ORDER[metric] == -1:
             crossval_score = crossval_score.desc()
         q = (
-            db.query(database.Pipeline)
-            .filter(database.Pipeline.id.in_(self.pipelines))
-            .filter(database.Pipeline.trained)
-            .options(joinedload(database.Pipeline.modules),
-                     joinedload(database.Pipeline.connections))
+            db.query(pipeline)
+            .filter(pipeline.id.in_(self.pipelines))
+            .filter(pipeline.trained)
+            .options(joinedload(pipeline.modules),
+                     joinedload(pipeline.connections))
             .order_by(crossval_score)
         )
         if limit is not None:
