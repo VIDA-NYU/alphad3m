@@ -97,14 +97,16 @@ class Session(Observable):
             .as_scalar()
         )
         if SCORES_RANKING_ORDER[metric] == -1:
-            crossval_score = crossval_score.desc()
+            crossval_score_order = crossval_score.desc()
+        else:
+            crossval_score_order = crossval_score.asc()
         q = (
-            db.query(pipeline)
+            db.query(pipeline, crossval_score)
             .filter(pipeline.id.in_(self.pipelines))
             .filter(pipeline.trained)
             .options(joinedload(pipeline.modules),
                      joinedload(pipeline.connections))
-            .order_by(crossval_score)
+            .order_by(crossval_score_order)
         )
         if limit is not None:
             q = q.limit(limit)
@@ -135,8 +137,11 @@ class Session(Observable):
         written = 0
         db = self.DBSession()
         try:
-            pipelines = self.get_top_pipelines(db, metric)
-            for i, pipeline in enumerate(pipelines):
+            top_pipelines = self.get_top_pipelines(db, metric)
+            logger.info("Writing logs for %d pipelines", len(top_pipelines))
+            for i, (pipeline, score) in enumerate(top_pipelines):
+                logger.info("    %d) %s %s=%s",
+                            i + 1, pipeline.id, metric, score)
                 filename = os.path.join(self._logs_dir,
                                         str(pipeline.id) + '.json')
                 obj = {
@@ -247,10 +252,7 @@ class D3mTa2(object):
         try:
             pipelines = session.get_top_pipelines(db, metrics[0])
 
-            logger.info("Generated %d pipelines",
-                        len(pipelines))
-
-            for pipeline in itertools.islice(pipelines, 20):
+            for pipeline, score in itertools.islice(pipelines, 20):
                 self.write_executable(pipeline)
         finally:
             db.close()
