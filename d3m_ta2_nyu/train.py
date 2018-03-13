@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 FOLDS = 4
 RANDOM = 65682867  # The most random of all numbers
 
+MAX_SAMPLE = 50000
+
 
 def cross_validation(pipeline, metrics, data, targets, target_names,
                      stratified_folds, progress, db):
@@ -124,6 +126,15 @@ def train(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
     data = ds.get_train_data()
     targets = ds.get_train_targets()
     target_names = [t['colName'] for t in ds.problem.get_targets()]
+
+    if len(data) > MAX_SAMPLE:
+        # Sample the dataset to stay reasonably fast
+        logger.info("Sampling down data from %d to %d", len(data), MAX_SAMPLE)
+        sample = numpy.concatenate([numpy.repeat(True, MAX_SAMPLE),
+                                    numpy.repeat(False, len(data) - MAX_SAMPLE)])
+        numpy.random.RandomState(seed=RANDOM).shuffle(sample)
+        data = data[sample]
+        targets = targets[sample]
 
     stratified_folds = \
         ds.problem.prDoc['about']['taskType'] == 'classification'
