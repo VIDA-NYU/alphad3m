@@ -34,9 +34,4 @@ def test(pipeline_id, dataset, problem, results_path, db):
 
     predictions = next(iter(outputs.values()))['predictions']
 
-    with open(results_path, 'w') as fp:
-        writer = csv.writer(fp)
-        writer.writerow(['d3mIndex', ds.problem.get_targets()[0]['colName']])
-
-        for i, o in zip(data.index, predictions):
-            writer.writerow([i, o])
+    predictions.to_csv(results_path)
