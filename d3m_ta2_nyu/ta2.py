@@ -37,6 +37,8 @@ from d3m_ta2_nyu.workflow import database
 
 MAX_RUNNING_PROCESSES = 1
 
+TUNE_PIPELINES_COUNT = 3
+
 
 logger = logging.getLogger(__name__)
 
@@ -50,17 +52,27 @@ class Session(Observable):
         Observable.__init__(self)
         self.id = uuid.uuid4()
         self._logs_dir = logs_dir
+        self.DBSession = DBSession
         self.problem = problem
         self.problem_id = problem_id
-        self.pipelines = set()
-        self.training = False
-        self.pipelines_training = set()
         self.metrics = []
-        self.DBSession = DBSession
+
+        # All the pipelines that belong to this session
+        self.pipelines = set()
+        # The pipelines currently in the queue for training
+        self.pipelines_training = set()
+        # The pipelines in the queue for hyperparameter tuning
+        self.pipelines_tuning = set()
+        # Pipelines already tuned, and pipelines created through tuning
+        self.tuned_pipelines = set()
+        # Flag indicating we started training & tuning, and a 'done_training'
+        # signal should be sent once both pipelines_training and
+        # pipelines_tuning are empty
+        self.working = False
 
     def add_training_pipeline(self, pipeline_id):
         with self.lock:
-            self.training = True
+            self.working = True
             self.pipelines.add(pipeline_id)
             self.pipelines_training.add(pipeline_id)
 
@@ -114,12 +126,45 @@ class Session(Observable):
 
     def check_status(self):
         with self.lock:
-            if self.training and not self.pipelines_training:
-                self.training = False
-                logger.info("Session %s: training done", self.id)
+            # We are already done
+            if not self.working:
+                return
+            # If pipelines are still in the queue
+            if self.pipelines_training or self.pipelines_tuning:
+                return
 
-                self.write_logs()
-                self.notify('done_training')
+            # If we are out of pipelines to train, maybe submit pipelines for
+            # tuning
+            logger.info("Session %s: training done", self.id)
+
+            db = self.DBSession()
+            tune = []
+            try:
+                top_pipelines = self.get_top_pipelines(
+                    db, self.metrics[0],
+                    TUNE_PIPELINES_COUNT)
+                for pipeline, _ in top_pipelines:
+                    if pipeline.id not in self.tuned_pipelines:
+                        tune.append(pipeline.id)
+            finally:
+                db.close()
+
+            tune = []  # TODO: Submit
+            if tune:
+                # Found some pipelines to tune, do that
+                logger.info("Found %d pipelines to tune:", len(tune))
+                for pipeline_id in tune:
+                    logger.info("    %s", pipeline_id)
+                    # TODO: Submit
+                    self.pipelines_tuning.add(pipeline_id)
+                return
+            logger.info("Found no pipeline to tune")
+
+            # Session is done (but new pipelines might be added later)
+            self.working = False
+
+            self.write_logs()
+            self.notify('done_training')
 
     def write_logs(self):
         if not self.metrics:
@@ -432,7 +477,9 @@ class D3mTa2(object):
                             metrics, old, session_id)
 
             logger.info("Creating pipelines...")
-            session.training = True
+            # Force working=True so we get 'done_training' even if no pipeline
+            # gets created
+            session.working = True
             template_name = task
             if 'TA2_DEBUG_BE_FAST' in os.environ:
                 template_name = 'DEBUG_' + task
