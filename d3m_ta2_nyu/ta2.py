@@ -206,6 +206,79 @@ class Session(Observable):
             db.close()
 
 
+class Job(object):
+    __id_gen = 1
+
+    def __init__(self, session):
+        self.id = Job.__id_gen
+        Job.__id_gen += 1
+        self.session = session
+
+    def start(self, **kwargs):
+        raise NotImplementedError
+
+    def poll(self):
+        raise NotImplementedError
+
+    def message(self, *args):
+        pass
+
+
+class TrainJob(Job):
+    def __init__(self, session, pipeline_id, dataset):
+        Job.__init__(self, session)
+        self.pipeline_id = pipeline_id
+        self.dataset = dataset
+
+    def start(self, db_filename, predictions_root, **kwargs):
+        self.predictions_root = predictions_root
+        logger.info("Running training pipeline for %s "
+                    "(session %s has %d pipelines left to train)",
+                    self.pipeline_id, self.session.id,
+                    len(self.session.pipelines_training))
+        self.results = os.path.join(self.predictions_root,
+                                    '%s.csv' % self.pipeline_id)
+        # FIXME: Can't use multiprocessing here because of gRPC bug
+        # https://github.com/grpc/grpc/issues/12455
+        self.proc = subprocess.Popen(
+            [sys.executable,
+             '-c',
+             'import uuid; from d3m_ta2_nyu.train import train; '
+             'train(uuid.UUID(hex=%r), %r, %r, %r, %r, '
+             'None, db_filename=%r)' % (
+                 self.pipeline_id.hex, self.session.metrics,
+                 self.dataset, self.session.problem, self.results,
+                 db_filename,
+             )]
+        )
+        self.session.notify('training_start', pipeline_id=self.pipeline_id)
+
+    def poll(self):
+        if self.proc.poll() is None:
+            return False
+        logger.info("Pipeline training process done, returned %d "
+                    "(pipeline: %s)",
+                    self.proc.returncode, self.pipeline_id)
+        if self.proc.returncode == 0:
+            self.session.notify('training_success',
+                                pipeline_id=self.pipeline_id,
+                                predict_result=self.results)
+        else:
+            self.session.notify('training_error',
+                                pipeline_id=self.pipeline_id)
+        self.session.pipeline_training_done(self.pipeline_id)
+        return True
+
+    def message(self, msg, arg):
+        if msg == 'progress':
+            # TODO: Report progress
+            logger.info("Training pipeline %s: %.0f%%",
+                        self.pipeline_id, arg * 100)
+        else:
+            logger.error("Unexpected message from training process %s",
+                         msg)
+
+
 class D3mTa2(object):
     def __init__(self, storage_root,
                  logs_root=None, executables_root=None):
@@ -336,7 +409,7 @@ class D3mTa2(object):
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             session.add_training_pipeline(pipeline_id)
-            self._run_queue.put((session, pipeline_id, dataset))
+            self._run_queue.put(TrainJob(session, pipeline_id, dataset))
             while queue.get(True)[0] != 'done_training':
                 pass
 
@@ -507,83 +580,40 @@ class D3mTa2(object):
         session.add_training_pipeline(pipeline_id)
 
         logger.info("Created pipeline %s", pipeline_id)
-        self._run_queue.put((session, pipeline_id, dataset))
+        self._run_queue.put(TrainJob(session, pipeline_id, dataset))
         session.notify('new_pipeline', pipeline_id=pipeline_id)
 
     # Runs in a background thread
     def _pipeline_running_thread(self):
-        running_pipelines = {}
+        running_jobs = {}
         msg_queue = multiprocessing.Queue()
         while True:
-            # Wait for a process to be done
+            # Poll jobs, remove finished ones
             remove = []
-            for pipeline_id, (session, proc) in running_pipelines.items():
-                if proc.poll() is not None:
-                    logger.info("Pipeline training process done, returned %d "
-                                "(pipeline: %s)",
-                                proc.returncode, pipeline_id)
-                    if proc.returncode == 0:
-                        results = os.path.join(self.predictions_root,
-                                               '%s.csv' % pipeline_id)
-                        session.notify('training_success',
-                                       pipeline_id=pipeline_id,
-                                       predict_result=results)
-                    else:
-                        session.notify('training_error',
-                                       pipeline_id=pipeline_id)
-                    session.pipeline_training_done(pipeline_id)
-                    remove.append(pipeline_id)
-            for id in remove:
-                del running_pipelines[id]
+            for job in running_jobs.values():
+                if job.poll():
+                    remove.append(job.id)
+            for job_id in remove:
+                del running_jobs[job_id]
 
-            if len(running_pipelines) < MAX_RUNNING_PROCESSES:
+            # Start new jobs if we are under the maximum
+            if len(running_jobs) < MAX_RUNNING_PROCESSES:
                 try:
-                    session, pipeline_id, dataset = self._run_queue.get(False)
+                    job = self._run_queue.get(False)
                 except Empty:
                     pass
                 else:
-                    logger.info("Running training pipeline for %s "
-                                "(session %s has %d pipelines left to train)",
-                                pipeline_id, session.id,
-                                len(session.pipelines_training))
-                    results = os.path.join(self.predictions_root,
-                                           '%s.csv' % pipeline_id)
-                    # FIXME: Can't use multiprocessing here because of gRPC bug
-                    # https://github.com/grpc/grpc/issues/12455
-                    # If changing this back, update poll() and returncode to
-                    # is_alive() and exitcode above.
-                    #proc = multiprocessing.Process(
-                    #    target=train,
-                    #    args=(pipeline_id, session.metrics,
-                    #          dataset, session.problem, results, msg_queue),
-                    #    kwargs={'db_filename': self.db_filename})
-                    #proc.start()
-                    proc = subprocess.Popen(
-                        [sys.executable,
-                         '-c',
-                         'import uuid; from d3m_ta2_nyu.train_and_tune import tune; '
-                         'tune(uuid.UUID(hex=%r), %r, %r, %r, %r, '
-                         'None, db_filename=%r)' % (
-                             pipeline_id.hex, session.metrics,
-                             dataset, session.problem, results,
-                             self.db_filename,
-                         )]
-                    )
-                    running_pipelines[pipeline_id] = session, proc
-                    session.notify('training_start', pipeline_id=pipeline_id)
+                    job.start(db_filename=self.db_filename,
+                              predictions_root=self.predictions_root)
+                    running_jobs[job.id] = job
 
+            # Handle messages from jobs
             try:
-                pipeline_id, msg, arg = msg_queue.get(timeout=3)
+                job_id, *args = msg_queue.get(timeout=3)
             except Empty:
                 pass
             else:
-                if msg == 'progress':
-                    # TODO: Report progress
-                    logger.info("Training pipeline %s: %.0f%%",
-                                pipeline_id, arg * 100)
-                else:
-                    logger.error("Unexpected message from training process %s",
-                                 msg)
+                running_jobs[job_id].message(*args)
 
     def write_executable(self, pipeline, filename=None):
         if not filename:
