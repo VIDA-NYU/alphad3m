@@ -107,12 +107,21 @@ def cross_validation(pipeline, metrics, data, targets, target_names,
 
 
 @database.with_db
-def tune(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
+def tune(pipeline_id, metrics, problem, results_path, msg_queue, db):
     logging.getLogger().handlers = []
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:tune-{}:%(name)s:%(message)s"
             .format(os.getpid()))
+
+    # Load pipeline from database
+    pipeline = (
+        db.query(database.Pipeline)
+        .filter(database.Pipeline.id == pipeline_id)
+        .options(joinedload(database.Pipeline.modules),
+                 joinedload(database.Pipeline.connections))
+    ).one()
+    dataset = pipeline.dataset
 
     logger.info("About to run training pipeline, id=%s, dataset=%r, "
                 "problem=%r",
@@ -139,14 +148,6 @@ def tune(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
 
     stratified_folds = \
         ds.problem.prDoc['about']['taskType'] == 'classification'
-
-    # Load pipeline from database
-    pipeline = (
-        db.query(database.Pipeline)
-        .filter(database.Pipeline.id == pipeline_id)
-        .options(joinedload(database.Pipeline.modules),
-                 joinedload(database.Pipeline.connections))
-    ).one()
 
     # TODO: tune all modules, not only the estimator
     estimator_module = None

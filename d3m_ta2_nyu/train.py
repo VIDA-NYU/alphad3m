@@ -103,7 +103,7 @@ def cross_validation(pipeline, metrics, data, targets, target_names,
 
 
 @database.with_db
-def train(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
+def train(pipeline_id, metrics, problem, results_path, msg_queue, db):
     logging.getLogger().handlers = []
     logging.basicConfig(
         level=logging.INFO,
@@ -115,6 +115,13 @@ def train(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
     else:
         signal = lambda m: None
     max_progress = FOLDS + 2.0
+
+    # Get dataset from database
+    dataset, = (
+        db.query(database.Pipeline.dataset)
+        .filter(database.Pipeline.id == pipeline_id)
+        .one()
+    )
 
     logger.info("About to run training pipeline, id=%s, dataset=%r, "
                 "problem=%r",

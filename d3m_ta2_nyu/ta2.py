@@ -225,10 +225,9 @@ class Job(object):
 
 
 class TrainJob(Job):
-    def __init__(self, session, pipeline_id, dataset):
+    def __init__(self, session, pipeline_id):
         Job.__init__(self, session)
         self.pipeline_id = pipeline_id
-        self.dataset = dataset
 
     def start(self, db_filename, predictions_root, **kwargs):
         self.predictions_root = predictions_root
@@ -244,11 +243,10 @@ class TrainJob(Job):
             [sys.executable,
              '-c',
              'import uuid; from d3m_ta2_nyu.train import train; '
-             'train(uuid.UUID(hex=%r), %r, %r, %r, %r, '
+             'train(uuid.UUID(hex=%r), %r, %r, %r, '
              'None, db_filename=%r)' % (
                  self.pipeline_id.hex, self.session.metrics,
-                 self.dataset, self.session.problem, self.results,
-                 db_filename,
+                 self.session.problem, self.results, db_filename,
              )]
         )
         self.session.notify('training_start', pipeline_id=self.pipeline_id)
@@ -375,7 +373,7 @@ class D3mTa2(object):
         finally:
             db.close()
 
-    def run_pipeline(self, pipeline_id, dataset, problem, metric=None):
+    def run_pipeline(self, pipeline_id, problem, metric=None):
         """Train and score a single pipeline.
 
         This is used to test the pipeline synthesis code.
@@ -399,8 +397,7 @@ class D3mTa2(object):
             except KeyError:
                 raise ValueError("Unknown metric %r", metric)
 
-        logger.info("Running single pipeline, dataset: %s, metric: %s",
-                    dataset, metric)
+        logger.info("Running single pipeline, metric: %s", metric)
 
         # Create session
         session = Session(self.logs_root, problem, problem_id, self.DBSession)
@@ -409,7 +406,7 @@ class D3mTa2(object):
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             session.add_training_pipeline(pipeline_id)
-            self._run_queue.put(TrainJob(session, pipeline_id, dataset))
+            self._run_queue.put(TrainJob(session, pipeline_id))
             while queue.get(True)[0] != 'done_training':
                 pass
 
@@ -580,7 +577,7 @@ class D3mTa2(object):
         session.add_training_pipeline(pipeline_id)
 
         logger.info("Created pipeline %s", pipeline_id)
-        self._run_queue.put(TrainJob(session, pipeline_id, dataset))
+        self._run_queue.put(TrainJob(session, pipeline_id))
         session.notify('new_pipeline', pipeline_id=pipeline_id)
 
     # Runs in a background thread
@@ -637,7 +634,8 @@ class D3mTa2(object):
         pipeline = database.Pipeline(
             origin="classification_template(imputer_cat=%s, imputer_num=%s, "
                    "encoder=%s, classifier=%s)" % (
-                       imputer_cat, imputer_num, encoder, classifier))
+                       imputer_cat, imputer_num, encoder, classifier),
+            dataset=dataset)
 
         ds = D3MDataset(dataset)
         columns = ds.get_learning_data_columns()

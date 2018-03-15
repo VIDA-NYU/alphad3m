@@ -24,6 +24,7 @@ class Pipeline(UuidMixin, Base):
     __tablename__ = 'pipelines'
 
     origin = Column(String, nullable=False)
+    dataset = Column(String, nullable=False)
     created_date = Column(DateTime, nullable=False,
                           server_default=functions.now())
     task = Column(String, nullable=True)
@@ -212,6 +213,7 @@ def duplicate_pipeline(db, pipeline, origin):
     new_pipeline = Pipeline(
         origin=origin,
         task=pipeline.task,
+        dataset=pipeline.dataset,
     )
     db.add(new_pipeline)
 
