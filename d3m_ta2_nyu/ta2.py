@@ -48,9 +48,10 @@ class Session(Observable):
 
     This is a TA3 session in which pipelines are created.
     """
-    def __init__(self, logs_dir, problem, problem_id, DBSession):
+    def __init__(self, ta2, logs_dir, problem, problem_id, DBSession):
         Observable.__init__(self)
         self.id = uuid.uuid4()
+        self._ta2 = ta2
         self._logs_dir = logs_dir
         self.DBSession = DBSession
         self.problem = problem
@@ -79,6 +80,15 @@ class Session(Observable):
     def pipeline_training_done(self, pipeline_id):
         with self.lock:
             self.pipelines_training.discard(pipeline_id)
+            self.check_status()
+
+    def pipeline_tuning_done(self, old_pipeline_id, new_pipeline_id=None):
+        with self.lock:
+            self.pipelines_tuning.discard(old_pipeline_id)
+            self.tuned_pipelines.add(old_pipeline_id)
+            if new_pipeline_id is not None:
+                self.pipelines.add(new_pipeline_id)
+                self.tuned_pipelines.add(new_pipeline_id)
             self.check_status()
 
     def get_top_pipelines(self, db, metric, limit=None):
@@ -149,13 +159,14 @@ class Session(Observable):
             finally:
                 db.close()
 
-            tune = []  # TODO: Submit
             if tune:
                 # Found some pipelines to tune, do that
                 logger.info("Found %d pipelines to tune:", len(tune))
                 for pipeline_id in tune:
                     logger.info("    %s", pipeline_id)
-                    # TODO: Submit
+                    self._ta2._run_queue.put(
+                        TuneHyperparamsJob(self, pipeline_id)
+                    )
                     self.pipelines_tuning.add(pipeline_id)
                 return
             logger.info("Found no pipeline to tune")
@@ -277,6 +288,59 @@ class TrainJob(Job):
                          msg)
 
 
+class TuneHyperparamsJob(Job):
+    def __init__(self, session, pipeline_id):
+        Job.__init__(self, session)
+        self.pipeline_id = pipeline_id
+
+    def start(self, db_filename, predictions_root, **kwargs):
+        self.predictions_root = predictions_root
+        logger.info("Running tuning for %s "
+                    "(session %s has %d pipelines left to tune)",
+                    self.pipeline_id, self.session.id,
+                    len(self.session.pipelines_tuning))
+        self.results = os.path.join(self.predictions_root,
+                                    '%s.csv' % self.pipeline_id)
+        # FIXME: Can't use multiprocessing here because of gRPC bug
+        # https://github.com/grpc/grpc/issues/12455
+        self.proc = subprocess.Popen(
+            [sys.executable,
+             '-c',
+             'import uuid; from d3m_ta2_nyu.train_and_tune import tune; '
+             'tune(uuid.UUID(hex=%r), %r, %r, %r, '
+             'None, db_filename=%r)' % (
+                 self.pipeline_id.hex, self.session.metrics,
+                 self.session.problem, self.results, db_filename,
+             )],
+            stdout=subprocess.PIPE,
+        )
+        self.session.notify('tuning_start', pipeline_id=self.pipeline_id)
+
+    def poll(self):
+        if self.proc.poll() is None:
+            return False
+        logger.info("Pipeline training process done, returned %d "
+                    "(pipeline: %s)",
+                    self.proc.returncode, self.pipeline_id)
+        if self.proc.returncode == 0:
+            new_pipeline_id = uuid.UUID(
+                hex=self.proc.stdout.read().decode('ascii').strip())
+            logger.info("New pipeline: %s)", new_pipeline_id)
+            self.session.notify('tuning_success',
+                                old_pipeline_id=self.pipeline_id,
+                                new_pipeline_id=new_pipeline_id)
+            self.session.notify('training_success',
+                                pipeline_id=new_pipeline_id,
+                                predict_result=self.results)
+            self.session.pipeline_tuning_done(self.pipeline_id,
+                                              new_pipeline_id)
+        else:
+            self.session.notify('tuning_error',
+                                pipeline_id=self.pipeline_id)
+            self.session.pipeline_tuning_done(self.pipeline_id)
+        return True
+
+
 class D3mTa2(object):
     def __init__(self, storage_root,
                  logs_root=None, executables_root=None):
@@ -354,7 +418,8 @@ class D3mTa2(object):
                     dataset, task, ", ".join(metrics))
 
         # Create pipelines
-        session = Session(self.logs_root, problem, problem_id, self.DBSession)
+        session = Session(self, self.logs_root, problem, problem_id,
+                          self.DBSession)
         session.metrics = metrics
         self.sessions[session.id] = session
         queue = Queue()
@@ -400,7 +465,8 @@ class D3mTa2(object):
         logger.info("Running single pipeline, metric: %s", metric)
 
         # Create session
-        session = Session(self.logs_root, problem, problem_id, self.DBSession)
+        session = Session(self, self.logs_root, problem, problem_id,
+                          self.DBSession)
         session.metrics = [metric]
         self.sessions[session.id] = session
         queue = Queue()
@@ -481,7 +547,7 @@ class D3mTa2(object):
     def new_session(self):
         if self.default_problem is None:
             logger.error("Creating a session but no default problem is set!")
-        session = Session(self.logs_root, self.default_problem,
+        session = Session(self, self.logs_root, self.default_problem,
                           self.default_problem_id, self.DBSession)
         self.sessions[session.id] = session
         return session.id

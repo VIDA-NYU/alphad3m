@@ -237,3 +237,4 @@ def tune(pipeline_id, metrics, problem, results_path, msg_queue, db):
         sys.exit(1)
 
     db.commit()
+    print(new_pipeline.id.hex)
