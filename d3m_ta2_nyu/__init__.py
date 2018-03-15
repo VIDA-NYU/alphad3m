@@ -1,4 +1,4 @@
-__version__ = '0.4'
+__version__ = '0.6.2'
 
 
 from .ta2 import D3mTa2
