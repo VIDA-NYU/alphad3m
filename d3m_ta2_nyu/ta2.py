@@ -14,7 +14,7 @@ import os
 import pickle
 from queue import Empty, Queue
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import aliased, joinedload
 import stat
 import subprocess
 import sys
@@ -69,27 +69,48 @@ class Session(Observable):
             self.pipelines_training.discard(pipeline_id)
             self.check_status()
 
-    def _get_top_pipelines(self, db, metric, limit=None):
+    def get_top_pipelines(self, db, metric, limit=None):
+        # SELECT pipelines.*
+        # FROM pipelines
+        # WHERE (
+        #     SELECT COUNT(runs.id)
+        #     FROM runs
+        #     WHERE runs.pipeline_id = pipelines.id AND
+        #         runs.special = 0 AND
+        #         runs.type = 'TRAIN'
+        # ) != 0
+        # ORDER BY (
+        #     SELECT cross_validation_scores.value
+        #     FROM cross_validation_scores
+        #     INNER JOIN cross_validation ON cross_validations.id =
+        #         cross_validation_scores.cross_validation_id
+        #     WHERE cross_validation_scores.metric = 'F1_MACRO' AND
+        #         cross_validations.pipeline_id = pipelines.id
+        # ) DESC;
+        pipeline = aliased(database.Pipeline)
         crossval_score = (
             select([database.CrossValidationScore.value])
             .where(database.CrossValidationScore.cross_validation_id ==
                    database.CrossValidation.id)
             .where(database.CrossValidationScore.metric == metric)
+            .where(database.CrossValidation.pipeline_id == pipeline.id)
             .as_scalar()
         )
         if SCORES_RANKING_ORDER[metric] == -1:
-            crossval_score = crossval_score.desc()
+            crossval_score_order = crossval_score.desc()
+        else:
+            crossval_score_order = crossval_score.asc()
         q = (
-            db.query(database.CrossValidation)
-            .options(joinedload(database.CrossValidation.pipeline)
-                     .joinedload(database.Pipeline.modules))
-            .filter(database.Pipeline.id.in_(self.pipelines))
-            .filter(database.Pipeline.trained != 0)
-            .order_by(crossval_score)
+            db.query(pipeline, crossval_score)
+            .filter(pipeline.id.in_(self.pipelines))
+            .filter(pipeline.trained)
+            .options(joinedload(pipeline.modules),
+                     joinedload(pipeline.connections))
+            .order_by(crossval_score_order)
         )
         if limit is not None:
             q = q.limit(limit)
-        return [crossval.pipeline for crossval in q.all()]
+        return q.all()
 
     def check_status(self):
         with self.lock:
@@ -116,8 +137,11 @@ class Session(Observable):
         written = 0
         db = self.DBSession()
         try:
-            pipelines = self._get_top_pipelines(db, metric)
-            for i, pipeline in enumerate(pipelines):
+            top_pipelines = self.get_top_pipelines(db, metric)
+            logger.info("Writing logs for %d pipelines", len(top_pipelines))
+            for i, (pipeline, score) in enumerate(top_pipelines):
+                logger.info("    %d) %s %s=%s",
+                            i + 1, pipeline.id, metric, score)
                 filename = os.path.join(self._logs_dir,
                                         str(pipeline.id) + '.json')
                 obj = {
@@ -140,6 +164,15 @@ class Session(Observable):
 class D3mTa2(object):
     def __init__(self, storage_root,
                  logs_root=None, executables_root=None):
+        if 'TA2_DEBUG_BE_FAST' in os.environ:
+            logger.warning("**************************************************"
+                           "*****")
+            logger.warning("***   DEBUG mode is on, will try fewer pipelines  "
+                           "  ***")
+            logger.warning("*** If this is not wanted, unset $TA2_DEBUG_BE_FAS"
+                           "T ***")
+            logger.warning("**************************************************"
+                           "*****")
         self.default_problem_id = 'problem_id_unset'
         self.default_problem = None
         self.storage = os.path.abspath(storage_root)
@@ -217,27 +250,9 @@ class D3mTa2(object):
 
         db = self.DBSession()
         try:
-            crossval_score = (
-                select([database.CrossValidationScore.value])
-                .where(database.CrossValidationScore.cross_validation_id ==
-                       database.CrossValidation.id)
-                .where(database.CrossValidationScore.metric == metrics[0])
-                .as_scalar()
-            )
-            if SCORES_RANKING_ORDER[metrics[0]] == -1:
-                crossval_score = crossval_score.desc()
-            pipelines = (
-                db.query(database.Pipeline)
-                .filter(database.Pipeline.trained)
-                .options(joinedload(database.Pipeline.modules),
-                         joinedload(database.Pipeline.connections))
-                .order_by(crossval_score)
-            ).all()
+            pipelines = session.get_top_pipelines(db, metrics[0])
 
-            logger.info("Generated %d pipelines",
-                        len(pipelines))
-
-            for pipeline in itertools.islice(pipelines, 20):
+            for pipeline, score in itertools.islice(pipelines, 20):
                 self.write_executable(pipeline)
         finally:
             db.close()
@@ -418,7 +433,10 @@ class D3mTa2(object):
 
             logger.info("Creating pipelines...")
             session.training = True
-            for template in self.TEMPLATES.get(task, []):
+            template_name = task
+            if 'TA2_DEBUG_BE_FAST' in os.environ:
+                template_name = 'DEBUG_' + task
+            for template in self.TEMPLATES.get(template_name, []):
                 logger.info("Creating pipeline from %r", template)
                 if isinstance(template, (list, tuple)):
                     func, args = template[0], template[1:]
@@ -547,11 +565,11 @@ class D3mTa2(object):
         ds = D3MDataset(dataset)
         columns = ds.get_learning_data_columns()
         # colType one of: integer, real, string, boolean, categorical, dateTime
-        categorical = [c['colIndex']
+        categorical = [c['colName']
                        for c in columns
                        if ('attribute' in c['role'] and
                            c['colType'] not in ['integer', 'real'])]
-        numerical = [c['colIndex']
+        numerical = [c['colName']
                      for c in columns
                      if ('attribute' in c['role'] and
                          c['colType'] in ['integer', 'real'])]
@@ -655,23 +673,38 @@ class D3mTa2(object):
             [None],
             # Imputer for numerical data
             [
-                None,
                 'dsbox.datapreprocessing.cleaner.KNNImputation',
                 'sklearn.preprocessing.Imputer',
             ],
             # Encoder for categorical data
             [
-                'dsbox.datapreprocessing.cleaner.Encoder',
                 'sklearn.preprocessing.LabelBinarizer',
             ],
             # Classifier
             [
                 'sklearn.svm.classes.LinearSVC',
                 'sklearn.neighbors.classification.KNeighborsClassifier',
-                'sklearn.tree.tree.DecisionTreeClassifier',
                 'sklearn.naive_bayes.MultinomialNB',
                 'sklearn.ensemble.forest.RandomForestClassifier',
                 'sklearn.linear_model.logistic.LogisticRegression'
+            ],
+        )),
+        'DEBUG_CLASSIFICATION': list(itertools.product(
+            [_classification_template],
+            # Imputer for categorical data
+            [None],
+            # Imputer for numerical data
+            [
+                'sklearn.preprocessing.Imputer',
+            ],
+            # Encoder for categorical data
+            [
+                'sklearn.preprocessing.LabelBinarizer',
+            ],
+            # Classifier
+            [
+                'sklearn.svm.classes.LinearSVC',
+                'sklearn.neighbors.classification.KNeighborsClassifier',
             ],
         )),
         'REGRESSION': list(itertools.product(
@@ -680,14 +713,11 @@ class D3mTa2(object):
             [None],
             # Imputer for numerical data
             [
-                None,
                 'dsbox.datapreprocessing.cleaner.KNNImputation',
                 'sklearn.preprocessing.Imputer',
             ],
             # Encoder for categorical data
             [
-                None,
-                'dsbox.datapreprocessing.cleaner.Encoder',
                 'sklearn.preprocessing.LabelBinarizer',
             ],
             # Classifier
@@ -697,6 +727,24 @@ class D3mTa2(object):
                 'sklearn.linear_model.coordinate_descent.LassoCV',
                 'sklearn.linear_model.ridge.Ridge',
                 'sklearn.linear_model.least_angle.Lars',
+            ],
+        )),
+        'DEBUG_REGRESSION': list(itertools.product(
+            [_classification_template],
+            # Imputer for categorical data
+            [None],
+            # Imputer for numerical data
+            [
+                'dsbox.datapreprocessing.cleaner.KNNImputation',
+                'sklearn.preprocessing.Imputer',
+            ],
+            # Encoder for categorical data
+            [
+                'sklearn.preprocessing.LabelBinarizer',
+            ],
+            # Classifier
+            [
+                'sklearn.linear_model.base.LinearRegression',
             ],
         )),
     }

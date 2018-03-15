@@ -1,6 +1,8 @@
 import csv
 import logging
 import numpy
+import pandas
+from sklearn.model_selection import StratifiedKFold, KFold
 from sqlalchemy.orm import joinedload
 import sys
 import time
@@ -23,37 +25,33 @@ RANDOM = 65682867  # The most random of all numbers
 MAX_SAMPLE = 1000
 
 
-def cross_validation(pipeline, metrics, data, targets, progress, db):
+def cross_validation(pipeline, metrics, data, targets, target_names,
+                     stratified_folds, progress, db):
     scores = {}
 
-    # For a given idx, ``random_sample[idx]`` indicates which fold will use
-    # ``data[idx]`` as test row. All the other ones will use it as a train row.
-    # data          = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-    # random_sample = [0, 0, 0, 1, 1, 1, 2, 2, 2]
-    # train_split0  = [         3, 4, 5, 6, 7, 8]
-    # train_split1  = [0, 1, 2,          6, 7, 8]
-    # train_split2  = [0, 1, 2, 3, 4, 5         ]
-    # test_split0   = [0, 1, 2                  ]
-    # test_split1   = [         3, 4, 5         ]
-    # test_split2   = [                  6, 7, 8]
-    random_sample = numpy.repeat(numpy.arange(FOLDS),
-                                 ((len(data) - 1) // FOLDS) + 1)
-    numpy.random.RandomState(seed=RANDOM).shuffle(random_sample)
-    random_sample = random_sample[:len(data)]
+    if stratified_folds:
+        splits = StratifiedKFold(n_splits=FOLDS, shuffle=True,
+                                 random_state=RANDOM).split(data, targets)
+    else:
+        splits = KFold(n_splits=FOLDS, shuffle=True,
+                       random_state=RANDOM).split(data, targets)
 
     all_predictions = []
 
-    for i in range(FOLDS):
+    for i, (train_split, test_split) in enumerate(splits):
         logger.info("Scoring round %d/%d", i + 1, FOLDS)
 
         progress(i)
 
         # Do the split
-        train_data_split = data[random_sample != i]
-        test_data_split = data[random_sample == i]
+        # Note that 'data' is a DataFrame but 'targets' is an array
+        # (this is what d3mds.py returns)
+        # For the dataframe, we need to map from row number to d3mIndex
+        train_data_split = data.loc[data.index[train_split]]
+        test_data_split = data.loc[data.index[test_split]]
 
-        train_target_split = targets[random_sample != i]
-        test_target_split = targets[random_sample == i]
+        train_target_split = targets[train_split]
+        test_target_split = targets[test_split]
 
         start_time = time.time()
 
@@ -93,16 +91,19 @@ def cross_validation(pipeline, metrics, data, targets, progress, db):
                     score_func(test_target_split, predictions))
 
         # Store predictions
+        assert len(predictions.columns) == len(target_names)
+        predictions.columns = target_names
         all_predictions.append(predictions)
 
     progress(FOLDS)
 
-    # Aggregate results over the folds
-    return (
-        {metric: numpy.mean(values)
-         for metric, values in scores.items()},
-        numpy.concatenate(all_predictions)
-    )
+    # Aggregate scores over the folds
+    scores = {metric: numpy.mean(values) for metric, values in scores.items()}
+
+    # Assemble predictions from each fold
+    predictions = pandas.concat(all_predictions, axis=0)
+
+    return scores, predictions
 
 
 @database.with_db
@@ -123,6 +124,7 @@ def tune(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
 
     data = ds.get_train_data()
     targets = ds.get_train_targets()
+    target_names = [t['colName'] for t in ds.problem.get_targets()]
 
     if len(data) > MAX_SAMPLE:
         # Sample the dataset to stay reasonably fast
@@ -132,6 +134,9 @@ def tune(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
         numpy.random.RandomState(seed=RANDOM).shuffle(sample)
         data = data[sample]
         targets = targets[sample]
+
+    stratified_folds = \
+        ds.problem.prDoc['about']['taskType'] == 'classification'
 
     # Load pipeline from database
     pipeline = (
@@ -163,7 +168,7 @@ def tune(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
                         )
             )
         scores, _ = cross_validation(
-            pipeline, metrics, data, targets,
+            pipeline, metrics, data, targets, target_names, stratified_folds,
             lambda i: None,
             db)
 
@@ -201,7 +206,7 @@ def tune(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
     # (set both training_data and test_data),
     # get predictions from OutputPort to get cross validation scores
     scores, predictions = cross_validation(
-        new_pipeline, metrics, data, targets,
+        new_pipeline, metrics, data, targets, target_names, stratified_folds,
         lambda i: None,
         db)
     logger.info("Scoring done: %s", ", ".join("%s=%s" % s
@@ -216,12 +221,7 @@ def tune(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
     db.add(crossval)
 
     # Store predictions
-    with open(results_path, 'w') as fp:
-        writer = csv.writer(fp)
-        writer.writerow(['d3mIndex', ds.problem.get_targets()[0]['colName']])
-
-        for i, o in zip(data.index, predictions):
-            writer.writerow([i, o])
+    predictions.to_csv(results_path)
 
     # Training step - run pipeline on full training_data,
     # Persist module set to write

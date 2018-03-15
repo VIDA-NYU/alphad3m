@@ -1,4 +1,3 @@
-import copy
 import importlib
 import pandas
 import pickle
@@ -21,7 +20,7 @@ def _get_columns(*, module_inputs, **kwargs):
     columns = pickle.loads(module_inputs['columns'][0])
     data = module_inputs['data'][0]
     # We have to -1 because column 0 is the index to pandas
-    return {'data': data.iloc[:, [e - 1 for e in columns]]}
+    return {'data': data[columns]}
 
 
 def _merge_columns(*, module_inputs, **kwargs):
@@ -36,25 +35,36 @@ def _sklearn_transformer(klass):
 
     def wrapper(*, module_inputs, global_inputs, cache, **kwargs):
         if global_inputs['run_type'] == 'train':
-            # Get transformer from module parameter
-            if 'hyperparams' in module_inputs:
-                transformer = pickle.loads(module_inputs['hyperparams'][0])
-            # Use default hyperparameters
-            else:
-                transformer = klass()
             data = module_inputs['data'][0]
             if issubclass(klass, one_column_at_a_time):
                 # Train and transform, one column at a time
-                transformers = [copy.copy(transformer)
-                                for _ in range(len(data.columns))]
+                transformers = []
+                for _ in range(len(data.columns)):
+                    # Get transformer from module parameter
+                    if 'hyperparams' in module_inputs:
+                        transformer = pickle.loads(
+                            module_inputs['hyperparams'][0])
+                    # Use default hyperparameters
+                    else:
+                        transformer = klass()
+                    transformers.append(transformer)
                 results = pandas.concat((
-                    pandas.DataFrame(transformers[i].fit_transform(data[col]))
+                    pandas.DataFrame(transformers[i].fit_transform(data[col]),
+                                     index=data.index)
                     for i, col in enumerate(data.columns)),
                     axis=1)
                 cache.store('transformer', pickle.dumps(transformers))
             else:
+                # Get transformer from module parameter
+                if 'hyperparams' in module_inputs:
+                    transformer = pickle.loads(
+                        module_inputs['hyperparams'][0])
+                # Use default hyperparameters
+                else:
+                    transformer = klass()
                 # Train and transform
                 results = transformer.fit_transform(data)
+                results = pandas.DataFrame(results, index=data.index)
                 cache.store('transformer', pickle.dumps(transformer))
             return {'data': results}
         elif global_inputs['run_type'] == 'test':
@@ -63,13 +73,15 @@ def _sklearn_transformer(klass):
                 # Transform data, one column at a time
                 transformers = pickle.loads(cache.get('transformer'))
                 results = pandas.concat((
-                    pandas.DataFrame(transformers[i].transform(data[col]))
+                    pandas.DataFrame(transformers[i].transform(data[col]),
+                                     index=data.index)
                     for i, col in enumerate(data.columns)),
                     axis=1)
             else:
                 # Transform data
                 transformer = pickle.loads(cache.get('transformer'))
                 results = transformer.transform(data)
+                results = pandas.DataFrame(results, index=data.index)
             return {'data': results}
         else:
             raise ValueError("Global 'run_type' not set")
@@ -94,7 +106,9 @@ def _sklearn_classifier(klass):
         elif global_inputs['run_type'] == 'test':
             classifier = pickle.loads(cache.get('classifier'))
             # Transform data
-            predictions = classifier.predict(module_inputs['data'][0])
+            data = module_inputs['data'][0]
+            predictions = classifier.predict(data)
+            predictions = pandas.DataFrame(predictions, index=data.index)
             return {'predictions': predictions}
         else:
             raise ValueError("Global 'run_type' not set")

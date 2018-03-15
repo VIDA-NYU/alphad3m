@@ -56,19 +56,23 @@ def main_serve():
             "        (default: 45042)\n"
             "        The configuration file is read from $CONFIG_JSON_PATH\n"
             "        Alternatively, the JSON *contents* can be read from "
-            "$JSON_CONFIG\n")
+            "$CONFIG_JSON\n")
         sys.exit(1)
     else:
         if 'CONFIG_JSON_PATH' in os.environ:
-            if 'JSON_CONFIG' in os.environ:
-                logger.warning("Both $CONFIG_JSON_PATH and $JSON_CONFIG are "
+            if 'CONFIG_JSON' in os.environ:
+                logger.warning("Both $CONFIG_JSON_PATH and CONFIG_JSON are "
                                "set, preferring $CONFIG_JSON_PATH")
             with open(os.environ['CONFIG_JSON_PATH']) as config_file:
                 config = json.load(config_file)
-        elif 'JSON_CONFIG' in os.environ:
-            config = json.loads(os.environ['JSON_CONFIG'])
+        elif 'CONFIG_JSON' in os.environ:
+            config = json.loads(os.environ['CONFIG_JSON'])
+        elif 'JSON_CONFIG' is os.environ:
+            logger.warning("The correct environment variable is now "
+                           "CONFIG_JSON. Please update your configuration")
+            config = json.loads(os.environ['CONFIG_JSON'])
         else:
-            logger.critical("Neither $CONFIG_JSON_PATH nor $JSON_CONFIG are "
+            logger.critical("Neither $CONFIG_JSON_PATH nor CONFIG_JSON are "
                             "set!")
             sys.exit(1)
 

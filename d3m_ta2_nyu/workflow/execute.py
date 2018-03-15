@@ -184,9 +184,8 @@ def execute(db, pipeline, module_loader, reason,
                 inputs.setdefault(k, []).append(v)
             # Output from connected upstream modules
             for conn in module.connections_to:
-                if conn.to_input_name not in inputs:
-                    inputs.setdefault(conn.to_input_name, []).append(
-                        outputs[conn.from_module_id][conn.from_output_name])
+                inputs.setdefault(conn.to_input_name, []).append(
+                    outputs[conn.from_module_id][conn.from_output_name])
 
             # Now run the module
             logger.info("Executing module %s (%s %s), inputs: %s",
