@@ -1,6 +1,6 @@
-import csv
 import logging
 import numpy
+import os
 import pandas
 from sklearn.model_selection import StratifiedKFold, KFold
 from sqlalchemy.orm import joinedload
@@ -108,9 +108,11 @@ def cross_validation(pipeline, metrics, data, targets, target_names,
 
 @database.with_db
 def tune(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
+    logging.getLogger().handlers = []
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
+        format="%(asctime)s:%(levelname)s:tune-{}:%(name)s:%(message)s"
+            .format(os.getpid()))
 
     logger.info("About to run training pipeline, id=%s, dataset=%r, "
                 "problem=%r",

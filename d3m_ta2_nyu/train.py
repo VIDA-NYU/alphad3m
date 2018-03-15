@@ -1,5 +1,6 @@
 import logging
 import numpy
+import os
 import pandas
 from sklearn.model_selection import StratifiedKFold, KFold
 import sys
@@ -103,9 +104,11 @@ def cross_validation(pipeline, metrics, data, targets, target_names,
 
 @database.with_db
 def train(pipeline_id, metrics, dataset, problem, results_path, msg_queue, db):
+    logging.getLogger().handlers = []
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
+        format="%(asctime)s:%(levelname)s:train-{}:%(name)s:%(message)s"
+            .format(os.getpid()))
 
     if msg_queue is not None:
         signal = msg_queue.put
