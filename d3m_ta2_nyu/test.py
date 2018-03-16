@@ -34,6 +34,8 @@ def test(pipeline_id, dataset, problem, results_path, db):
         logger.exception("Error running testing")
         sys.exit(1)
 
+    target_names = [t['colName'] for t in ds.problem.get_targets()]
     predictions = next(iter(outputs.values()))['predictions']
-
+    assert len(predictions.columns) == len(target_names)
+    predictions.columns = target_names
     predictions.to_csv(results_path)
