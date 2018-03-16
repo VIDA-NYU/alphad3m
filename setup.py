@@ -16,7 +16,7 @@ req = [
     'pandas',
     'dsbox-datacleaning']
 setup(name='d3m_ta2_nyu',
-      version='0.6.2',
+      version='0.7-pre',
       packages=['d3m_ta2_nyu'],
       entry_points={
           'console_scripts': [
