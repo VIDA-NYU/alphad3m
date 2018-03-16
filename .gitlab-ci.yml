@@ -26,17 +26,15 @@ build_image:
     - curl -Lo /tmp/docker.tgz https://get.docker.com/builds/Linux/x86_64/docker-17.05.0-ce.tgz && tar -xf /tmp/docker.tgz -C /usr/local && rm /tmp/docker.tgz && export PATH=/usr/local/docker:$PATH && export DOCKER_HOST=tcp://docker:2375
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
     - INIT="$(< d3m_ta2_nyu/__init__.py)"; echo "$INIT" | sed 's/__version__ = .*$/__version__ = '"'$(git describe)'/" >d3m_ta2_nyu/__init__.py
-    - docker pull $CI_REGISTRY_IMAGE:latest && docker build --cache-from $CI_REGISTRY_IMAGE:latest -t $IMAGE .
+    - docker pull $CI_REGISTRY_IMAGE:devel && docker build --cache-from $CI_REGISTRY_IMAGE:devel -t $IMAGE .
     - |
       REV=$(git describe --always --tags)
-      if [ "x$CI_COMMIT_TAG" = x -a "$CI_COMMIT_REF_NAME" != master ]; then
-        REV="$CI_COMMIT_REF_NAME-$REV"
-      fi
+      REV="$CI_COMMIT_REF_NAME-$REV"
       docker tag $IMAGE $CI_REGISTRY_IMAGE:$REV
-      docker tag $IMAGE $CI_REGISTRY_IMAGE:latest
+      docker tag $IMAGE $CI_REGISTRY_IMAGE:devel
     - docker push $IMAGE
     - docker push $CI_REGISTRY_IMAGE:$REV
-    - if [ "$CI_COMMIT_REF_NAME" = master ]; then docker push $CI_REGISTRY_IMAGE:latest; fi
+    - if [ "$CI_COMMIT_REF_NAME" = devel ]; then docker push $CI_REGISTRY_IMAGE:devel; fi
   tags:
     - docker
 
