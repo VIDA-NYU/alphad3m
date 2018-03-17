@@ -404,7 +404,7 @@ class D3mTa2(object):
         task = TASKS_FROM_SCHEMA[task]
         if task not in ('CLASSIFICATION', 'REGRESSION'):  # TODO
             logger.error("Unsupported task %s requested", task)
-            sys.exit(1)
+            sys.exit(148)
         metrics = []
         for metric in problem_json['inputs']['performanceMetrics']:
             metric = metric['metric']

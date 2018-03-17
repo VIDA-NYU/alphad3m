@@ -31,7 +31,7 @@ def main_search():
             "    ta2_search <config_file.json>\n"
             "        Run the TA2 system standalone, solving the given problem "
             "as per official schemas\n")
-        sys.exit(1)
+        sys.exit(2)
     else:
         with open(sys.argv[1]) as config_file:
             config = json.load(config_file)
@@ -57,7 +57,7 @@ def main_serve():
             "        The configuration file is read from $CONFIG_JSON_PATH\n"
             "        Alternatively, the JSON *contents* can be read from "
             "$CONFIG_JSON\n")
-        sys.exit(1)
+        sys.exit(2)
     else:
         if 'CONFIG_JSON_PATH' in os.environ:
             if 'CONFIG_JSON' in os.environ:
@@ -74,7 +74,7 @@ def main_serve():
         else:
             logger.critical("Neither $CONFIG_JSON_PATH nor CONFIG_JSON are "
                             "set!")
-            sys.exit(1)
+            sys.exit(2)
 
         port = None
         if len(sys.argv) == 2:
@@ -90,7 +90,7 @@ def main_test():
     setup_logging()
 
     if len(sys.argv) != 3:
-        sys.exit(1)
+        sys.exit(2)
     else:
         with open(sys.argv[2]) as config_file:
             config = json.load(config_file)
