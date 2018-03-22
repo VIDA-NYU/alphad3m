@@ -3,6 +3,7 @@ from pipeline.PipelineGame import PipelineGame
 from pipeline.pytorch.NNet import NNetWrapper as nn
 
 import logging
+import os
 
 
 class PipelineGenerator:
@@ -18,10 +19,10 @@ class PipelineGenerator:
         'cpuct': 1,
         
         'checkpoint': './temp/',
-        'load_model': False,
+        'load_model': True,
         'load_folder_file': ('./temp/','best.pth.tar')
     })
-    
+
     def createPipelines(self, dataset_path, problem_path):
         self.args['dataset_path'] = dataset_path
         self.args['problem_path'] = problem_path
@@ -30,7 +31,9 @@ class PipelineGenerator:
         nnet = nn(g)
         
         if self.args.get('load_model'):
-            nnet.load_checkpoint(self.args.get('load_folder_file')[0], self.args.get('load_folder_file')[1])
+            model_file = os.path.join(self.args.get('load_folder_file')[0], self.args.get('load_folder_file')[1])
+            if os.path.isfile(model_file):
+                nnet.load_checkpoint(self.args.get('load_folder_file')[0], self.args.get('load_folder_file')[1])
             
         c = Coach(g, nnet, self.args)
         c.learn()
@@ -52,3 +55,4 @@ if __name__=="__main__":
     #dataset_path = '/Users/yamuna/D3M/data/185_baseball/185_baseball_dataset'
     #problem_path = '/Users/yamuna/D3M/data/185_baseball/185_baseball_problem'
     pg.createPipelines(dataset_path, problem_path)
+    

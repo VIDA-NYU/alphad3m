@@ -16,8 +16,8 @@ class PipelineGame(Game):
         self.args = args
         self.evaluations = {}
         self.curr_evaluations = {}
-        problem_features = parse_problem_description(self.args['problem_path']+'/problemDoc.json')
-        self.problem = problem_features['problem']['task_type'].unparse().upper()
+        self.problem_features = parse_problem_description(self.args['problem_path']+'/problemDoc.json')
+        self.problem = self.problem_features['problem']['task_type'].unparse().upper()
         self.dataset_metafeatures = list(compute_metafeatures(os.path.join(self.args['dataset_path'],'tables','learningData.csv')).values())
         #print(self.dataset_metafeatures)
         self.n = m + len(self.dataset_metafeatures)

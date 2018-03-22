@@ -24,7 +24,7 @@ from .PipelineNNet import PipelineNNet as onnet
 args = dict({
     'lr': 0.001,
     'dropout': 0.3,
-    'epochs': 10,
+    'epochs': 2,
     'batch_size': 64,
     'cuda': False,
     'num_channels': 512,
@@ -71,7 +71,8 @@ class NNetWrapper(NeuralNet):
                 # predict
                 if args.get('cuda'):
                     boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
-                boards, target_pis, target_vs = Variable(boards), Variable(target_pis), Variable(target_vs)
+                else:
+                    boards, target_pis, target_vs = Variable(boards), Variable(target_pis), Variable(target_vs)
 
                 # measure data loading time
                 data_time.update(time.time() - end)
@@ -117,6 +118,7 @@ class NNetWrapper(NeuralNet):
         """
         # timing
         start = time.time()
+        print('\n\n\nBOARD\n', [r[1] for r in board[0:self.board_x]])
 
         # preparing input
         board = torch.from_numpy(np.array(board[0:self.board_x], dtype='f')).cuda().double() if args.get('cuda') else torch.from_numpy(np.array(board[0:self.board_x], dtype='f'))
@@ -127,6 +129,9 @@ class NNetWrapper(NeuralNet):
 
         self.nnet.eval()
         pi, v = self.nnet(board)
+
+        print('\n\n\nPROBABILITY\n', torch.exp(pi).data.cpu().numpy()[0])
+        print('\n\n\nVALUE\n',  v.data.cpu().numpy()[0])
 
         print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
         return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0]
