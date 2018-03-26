@@ -1,0 +1,40 @@
+# Create the Docker secret datadrivendiscovery
+# Make sure the data, config, ... are accessible from Kubernetes (you might
+#   have to mount /home in the VM if using Minikube)
+# Update paths, create the config_train.json
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ta2-test
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+      - name: datadrivendiscovery
+      containers:
+      - name: ta2
+        image: registry.datadrivendiscovery.org/j18_ta2eval/nyu_ta2:stable
+        imagePullPolicy: Always
+        command: ["/d3m/out/executables/REPLACEME", "/d3m/config_test.json"]
+        volumeMounts:
+        - mountPath: /d3m/config_test.json
+          name: config-test
+        - mountPath: /d3m/data
+          name: data
+        - mountPath: /d3m/out
+          name: out
+      volumes:
+      - name: config-test
+        hostPath:
+          path: /home/remram/Documents/programming/d3m/ta2/config_test.json
+          type: File
+      - name: data
+        hostPath:
+          path: /home/remram/Documents/programming/d3m/data
+          type: Directory
+      - name: out
+        hostPath:
+          path: /home/remram/Documents/programming/d3m/tmp
+          type: DirectoryOrCreate
+      restartPolicy: Never
+  backoffLimit: 4
