@@ -49,7 +49,9 @@ def evaluate_pipeline_from_strings(strings, origin,
     # Create the pipeline in the database
     db = ta2.DBSession()
 
-    pipeline = database.Pipeline(origin=origin)
+    pipeline = database.Pipeline(
+        origin=origin,
+        dataset=dataset)
 
     def make_module(package, version, name):
         pipeline_module = database.PipelineModule(
@@ -96,5 +98,4 @@ def evaluate_pipeline_from_strings(strings, origin,
         db.close()
 
     # Evaluate the pipeline
-    return ta2.run_pipeline(pipeline_id, dataset, problem,
-                            metric=metric)
+    return ta2.run_pipeline(pipeline_id, problem, metric=metric)
