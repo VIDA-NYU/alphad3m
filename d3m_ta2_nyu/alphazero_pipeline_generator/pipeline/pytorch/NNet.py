@@ -1,25 +1,14 @@
-import argparse
-import os
-import shutil
-import time
-import random
 import numpy as np
-import math
-import sys
-sys.path.append('../../')
-#from utils import *
-from pytorch_classification.utils import Bar, AverageMeter
-from NeuralNet import NeuralNet
-
-import argparse
+import os
+import time
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-from torchvision import datasets, transforms
 from torch.autograd import Variable
+import torch.optim as optim
 
 from .PipelineNNet import PipelineNNet as onnet
+from ...pytorch_classification.utils import Bar, AverageMeter
+from ...NeuralNet import NeuralNet
+
 
 args = dict({
     'lr': 0.001,

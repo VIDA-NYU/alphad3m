@@ -1,7 +1,7 @@
-from Coach import Coach
-from pipeline.PipelineGame import PipelineGame
-from pipeline.pytorch.NNet import NNetWrapper as nn
-#from utils import *
+from .Coach import Coach
+from .pipeline.PipelineGame import PipelineGame
+from .pipeline.pytorch.NNet import NNetWrapper as nn
+
 
 args = dict({
     'numIters': 3,

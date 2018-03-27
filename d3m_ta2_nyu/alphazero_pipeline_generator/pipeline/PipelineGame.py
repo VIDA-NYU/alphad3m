@@ -1,15 +1,13 @@
-from __future__ import print_function
-import sys
-import os
 from copy import deepcopy
-sys.path.append('..')
-from Game import Game
-from .PipelineLogic import Board
-import numpy as np
-from random import uniform
-import nn_evaluation
 from d3m_metadata.problem import parse_problem_description
-from d3m_ta2_nyu.metafeatures.dataset import compute_metafeatures
+import numpy as np
+import os
+
+from .PipelineLogic import Board
+from ..Game import Game
+from ...metafeatures.dataset import compute_metafeatures
+import nn_evaluation
+
 
 class PipelineGame(Game):
     def __init__(self, m, args=None):
@@ -115,8 +113,8 @@ class PipelineGame(Game):
         return deepcopy(board)
 
     def stringRepresentation(self, board):
-    	# 3x3 numpy array (canonical board)
-    	return np.array(board[0:self.n]).tostring()+np.array(board[self.n:]).tostring()
+        # 3x3 numpy array (canonical board)
+        return np.array(board[0:self.n]).tostring()+np.array(board[self.n:]).tostring()
 
     def getTrainExamples(self, board, pi):
         #print('LENGTH PI ', len(pi))

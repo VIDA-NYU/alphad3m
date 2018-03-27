@@ -1,6 +1,7 @@
 import math
 import numpy as np
 
+
 class MCTS():
     """
     This class handles the MCTS tree.

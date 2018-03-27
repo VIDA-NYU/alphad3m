@@ -1,9 +1,9 @@
-from Coach import Coach
-from pipeline.PipelineGame import PipelineGame
-from pipeline.pytorch.NNet import NNetWrapper as nn
-
 import logging
 import os
+
+from .Coach import Coach
+from .pipeline.PipelineGame import PipelineGame
+from .pipeline.pytorch.NNet import NNetWrapper as nn
 
 
 class PipelineGenerator:
@@ -39,7 +39,7 @@ class PipelineGenerator:
         c.learn()
 
     
-if __name__=="__main__":
+def main():
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
@@ -55,4 +55,6 @@ if __name__=="__main__":
     #dataset_path = '/Users/yamuna/D3M/data/185_baseball/185_baseball_dataset'
     #problem_path = '/Users/yamuna/D3M/data/185_baseball/185_baseball_problem'
     pg.createPipelines(dataset_path, problem_path)
-    
+
+if __name__ == '__main__':
+    main()

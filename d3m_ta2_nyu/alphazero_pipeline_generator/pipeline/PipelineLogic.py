@@ -10,6 +10,7 @@ x is the column, y is the row.
 
 import numpy as np
 
+
 class Board():
     PRIMITIVES_DECODE = ['None', 'E', 'I', 'S', 'K', 'D','NB', 'T', 'LO', 'LI', 'BR', 'L', 'R', 'LA']
     PRIMITIVES = {

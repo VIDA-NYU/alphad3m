@@ -1,6 +1,3 @@
-import numpy as np
-import copy
-
 class Arena():
     """
     An Arena class where any 2 agents can be pit against each other.

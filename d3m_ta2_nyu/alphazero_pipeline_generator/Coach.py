@@ -1,9 +1,11 @@
 from collections import deque
-from Arena import Arena
-from MCTS import MCTS
 import numpy as np
-from pytorch_classification.utils import Bar, AverageMeter
 import time
+
+from .Arena import Arena
+from .MCTS import MCTS
+from .pytorch_classification.utils import Bar, AverageMeter
+
 
 class Coach():
     """
