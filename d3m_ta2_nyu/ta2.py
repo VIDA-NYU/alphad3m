@@ -457,43 +457,32 @@ class D3mTa2(object):
         finally:
             db.close()
 
-    def run_pipeline(self, pipeline_id, problem, metric=None):
+    def run_pipeline(self, session_id, pipeline_id):
         """Train and score a single pipeline.
 
         This is used to test the pipeline synthesis code.
         """
-        # Read problem
-        with open(os.path.join(problem, 'problemDoc.json')) as fp:
-            problem_json = json.load(fp)
-        problem_id = problem_json['about']['problemID']
 
-        if metric is not None:
-            try:
-                metric = SCORES_FROM_SCHEMA[metric]
-            except KeyError:
-                raise ValueError("Unknown metric %r" % metric)
-        else:
-            if not problem_json['inputs']['performanceMetrics']:
-                raise ValueError("Problem has no metric")
-            metric = problem_json['inputs']['performanceMetrics'][0]['metric']
-            try:
-                metric = SCORES_FROM_SCHEMA[metric]
-            except KeyError:
-                raise ValueError("Unknown metric %r", metric)
-
+        # Get the session
+        session = self.sessions[session_id]
+        metric = session.metrics[0]
         logger.info("Running single pipeline, metric: %s", metric)
 
-        # Create session
-        session = Session(self, self.logs_root, problem, problem_id,
-                          self.DBSession)
-        session.metrics = [metric]
-        self.sessions[session.id] = session
+        # Train and score the pipeline
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             session.add_training_pipeline(pipeline_id)
             self._run_queue.put(TrainJob(session, pipeline_id))
-            while queue.get(True)[0] != 'done_training':
-                pass
+            while True:
+                event, kwargs = queue.get(True)
+                if event == 'done_training':
+                    raise RuntimeError("Never got pipeline results")
+                elif (event == 'training_error' and
+                        kwargs['pipeline_id'] == pipeline_id):
+                    return None
+                elif (event == 'training_success' and
+                        kwargs['pipeline_id'] == pipeline_id):
+                    break
 
         db = self.DBSession()
         try:
@@ -563,12 +552,31 @@ class D3mTa2(object):
         while True:
             time.sleep(60)
 
-    def new_session(self):
-        if self.default_problem is None:
-            logger.error("Creating a session but no default problem is set!")
-        session = Session(self, self.logs_root, self.default_problem,
-                          self.default_problem_id, self.DBSession)
+    def new_session(self, problem=None):
+        metrics = []
+        if problem is None:
+            if self.default_problem is None:
+                logger.error("Creating a session but no default problem is "
+                             "set!")
+            problem = self.default_problem
+            problem_id = self.default_problem_id
+        else:
+            with open(os.path.join(problem, 'problemDoc.json')) as fp:
+                problem_json = json.load(fp)
+            problem_id = problem_json['about']['problemID']
+            for metric in problem_json['inputs']['performanceMetrics']:
+                metric = metric['metric']
+                try:
+                    metric = SCORES_FROM_SCHEMA[metric]
+                except KeyError:
+                    raise ValueError("Unknown metric %r" % metric)
+                metrics.append(metric)
+
+        session = Session(self, self.logs_root, problem, problem_id,
+                          self.DBSession)
         self.sessions[session.id] = session
+        if metrics:
+            session.metrics = metrics
         return session.id
 
     def finish_session(self, session_id):

@@ -19,9 +19,9 @@ ta2 = D3mTa2(storage_root=storage,
 setup_logging()
 
 
-def evaluate_pipeline_from_strings(strings, origin,
-                                   dataset, problem,
-                                   metric=None):
+def evaluate_pipeline_from_strings(session_id,
+                                   strings, origin,
+                                   dataset):
     """Translate the pipeline, add it to the database, and evaluate it.
 
     Example::
@@ -36,13 +36,11 @@ def evaluate_pipeline_from_strings(strings, origin,
             'data/LL0_22_mfeat_zernike/LL0_22_mfeat_zernike_dataset',
             'data/LL0_22_mfeat_zernike/LL0_22_mfeat_zernike_problem')
 
+    :param session_id: A TA2 session in which to run the pipeline
     :param strings: A list of 3 strings [imputer, encoder, classifier]
     :param origin: A description of this pipeline's creator, for example
         "Created by neural network"
     :param dataset: Path to the D3M dataset to use when running the pipeline
-    :param problem: Path to the D3M problem to use when running the pipeline
-    :param metric: The name of the metric to use (same name used in problem
-        schema) or None to use the first metric defined in the problem
     :return: A dict of scores, for example ``{'F1': 0.5, 'ROC_AUC': 1.0}``
     """
 
@@ -98,4 +96,4 @@ def evaluate_pipeline_from_strings(strings, origin,
         db.close()
 
     # Evaluate the pipeline
-    return ta2.run_pipeline(pipeline_id, problem, metric=metric)
+    return ta2.run_pipeline(session_id, pipeline_id)

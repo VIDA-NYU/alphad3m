@@ -20,6 +20,9 @@ class PipelineGame(Game):
         #print(self.dataset_metafeatures)
         self.n = m + len(self.dataset_metafeatures)
         self.m = m
+
+        self.ta2_session = nn_evaluation.ta2.new_session(
+            self.args['problem_path'])
                 
     def getInitBoard(self):
         # return initial board (numpy board)
@@ -71,7 +74,9 @@ class PipelineGame(Game):
                     if primitive == value:
                         pipeline.append(key)
                 #print('PIPELINE ', pipeline)
-                eval_val = nn_evaluation.evaluate_pipeline_from_strings(pipeline, 'ALPHAZERO', self.args['dataset_path'], self.args['problem_path'])
+                eval_val = nn_evaluation.evaluate_pipeline_from_strings(
+                    self.ta2_session, pipeline, 'ALPHAZERO',
+                    self.args['dataset_path'])
                 if eval_val is None:
                     eval_val = float('inf')
                 self.evaluations[primitive] = eval_val
