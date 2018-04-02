@@ -9,14 +9,12 @@ import grpc
 import itertools
 import json
 import logging
-import multiprocessing
 import os
 import pickle
 from queue import Empty, Queue
 from sqlalchemy import select
 from sqlalchemy.orm import aliased, joinedload
 import stat
-import subprocess
 import sys
 import threading
 import time
@@ -27,6 +25,7 @@ from . import __version__
 from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
     TASKS_FROM_SCHEMA
 from d3m_ta2_nyu.d3mds import D3MDataset
+from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
@@ -224,15 +223,26 @@ class Job(object):
         self.id = Job.__id_gen
         Job.__id_gen += 1
         self.session = session
+        self.msg = None
 
     def start(self, **kwargs):
         raise NotImplementedError
+
+    def check(self):
+        if self.msg is not None:
+            try:
+                while True:
+                    self.message(*self.msg.get(0))
+            except Empty:
+                pass
+
+        return self.poll()
 
     def poll(self):
         raise NotImplementedError
 
     def message(self, *args):
-        pass
+        raise NotImplementedError
 
 
 class TrainJob(Job):
@@ -248,18 +258,13 @@ class TrainJob(Job):
                     len(self.session.pipelines_training))
         self.results = os.path.join(self.predictions_root,
                                     '%s.csv' % self.pipeline_id)
-        # FIXME: Can't use multiprocessing here because of gRPC bug
-        # https://github.com/grpc/grpc/issues/12455
-        self.proc = subprocess.Popen(
-            [sys.executable,
-             '-c',
-             'import uuid; from d3m_ta2_nyu.train import train; '
-             'train(uuid.UUID(hex=%r), %r, %r, %r, '
-             'None, db_filename=%r)' % (
-                 self.pipeline_id.hex, self.session.metrics,
-                 self.session.problem, self.results, db_filename,
-             )]
-        )
+        self.msg = Receiver()
+        self.proc = run_process('d3m_ta2_nyu.train.train', 'train', self.msg,
+                                pipeline_id=self.pipeline_id,
+                                metrics=self.session.metrics,
+                                problem=self.session.problem,
+                                results_path=self.results,
+                                db_filename=db_filename)
         self.session.notify('training_start', pipeline_id=self.pipeline_id)
 
     def poll(self):
@@ -301,19 +306,14 @@ class TuneHyperparamsJob(Job):
                     len(self.session.pipelines_tuning))
         self.results = os.path.join(self.predictions_root,
                                     '%s.csv' % self.pipeline_id)
-        # FIXME: Can't use multiprocessing here because of gRPC bug
-        # https://github.com/grpc/grpc/issues/12455
-        self.proc = subprocess.Popen(
-            [sys.executable,
-             '-c',
-             'import uuid; from d3m_ta2_nyu.train_and_tune import tune; '
-             'tune(uuid.UUID(hex=%r), %r, %r, %r, '
-             'None, db_filename=%r)' % (
-                 self.pipeline_id.hex, self.session.metrics,
-                 self.session.problem, self.results, db_filename,
-             )],
-            stdout=subprocess.PIPE,
-        )
+        self.msg = Receiver()
+        self.proc = run_process('d3m_ta2_nyu.train_and_tune.tune',
+                                'tune', self.msg,
+                                pipeline_id=self.pipeline_id,
+                                metrics=self.session.metrics,
+                                problem=self.session.problem,
+                                results_path=self.results,
+                                db_filename=db_filename)
         self.session.notify('tuning_start', pipeline_id=self.pipeline_id)
 
     def poll(self):
@@ -323,22 +323,31 @@ class TuneHyperparamsJob(Job):
                     "(pipeline: %s)",
                     self.proc.returncode, self.pipeline_id)
         if self.proc.returncode == 0:
-            new_pipeline_id = uuid.UUID(
-                hex=self.proc.stdout.read().decode('ascii').strip())
-            logger.info("New pipeline: %s)", new_pipeline_id)
+            logger.info("New pipeline: %s)", self.tuned_pipeline_id)
             self.session.notify('tuning_success',
                                 old_pipeline_id=self.pipeline_id,
-                                new_pipeline_id=new_pipeline_id)
+                                new_pipeline_id=self.tuned_pipeline_id)
             self.session.notify('training_success',
-                                pipeline_id=new_pipeline_id,
+                                pipeline_id=self.tuned_pipeline_id,
                                 predict_result=self.results)
             self.session.pipeline_tuning_done(self.pipeline_id,
-                                              new_pipeline_id)
+                                              self.tuned_pipeline_id)
         else:
             self.session.notify('tuning_error',
                                 pipeline_id=self.pipeline_id)
             self.session.pipeline_tuning_done(self.pipeline_id)
         return True
+
+    def message(self, msg, arg):
+        if msg == 'progress':
+            # TODO: Report progress
+            logger.info("Training pipeline %s: %.0f%%",
+                        self.pipeline_id, arg * 100)
+        elif msg == 'tuned_pipeline_id':
+            self.tuned_pipeline_id = arg
+        else:
+            logger.error("Unexpected message from tuning process %s",
+                         msg)
 
 
 class D3mTa2(object):
@@ -649,12 +658,11 @@ class D3mTa2(object):
     # Runs in a background thread
     def _pipeline_running_thread(self):
         running_jobs = {}
-        msg_queue = multiprocessing.Queue()
         while True:
             # Poll jobs, remove finished ones
             remove = []
             for job in running_jobs.values():
-                if job.poll():
+                if job.check():
                     remove.append(job.id)
             for job_id in remove:
                 del running_jobs[job_id]
@@ -670,13 +678,7 @@ class D3mTa2(object):
                               predictions_root=self.predictions_root)
                     running_jobs[job.id] = job
 
-            # Handle messages from jobs
-            try:
-                job_id, *args = msg_queue.get(timeout=3)
-            except Empty:
-                pass
-            else:
-                running_jobs[job_id].message(*args)
+            time.sleep(3)
 
     def write_executable(self, pipeline, filename=None):
         if not filename:

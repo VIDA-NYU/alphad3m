@@ -1,6 +1,5 @@
 import logging
 import numpy
-import os
 import pandas
 from sklearn.model_selection import StratifiedKFold, KFold
 import sys
@@ -104,16 +103,6 @@ def cross_validation(pipeline, metrics, data, targets, target_names,
 
 @database.with_db
 def train(pipeline_id, metrics, problem, results_path, msg_queue, db):
-    logging.getLogger().handlers = []
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s:%(levelname)s:train-{}:%(name)s:%(message)s"
-            .format(os.getpid()))
-
-    if msg_queue is not None:
-        signal = msg_queue.put
-    else:
-        signal = lambda m: None
     max_progress = FOLDS + 2.0
 
     # Get dataset from database
@@ -154,7 +143,7 @@ def train(pipeline_id, metrics, problem, results_path, msg_queue, db):
     # get predictions from OutputPort to get cross validation scores
     scores, predictions = cross_validation(
         pipeline_id, metrics, data, targets, target_names, stratified_folds,
-        lambda i: signal((pipeline_id, 'progress', (i + 1.0) / max_progress)),
+        lambda i: msg_queue.send(('progress', (i + 1.0) / max_progress)),
         db)
     logger.info("Scoring done: %s", ", ".join("%s=%s" % s
                                               for s in scores.items()))

@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 
 from d3m_ta2_nyu.d3mds import D3MDS
@@ -12,12 +11,6 @@ logger = logging.getLogger(__name__)
 
 @database.with_db
 def test(pipeline_id, dataset, problem, results_path, db):
-    logging.getLogger().handlers = []
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s:%(levelname)s:test-{}:%(name)s:%(message)s"
-            .format(os.getpid()))
-
     # Load data
     ds = D3MDS(dataset, problem)
     logger.info("Loaded dataset, columns: %s",
