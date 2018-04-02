@@ -18,6 +18,7 @@ COPY requirements.txt /usr/src/app/requirements.txt
 RUN /usr/src/app/venv/bin/pip install -r requirements.txt
 COPY d3m_ta2_nyu /usr/src/app/d3m_ta2_nyu
 COPY setup.py /usr/src/app/setup.py
+COPY nn_evaluation.py /usr/src/app/nn_evaluation.py
 RUN /usr/src/app/venv/bin/pip install --no-deps -e /usr/src/app
 RUN printf "#!/bin/sh\n\n/usr/src/app/venv/bin/ta2_search \"\$@\"\n" >/usr/local/bin/ta2_search && \
     chmod +x /usr/local/bin/ta2_search && \
