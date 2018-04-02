@@ -57,6 +57,9 @@ class Session(Observable):
         self.problem_id = problem_id
         self.metrics = []
 
+        # Should tuning be triggered when we are done with current pipelines?
+        self._tune_when_ready = False
+
         # All the pipelines that belong to this session
         self.pipelines = set()
         # The pipelines currently in the queue for training
@@ -69,6 +72,10 @@ class Session(Observable):
         # signal should be sent once both pipelines_training and
         # pipelines_tuning are empty
         self.working = False
+
+    def tune_when_ready(self):
+        self._tune_when_ready = True
+        self.check_status()
 
     def add_training_pipeline(self, pipeline_id):
         with self.lock:
@@ -135,6 +142,9 @@ class Session(Observable):
 
     def check_status(self):
         with self.lock:
+            # Session is not to be finished automatically
+            if not self._tune_when_ready:
+                return
             # We are already done
             if not self.working:
                 return
@@ -605,11 +615,12 @@ class D3mTa2(object):
     def build_pipelines(self, session_id, task, dataset, metrics):
         if not metrics:
             raise ValueError("no metrics")
-        self.executor.submit(self._build_pipelines,
+        self.executor.submit(self._build_pipelines_from_templates,
                              session_id, task, dataset, metrics)
 
     # Runs in a worker thread from executor
-    def _build_pipelines(self, session_id, task, dataset, metrics):
+    def _build_pipelines_from_templates(self, session_id, task,
+                                        dataset, metrics):
         session = self.sessions[session_id]
         with session.lock:
             if session.metrics != metrics:
@@ -641,6 +652,7 @@ class D3mTa2(object):
                 except Exception:
                     logger.exception("Error building pipeline from %r",
                                      template)
+            session.tune_when_ready()
             logger.info("Pipeline creation completed")
             session.check_status()
 
