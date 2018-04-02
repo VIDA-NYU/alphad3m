@@ -3,10 +3,10 @@ from d3m_metadata.problem import parse_problem_description
 import numpy as np
 import os
 
+from . import nn_evaluation
 from .PipelineLogic import Board
 from ..Game import Game
 from ...metafeatures.dataset import compute_metafeatures
-import nn_evaluation
 
 
 class PipelineGame(Game):
