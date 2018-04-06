@@ -141,9 +141,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             self._app.build_pipelines(session_id, task, dataset, metrics)
 
-            for msg in self._pipelinecreateresult_stream(context, queue,
-                                                         session):
-                yield msg
+            yield from self._pipelinecreateresult_stream(context, queue,
+                                                         session)
 
     def GetCreatePipelineResults(self, request, context):
         session_id = UUID(hex=request.context.session_id)
@@ -162,10 +161,9 @@ class CoreService(pb_core_grpc.CoreServicer):
         queue = Queue()
         session = self._app.sessions[session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            for msg in self._pipelinecreateresult_stream(context, queue,
+            yield from self._pipelinecreateresult_stream(context, queue,
                                                          session,
-                                                         pipeline_ids):
-                yield msg
+                                                         pipeline_ids)
 
     def _pipelinecreateresult_stream(self, context, queue,
                                      session, pipeline_ids=None):
