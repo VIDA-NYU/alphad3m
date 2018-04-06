@@ -155,10 +155,10 @@ eval_validate_results:
   image: $EVAL_TAGGED_IMAGE
   script:
     - cd $CI_PROJECT_DIR
-    - python /validate_results.py $CI_PROJECT_DIR/Eval/Outputs/Results $CI_PROJECT_DIR/Eval/problem_TRAIN/problemDoc.json
+    - python /validate_results.py $CI_PROJECT_DIR/Eval/Outputs/Results $CI_PROJECT_DIR/Eval /$EVAL_DATA/Eval_Score
   when: on_success
   dependencies:
-    - eval_prepare_train
+    - eval_prepare_test
     - eval_run_test_execs
   tags:
     - docker
