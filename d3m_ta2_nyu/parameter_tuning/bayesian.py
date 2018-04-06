@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import typing
 # Import ConfigSpace and different types of parameters
 from smac.configspace import ConfigurationSpace
@@ -60,8 +61,11 @@ class HyperparameterTuning(object):
 
     def tune(self, runner):
         # Scenario object
+        RUNCOUNT = 100
+        if 'TA2_DEBUG_BE_FAST' in os.environ:
+            RUNCOUNT = 10
         scenario = Scenario({"run_obj": "quality",  # we optimize quality (alternatively runtime)
-                             "runcount-limit": 100,  # maximum function evaluations
+                             "runcount-limit": RUNCOUNT,  # maximum function evaluations
                              "cs": self.cs,  # configuration space
                              "deterministic": "true",
                              "output_dir": "/tmp/"

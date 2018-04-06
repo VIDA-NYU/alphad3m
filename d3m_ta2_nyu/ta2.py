@@ -37,6 +37,7 @@ from d3m_ta2_nyu.workflow import database
 MAX_RUNNING_PROCESSES = 1
 
 TUNE_PIPELINES_COUNT = 3
+TUNE_PIPELINES_COUNT_DEBUG = 1
 
 
 logger = logging.getLogger(__name__)
@@ -159,9 +160,12 @@ class Session(Observable):
             db = self.DBSession()
             tune = []
             try:
+                tune_nb = TUNE_PIPELINES_COUNT
+                if 'TA2_DEBUG_BE_FAST' in os.environ:
+                    tune_nb = TUNE_PIPELINES_COUNT_DEBUG
                 top_pipelines = self.get_top_pipelines(
                     db, self.metrics[0],
-                    TUNE_PIPELINES_COUNT)
+                    tune_nb)
                 for pipeline, _ in top_pipelines:
                     if pipeline.id not in self.tuned_pipelines:
                         tune.append(pipeline.id)
