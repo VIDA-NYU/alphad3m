@@ -376,6 +376,15 @@ class D3mTa2(object):
                            "T ***")
             logger.warning("**************************************************"
                            "*****")
+        if 'TA2_USE_TEMPLATES' in os.environ:
+            logger.warning("**************************************************"
+                           "****")
+            logger.warning("***      Using templates instead of generator     "
+                           " ***")
+            logger.warning("*** If this is not wanted, unset TA2_USE_TEMPLATES"
+                           " ***")
+            logger.warning("**************************************************"
+                           "****")
         self.default_problem_id = 'problem_id_unset'
         self.default_problem = None
         self.storage = os.path.abspath(storage_root)
@@ -628,8 +637,12 @@ class D3mTa2(object):
     def build_pipelines(self, session_id, task, dataset, metrics):
         if not metrics:
             raise ValueError("no metrics")
-        self.executor.submit(self._build_pipelines_with_generator,
-                             session_id, task, dataset, metrics)
+        if 'TA2_USE_TEMPLATES' in os.environ:
+            self.executor.submit(self._build_pipelines_from_templates,
+                                 session_id, task, dataset, metrics)
+        else:
+            self.executor.submit(self._build_pipelines_with_generator,
+                                 session_id, task, dataset, metrics)
 
     # Runs in a worker thread from executor
     def _build_pipelines_with_generator(self, session_id, task,
