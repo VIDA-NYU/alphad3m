@@ -182,6 +182,14 @@ def with_db(wrapped):
     return wrapper
 
 
+def with_sessionmaker(wrapped):
+    @functools.wraps(wrapped)
+    def wrapper(*args, db_filename=None, **kwargs):
+        engine, DBSession = connect(db_filename)
+        return wrapped(*args, **kwargs, DBSession=DBSession)
+    return wrapper
+
+
 def _duplicate(db, obj, replace={}):
     new_obj = type(obj)()
     mapper = inspect(type(obj))

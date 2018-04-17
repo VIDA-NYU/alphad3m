@@ -78,7 +78,33 @@ def make_pipeline_from_strings(strings, origin, dataset, DBSession):
         db.close()
 
 
+@database.with_sessionmaker
+def generate(task, dataset, metrics, problem, msg_queue, DBSession):
+    def eval_pipeline(strings, origin):
+        # Create the pipeline in the database
+        pipeline_id = make_pipeline_from_strings(strings, origin, dataset,
+                                                 DBSession)
 
+        # Evaluate the pipeline
+        msg_queue.send(('eval', pipeline_id, dataset, problem))
+        return msg_queue.get()
+
+    args = dict(ARGS)
+    args['dataset_path'] = dataset
+    args['problem_path'] = problem
+    args['metric'] = problem
+    game = PipelineGame(3, args, eval_pipeline)
+    nnet = NNetWrapper(game)
+
+    if args.get('load_model'):
+        model_file = os.path.join(args.get('load_folder_file')[0],
+                                  args.get('load_folder_file')[1])
+        if os.path.isfile(model_file):
+            nnet.load_checkpoint(args.get('load_folder_file')[0],
+                                 args.get('load_folder_file')[1])
+
+    c = Coach(game, nnet, args)
+    c.learn()
 
 
 def main():
