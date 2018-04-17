@@ -30,7 +30,7 @@ class Receiver(object):
 
         self._sockets = [self._listener]
 
-    def get(self, timeout=None):
+    def recv(self, timeout=None):
         done = False
         while not done:
             done = True

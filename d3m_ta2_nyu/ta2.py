@@ -246,7 +246,7 @@ class Job(object):
         if self.msg is not None:
             try:
                 while True:
-                    self.message(*self.msg.get(0))
+                    self.message(*self.msg.recv(0))
             except Empty:
                 pass
 

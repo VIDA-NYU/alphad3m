@@ -87,7 +87,7 @@ def generate(task, dataset, metrics, problem, msg_queue, DBSession):
 
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id, dataset, problem))
-        return msg_queue.get()
+        return msg_queue.recv()
 
     args = dict(ARGS)
     args['dataset_path'] = dataset
