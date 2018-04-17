@@ -51,7 +51,7 @@ class Board():
         self.previous_moves = [0]*len(self.PRIMITIVES[problem].values())
         self.win_threshold = win_threshold
         self.problem = problem
-        
+
     # add [][] indexer syntax to the Board
     def __getitem__(self, index):
         return self.pieces[index]
@@ -80,7 +80,7 @@ class Board():
         if np.sum(valid_moves) == 0:
             valid_moves[-1] = 1
         return valid_moves
-        
+
     def has_legal_moves(self, problem='CLASSIFICATION'):
         return len(self.previous_moves) < len(self.PRIMITIVES[problem].values())
 
@@ -95,7 +95,7 @@ class Board():
     def getPrimitive(cls, piece):
         return cls.PRIMITIVES_DECODE[piece]
 
-    
+
     def execute_move(self, action, player):
         """Perform the given move on the board;
         color gives the color of the piece to play (1=x,-1=o)

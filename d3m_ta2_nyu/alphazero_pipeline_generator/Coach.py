@@ -40,7 +40,7 @@ class Coach():
         #print('BOARD ', self.board,'\n', np.array(self.board[0:self.game.n]))
         self.curPlayer = 1
         episodeStep = 0
-        
+
         while episodeStep <= 100:
             episodeStep += 1
             #print('COACH - EPISODE STEP ', episodeStep)
@@ -67,7 +67,7 @@ class Coach():
             if r!=0:
                 return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
         return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
-    
+
     def learn(self):
         """
         Performs numIters iterations with numEps episodes of self-play in each
@@ -96,7 +96,7 @@ class Coach():
                                                                                                            total=bar.elapsed_td, eta=bar.eta_td)
                 bar.next()
             bar.finish()
-            
+
             # training new network, keeping a copy of the old one
             self.nnet.save_checkpoint(folder=self.args.get('checkpoint'), filename='temp.pth.tar')
             pnet = self.nnet.__class__(self.game)

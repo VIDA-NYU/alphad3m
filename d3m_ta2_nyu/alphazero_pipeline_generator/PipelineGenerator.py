@@ -20,7 +20,7 @@ class PipelineGenerator:
         'numMCTSSims': 25,
         'arenaCompare': 40,
         'cpuct': 1,
-        
+
         'checkpoint': './temp/',
         'load_model': True,
         'load_folder_file': ('./temp/','best.pth.tar')
@@ -29,19 +29,19 @@ class PipelineGenerator:
     def createPipelines(self, dataset_path, problem_path):
         self.args['dataset_path'] = dataset_path
         self.args['problem_path'] = problem_path
-        self.args['metric'] = problem_path        
+        self.args['metric'] = problem_path
         g = PipelineGame(3, self.args)
         nnet = nn(g)
-        
+
         if self.args.get('load_model'):
             model_file = os.path.join(self.args.get('load_folder_file')[0], self.args.get('load_folder_file')[1])
             if os.path.isfile(model_file):
                 nnet.load_checkpoint(self.args.get('load_folder_file')[0], self.args.get('load_folder_file')[1])
-            
+
         c = Coach(g, nnet, self.args)
         c.learn()
 
-    
+
 def main():
     logging.basicConfig(
         level=logging.INFO,

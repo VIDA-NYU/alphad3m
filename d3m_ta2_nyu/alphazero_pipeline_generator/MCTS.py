@@ -34,7 +34,7 @@ class MCTS():
         for i in range(self.args.get('numMCTSSims')):
             #print('RESTART SEARCH SIM ', i)
             self.search(canonicalBoard, problem=problem)
-        #print('END GET ACTION PROB')            
+        #print('END GET ACTION PROB')
 
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
@@ -73,7 +73,7 @@ class MCTS():
         Returns:
             v: the negative of the value of the current canonicalBoard
         """
-        
+
         s = self.game.stringRepresentation(canonicalBoard)
         game_ended = self.game.getGameEnded(canonicalBoard, player)
         if not s in self.Es:
@@ -99,7 +99,7 @@ class MCTS():
                 self.Ns[s] = 0
             return -v
         #else:
-            #print('s in self.Ps')    
+            #print('s in self.Ps')
 
         valids = self.Vs[s]
         #print('VALIDS\n', valids)
@@ -107,7 +107,7 @@ class MCTS():
         #Check if valid moves are available. Quit if no more legal moves are possible
         if valids[-1] == 1:
             return -1
-        
+
         cur_best = -float('inf')
         best_act = -1
 

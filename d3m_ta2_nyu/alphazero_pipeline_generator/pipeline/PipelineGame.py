@@ -23,7 +23,7 @@ class PipelineGame(Game):
 
         self.ta2_session = nn_evaluation.ta2.new_session(
             self.args['problem_path'])
-                
+
     def getInitBoard(self):
         # return initial board (numpy board)
         b = Board(self.n, self.problem)
@@ -31,7 +31,7 @@ class PipelineGame(Game):
         for i in range(self.m, self.n):
             b.pieces[i][1] = self.dataset_metafeatures[count]
             count += 1
-        return b.pieces+b.previous_moves 
+        return b.pieces+b.previous_moves
 
     def getBoardSize(self):
         # (a,b) tuple
@@ -81,15 +81,15 @@ class PipelineGame(Game):
                     eval_val = float('inf')
                 self.evaluations[primitive] = eval_val
             #self.curr_evaluations[primitive] = eval_val
-            
+
         return eval_val
-    
+
     def getGameEnded(self, board, player, eval_val=None):
         # return 0 if not ended, 1 if x won, -1 if x lost
         # player = 1
         #print('\n\nEVALUATIONS ', self.evaluations)
         #if len(self.curr_evaluations) > 0:
-        if len(self.evaluations) > 0:            
+        if len(self.evaluations) > 0:
             #win_threshold = sorted(list(self.curr_evaluations.values()))[-1]
             win_threshold = sorted(list(self.evaluations.values()))[-1]
             b = Board(self.n, self.problem, win_threshold)
@@ -99,7 +99,7 @@ class PipelineGame(Game):
         b.previous_moves = board[self.n:]
         eval_val = self.getEvaluation(board)
         #print('\nEVAL', eval_val)
-        #self.display(board)        
+        #self.display(board)
         if b.findWin(player, eval_val):
             #print('EVALUATIONS ', self.curr_evaluations)
             #print('findwin',player)
@@ -125,7 +125,7 @@ class PipelineGame(Game):
         #print('LENGTH PI ', len(pi))
         assert(len(pi) == self.getActionSize())  # 1 for pass
         return [(board[0:self.n], pi)]
- 
+
     def display(self, b):
         n = self.m
         board = b[0:n]
