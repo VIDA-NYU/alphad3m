@@ -1,6 +1,9 @@
 import logging
 import os
 
+# Use a headless matplotlib backend
+os.environ['MPLBACKEND'] = 'Agg'
+
 from .Coach import Coach
 from .pipeline.PipelineGame import PipelineGame
 from .pipeline.pytorch.NNet import NNetWrapper as nn
