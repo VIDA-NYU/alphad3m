@@ -50,6 +50,11 @@ class Receiver(object):
                         return msg
         raise Empty
 
+    def send(self, msg):
+        for sock in self._sockets:
+            if sock != self._listener:
+                sock.send(msg)
+
     def close(self):
         try:
             self._listener.close()

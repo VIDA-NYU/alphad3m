@@ -401,7 +401,7 @@ class D3mTa2(object):
         self.dbengine, self.DBSession = database.connect(self.db_filename)
 
         self.sessions = {}
-        self.executor = futures.ThreadPoolExecutor(max_workers=10)
+        self.executor = futures.ThreadPoolExecutor(max_workers=16)
         self._run_queue = Queue()
         self._run_thread = threading.Thread(
             target=self._pipeline_running_thread)
@@ -464,7 +464,7 @@ class D3mTa2(object):
     def run_pipeline(self, session_id, pipeline_id):
         """Train and score a single pipeline.
 
-        This is used to test the pipeline synthesis code.
+        This is used by the pipeline synthesis code.
         """
 
         # Get the session
@@ -472,11 +472,12 @@ class D3mTa2(object):
         metric = session.metrics[0]
         logger.info("Running single pipeline, metric: %s", metric)
 
-        # Train and score the pipeline
+        # Add the pipeline to the session, train, and score it
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             session.add_training_pipeline(pipeline_id)
             self._run_queue.put(TrainJob(session, pipeline_id))
+            session.notify('new_pipeline', pipeline_id=pipeline_id)
             while True:
                 event, kwargs = queue.get(True)
                 if event == 'done_training':
@@ -627,12 +628,15 @@ class D3mTa2(object):
     def build_pipelines(self, session_id, task, dataset, metrics):
         if not metrics:
             raise ValueError("no metrics")
-        self.executor.submit(self._build_pipelines_from_templates,
+        self.executor.submit(self._build_pipelines_with_generator,
                              session_id, task, dataset, metrics)
 
     # Runs in a worker thread from executor
-    def _build_pipelines_from_templates(self, session_id, task,
+    def _build_pipelines_with_generator(self, session_id, task,
                                         dataset, metrics):
+        """Generates pipelines for the session, using the generator process.
+        """
+        # Start AlphaD3M process
         session = self.sessions[session_id]
         with session.lock:
             if session.metrics != metrics:
@@ -644,7 +648,58 @@ class D3mTa2(object):
                 logger.info("Set metrics to %s %s(for session %s)",
                             metrics, old, session_id)
 
-            logger.info("Creating pipelines...")
+            logger.info("Starting AlphaD3M process...")
+            msg_queue = Receiver()
+            proc = run_process(
+                'd3m_ta2_nyu.alphazero_pipeline_generator'
+                '.PipelineGenerator.generate',
+                'alphad3m',
+                msg_queue,
+                task=task,
+                dataset=dataset,
+                metrics=metrics,
+                problem=session.problem,
+                db_filename=self.db_filename,
+            )
+
+        # Now we wait for pipelines to be sent over the pipe
+        while proc.poll() is None:
+            try:
+                msg, *args = msg_queue.recv(3)
+            except Empty:
+                continue
+
+            if msg == 'eval':
+                pipeline_id, = args
+                logger.info("Got pipeline %s from generator process",
+                            pipeline_id)
+                score = self.run_pipeline(session_id, pipeline_id)
+                logger.info("Sending score to generator process")
+                msg_queue.send(score)
+            else:
+                raise RuntimeError("Got unknown message from generator "
+                                   "process: %r" % msg)
+
+        logger.info("Generator process exited with %r", proc.returncode)
+        session.tune_when_ready()
+
+    # Runs in a worker thread from executor
+    def _build_pipelines_from_templates(self, session_id, task,
+                                        dataset, metrics):
+        """Generates pipelines for the session, using templates.
+        """
+        session = self.sessions[session_id]
+        with session.lock:
+            if session.metrics != metrics:
+                if session.metrics:
+                    old = 'from %s ' % ', '.join(session.metrics)
+                else:
+                    old = ''
+                session.metrics = metrics
+                logger.info("Set metrics to %s %s(for session %s)",
+                            metrics, old, session_id)
+
+            logger.info("Creating pipelines from templates...")
             # Force working=True so we get 'done_training' even if no pipeline
             # gets created
             session.working = True
