@@ -65,24 +65,26 @@ def run_process(target, tag, msg_queue, **kwargs):
     :return: A `subprocess.Popen` object.
     """
     assert isinstance(msg_queue, Receiver)
-    data = msg_queue.address, tag, target, kwargs
+    data = msg_queue.address, kwargs
     proc = subprocess.Popen([
         sys.executable,
         '-c',
-        'from d3m_ta2_nyu.multiprocessing import _invoke; _invoke()',
+        'from d3m_ta2_nyu.multiprocessing import _invoke; _invoke(%r, %r)' % (
+            tag, target
+        ),
         base64.b64encode(pickle.dumps(data))
     ])
 
     return proc
 
 
-def _invoke():
+def _invoke(tag, target):
     """Invoked in the subprocess to setup logging and start the function.
 
     Arguments are read from ``sys.argv``.
     """
     data = pickle.loads(base64.b64decode(sys.argv[1]))
-    address, tag, target, kwargs = data
+    address, kwargs = data
 
     tag = '{}-{}'.format(tag, os.getpid())
 
