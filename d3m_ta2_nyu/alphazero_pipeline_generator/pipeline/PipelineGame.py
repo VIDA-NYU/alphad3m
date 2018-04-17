@@ -3,14 +3,17 @@ from d3m_metadata.problem import parse_problem_description
 import numpy as np
 import os
 
-from . import nn_evaluation
+from d3m_ta2_nyu.metafeatures.dataset import compute_metafeatures
+
 from .PipelineLogic import Board
 from ..Game import Game
-from ...metafeatures.dataset import compute_metafeatures
 
 
 class PipelineGame(Game):
-    def __init__(self, m, args=None):
+    def __init__(self, m, args, eval_pipeline):
+        super(PipelineGame, self).__init__()
+
+        self.eval_pipeline = eval_pipeline
         self.args = args
         self.evaluations = {}
         self.curr_evaluations = {}
@@ -20,9 +23,6 @@ class PipelineGame(Game):
         #print(self.dataset_metafeatures)
         self.n = m + len(self.dataset_metafeatures)
         self.m = m
-
-        self.ta2_session = nn_evaluation.ta2.new_session(
-            self.args['problem_path'])
 
     def getInitBoard(self):
         # return initial board (numpy board)
@@ -74,9 +74,7 @@ class PipelineGame(Game):
                     if primitive == value:
                         pipeline.append(key)
                 #print('PIPELINE ', pipeline)
-                eval_val = nn_evaluation.evaluate_pipeline_from_strings(
-                    self.ta2_session, pipeline, 'ALPHAZERO',
-                    self.args['dataset_path'])
+                self.eval_pipeline(pipeline, 'AlphaZero eval')
                 if eval_val is None:
                     eval_val = float('inf')
                 self.evaluations[primitive] = eval_val
