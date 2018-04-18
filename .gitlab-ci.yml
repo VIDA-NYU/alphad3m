@@ -67,7 +67,7 @@ eval_train:
     - mkdir Eval/Outputs/Logs
     - mkdir Eval/Outputs/Executables
     - mkdir Eval/Temp
-    - ta2_search Eval/config.json
+    - TA2_DEBUG_BE_FAST=1 ta2_search Eval/config.json
   when: on_success
   dependencies:
     - eval_prepare_train
