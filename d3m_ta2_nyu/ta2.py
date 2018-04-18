@@ -333,7 +333,7 @@ class TuneHyperparamsJob(Job):
     def poll(self):
         if self.proc.poll() is None:
             return False
-        logger.info("Pipeline training process done, returned %d "
+        logger.info("Pipeline tuning process done, returned %d "
                     "(pipeline: %s)",
                     self.proc.returncode, self.pipeline_id)
         if self.proc.returncode == 0:
