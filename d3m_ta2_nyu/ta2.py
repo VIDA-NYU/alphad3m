@@ -163,12 +163,13 @@ class Session(Observable):
                 tune_nb = TUNE_PIPELINES_COUNT
                 if 'TA2_DEBUG_BE_FAST' in os.environ:
                     tune_nb = TUNE_PIPELINES_COUNT_DEBUG
-                top_pipelines = self.get_top_pipelines(
-                    db, self.metrics[0],
-                    tune_nb)
-                for pipeline, _ in top_pipelines:
-                    if pipeline.id not in self.tuned_pipelines:
-                        tune.append(pipeline.id)
+                if tune_nb:
+                    top_pipelines = self.get_top_pipelines(
+                        db, self.metrics[0],
+                        tune_nb)
+                    for pipeline, _ in top_pipelines:
+                        if pipeline.id not in self.tuned_pipelines:
+                            tune.append(pipeline.id)
             finally:
                 db.close()
 
