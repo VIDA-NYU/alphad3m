@@ -17,7 +17,7 @@ RUN /usr/src/app/venv/bin/pip install numpy==1.13.3 pyyaml==3.12 Cython==0.27.3 
 COPY requirements.txt /usr/src/app/requirements.txt
 RUN /usr/src/app/venv/bin/pip install -r requirements.txt
 COPY d3m_ta2_nyu /usr/src/app/d3m_ta2_nyu
-COPY setup.py /usr/src/app/setup.py
+COPY setup.py README.rst /usr/src/app/
 RUN /usr/src/app/venv/bin/pip install --no-deps -e /usr/src/app
 RUN printf "#!/bin/sh\n\n/usr/src/app/venv/bin/ta2_search \"\$@\"\n" >/usr/local/bin/ta2_search && \
     chmod +x /usr/local/bin/ta2_search && \

@@ -7,6 +7,8 @@ from setuptools import setup
 os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
 
+with io.open('README.rst', encoding='utf-8') as fp:
+    description = fp.read()
 req = [
     'grpcio',
     'SQLAlchemy',
@@ -26,6 +28,7 @@ setup(name='d3m_ta2_nyu',
               'ta2_test = d3m_ta2_nyu.main:main_test']},
       install_requires=req,
       description="NYU's TA2 system",
+      long_description=description,
       author="Remi Rampin",
       author_email='remi.rampin@nyu.edu',
       maintainer="Remi Rampin",
