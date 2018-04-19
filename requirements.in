@@ -5,6 +5,7 @@
 #-e git+https://gitlab.com/datadrivendiscovery/common-primitives.git@617e116a4e0a839df4b049c3cb48dfff14d2a8b8#egg=common_primitives
 -e git+https://github.com/byu-dml/metalearn.git@e7f3ee28437141ef86bcabf93366c7b41e0cec6d#egg=metalearn
 tensorflow
+torch
 keras
 -e git+https://github.com/usc-isi-i2/dsbox-cleaning.git@8fed51ea59925c74be76b000deb7300d08f3d4b5#egg=dsbox-datacleaning
 ipykernel

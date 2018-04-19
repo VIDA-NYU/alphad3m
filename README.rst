@@ -14,8 +14,8 @@ You can either use Docker::
 
 Or you can run this natively, by installing it in a Python 3 virtualenv::
 
-    # First get pytorch: http://pytorch.org/
-    pip install numpy==1.13.3 pyyaml==3.12 Cython==0.27.3 http:///...torch-0.3.0-post4...whl
+    # First get build dependencies. Make sure to use versions locked in requirements.txt!
+    pip install numpy==1.13.3 Cython==0.27.3
     # Then install the other requirements
     pip install -r requirements.txt
     # Then this package, to create the ta2_search and other commands
@@ -49,6 +49,6 @@ Updating dependencies
 
 I am using locked versions of dependencies for reproducible builds and so everyone has the same environment. The ``requirements.txt`` is generated via ``pip freeze`` from the dependencies listed in ``requirements.in`` and ``setup,py``.
 
-PyTorch's dependencies need to be added to the Dockerfile, to be installed first. Otherwise some version will be pulled with PyTorch, then replaced from ``requirements.txt``, breaking things.
+``numpy`` and ``Cython`` need to be installed first (they are in Dockerfile) because other packages depend on them to build.
 
 I want to switch to pip-tools or pipenv eventually, but there are issues right now preventing me from doing it.

@@ -13,7 +13,7 @@ RUN apt-get install -yy build-essential libncursesw5-dev libreadline6-dev libssl
 
 WORKDIR /usr/src/app
 RUN python3 -m virtualenv -p python3.6 --system-site-packages /usr/src/app/venv && . /usr/src/app/venv/bin/activate && /usr/src/app/venv/bin/pip install -U certifi pip
-RUN /usr/src/app/venv/bin/pip install numpy==1.13.3 pyyaml==3.12 Cython==0.27.3 http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp36-cp36m-linux_x86_64.whl
+RUN /usr/src/app/venv/bin/pip install numpy==1.13.3 Cython==0.27.3
 COPY requirements.txt /usr/src/app/requirements.txt
 RUN /usr/src/app/venv/bin/pip install -r requirements.txt
 COPY d3m_ta2_nyu /usr/src/app/d3m_ta2_nyu
