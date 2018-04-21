@@ -9,8 +9,8 @@ import os
 class PipelineGenerator:
 
     args = dict({
-        'numIters': 3,
-        'numEps': 3,
+        'numIters': 10,
+        'numEps': 10,
         'tempThreshold': 15,
         'updateThreshold': 0.6,
         'maxlenOfQueue': 200000,
@@ -19,7 +19,7 @@ class PipelineGenerator:
         'cpuct': 1,
         
         'checkpoint': './temp/',
-        'load_model': True,
+        'load_model': False,
         'load_folder_file': ('./temp/','best.pth.tar')
     })
 
@@ -47,6 +47,7 @@ if __name__=="__main__":
     pg = PipelineGenerator()
     dataset_path = '/Users/yamuna/D3M/data/LL0/LL0_21_car/LL0_21_car_dataset'
     problem_path = '/Users/yamuna/D3M/data/LL0/LL0_21_car/LL0_21_car_problem'
+    dataset = '/Users/yamuna/D3M/data/LL0/LL0_21_car/'
     #dataset_path = '/Users/yamuna/D3M/data/LL0/LL0_22_mfeat_zernike/LL0_22_mfeat_zernike_dataset'
     #problem_path = '/Users/yamuna/D3M/data/LL0/LL0_22_mfeat_zernike/LL0_22_mfeat_zernike_problem'
     #dataset_path = '/Users/yamuna/D3M/data/LL0/LL0_1530_volcanoes_a4/LL0_1530_volcanoes_a4_dataset'

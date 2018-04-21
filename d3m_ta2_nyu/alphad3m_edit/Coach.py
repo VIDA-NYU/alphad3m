@@ -40,31 +40,33 @@ class Coach():
         episodeStep = 0
         
         while episodeStep <= 100:
+            self.game.display(self.board)
             episodeStep += 1
-            #print('COACH - EPISODE STEP ', episodeStep)
-            #self.game.display(self.board)
             canonicalBoard = self.game.getCanonicalForm(self.board,self.curPlayer)
             temp = int(episodeStep < self.args.get('tempThreshold'))
 
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
             sym = self.game.getTrainExamples(canonicalBoard, pi)
-            for b,p in sym:
-                trainExamples.append([b, self.curPlayer, p, None])
 
+            trainExamples.append(sym)
+
+            for i in range(self.game.m+self.game.p+self.game.o, len(canonicalBoard)):
+                canonicalBoard[i] = 0
+            valids = self.game.getValidMoves(canonicalBoard, 1)
+            pi = pi*valids
+            print(valids)
+            print(pi)
+            print(np.sum(pi))
+
+            if np.sum(pi) != 1:
+                pi /= np.sum(pi)
             action = np.random.choice(len(pi), p=pi)
-            #print('ACTION ', action)
-            #self.game.display(self.board)
+
             self.board, self.curPlayer = self.game.getNextState(self.board, self.curPlayer, action)
-            #self.game.display(self.board)
             r = self.game.getGameEnded(self.board, self.curPlayer)
-            #print('win_threshold ', sorted(list(self.game.evaluations.values()))[-1], ' evaluations ', self.game.evaluations)
-            #if r!=0:
-            #    print('findwin',self.curPlayer)
-            #print('IN EXECUTE EPISODE WHILE LOOP ', r)
-            #print(trainExamples)
             if r!=0:
-                return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
-        return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
+               break
+        return trainExamples
     
     def learn(self):
         """

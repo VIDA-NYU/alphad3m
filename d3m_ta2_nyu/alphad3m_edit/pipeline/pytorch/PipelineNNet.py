@@ -15,6 +15,7 @@ class PipelineNNet(nn.Module):
         # game params
         self.action_size = game.getActionSize()
         self.board_size = game.getBoardSize()
+        #self.op_size = game.getOperationsSize()
         self.args = args
 
         super(PipelineNNet, self).__init__()
@@ -27,7 +28,7 @@ class PipelineNNet(nn.Module):
     def forward(self, s):
         s = s.view(-1, 1, self.board_size)
         lstm_out, hidden = self.lstm(s)
-        s = lstm_out[-1]
+        s = lstm_out[:,-1]
         pi = self.probFC(s)                                                                         # batch_size x 512
         v = self.valueFC(s)                                                                          # batch_size x 512
-        return F.log_softmax(pi, 1) , F.tanh(v)
+        return F.log_softmax(pi, 1), F.sigmoid(v)

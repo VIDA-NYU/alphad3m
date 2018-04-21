@@ -60,17 +60,18 @@ class NNetWrapper(NeuralNet):
             while batch_idx < int(len(examples)/batch_size):
                 sample_ids = np.random.randint(len(examples), size=batch_size)
                 #print('SAMPLE IDS ', sample_ids, ' ', examples[0])
-                boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
+                boards, pis,vs = list(zip(*[examples[i] for i in sample_ids]))
                 #print('\n\nBOARDS\n', boards)
                 boards = torch.FloatTensor(np.array(boards).astype(np.float64))
                 target_pis = torch.FloatTensor(np.array(pis))
                 target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
 
-                # predict
+                #  predict
                 if args.get('cuda'):
                     boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
                 else:
-                    boards, target_pis, target_vs = Variable(boards), Variable(target_pis), Variable(target_vs)
+                    boards, target_pis, target_vs = Variable(boards), Variable(target_pis),  Variable(target_vs)
+
 
                 # measure data loading time
                 data_time.update(time.time() - end)

@@ -34,16 +34,20 @@ class Board():
             'sklearn.linear_model.least_angle.Lars': 13,
         },
     }
+    OPERATIONS = {0:'insert',
+                  1:'delete',
+                  2:'substitute'}
 
     def __init__(self, m=30, problem='CLASSIFICATION', win_threshold=0.6):
         "Set up initial board configuration."
         
         self.m = m #Number of metafeatures
         self.p = len(self.PRIMITIVES['PREPROCESSING'].values()) + 1 #Length of pipeline
-        
+        self.o = len(self.OPERATIONS)
         # Create the empty board array.
         self.pieces_m = [0] * self.m
         self.pieces_p = [0] * self.p
+        self.pieces_o = [0] * self.o
         self.win_threshold = win_threshold
         self.problem = problem
         self.num_preprocessors = len(self.PRIMITIVES['PREPROCESSING'].values())
@@ -54,6 +58,18 @@ class Board():
     # add [][] indexer syntax to the Board
     def __getitem__(self, index):
         return self.pieces_p[index]
+
+    def get_pipeline(self, board):
+        return board[self.m:self.m+self.p]
+
+    def get_previous_moves(self, board):
+        return board[self.m+self.p+self.o:]
+
+    def get_metafeatures(self, board):
+        return board[0:self.m]
+
+    def get_operation(self, board):
+        return board[self.m+self.p:self.m+self.p+self.o]
 
     def findWin(self, player, eval_val=None):
         """Find win of the given color in row, column, or diagonal
@@ -66,14 +82,24 @@ class Board():
 
         return eval_val >= self.win_threshold
 
-    def get_legal_moves(self, action, problem='CLASSIFICATION'):
+    def get_legal_moves(self, problem='CLASSIFICATION'):
         """Returns all the legal moves.
         """
 
-        valid_moves = [1]* (len(self.valid_moves))
+        valid_moves = [0]*len(self.valid_moves)
+        valid_moves = self._get_insert_moves(valid_moves)
+        if any(self.pieces_p):
+            valid_moves = self._get_substitue_moves(valid_moves)
+        if np.where(np.asarray(self.pieces_p)>0)[0].shape[0] > 1:
+            valid_moves = self._get_delete_moves(valid_moves)
+
         #print('VM ', valid_moves)
         #print('PM ', self.previous_moves)
-        valid_moves = np.bitwise_xor(self.previous_moves, valid_moves)
+
+        for i in range(0, len(self.previous_moves)):
+            if self.previous_moves[i] == 1:
+                valid_moves[i] = 0
+        #valid_moves = self.previous_moves, valid_moves
 
         #if np.sum(valid_moves) == 0:
         #    valid_moves = []
@@ -102,8 +128,71 @@ class Board():
             s = [0, 0] + s
         elif len(s) == 2:
             s = [0] + s
+        pipeline = np.asarray((self.pieces_p))[np.where(np.asarray(self.pieces_p) > 0)[0]].tolist()
+        if len(s) > len(pipeline):
+            self.pieces_o[0] = 1
+        elif len(s) < len(pipeline):
+                self.pieces_o[1] = 1
+        if len(s) == len(pipeline):
+            self.pieces_o[2] = 1
+
         self.pieces_p = s
         self.previous_moves[action] = 1
+
+    def _get_insert_moves(self, valid_moves):
+        if any(self.pieces_p):
+            pipeline_array = np.asarray((self.pieces_p))[np.where(np.asarray(self.pieces_p) > 0)[0]]
+            N = pipeline_array.shape[0]
+            pipeline_set = set(pipeline_array.tolist())
+        else:
+            pipeline_set = set()
+            N = 0
+
+        index = 0
+        for move in self.valid_moves:
+            if len(move) == (N+1):
+                if len(set(move).difference(pipeline_set)) == 1:
+                    valid_moves[index] = 1
+            index = index + 1
+
+        return valid_moves
+
+    def _get_delete_moves(self, valid_moves):
+        if any(self.pieces_p):
+            pipeline_array = np.asarray((self.pieces_p))[np.where(np.asarray(self.pieces_p) > 0)[0]]
+            N = pipeline_array.shape[0]
+            pipeline_set = set(pipeline_array.tolist())
+        else:
+            pipeline_set = set()
+            N = 0
+
+        index = 0
+        for move in self.valid_moves:
+            if len(move) == (N - 1):
+                if len(set(move).intersection(pipeline_set)) == N-1:
+                    valid_moves[index] = 1
+            index = index + 1
+
+        return valid_moves
+
+    def _get_substitue_moves(self, valid_moves):
+
+        if any(self.pieces_p):
+            pipeline_array = np.asarray((self.pieces_p))[np.where(np.asarray(self.pieces_p) > 0)[0]]
+            N = pipeline_array.shape[0]
+            pipeline_set = set(pipeline_array.tolist())
+        else:
+            pipeline_set = set()
+            N = 0
+
+        index = 0
+        for move in self.valid_moves:
+            if len(move) == N:
+                if len(set(move).intersection(pipeline_set)) == (N-1):
+                    valid_moves[index] = 1
+            index = index + 1
+
+        return valid_moves
 
     def _compute_valid_moves(self, pp, est):
         valid_moves = []

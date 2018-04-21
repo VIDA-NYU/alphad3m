@@ -135,8 +135,8 @@ class MCTS():
 
         next_s, next_player = self.game.getNextState(canonicalBoard, player, a)
 
-        print('NEXT STATE')
-        self.game.display(next_s)
+        #print('NEXT STATE')
+        #self.game.display(next_s)
 
         next_s = self.game.getCanonicalForm(next_s, next_player)
 
