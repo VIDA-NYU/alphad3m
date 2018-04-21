@@ -71,7 +71,7 @@ def evaluate_pipeline_from_strings(session_id,
         targets = make_module('data', '0.0', 'targets')
 
         # Assuming a simple linear pipeline
-        imputer_name, encoder_name, classifier_name = strings
+        #imputer_name, encoder_name, classifier_name = strings
 
         # This will use sklearn directly, and others through the TA1 interface
         def make_primitive(name):
@@ -80,14 +80,16 @@ def evaluate_pipeline_from_strings(session_id,
             else:
                 return make_module('primitives', '0.0', name)
 
-        imputer = make_primitive(imputer_name)
-        encoder = make_primitive(encoder_name)
-        classifier = make_primitive(classifier_name)
+        primitives = []
+        for s in strings:
+            primitives.append(make_primitive(s))
 
-        connect(data, imputer)
-        connect(imputer, encoder)
-        connect(encoder, classifier)
-        connect(targets, classifier, 'targets', 'targets')
+        connect(data, primitives[0])
+        for i in range(0, len(primitives) - 1):
+            # print('Loop Connecting ', primitives[i], " ", primitives[i+1])
+            connect(primitives[i], primitives[i + 1])
+        # print('Connecting targets ', primitives[-1])
+        connect(targets, primitives[-1], 'targets', 'targets')
 
         db.add(pipeline)
         db.commit()

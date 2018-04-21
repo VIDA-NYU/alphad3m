@@ -15,7 +15,6 @@ from pprint import pprint
 
 PROBLEM_TYPES = {'CLASSIFICATION': 1}
 DATA_TYPES = {'TABULAR': 1}
-ACTIONS = ['insert', 'delete']
 
 class PipelineGame(Game):
     def __init__(self, args=None):
@@ -27,52 +26,67 @@ class PipelineGame(Game):
         self.metric = self.problem_features['problem']['performance_metrics'][0]['metric'].unparse()
         self.dataset_metafeatures = list(compute_metafeatures(os.path.join(self.args['dataset_path'],'tables','learningData.csv')).values())
         #print(self.dataset_metafeatures)
-        self.p = len(Board.getPrimitives('PREPROCESSING').values()) + 1
+        self.p = 0
         self.m = len(self.dataset_metafeatures)+2
+        self.o = 0
         self.action_size = 0
+        self.ta2_session = nn_evaluation.ta2.new_session(
+            self.args['problem_path'])
                 
     def getInitBoard(self):
         # return initial board (numpy board)
         b = Board(self.m, self.problem)
+        self.p = b.p
+        self.o = b.o
         for i in range(0, len(self.dataset_metafeatures)):
             b.pieces_m[i] = self.dataset_metafeatures[i]
         b.pieces_m[i] = DATA_TYPES['TABULAR']
         i = i+1
         b.pieces_m[i] = PROBLEM_TYPES[self.problem]
         self.action_size = len(b.valid_moves)
-        return b.pieces_m + b.pieces_p + b.previous_moves
+        return b.pieces_m + b.pieces_p + b.pieces_o + b.previous_moves
 
     def getBoardSize(self):
         # (a,b) tuple
-        return self.m + self.p
+        return self.m + self.p + self.o
 
     def getActionSize(self):
         # return number of actions
+        pp = len(Board.PRIMITIVES['PREPROCESSING'])
+        est = len(Board.PRIMITIVES[self.problem])
+        action_size = 0
+        for i in range(1, pp + 1):
+            action_size = action_size + comb(pp, i)
+        action_size = action_size * est  # Account for the estimators
+        action_size = action_size + est  # When no primitives are used
 
-        return len(ACTIONS)
+        return int(action_size)
 
     def getNextState(self, board, player, action):
         # if player takes action on board, return next (board,player)
         # action must be a valid move
         b = Board(self.m, self.problem)
-        b.pieces_m = board[0:self.m]
-        b.previous_moves = board[self.m+self.p:]
+        b.pieces_m = b.get_metafeatures(board)
+        b.previous_moves = b.get_previous_moves(board)
         b.execute_move(action, player)
-        return (b.pieces_m+b.pieces_p+b.previous_moves, -player)
+        return (b.pieces_m+b.pieces_p+b.pieces_o+b.previous_moves, -player)
 
     def getValidMoves(self, board, player):
         # return a fixed size binary vector
         b = Board(self.m, self.problem)
-        b.pieces_m = board[0:self.m]
-        b.pieces_p = board[self.m:self.p]
-        b.previous_moves = board[self.m+self.p:]
+        b.pieces_m = b.get_metafeatures(board)
+        b.pieces_p = b.get_pipeline(board)
+        b.previous_moves = b.get_previous_moves(board)
         legalMoves =  b.get_legal_moves(self.problem)
+        print(b.pieces_p)
+        print([b.valid_moves[i] for i in range(0, len(legalMoves)) if legalMoves[i] == 1])
         return np.array(legalMoves)
 
     def getEvaluation(self, board):
         valid_p_names = list(Board.getPrimitives('PREPROCESSING').keys())+list(Board.getPrimitives(self.problem).keys())
         valid_p_enum = list(Board.getPrimitives('PREPROCESSING').values())+list(Board.getPrimitives(self.problem).values())
-        pipeline_enums = board[self.m: self.m+self.p]
+        b = Board(self.m, self.problem)
+        pipeline_enums = b.get_pipeline(board)
         #print('PIPELINE_ENUMS', pipeline_enums)
         pipeline = [valid_p_names[valid_p_enum.index(board[i])] for i in range(self.m, self.m+self.p) if not board[i] == 0]
         #ßprint('PIPELINE ', pipeline)
@@ -85,11 +99,10 @@ class PipelineGame(Game):
         if eval_val is None:
             #print('PIPELINE ', pipeline)
             try:
-                eval_val = nn_evaluation.evaluate_pipeline_from_strings(pipeline,
+                eval_val = nn_evaluation.evaluate_pipeline_from_strings(self.ta2_session,
+                                                                        pipeline,
                                                                         'ALPHAZERO',
-                                                                        self.args['dataset_path'],
-                                                                        self.args['problem_path'],
-                                                                        self.metric)
+                                                                        self.args['dataset_path'])
             except:
                 print('Error in Pipeline Execution ', eval_val)
 
@@ -114,9 +127,9 @@ class PipelineGame(Game):
                 b = Board(self.m, self.problem)
         else:
             b = Board(self.m, self.problem)
-        b.pieces_m = board[0:self.m]
-        b.pieces_p = board[self.m:self.m+self.p]
-        b.previous_moves = board[self.m+self.p:]
+        b.pieces_m = b.get_metafeatures(board)
+        b.pieces_p = b.get_pipeline(board)
+        b.previous_moves = b.get_previous_moves(board)
         eval_val = self.getEvaluation(board)
         if b.findWin(player, eval_val):
             print('EVALUATIONS ')
@@ -139,12 +152,12 @@ class PipelineGame(Game):
 
     def stringRepresentation(self, board):
         # 3x3 numpy array (canonical board)
-        return np.asarray(board[:self.m+self.p]).tostring()
+        return np.asarray(board[:self.m+self.p+self.o]).tostring()
 
     def getTrainExamples(self, board, pi):
         #print('LENGTH PI ', len(pi))
         assert(len(pi) == self.getActionSize())  # 1 for pass
-        return [(board[:self.m+self.p], pi)]
+        return [(board[:self.m+self.p+self.o], pi, self.getEvaluation(board) if self.getEvaluation(board)!= float('inf') else 0)]
  
     def display(self, b):
         n = self.p
