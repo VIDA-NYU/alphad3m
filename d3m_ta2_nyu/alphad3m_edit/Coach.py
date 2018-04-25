@@ -55,8 +55,10 @@ class Coach():
             valids = self.game.getValidMoves(canonicalBoard, 1, True)
             print(valids)
             print(pi)
-            #pi = pi*valids
-            #print(pi)
+            pi = pi*valids
+
+            if np.sum(pi) == 0:
+                break
 
             if np.sum(pi) != 1:
                 pi /= np.sum(pi)
