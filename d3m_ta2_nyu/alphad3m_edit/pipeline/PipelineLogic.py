@@ -59,6 +59,14 @@ class Board():
     def __getitem__(self, index):
         return self.pieces_p[index]
 
+    @classmethod
+    def get_pipeline_size(cls):
+        return len(cls.PRIMITIVES['PREPROCESSING'].values()) + 1
+
+    @classmethod
+    def get_edit_operations_size(cls):
+        return len(cls.OPERATIONS)
+
     def get_pipeline(self, board):
         return board[self.m:self.m+self.p]
 

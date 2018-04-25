@@ -8,8 +8,8 @@ import math
 import sys
 sys.path.append('../../')
 #from utils import *
-from pytorch_classification.utils import Bar, AverageMeter
-from NeuralNet import NeuralNet
+from ...pytorch_classification.utils import Bar, AverageMeter
+from ...NeuralNet import NeuralNet
 
 import argparse
 import torch
@@ -59,9 +59,7 @@ class NNetWrapper(NeuralNet):
 
             while batch_idx < int(len(examples)/batch_size):
                 sample_ids = np.random.randint(len(examples), size=batch_size)
-                #print('SAMPLE IDS ', sample_ids, ' ', examples[0])
-                boards, pis,vs = list(zip(*[examples[i] for i in sample_ids]))
-                #print('\n\nBOARDS\n', boards)
+                boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
                 boards = torch.FloatTensor(np.array(boards).astype(np.float64))
                 target_pis = torch.FloatTensor(np.array(pis))
                 target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))

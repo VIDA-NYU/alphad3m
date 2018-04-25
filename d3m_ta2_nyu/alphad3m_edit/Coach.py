@@ -1,8 +1,8 @@
 from collections import deque
-from Arena import Arena
-from MCTS import MCTS
+from .Arena import Arena
+from .MCTS import MCTS
 import numpy as np
-from pytorch_classification.utils import Bar, AverageMeter
+from .pytorch_classification.utils import Bar, AverageMeter
 import time
 
 class Coach():
@@ -52,11 +52,11 @@ class Coach():
 
             for i in range(self.game.m+self.game.p+self.game.o, len(canonicalBoard)):
                 canonicalBoard[i] = 0
-            valids = self.game.getValidMoves(canonicalBoard, 1)
-            pi = pi*valids
+            valids = self.game.getValidMoves(canonicalBoard, 1, True)
             print(valids)
             print(pi)
-            print(np.sum(pi))
+            #pi = pi*valids
+            #print(pi)
 
             if np.sum(pi) != 1:
                 pi /= np.sum(pi)
@@ -89,6 +89,8 @@ class Coach():
                 self.mcts = MCTS(self.game, self.nnet, self.args)   # reset search tree
                 trainExamples += self.executeEpisode()
 
+
+
                 # bookkeeping + plot progress
                 eps_time.update(time.time() - end)
                 end = time.time()
@@ -102,6 +104,8 @@ class Coach():
             pnet = self.nnet.__class__(self.game)
             pnet.load_checkpoint(folder=self.args.get('checkpoint'), filename='temp.pth.tar')
             pmcts = MCTS(self.game, pnet, self.args)
+            boards, pis, vs = list(zip(*trainExamples))
+            print([board[self.game.m:self.game.m+self.game.p] for board in boards])
             self.nnet.train(trainExamples)
             nmcts = MCTS(self.game, self.nnet, self.args)
 

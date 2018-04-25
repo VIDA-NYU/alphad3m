@@ -16,7 +16,8 @@ class MCTS():
         self.Ps = {}        # stores initial policy (returned by neural net)
 
         self.Es = {}        # stores game.getGameEnded ended for board s
-        self.Vs = {}        # stores game.getValidMoves for board s
+        self.Vals = {}
+        self.Vs = {}       # stores game.getValidMoves for board s
         self.count = 0
         self.prev_moves = []
 
@@ -29,11 +30,8 @@ class MCTS():
             probs: a policy vector where the probability of the ith action is
                    proportional to Nsa[(s,a)]**(1./temp)
         """
-        #print('START GET ACTION PROB')
         for i in range(self.args.get('numMCTSSims')):
-            #print('RESTART SEARCH SIM ', i)
             self.search(canonicalBoard, problem=problem)
-        #print('END GET ACTION PROB')            
 
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
@@ -42,14 +40,17 @@ class MCTS():
             bestA = np.argmax(counts)
             probs = [0]*len(counts)
             probs[bestA]=1
+            if np.sum(probs) == 0:
+                print('PROB ZEROz')
             return probs
 
         counts = [x**(1./temp) for x in counts]
         if np.sum(counts) == 0:
-            probs = [1/(len(counts)-1)]*len(counts)
-            probs[len(counts)-1] = 0.0
+            probs = [1/(len(counts))]*len(counts)
         else:
             probs = [x/float(sum(counts)) for x in counts]
+        if np.sum(probs) == 0:
+            print('PROB ZERO')
         return probs
 
 
@@ -83,30 +84,24 @@ class MCTS():
             # terminal node
             #Clear all previous moves
             self.prev_moves = []
-            return -self.Es[s]
+            return self.Vals[s] if not self.Vals.get(s) is None else 0
 
         if s not in self.Ps:
             # leaf node
-            #print('s not in self.Ps')
             self.Ps[s], v = self.nnet.predict(canonicalBoard)
             print('Value ', v)
-            #print('CB ', canonicalBoard)
             valids = self.game.getValidMoves(canonicalBoard, 1)
-            #if len(valids) != 0:
-            #print('VALIDS ', valids)
             self.Ps[s] = self.Ps[s]*valids      # masking invalid moves
             self.Ps[s] /= np.sum(self.Ps[s])    # renormalize
+            self.Vals[s] = v
             self.Vs[s] = valids
             self.Ns[s] = 0
-            return -v
-        #else:
-            #print('s in self.Ps')    
+            return v
 
         valids = self.Vs[s]
-        #print('VALIDS\n', valids)
 
         #Check if valid moves are available. Quit if no more legal moves are possible
-        #if valids[-1] == 1:
+        #if not any(valids):
         #    return -1
         
         cur_best = -float('inf')
@@ -120,24 +115,18 @@ class MCTS():
                 else:
                     u = self.args.get('cpuct')*self.Ps[s][a]*math.sqrt(self.Ns[s])     # Q = 0 ?
 
-                #print(u)
-
                 if u > cur_best:
                     cur_best = u
                     best_act = a
 
         a = best_act
-        #print('BEST_ACT\n', a, ' ', self.prev_moves)
         if a in self.prev_moves:
-            return -1
+            return 0
+
         #Append action to previous moves
         self.prev_moves.append(a)
 
         next_s, next_player = self.game.getNextState(canonicalBoard, player, a)
-
-        #print('NEXT STATE')
-        #self.game.display(next_s)
-
         next_s = self.game.getCanonicalForm(next_s, next_player)
 
         #print('NEXT STATE SEARCH RECURSION')
@@ -152,4 +141,4 @@ class MCTS():
             self.Nsa[(s,a)] = 1
 
         self.Ns[s] += 1
-        return -v
+        return v
