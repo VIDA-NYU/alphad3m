@@ -66,7 +66,7 @@ class NNetWrapper(NeuralNet):
 
                 #  predict
                 if args.get('cuda'):
-                    boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
+                    boards, target_pis, target_vs = Variable(boards.contiguous().cuda(),requires_grad=True), Variable(target_pis.contiguous().cuda(), requires_grad=True), Variable(target_vs.contiguous().cuda(),requires_grad=True)
                 else:
                     boards, target_pis, target_vs = Variable(boards), Variable(target_pis),  Variable(target_vs)
 
@@ -119,7 +119,7 @@ class NNetWrapper(NeuralNet):
         #print('BOARD\n', board)
 
         # preparing input
-        board = torch.from_numpy(np.array(board[0:self.board_size], dtype='f')).cuda().double() if args.get('cuda') else torch.from_numpy(np.array(board[0:self.board_size], dtype='f'))
+        board = torch.from_numpy(np.array(board[0:self.board_size], dtype='f')).cuda().float() if args.get('cuda') else torch.from_numpy(np.array(board[0:self.board_size], dtype='f'))
         #board = torch.FloatTensor(board[0:self.board_x])
         if args.get('cuda'): board = board.contiguous().cuda()
         board = Variable(board, volatile=True)
