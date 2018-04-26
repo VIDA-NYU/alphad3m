@@ -1,7 +1,8 @@
-FROM registry.datadrivendiscovery.org/jpl/docker_images/complete:ubuntu-xenial-python36-v2018.1.26-20180418-192927
-# BUILT FROM https://gitlab.com/datadrivendiscovery/images/blob/5d36fec8f6de999d569e65cf7dbfbba79fcf2fba/core/ubuntu-xenial-python36-v2018.1.26.dockerfile
-# BUILT FROM https://gitlab.com/datadrivendiscovery/images/blob/1615a60aa1875ccf06a5cf90cffa4e59d5a7be45/base/ubuntu-xenial-python36.dockerfile
-# BUILT FROM ubuntu:xenial
+FROM registry.datadrivendiscovery.org/jpl/docker_images/complete:ubuntu-artful-python36-v2018.4.18-20180426-071405
+# BUILT FROM https://gitlab.datadrivendiscovery.org/jpl/docker_images/blob/cf415625ff688ae5b76a9b305a384db1b1c20815/complete/ubuntu-artful-python36-v2018.4.18.dockerfile
+# BUILT FROM https://gitlab.com/datadrivendiscovery/images/blob/136a1cb7c21375349a0f149b702a6fb9dfe681bd/core/ubuntu-artful-python36-v2018.4.18.dockerfile
+# BUILT FROM https://gitlab.com/datadrivendiscovery/images/blob/136a1cb7c21375349a0f149b702a6fb9dfe681bd/base/ubuntu-artful-python36.dockerfile
+# BUILT FROM ubuntu:artful
 
 MAINTAINER "remirampin@gmail.com"
 
