@@ -16,10 +16,6 @@ RUN pip3 install -r requirements.txt
 COPY d3m_ta2_nyu /usr/src/app/d3m_ta2_nyu
 COPY setup.py README.rst /usr/src/app/
 RUN pip3 install --no-deps -e /usr/src/app
-RUN printf "#!/bin/sh\n\n/usr/src/app/venv/bin/ta2_search \"\$@\"\n" >/usr/local/bin/ta2_search && \
-    chmod +x /usr/local/bin/ta2_search && \
-    printf "#!/bin/sh\n\n/usr/src/app/venv/bin/ta2_serve \"\$@\"\n" >/usr/local/bin/ta2_serve && \
-    chmod +x /usr/local/bin/ta2_serve
 
 CMD "ta2_serve"
 
