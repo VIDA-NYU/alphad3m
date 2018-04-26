@@ -25,7 +25,17 @@ class Board():
             'sklearn.naive_bayes.MultinomialNB':6,
             'sklearn.ensemble.forest.RandomForestClassifier':7,
             'sklearn.linear_model.logistic.LogisticRegression':8,
-        },
+            'sklearn.neural_network.MLPClassifier':9,
+            'sklearn.svm.SVC':10,
+            'sklearn.gaussian_process.GaussianProcessClassifier':11,
+            'sklearn.gaussian_process.kernels.RBF':12,
+            'sklearn.tree.DecisionTreeClassifier':13,
+            'sklearn.ensemble.AdaBoostClassifier':14,
+            'sklearn.naive_bayes.GaussianNB':15,
+            'sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis':16,
+            'sklearn.linear_model.SGDClassifier':17
+
+    },
         'REGRESSION': {
             'sklearn.linear_model.base.LinearRegression': 9,
             'sklearn.linear_model.bayes.BayesianRidge':10,
