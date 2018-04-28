@@ -1,4 +1,5 @@
 import os
+import operator
 
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
@@ -21,7 +22,7 @@ ARGS = {
     'cpuct': 1,
 
     'checkpoint': './temp/',
-    'load_model': False,
+    'load_model': True,
     'load_folder_file': ('./temp/', 'best.pth.tar')
 }
 
@@ -112,41 +113,68 @@ def main():
     from d3m_ta2_nyu.main import setup_logging
     from d3m_ta2_nyu.ta2 import D3mTa2
 
+    p_enum = {
+                 'dsbox.datapreprocessing.cleaner.Encoder': 1,
+                 'dsbox.datapreprocessing.cleaner.KNNImputation': 2,
+                 'sklearn.linear_model.SGDClassifier':17,
+            	 'sklearn.linear_model.SGDRegressor': 35     
+             }
+    pipelines_list = []
+    pipelines = {}
+    with open('pipelines.txt') as f:
+        pipelines_list = [line.strip() for line in f.readlines()]
+        for pipeline in pipelines_list:
+            fields = pipeline.split(' ')
+            pipelines[fields[0]] = fields[1].split(',')
+    datasets_path = '/home/ubuntu/datasets/training_datasets'
+    dataset_names = pipelines.keys()
+    out_p = open('best_pipelines.txt', 'w')
+    for dataset in dataset_names:
+        print(dataset)
+        out_str = dataset + ', , \n'
+        if 'LL0' in dataset:
+           dataset_path = os.path.join(datasets_path, 'LL0', dataset)
+        else:
+           dataset_path = os.path.join(datasets_path, 'LL1', dataset)
 
-    dataset = '/Users/yamuna/D3M/data/LL0/LL0_21_car/LL0_21_car_dataset'
-    problem = '/Users/yamuna/D3M/data/LL0/LL0_21_car/LL0_21_car_problem'
+        dataset_name = os.path.join(dataset_path, dataset+'_dataset')
+        problem_name = os.path.join(dataset_path, dataset+'_problem')
 
-    storage = tempfile.mkdtemp(prefix='d3m_pipeline_eval_')
-    ta2 = D3mTa2(storage_root=storage,
+        storage = tempfile.mkdtemp(prefix='d3m_pipeline_eval_')
+        ta2 = D3mTa2(storage_root=storage,
                  logs_root=os.path.join(storage, 'logs'),
                  executables_root=os.path.join(storage, 'executables'))
-    setup_logging()
-    session_id = ta2.new_session(problem)
+        setup_logging()
+        session_id = ta2.new_session(problem_name)
 
-    def eval_pipeline(strings, origin):
-        # Create the pipeline in the database
-        pipeline_id = make_pipeline_from_strings(strings, origin, dataset,
+        def eval_pipeline(strings, origin):
+            # Create the pipeline in the database
+            pipeline_id = make_pipeline_from_strings(strings, origin, dataset_name,
                                                  ta2.DBSession)
 
-        # Evaluate the pipeline
-        return ta2.run_pipeline(session_id, pipeline_id)
+            # Evaluate the pipeline
+            return ta2.run_pipeline(session_id, pipeline_id)
+        pipeline = [p_enum[primitive] for primitive in pipelines[dataset]]
+        print(pipeline)
+        args = dict(ARGS)
+        args['dataset_path'] = dataset_name
+        args['problem_path'] = problem_name
+        args['metric'] = problem_name
+        game = PipelineGame(args, pipeline, eval_pipeline)
+        nnet = NNetWrapper(game)
 
-    args = dict(ARGS)
-    args['dataset_path'] = dataset
-    args['problem_path'] = problem
-    args['metric'] = problem
-    game = PipelineGame(args, eval_pipeline)
-    nnet = NNetWrapper(game)
-
-    if args.get('load_model'):
-        model_file = os.path.join(args.get('load_folder_file')[0],
+        if args.get('load_model'):
+           model_file = os.path.join(args.get('load_folder_file')[0],
                                   args.get('load_folder_file')[1])
-        if os.path.isfile(model_file):
-            nnet.load_checkpoint(args.get('load_folder_file')[0],
+           if os.path.isfile(model_file):
+                nnet.load_checkpoint(args.get('load_folder_file')[0],
                                  args.get('load_folder_file')[1])
 
-    c = Coach(game, nnet, args)
-    c.learn()
+        c = Coach(game, nnet, args)
+        c.learn()
+        evaluations = sorted(game.evaluations.items(), key=operator.itemgetter(1)).values()
+        out_p.write(dataset+' '+evaluations[0] + ' ' + evaluations[1])
+        break
 
 if __name__ == '__main__':
     main()

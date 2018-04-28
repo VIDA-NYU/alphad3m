@@ -16,8 +16,9 @@ PROBLEM_TYPES = {'CLASSIFICATION': 1}
 DATA_TYPES = {'TABULAR': 1}
 
 class PipelineGame(Game):
-    def __init__(self, args, eval_pipeline):
+    def __init__(self, args, pipeline, eval_pipeline):
         self.eval_pipeline = eval_pipeline
+        self.pipeline = pipeline
         self.args = args
         self.evaluations = {}
         self.curr_evaluations = {}
@@ -34,7 +35,7 @@ class PipelineGame(Game):
                 
     def getInitBoard(self):
         # return initial board (numpy board)
-        b = Board(self.m, self.problem)
+        b = Board(self.m, self.pipeline, self.problem)
         self.p = b.p
         self.o = b.o
         for i in range(0, len(self.dataset_metafeatures)):
