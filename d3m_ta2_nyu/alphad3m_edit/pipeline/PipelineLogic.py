@@ -37,11 +37,25 @@ class Board():
 
     },
         'REGRESSION': {
-            'sklearn.linear_model.base.LinearRegression': 9,
-            'sklearn.linear_model.bayes.BayesianRidge':10,
-            'sklearn.linear_model.coordinate_descent.LassoCV':11,
-            'sklearn.linear_model.ridge.Ridge': 12,
-            'sklearn.linear_model.least_angle.Lars': 13,
+            'sklearn.linear_model.ARDRegression': 18,
+            'sklearn.learn_model.BayesianRidge': 19,
+            'sklearn.learn_model.ElasticNet': 20,
+            'sklearn.learn_model.ElasticNetCV': 21,
+            'sklearn.learn_model.HuberRegressor': 22,
+            'sklearn.learn_model.Lars': 23,
+            'sklearn.learn_model.LarsCV': 24,
+            'sklearn.learn_model.Lasso': 25,
+            'sklearn.learn_model.LassoCV': 26,
+            'sklearn.learn_model.LassoLars': 27,
+            'sklearn.learn_model.LassoLarsCV': 28,
+            'sklearn.learn_model.LassoLarsIC': 29,
+            'sklearn.learn_model.LinearRegression': 30,
+            'sklearn.learn_model.PassiveAggressiveRegressor': 31,
+            'sklearn.learn_model.RANSACRegressor': 32,
+            'sklearn.learn_model.Ridge': 33,
+            'sklearn.learn_model.RidgeCV': 34,
+            'sklearn.learn_model.SGDRegressor': 35,
+            'sklearn.learn_model.TheilSenRegressor': 36
         },
     }
     OPERATIONS = {0:'insert',
@@ -57,6 +71,7 @@ class Board():
         # Create the empty board array.
         self.pieces_m = [0] * self.m
         self.pieces_p = [0] * self.p
+        self.pieces_p = [1,2,17]
         self.pieces_o = [0] * self.o
         self.win_threshold = win_threshold
         self.problem = problem
