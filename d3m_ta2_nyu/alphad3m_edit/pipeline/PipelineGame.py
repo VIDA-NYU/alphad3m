@@ -65,7 +65,7 @@ class PipelineGame(Game):
     def getNextState(self, board, player, action):
         # if player takes action on board, return next (board,player)
         # action must be a valid move
-        b = Board(self.m, self.problem)
+        b = Board(self.m, self.pipeline, self.problem)
         b.pieces_m = b.get_metafeatures(board)
         b.previous_moves = b.get_previous_moves(board)
         b.execute_move(action, player)
@@ -73,7 +73,7 @@ class PipelineGame(Game):
 
     def getValidMoves(self, board, player, ignore_prev_moves=False):
         # return a fixed size binary vector
-        b = Board(self.m, self.problem)
+        b = Board(self.m, self.pipeline, self.problem)
         b.pieces_m = b.get_metafeatures(board)
         b.pieces_p = b.get_pipeline(board)
         if not ignore_prev_moves:
@@ -86,7 +86,7 @@ class PipelineGame(Game):
     def getEvaluation(self, board):
         valid_p_names = list(Board.getPrimitives('PREPROCESSING').keys())+list(Board.getPrimitives(self.problem).keys())
         valid_p_enum = list(Board.getPrimitives('PREPROCESSING').values())+list(Board.getPrimitives(self.problem).values())
-        b = Board(self.m, self.problem)
+        b = Board(self.m, self.pipeline, self.problem)
         pipeline_enums = b.get_pipeline(board)
         pipeline = [valid_p_names[valid_p_enum.index(board[i])] for i in range(self.m, self.m+self.p) if not board[i] == 0]
         if not any(pipeline):
@@ -112,11 +112,11 @@ class PipelineGame(Game):
             sorted_evals = sorted([eval for eval in list(self.evaluations.values()) if eval != float('inf')])
             if len(sorted_evals) > 0:
                 win_threshold = sorted_evals[-1]
-                b = Board(self.m, self.problem, win_threshold)
+                b = Board(self.m, self.pipeline, self.problem, win_threshold)
             else:
-                b = Board(self.m, self.problem)
+                b = Board(self.m, self.pipeline, self.problem)
         else:
-            b = Board(self.m, self.problem)
+            b = Board(self.m, self.pipeline, self.problem)
         b.pieces_m = b.get_metafeatures(board)
         b.pieces_p = b.get_pipeline(board)
         b.previous_moves = b.get_previous_moves(board)

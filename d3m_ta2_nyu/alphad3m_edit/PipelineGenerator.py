@@ -22,7 +22,7 @@ ARGS = {
     'cpuct': 1,
 
     'checkpoint': './temp/',
-    'load_model': True,
+    'load_model': False,
     'load_folder_file': ('./temp/', 'best.pth.tar')
 }
 
@@ -126,10 +126,11 @@ def main():
         for pipeline in pipelines_list:
             fields = pipeline.split(' ')
             pipelines[fields[0]] = fields[1].split(',')
-    datasets_path = '/home/ubuntu/datasets/training_datasets'
+    datasets_path = '/Users/yamuna/D3M/data'
     dataset_names = pipelines.keys()
     out_p = open('best_pipelines.txt', 'w')
     for dataset in dataset_names:
+        dataset = 'LL0_21_car'
         print(dataset)
         out_str = dataset + ', , \n'
         if 'LL0' in dataset:

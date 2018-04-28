@@ -38,31 +38,31 @@ class Board():
     },
         'REGRESSION': {
             'sklearn.linear_model.ARDRegression': 18,
-            'sklearn.learn_model.BayesianRidge': 19,
-            'sklearn.learn_model.ElasticNet': 20,
-            'sklearn.learn_model.ElasticNetCV': 21,
-            'sklearn.learn_model.HuberRegressor': 22,
-            'sklearn.learn_model.Lars': 23,
-            'sklearn.learn_model.LarsCV': 24,
-            'sklearn.learn_model.Lasso': 25,
-            'sklearn.learn_model.LassoCV': 26,
-            'sklearn.learn_model.LassoLars': 27,
-            'sklearn.learn_model.LassoLarsCV': 28,
-            'sklearn.learn_model.LassoLarsIC': 29,
-            'sklearn.learn_model.LinearRegression': 30,
-            'sklearn.learn_model.PassiveAggressiveRegressor': 31,
-            'sklearn.learn_model.RANSACRegressor': 32,
-            'sklearn.learn_model.Ridge': 33,
-            'sklearn.learn_model.RidgeCV': 34,
-            'sklearn.learn_model.SGDRegressor': 35,
-            'sklearn.learn_model.TheilSenRegressor': 36
+            'sklearn.linear_model.BayesianRidge': 19,
+            'sklearn.linear_model.ElasticNet': 20,
+            'sklearn.linear_model.ElasticNetCV': 21,
+            'sklearn.linear_model.HuberRegressor': 22,
+            'sklearn.linear_model.Lars': 23,
+            'sklearn.linear_model.LarsCV': 24,
+            'sklearn.linear_model.Lasso': 25,
+            'sklearn.linear_model.LassoCV': 26,
+            'sklearn.linear_model.LassoLars': 27,
+            'sklearn.linear_model.LassoLarsCV': 28,
+            'sklearn.linear_model.LassoLarsIC': 29,
+            'sklearn.linear_model.LinearRegression': 30,
+            'sklearn.linear_model.PassiveAggressiveRegressor': 31,
+            'sklearn.linear_model.RANSACRegressor': 32,
+            'sklearn.linear_model.Ridge': 33,
+            'sklearn.linear_model.RidgeCV': 34,
+            'sklearn.linear_model.SGDRegressor': 35,
+            'sklearn.linear_model.TheilSenRegressor': 36
         },
     }
     OPERATIONS = {0:'insert',
                   1:'delete',
                   2:'substitute'}
 
-    def __init__(self, m=30, problem='CLASSIFICATION', win_threshold=0.6):
+    def __init__(self, m=30, pipeline=[1,2,17], problem='CLASSIFICATION', win_threshold=0.6):
         "Set up initial board configuration."
         
         self.m = m #Number of metafeatures
@@ -71,7 +71,7 @@ class Board():
         # Create the empty board array.
         self.pieces_m = [0] * self.m
         self.pieces_p = [0] * self.p
-        self.pieces_p = [1,2,17]
+        self.pieces_p = pipeline
         self.pieces_o = [0] * self.o
         self.win_threshold = win_threshold
         self.problem = problem
