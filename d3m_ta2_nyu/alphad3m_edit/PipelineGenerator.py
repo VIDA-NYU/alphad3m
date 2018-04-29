@@ -22,7 +22,7 @@ ARGS = {
     'cpuct': 1,
 
     'checkpoint': './temp/',
-    'load_model': False,
+    'load_model': True,
     'load_folder_file': ('./temp/', 'best.pth.tar')
 }
 
@@ -126,11 +126,10 @@ def main():
         for pipeline in pipelines_list:
             fields = pipeline.split(' ')
             pipelines[fields[0]] = fields[1].split(',')
-    datasets_path = '/Users/yamuna/D3M/data'
+    datasets_path = '/home/ubuntu/datasets/training_datasets'
     dataset_names = pipelines.keys()
     out_p = open('best_pipelines.txt', 'w')
     for dataset in dataset_names:
-        dataset = 'LL0_21_car'
         print(dataset)
         out_str = dataset + ', , \n'
         if 'LL0' in dataset:
@@ -173,9 +172,13 @@ def main():
 
         c = Coach(game, nnet, args)
         c.learn()
-        evaluations = sorted(game.evaluations.items(), key=operator.itemgetter(1)).values()
-        out_p.write(dataset+' '+evaluations[0] + ' ' + evaluations[1])
-        break
+        eval_dict = game.evaluations
+        for key, value in eval_dict.items():
+            if value == float('inf'):
+               eval_dict[key] = 0
+        evaluations = sorted(eval_dict.items(), key=operator.itemgetter(1))
+        evaluations.reverse()
+        out_p.write(dataset+' '+evaluations[0][0] + ' ' + str(evaluations[0][1]))
 
 if __name__ == '__main__':
     main()
