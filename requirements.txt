@@ -13,6 +13,7 @@ cycler==0.10.0
 Cython==0.27.3
 -e git+https://gitlab.com/datadrivendiscovery/d3m.git@9e4cd16dcac2d06894e201ba7384b82a42bf81eb#egg=d3m
 -e git+https://gitlab.com/datadrivendiscovery/metadata.git@de9d3dea0fffb1040c423bb1f84b15d15c1476e8#egg=d3m_metadata
+d3metafeatureextraction
 dateparser==0.6.0
 decorator==4.2.1
 dill==0.2.7.1
@@ -48,7 +49,6 @@ langdetect==1.0.7
 Markdown==2.6.11
 MarkupSafe==1.0
 matplotlib==2.1.2
--e git+https://github.com/byu-dml/metalearn.git@e7f3ee28437141ef86bcabf93366c7b41e0cec6d#egg=metalearn
 multiprocess==0.70.5
 networkx==2.0
 numpy==1.13.3
