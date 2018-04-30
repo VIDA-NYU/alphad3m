@@ -33,7 +33,7 @@ class PipelineGame(Game):
             metafeatures = pickle.load(m_f)
             self.dataset_metafeatures = metafeatures[args['dataset']]
         if len(self.dataset_metafeatures) == 0:
-            self.dataset_metafeatures = compute_metafeatures(os.path.join(self.args['dataset_path'],'tables','learningData.csv'))
+            self.dataset_metafeatures = compute_metafeatures(os.path.join(self.args['dataset_path'], 'datasetDoc.json'), os.path.join(self.args['dataset_path'],'tables','learningData.csv'))
         #print(self.dataset_metafeatures)
         self.p = Board.get_pipeline_size()
         self.m = len(self.dataset_metafeatures)+2
