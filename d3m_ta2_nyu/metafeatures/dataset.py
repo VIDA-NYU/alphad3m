@@ -12,5 +12,4 @@ def compute_metafeatures(dataset_path):
     df = df.rename(columns={"class": "target"})
     df.drop("d3mIndex", axis=1, inplace=True)
     metafeatures = D3MetafeatureExtraction(hyperparams=None).produce(inputs=df).value
-    print(metafeatures.values[0])
     return metafeatures.values[0]

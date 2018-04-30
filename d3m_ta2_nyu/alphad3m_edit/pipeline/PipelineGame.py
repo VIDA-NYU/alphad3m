@@ -28,7 +28,7 @@ class PipelineGame(Game):
         self.problem = self.problem_features['problem']['task_type'].unparse().upper()
         self.metric = self.problem_features['problem']['performance_metrics'][0]['metric'].unparse()
         self.dataset_metafeatures = {}
-        if os.path.isfile(args['metafeatures_file']):
+        if not args.get('metafeatures_file') is None and os.path.isfile(args['metafeatures_file']):
             m_f = open(args['metafeatures_file'], 'rb')
             metafeatures = pickle.load(m_f)
             self.dataset_metafeatures = metafeatures[args['dataset']]
