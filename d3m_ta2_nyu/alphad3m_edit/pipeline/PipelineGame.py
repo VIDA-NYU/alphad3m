@@ -1,6 +1,7 @@
 from __future__ import print_function
 import sys
 import os
+import pickle
 from copy import deepcopy
 sys.path.append('..')
 from ..Game import Game
@@ -12,7 +13,8 @@ from d3m_metadata.problem import parse_problem_description
 from d3m_ta2_nyu.metafeatures.dataset import compute_metafeatures
 from pprint import pprint
 
-PROBLEM_TYPES = {'CLASSIFICATION': 1}
+PROBLEM_TYPES = {'CLASSIFICATION': 1,
+                 'REGRESSION': 2}
 DATA_TYPES = {'TABULAR': 1}
 
 class PipelineGame(Game):
@@ -25,7 +27,13 @@ class PipelineGame(Game):
         self.problem_features = parse_problem_description(self.args['problem_path']+'/problemDoc.json')
         self.problem = self.problem_features['problem']['task_type'].unparse().upper()
         self.metric = self.problem_features['problem']['performance_metrics'][0]['metric'].unparse()
-        self.dataset_metafeatures = list(compute_metafeatures(os.path.join(self.args['dataset_path'],'tables','learningData.csv')).values())
+        self.dataset_metafeatures = {}
+        if os.path.isfile(args['metafeatures_file']):
+            m_f = open(args['metafeatures_file'], 'rb')
+            metafeatures = pickle.load(m_f)
+            self.dataset_metafeatures = metafeatures[args['dataset']]
+        if len(self.dataset_metafeatures) == 0:
+            self.dataset_metafeatures = list(compute_metafeatures(os.path.join(self.args['dataset_path'],'tables','learningData.csv')).values())
         #print(self.dataset_metafeatures)
         self.p = Board.get_pipeline_size()
         self.m = len(self.dataset_metafeatures)+2
@@ -35,7 +43,7 @@ class PipelineGame(Game):
                 
     def getInitBoard(self):
         # return initial board (numpy board)
-        b = Board(self.m, self.pipeline, self.problem)
+        b = Board(self.m, self.pipeline, self.problem, self.metric)
         self.p = b.p
         self.o = b.o
         for i in range(0, len(self.dataset_metafeatures)):
@@ -65,7 +73,7 @@ class PipelineGame(Game):
     def getNextState(self, board, player, action):
         # if player takes action on board, return next (board,player)
         # action must be a valid move
-        b = Board(self.m, self.pipeline, self.problem)
+        b = Board(self.m, self.pipeline, self.problem, self.metric)
         b.pieces_m = b.get_metafeatures(board)
         b.previous_moves = b.get_previous_moves(board)
         b.execute_move(action, player)
@@ -73,7 +81,7 @@ class PipelineGame(Game):
 
     def getValidMoves(self, board, player, ignore_prev_moves=False):
         # return a fixed size binary vector
-        b = Board(self.m, self.pipeline, self.problem)
+        b = Board(self.m, self.pipeline, self.problem, self.metric)
         b.pieces_m = b.get_metafeatures(board)
         b.pieces_p = b.get_pipeline(board)
         if not ignore_prev_moves:
@@ -86,7 +94,7 @@ class PipelineGame(Game):
     def getEvaluation(self, board):
         valid_p_names = list(Board.getPrimitives('PREPROCESSING').keys())+list(Board.getPrimitives(self.problem).keys())
         valid_p_enum = list(Board.getPrimitives('PREPROCESSING').values())+list(Board.getPrimitives(self.problem).values())
-        b = Board(self.m, self.pipeline, self.problem)
+        b = Board(self.m, self.pipeline, self.problem, self.metric)
         pipeline_enums = b.get_pipeline(board)
         pipeline = [valid_p_names[valid_p_enum.index(board[i])] for i in range(self.m, self.m+self.p) if not board[i] == 0]
         if not any(pipeline):
@@ -102,6 +110,8 @@ class PipelineGame(Game):
             if eval_val is None:
                 eval_val = float('inf')
             self.evaluations[",".join(pipeline)] = eval_val
+        #if 'error' in self.metric.lower():
+        #    eval_val = -1 * eval_val        
         return eval_val
     
     def getGameEnded(self, board, player, eval_val=None):
@@ -111,12 +121,15 @@ class PipelineGame(Game):
         if len(self.evaluations) > 0:
             sorted_evals = sorted([eval for eval in list(self.evaluations.values()) if eval != float('inf')])
             if len(sorted_evals) > 0:
-                win_threshold = sorted_evals[-1]
-                b = Board(self.m, self.pipeline, self.problem, win_threshold)
+                if 'error' in self.metric.lower():
+                   win_threshold = sorted_evals[0]
+                else:
+                   win_threshold = sorted_evals[-1]
+                b = Board(self.m, self.pipeline, self.problem, self.metric, win_threshold)
             else:
-                b = Board(self.m, self.pipeline, self.problem)
+                b = Board(self.m, self.pipeline, self.problem, self.metric)
         else:
-            b = Board(self.m, self.pipeline, self.problem)
+            b = Board(self.m, self.pipeline, self.problem, self.metric)
         b.pieces_m = b.get_metafeatures(board)
         b.pieces_p = b.get_pipeline(board)
         b.previous_moves = b.get_previous_moves(board)
@@ -145,10 +158,13 @@ class PipelineGame(Game):
         return np.asarray(board[:self.m+self.p+self.o]).tostring()
 
     def getTrainExamples(self, board, pi):
-        #print('LENGTH PI ', len(pi))
         assert(len(pi) == self.getActionSize())  # 1 for pass
-        return (board[:self.m+self.p+self.o], pi, self.getEvaluation(board) if self.getEvaluation(board)!= float('inf') else 0)
- 
+        eval_val = self.getEvaluation(board)
+        if 'error' in self.metric.lower():
+            return (board[:self.m+self.p+self.o], pi, self.getEvaluation(board) if self.getEvaluation(board)!= float('inf') else 100000)
+        else:
+            return (board[:self.m+self.p+self.o], pi, self.getEvaluation(board) if self.getEvaluation(board)!= float('inf') else 0)
+
     def display(self, b):
         n = self.p
         #print(b)
