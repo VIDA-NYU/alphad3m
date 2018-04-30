@@ -12,8 +12,7 @@ from d3m_metadata.problem import parse_problem_description
 from d3m_ta2_nyu.metafeatures.dataset import compute_metafeatures
 from pprint import pprint
 
-PROBLEM_TYPES = {'CLASSIFICATION': 1,
-                 'REGRESSION': 2}
+PROBLEM_TYPES = {'CLASSIFICATION': 1}
 DATA_TYPES = {'TABULAR': 1}
 
 class PipelineGame(Game):
