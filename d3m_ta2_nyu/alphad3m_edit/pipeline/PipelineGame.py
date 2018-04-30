@@ -12,7 +12,8 @@ from d3m_metadata.problem import parse_problem_description
 from d3m_ta2_nyu.metafeatures.dataset import compute_metafeatures
 from pprint import pprint
 
-PROBLEM_TYPES = {'CLASSIFICATION': 1}
+PROBLEM_TYPES = {'CLASSIFICATION': 1,
+                 'REGRESSION': 2}
 DATA_TYPES = {'TABULAR': 1}
 
 class PipelineGame(Game):
@@ -25,7 +26,7 @@ class PipelineGame(Game):
         self.problem_features = parse_problem_description(self.args['problem_path']+'/problemDoc.json')
         self.problem = self.problem_features['problem']['task_type'].unparse().upper()
         self.metric = self.problem_features['problem']['performance_metrics'][0]['metric'].unparse()
-        self.dataset_metafeatures = list(compute_metafeatures(os.path.join(self.args['dataset_path'],'tables','learningData.csv')).values())
+        self.dataset_metafeatures = compute_metafeatures(os.path.join(self.args['dataset_path'],'tables','learningData.csv'))
         #print(self.dataset_metafeatures)
         self.p = Board.get_pipeline_size()
         self.m = len(self.dataset_metafeatures)+2
