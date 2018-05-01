@@ -285,9 +285,9 @@ class TrainJob(Job):
     def poll(self):
         if self.proc.poll() is None:
             return False
-        logger.info("Pipeline training process done, returned %d "
-                    "(pipeline: %s)",
-                    self.proc.returncode, self.pipeline_id)
+        log = logger.info if self.proc.returncode == 0 else logger.error
+        log("Pipeline training process done, returned %d (pipeline: %s)",
+            self.proc.returncode, self.pipeline_id)
         if self.proc.returncode == 0:
             self.session.notify('training_success',
                                 pipeline_id=self.pipeline_id,
@@ -334,9 +334,9 @@ class TuneHyperparamsJob(Job):
     def poll(self):
         if self.proc.poll() is None:
             return False
-        logger.info("Pipeline tuning process done, returned %d "
-                    "(pipeline: %s)",
-                    self.proc.returncode, self.pipeline_id)
+        log = logger.info if self.proc.returncode == 0 else logger.error
+        log("Pipeline tuning process done, returned %d (pipeline: %s)",
+            self.proc.returncode, self.pipeline_id)
         if self.proc.returncode == 0:
             logger.info("New pipeline: %s)", self.tuned_pipeline_id)
             self.session.notify('tuning_success',
