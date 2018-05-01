@@ -788,27 +788,15 @@ class D3mTa2(object):
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
 
-    def _classification_template(self, imputer_cat, imputer_num, encoder,
-                                 classifier, dataset):
+    def _classification_template(self, imputer, classifier, dataset):
         db = self.DBSession()
 
         pipeline = database.Pipeline(
-            origin="classification_template(imputer_cat=%s, imputer_num=%s, "
-                   "encoder=%s, classifier=%s)" % (
-                       imputer_cat, imputer_num, encoder, classifier),
+            origin="classification_template(imputer=%s, classifier=%s)" % (
+                       imputer, classifier),
             dataset=dataset)
 
-        ds = D3MDataset(dataset)
-        columns = ds.get_learning_data_columns()
-        # colType one of: integer, real, string, boolean, categorical, dateTime
-        categorical = [c['colName']
-                       for c in columns
-                       if ('attribute' in c['role'] and
-                           c['colType'] not in ['integer', 'real'])]
-        numerical = [c['colName']
-                     for c in columns
-                     if ('attribute' in c['role'] and
-                         c['colType'] in ['integer', 'real'])]
+        dataset = Dataset.load(dataset)
 
         def make_module(package, version, name):
             pipeline_module = database.PipelineModule(
@@ -821,13 +809,12 @@ class D3mTa2(object):
             return make_module('data','0.0', name)
 
         def make_primitive_module(name):
-            if name.startswith('sklearn'):
-                return make_module('sklearn-builtin', '0.0', name)
-            else:
-                return make_module('primitives', '0.0', name)
+            if name[0] == '.':
+                name = 'd3m.primitives' + name
+            return make_module('d3m', 'v2018.4.18', name)
 
         def connect(from_module, to_module,
-                    from_output='data', to_input='data'):
+                    from_output='produce', to_input='inputs'):
             db.add(database.PipelineConnection(pipeline=pipeline,
                                                from_module=from_module,
                                                to_module=to_module,
@@ -835,66 +822,50 @@ class D3mTa2(object):
                                                to_input_name=to_input))
 
         try:
-            data = make_data_module('data')
-            targets = make_data_module('targets')
+            #                data
+            #                  |
+            #              Denormalize
+            #                  |
+            #           DatasetToDataframe
+            #                  |
+            #             ColumnParser
+            #                /     \
+            # ExtractAttributes  ExtractTargets
+            #         |               |
+            #     CastToType      CastToType
+            #         |               |
+            #     [imputer]           |
+            #            \            /
+            #             [classifier]
+            input_data = make_data_module('dataset')
 
-            # If we have to split the data for imputation
-            if (categorical and numerical and
-                    (imputer_cat or imputer_num or encoder)):
-                # Split the data
-                data_cat = make_data_module('get_columns')
-                db.add(database.PipelineParameter(
-                    pipeline=pipeline, module=data_cat,
-                    name='columns', value=pickle.dumps(categorical),
-                ))
-                connect(data, data_cat)
+            step0 = make_primitive_module('.datasets.Denormalize')
+            connect(input_data, step0, from_output='data')
 
-                data_num = make_data_module('get_columns')
-                db.add(database.PipelineParameter(
-                    pipeline=pipeline, module=data_num,
-                    name='columns', value=pickle.dumps(numerical),
-                ))
-                connect(data, data_num)
+            step1 = make_primitive_module('.datasets.DatasetToDataFrame')
+            connect(step0, step1)
 
-                # Add imputers
-                if imputer_cat:
-                    imputer_cat = make_primitive_module(imputer_cat)
-                    connect(data_cat, imputer_cat)
-                    data_cat = imputer_cat
-                if imputer_num:
-                    imputer_num = make_primitive_module(imputer_num)
-                    connect(data_num, imputer_num)
-                    data_num = imputer_num
+            step2 = make_primitive_module('.data.ColumnParser')
+            connect(step1, step2)
 
-                # Add encoder
-                if encoder:
-                    encoder = make_primitive_module(encoder)
-                    connect(data_cat, encoder)
-                    data_cat = encoder
+            step3 = make_primitive_module('.data.ExtractAttributes')
+            connect(step2, step3)
 
-                # Merge data
-                data = make_data_module('merge_columns')
-                connect(data_cat, data)
-                connect(data_num, data)
-            # If we don't have to split
-            else:
-                if categorical and (imputer_cat or encoder):
-                    if imputer_cat:
-                        imputer = make_primitive_module(imputer_cat)
-                        connect(data, imputer)
-                        data = imputer
-                    if encoder:
-                        encoder = make_primitive_module(encoder)
-                        connect(data, encoder)
-                        data = encoder
-                elif numerical and imputer_num:
-                    imputer = make_primitive_module(imputer_num)
-                    connect(data, imputer)
-                    data = imputer
+            step4 = make_primitive_module('.data.CastToType')
+            connect(step3, step4)
 
-            classifier = make_primitive_module(classifier)
-            connect(data, classifier)
-            connect(targets, classifier, 'targets', 'targets')
+            step5 = make_primitive_module(imputer)
+            connect(step4, step5)
+
+            step6 = make_primitive_module('.data.ExtractTargets')
+            connect(step2, step6)
+
+            step7 = make_primitive_module('.data.CastToType')
+            connect(step6, step7)
+
+            step8 = make_primitive_module(classifier)
+            connect(step5, step8)
+            connect(step7, step8, to_input='outputs')
 
             db.add(pipeline)
             db.commit()
@@ -905,82 +876,45 @@ class D3mTa2(object):
     TEMPLATES = {
         'CLASSIFICATION': list(itertools.product(
             [_classification_template],
-            # Imputer for categorical data
-            [None],
-            # Imputer for numerical data
-            [
-                'dsbox.datapreprocessing.cleaner.KNNImputation',
-                'sklearn.preprocessing.Imputer',
-            ],
-            # Encoder for categorical data
-            [
-                'sklearn.preprocessing.LabelBinarizer',
-            ],
+            # Imputer
+            ['d3m.primitives.sklearn_wrap.SKImputer'],
             # Classifier
             [
-                'sklearn.svm.classes.LinearSVC',
-                'sklearn.neighbors.classification.KNeighborsClassifier',
-                'sklearn.naive_bayes.MultinomialNB',
-                'sklearn.ensemble.forest.RandomForestClassifier',
-                'sklearn.linear_model.logistic.LogisticRegression'
+                'd3m.primitives.sklearn_wrap.SKLinearSVC',
+                'd3m.primitives.sklearn_wrap.SKKNeighborsClassifier',
+                'd3m.primitives.sklearn_wrap.SKMultinomialNB',
+                'd3m.primitives.sklearn_wrap.SKRandomForestClassifier',
+                'd3m.primitives.sklearn_wrap.SKLogisticRegression',
             ],
         )),
         'DEBUG_CLASSIFICATION': list(itertools.product(
             [_classification_template],
-            # Imputer for categorical data
-            [None],
-            # Imputer for numerical data
-            [
-                'sklearn.preprocessing.Imputer',
-            ],
-            # Encoder for categorical data
-            [
-                'sklearn.preprocessing.LabelBinarizer',
-            ],
+            # Imputer
+            ['d3m.primitives.sklearn_wrap.SKImputer'],
             # Classifier
             [
-                'sklearn.svm.classes.LinearSVC',
-                'sklearn.neighbors.classification.KNeighborsClassifier',
+                'd3m.primitives.sklearn_wrap.SKLinearSVC',
+                'd3m.primitives.sklearn_wrap.SKKNeighborsClassifier',
             ],
         )),
         'REGRESSION': list(itertools.product(
             [_classification_template],
-            # Imputer for categorical data
-            [None],
-            # Imputer for numerical data
-            [
-                'dsbox.datapreprocessing.cleaner.KNNImputation',
-                'sklearn.preprocessing.Imputer',
-            ],
-            # Encoder for categorical data
-            [
-                'sklearn.preprocessing.LabelBinarizer',
-            ],
+            # Imputer
+            ['d3m.primitives.sklearn_wrap.SKImputer'],
             # Classifier
             [
-                'sklearn.linear_model.base.LinearRegression',
-                'sklearn.linear_model.bayes.BayesianRidge',
-                'sklearn.linear_model.coordinate_descent.LassoCV',
-                'sklearn.linear_model.ridge.Ridge',
-                'sklearn.linear_model.least_angle.Lars',
+                'd3m.primitives.common_primitives.LinearRegression',
+                'd3m.primitives.sklearn_wrap.SKRidge',
             ],
         )),
         'DEBUG_REGRESSION': list(itertools.product(
             [_classification_template],
-            # Imputer for categorical data
-            [None],
-            # Imputer for numerical data
-            [
-                'dsbox.datapreprocessing.cleaner.KNNImputation',
-                'sklearn.preprocessing.Imputer',
-            ],
-            # Encoder for categorical data
-            [
-                'sklearn.preprocessing.LabelBinarizer',
-            ],
+            # Imputer
+            ['d3m.primitives.sklearn_wrap.SKImputer'],
             # Classifier
             [
-                'sklearn.linear_model.base.LinearRegression',
+                'd3m.primitives.common_primitives.LinearRegression',
+                'd3m.primitives.sklearn_wrap.SKRidge',
             ],
         )),
     }
