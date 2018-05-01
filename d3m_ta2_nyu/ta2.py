@@ -426,6 +426,8 @@ class D3mTa2(object):
         This is called by the ``ta2_search`` executable, it is part of the
         evaluation.
         """
+        if dataset[0] == '/':
+            dataset = 'file://' + dataset
         # Read problem
         with open(os.path.join(problem, 'problemDoc.json')) as fp:
             problem_json = json.load(fp)

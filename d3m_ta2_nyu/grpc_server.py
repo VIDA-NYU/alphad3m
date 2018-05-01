@@ -79,7 +79,6 @@ class CoreService(pb_core_grpc.CoreServicer):
                 ),
             )
             return
-        dataset = dataset[:-15]
         task = request.task
         if task not in self.grpc2task:
             logger.error("Got unknown task %r", task)
@@ -128,8 +127,9 @@ class CoreService(pb_core_grpc.CoreServicer):
         target_features = request.target_features
         max_pipelines = request.max_pipelines
 
-        if dataset.startswith('file:///'):
-            dataset = dataset[7:]
+        if dataset.startswith('/'):
+            logger.warning("Dataset is a path, turning it into a file:// URL")
+            dataset = 'file://' + dataset
 
         logger.info("Got CreatePipelines request, session=%s, task=%s, "
                     "dataset=%s, metrics=%s, ",

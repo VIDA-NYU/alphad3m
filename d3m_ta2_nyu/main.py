@@ -40,7 +40,7 @@ def main_search():
             logs_root=config['pipeline_logs_root'],
             executables_root=config['executables_root'])
         ta2.run_search(
-            dataset=config['training_data_root'],
+            dataset=config['dataset_schema'],
             problem=config['problem_root'])
 
 
