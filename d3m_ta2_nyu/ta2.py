@@ -20,11 +20,11 @@ import threading
 import time
 import uuid
 
-from . import __version__
+from d3m.container import Dataset
 
+from d3m_ta2_nyu import __version__
 from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
     TASKS_FROM_SCHEMA
-from d3m_ta2_nyu.d3mds import D3MDataset
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc

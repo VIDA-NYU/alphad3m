@@ -1,7 +1,6 @@
 import logging
 import sys
 
-from d3m_ta2_nyu.d3mds import D3MDS
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.execute import execute_test
 

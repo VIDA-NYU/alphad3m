@@ -6,7 +6,6 @@ import sys
 import time
 
 from d3m_ta2_nyu.common import SCORES_TO_SKLEARN
-from d3m_ta2_nyu.d3mds import D3MDS
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.execute import execute_train, execute_test
 
