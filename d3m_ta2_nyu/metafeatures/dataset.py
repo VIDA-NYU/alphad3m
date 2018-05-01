@@ -17,6 +17,7 @@ def compute_metafeatures(dataset_path, table_file):
             if 'suggestedTarget' in col['role']:
                 target_col = col['colName']
                 break
+    print(target_col)
     df = DataFrame(pd.read_csv(table_file))
     names = df.columns.values
     df = df.rename(columns={target_col: "target"})

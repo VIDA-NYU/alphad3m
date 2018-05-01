@@ -1,5 +1,6 @@
 import os
 import operator
+import pickle
 
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
@@ -23,7 +24,8 @@ ARGS = {
 
     'checkpoint': './temp/',
     'load_model': True,
-    'load_folder_file': ('./temp/', 'best.pth.tar')
+    'load_folder_file': ('./temp/', 'best.pth.tar'),
+    'metafeatures_file': '/home/ubuntu/scripts/metafeatures.pkl'
 }
 
 
@@ -128,9 +130,14 @@ def main():
             pipelines[fields[0]] = fields[1].split(',')
     datasets_path = '/home/ubuntu/datasets/training_datasets'
     dataset_names = pipelines.keys()
+    args = dict(ARGS)
+    m_f = open(args['metafeatures_file'], 'rb')
+    metafeatures = pickle.load(m_f)
+    dataset_names = metafeatures.keys()	
     out_p = open('best_pipelines.txt', 'w')
     for dataset in dataset_names:
         print(dataset)
+        dataset =  'LL0_1589_svmguide3'
         out_str = dataset + ', , \n'
         if 'LL0' in dataset:
            dataset_path = os.path.join(datasets_path, 'LL0', dataset)
@@ -156,7 +163,7 @@ def main():
             return ta2.run_pipeline(session_id, pipeline_id)
         pipeline = [p_enum[primitive] for primitive in pipelines[dataset]]
         print(pipeline)
-        args = dict(ARGS)
+        args['dataset'] = dataset
         args['dataset_path'] = dataset_name
         args['problem_path'] = problem_name
         args['metric'] = problem_name
@@ -174,11 +181,13 @@ def main():
         c.learn()
         eval_dict = game.evaluations
         for key, value in eval_dict.items():
-            if value == float('inf'):
+            if value == float('inf') and not 'error' in game.metric.lower():
                eval_dict[key] = 0
         evaluations = sorted(eval_dict.items(), key=operator.itemgetter(1))
-        evaluations.reverse()
-        out_p.write(dataset+' '+evaluations[0][0] + ' ' + str(evaluations[0][1]))
+        if not 'error' in game.metric.lower():
+            evaluations.reverse()
+        out_p.write(dataset+' '+evaluations[0][0] + ' ' + str(evaluations[0][1])+'\n')
+        break
 
 if __name__ == '__main__':
     main()
