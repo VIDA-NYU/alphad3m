@@ -1,9 +1,11 @@
 import logging
 import numpy
 import pandas
-from sklearn.model_selection import StratifiedKFold, KFold
+from sklearn.model_selection import KFold
 import sys
 import time
+
+from d3m.container import Dataset
 
 from d3m_ta2_nyu.common import SCORES_TO_SKLEARN
 from d3m_ta2_nyu.workflow import database
@@ -19,16 +21,14 @@ RANDOM = 65682867  # The most random of all numbers
 MAX_SAMPLE = 50000
 
 
-def cross_validation(pipeline, metrics, data, targets, target_names,
-                     stratified_folds, progress, db):
+def cross_validation(pipeline, metrics, dataset,
+                     progress, db):
     scores = {}
 
-    if stratified_folds:
-        splits = StratifiedKFold(n_splits=FOLDS, shuffle=True,
-                                 random_state=RANDOM).split(data, targets)
-    else:
-        splits = KFold(n_splits=FOLDS, shuffle=True,
-                       random_state=RANDOM).split(data, targets)
+    first_res_id = next(iter(dataset))
+
+    splits = KFold(n_splits=FOLDS, shuffle=True,
+                   random_state=RANDOM).split(dataset[first_res_id])
 
     all_predictions = []
 
@@ -38,14 +38,12 @@ def cross_validation(pipeline, metrics, data, targets, target_names,
         progress(i)
 
         # Do the split
-        # Note that 'data' is a DataFrame but 'targets' is an array
-        # (this is what d3mds.py returns)
-        # For the dataframe, we need to map from row number to d3mIndex
-        train_data_split = data.loc[data.index[train_split]]
-        test_data_split = data.loc[data.index[test_split]]
-
-        train_target_split = targets[train_split]
-        test_target_split = targets[test_split]
+        resources = dict(dataset)
+        resources[first_res_id] = resources[first_res_id].iloc[train_split]
+        train_data_split = Dataset(resources, dataset.metadata)
+        resources = dict(dataset)
+        resources[first_res_id] = resources[first_res_id].iloc[test_split]
+        test_data_split = Dataset(resources, dataset.metadata)
 
         start_time = time.time()
 
@@ -53,7 +51,7 @@ def cross_validation(pipeline, metrics, data, targets, target_names,
         logger.info("Training on fold")
         try:
             train_run, outputs = execute_train(
-                db, pipeline, train_data_split, train_target_split,
+                db, pipeline, train_data_split,
                 crossval=True)
         except Exception:
             logger.exception("Error running training on fold")
@@ -72,7 +70,7 @@ def cross_validation(pipeline, metrics, data, targets, target_names,
 
         run_time = time.time() - start_time
 
-        predictions = next(iter(outputs.values()))['predictions']
+        predictions = next(iter(outputs.values()))['produce']
 
         # Compute score
         for metric in metrics:
@@ -115,32 +113,24 @@ def train(pipeline_id, metrics, problem, results_path, msg_queue, db):
                 pipeline_id, dataset)
 
     # Load data
-    ds = D3MDS(dataset, problem)
-    logger.info("Loaded dataset, columns: %s",
-                ", ".join(col['colName']
-                          for col in ds.dataset.get_learning_data_columns()))
+    dataset = Dataset.load(dataset)
+    logger.info("Loaded dataset")
 
-    data = ds.get_train_data()
-    targets = ds.get_train_targets()
-    target_names = [t['colName'] for t in ds.problem.get_targets()]
-
-    if len(data) > MAX_SAMPLE:
+    if len(dataset['0']) > MAX_SAMPLE:
         # Sample the dataset to stay reasonably fast
-        logger.info("Sampling down data from %d to %d", len(data), MAX_SAMPLE)
-        sample = numpy.concatenate([numpy.repeat(True, MAX_SAMPLE),
-                                    numpy.repeat(False, len(data) - MAX_SAMPLE)])
+        logger.info("Sampling down data from %d to %d",
+                    len(dataset['0']), MAX_SAMPLE)
+        sample = numpy.concatenate(
+            [numpy.repeat(True, MAX_SAMPLE),
+             numpy.repeat(False, len(dataset['0']) - MAX_SAMPLE)])
         numpy.random.RandomState(seed=RANDOM).shuffle(sample)
-        data = data[sample]
-        targets = targets[sample]
-
-    stratified_folds = \
-        ds.problem.prDoc['about']['taskType'] == 'classification'
+        dataset['0'] = dataset['0'][sample]
 
     # Scoring step - make folds, run them through the pipeline one by one
     # (set both training_data and test_data),
     # get predictions from OutputPort to get cross validation scores
     scores, predictions = cross_validation(
-        pipeline_id, metrics, data, targets, target_names, stratified_folds,
+        pipeline_id, metrics, dataset,
         lambda i: msg_queue.send(('progress', (i + 1.0) / max_progress)),
         db)
     logger.info("Scoring done: %s", ", ".join("%s=%s" % s

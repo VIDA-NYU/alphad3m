@@ -73,6 +73,7 @@ class Session(Observable):
         # pipelines_tuning are empty
         self.working = False
 
+        # Read metrics from problem
         for metric in self.problem['inputs']['performanceMetrics']:
             metric = metric['metric']
             try:
@@ -81,6 +82,12 @@ class Session(Observable):
                 logger.error("Unknown metric %r", metric)
                 raise ValueError("Unknown metric %r" % metric)
             self.metrics.append(metric)
+
+        # Read targets from problem
+        self.targets = set()
+        assert len(self.problem['inputs']['data']) == 1
+        for target in self.problem['inputs']['data'][0]['targets']:
+            self.targets.add((target['resID'], target['colName']))
 
     @property
     def problem_id(self):
@@ -616,28 +623,27 @@ class D3mTa2(object):
             db.close()
 
     def build_pipelines(self, session_id, task, dataset, metrics,
-                        targets=None, attributes=None):
+                        targets=None):
         if not metrics:
             raise ValueError("no metrics")
         if 'TA2_USE_TEMPLATES' in os.environ:
             self.executor.submit(self._build_pipelines_from_templates,
                                  session_id, task, dataset, metrics,
-                                 targets, attributes)
+                                 targets)
         else:
             self.executor.submit(self._build_pipelines_with_generator,
                                  session_id, task, dataset, metrics,
-                                 targets, attributes)
+                                 targets)
 
     # Runs in a worker thread from executor
     def _build_pipelines_with_generator(self, session_id, task, dataset,
-                                        metrics, targets, attributes):
+                                        metrics, targets):
         """Generates pipelines for the session, using the generator process.
         """
         # Start AlphaD3M process
         session = self.sessions[session_id]
         with session.lock:
             session.targets = targets
-            session.attributes = attributes
             if session.metrics != metrics:
                 if session.metrics:
                     old = 'from %s ' % ', '.join(session.metrics)
@@ -684,13 +690,12 @@ class D3mTa2(object):
 
     # Runs in a worker thread from executor
     def _build_pipelines_from_templates(self, session_id, task, dataset,
-                                        metrics, targets, attributes):
+                                        metrics, targets):
         """Generates pipelines for the session, using templates.
         """
         session = self.sessions[session_id]
         with session.lock:
             session.targets = targets
-            session.attributes = attributes
             if session.metrics != metrics:
                 if session.metrics:
                     old = 'from %s ' % ', '.join(session.metrics)
@@ -726,7 +731,8 @@ class D3mTa2(object):
 
     def _build_pipeline_from_template(self, session, template, dataset):
         # Create workflow from a template
-        pipeline_id = template(self, dataset=dataset)
+        pipeline_id = template(self, dataset=dataset,
+                               targets=session.targets)
 
         # Add it to the session
         session.add_training_pipeline(pipeline_id)
@@ -775,7 +781,8 @@ class D3mTa2(object):
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
 
-    def _classification_template(self, imputer, classifier, dataset):
+    def _classification_template(self, imputer, classifier, dataset,
+                                 targets):
         db = self.DBSession()
 
         pipeline = database.Pipeline(
@@ -824,10 +831,16 @@ class D3mTa2(object):
             #     [imputer]           |
             #            \            /
             #             [classifier]
+            # TODO: Use pipeline input for this
+            # TODO: Have execution set metadata from problem, don't hardcode
             input_data = make_data_module('dataset')
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=input_data,
+                name='targets', value=pickle.dumps(targets),
+            ))
 
             step0 = make_primitive_module('.datasets.Denormalize')
-            connect(input_data, step0, from_output='data')
+            connect(input_data, step0, from_output='dataset')
 
             step1 = make_primitive_module('.datasets.DatasetToDataFrame')
             connect(step0, step1)

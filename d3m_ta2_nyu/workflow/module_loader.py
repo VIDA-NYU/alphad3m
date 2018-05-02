@@ -8,12 +8,35 @@ def get_class(name):
     return getattr(importlib.import_module(package), classname)
 
 
-def _data(*, global_inputs, **kwargs):
-    return {'data': global_inputs['data']}
+def _dataset(*, global_inputs, module_inputs, **kwargs):
+    from d3m.container import Dataset
+    from d3m.metadata.base import ALL_ELEMENTS
 
+    TYPE_TARGET = 'https://metadata.datadrivendiscovery.org/types/Target'
+    TYPE_ATTRIBUTE = 'https://metadata.datadrivendiscovery.org/types/Attribute'
 
-def _targets(*, global_inputs, **kwargs):
-    return {'targets': global_inputs.get('targets')}
+    # Get dataset from global inputs
+    dataset = global_inputs['dataset']
+
+    # Get list of targets and attributes from global inputs
+    targets = global_inputs['targets']
+
+    # Update dataset metadata from those
+    dataset = Dataset(dataset)
+    for resID, res in dataset:
+        for col_index, col_name in enumerate(res.columns):
+            if (resID, col_name) in targets:
+                types = set(
+                    res.metadata.query([resID,
+                                        ALL_ELEMENTS,
+                                        col_index])['semantic_types'])
+                types.remove(TYPE_ATTRIBUTE)
+                types.add(TYPE_TARGET)
+                dataset.metadata = dataset.metadata.update(
+                    [resID, ALL_ELEMENTS, col_index],
+                    {'semantic_types': tuple(types)})
+
+    return {'dataset': dataset}
 
 
 def _get_columns(*, module_inputs, **kwargs):
@@ -206,7 +229,7 @@ def _loader_primitives(name):
 
 _loaders = {'sklearn-builtin': _loader_sklearn,
             'primitives': _loader_primitives,
-            'data': {'data': _data, 'targets': _targets,
+            'data': {'dataset': _dataset,
                      'get_columns': _get_columns,
                      'merge_columns': _merge_columns}.get}
 

@@ -78,11 +78,10 @@ def get_pipeline(db, pipeline):
     return pipeline
 
 
-def execute_train(db, pipeline, data, targets, crossval=False):
+def execute_train(db, pipeline, dataset, crossval=False):
     pipeline = get_pipeline(db, pipeline)
 
-    global_inputs = {'data': data,
-                     'targets': targets,
+    global_inputs = {'dataset': dataset,
                      'run_type': 'train'}
 
     if crossval:
