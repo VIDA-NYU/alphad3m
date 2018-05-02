@@ -111,9 +111,8 @@ def train(pipeline_id, metrics, problem, results_path, msg_queue, db):
         .one()
     )
 
-    logger.info("About to run training pipeline, id=%s, dataset=%r, "
-                "problem=%r",
-                pipeline_id, dataset, problem)
+    logger.info("About to run training pipeline, id=%s, dataset=%r",
+                pipeline_id, dataset)
 
     # Load data
     ds = D3MDS(dataset, problem)

@@ -48,14 +48,13 @@ class Session(Observable):
 
     This is a TA3 session in which pipelines are created.
     """
-    def __init__(self, ta2, logs_dir, problem, problem_id, DBSession):
+    def __init__(self, ta2, logs_dir, problem, DBSession):
         Observable.__init__(self)
         self.id = uuid.uuid4()
         self._ta2 = ta2
         self._logs_dir = logs_dir
         self.DBSession = DBSession
         self.problem = problem
-        self.problem_id = problem_id
         self.metrics = []
 
         # Should tuning be triggered when we are done with current pipelines?
@@ -73,6 +72,19 @@ class Session(Observable):
         # signal should be sent once both pipelines_training and
         # pipelines_tuning are empty
         self.working = False
+
+        for metric in self.problem['inputs']['performanceMetrics']:
+            metric = metric['metric']
+            try:
+                metric = SCORES_FROM_SCHEMA[metric]
+            except KeyError:
+                logger.error("Unknown metric %r", metric)
+                raise ValueError("Unknown metric %r" % metric)
+            self.metrics.append(metric)
+
+    @property
+    def problem_id(self):
+        return self.problem['about']['problemID']
 
     def tune_when_ready(self):
         self._tune_when_ready = True
@@ -197,13 +209,6 @@ class Session(Observable):
             return
         metric = self.metrics[0]
 
-        try:
-            with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
-                problem_id = json.load(fp)['about']['problemID']
-        except (IOError, KeyError):
-            logger.error("Error reading problemID from problem JSON")
-            problem_id = 'problem_id_unset'
-
         written = 0
         db = self.DBSession()
         try:
@@ -215,7 +220,7 @@ class Session(Observable):
                 filename = os.path.join(self._logs_dir,
                                         str(pipeline.id) + '.json')
                 obj = {
-                    'problem_id': problem_id,
+                    'problem_id': self.problem_id,
                     'pipeline_rank': i + 1,
                     'name': str(pipeline.id),
                     'primitives': [
@@ -386,7 +391,6 @@ class D3mTa2(object):
                            " ***")
             logger.warning("**************************************************"
                            "****")
-        self.default_problem_id = 'problem_id_unset'
         self.default_problem = None
         self.storage = os.path.abspath(storage_root)
         if not os.path.exists(self.storage):
@@ -420,7 +424,7 @@ class D3mTa2(object):
 
         logger.info("TA2 started, version=%s", __version__)
 
-    def run_search(self, dataset, problem):
+    def run_search(self, dataset, problem_path):
         """Run the search phase: create pipelines, train and score them.
 
         This is called by the ``ta2_search`` executable, it is part of the
@@ -429,10 +433,10 @@ class D3mTa2(object):
         if dataset[0] == '/':
             dataset = 'file://' + dataset
         # Read problem
-        with open(os.path.join(problem, 'problemDoc.json')) as fp:
-            problem_json = json.load(fp)
-        problem_id = problem_json['about']['problemID']
-        task = problem_json['about']['taskType']
+        with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
+            problem = json.load(fp)
+        problem_id = problem['about']['problemID']
+        task = problem['about']['taskType']
         if task not in TASKS_FROM_SCHEMA:
             logger.error("Unknown task %r", task)
             sys.exit(1)
@@ -440,33 +444,21 @@ class D3mTa2(object):
         if task not in ('CLASSIFICATION', 'REGRESSION'):  # TODO
             logger.error("Unsupported task %s requested", task)
             sys.exit(148)
-        metrics = []
-        for metric in problem_json['inputs']['performanceMetrics']:
-            metric = metric['metric']
-            try:
-                metric = SCORES_FROM_SCHEMA[metric]
-            except KeyError:
-                logger.error("Unknown metric %r", metric)
-                sys.exit(1)
-            metrics.append(metric)
-        logger.info("Dataset: %s, task: %s, metrics: %s",
-                    dataset, task, ", ".join(metrics))
 
         # Create pipelines
-        session = Session(self, self.logs_root, problem, problem_id,
-                          self.DBSession)
-        session.metrics = metrics
+        session = Session(self, self.logs_root, problem, self.DBSession)
+        logger.info("Dataset: %s, task: %s, metrics: %s",
+                    dataset, task, ", ".join(session.metrics))
         self.sessions[session.id] = session
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            self.build_pipelines(session.id, task, dataset,
-                                 metrics)
+            self.build_pipelines(session.id, task, dataset, session.metrics)
             while queue.get(True)[0] != 'done_training':
                 pass
 
         db = self.DBSession()
         try:
-            pipelines = session.get_top_pipelines(db, metrics[0])
+            pipelines = session.get_top_pipelines(db, session.metrics[0])
 
             for pipeline, score in itertools.islice(pipelines, 20):
                 self.write_executable(pipeline)
@@ -526,34 +518,32 @@ class D3mTa2(object):
         finally:
             db.close()
 
-    def run_test(self, dataset, problem, pipeline_id, results_root):
+    def run_test(self, dataset, problem_path, pipeline_id, results_root):
         """Run a previously trained pipeline.
 
         This is called by the generated executables, it is part of the
         evaluation.
         """
         logger.info("About to run test")
-        with open(os.path.join(problem, 'problemDoc.json')) as fp:
-            problem_json = json.load(fp)
-        problem_id = problem_json['about']['problemID']
+        with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
+            problem = json.load(fp)
         if not os.path.exists(results_root):
             os.makedirs(results_root)
         results_path = os.path.join(
             results_root,
-            problem_json['expectedOutputs']['predictionsFile'])
+            problem['expectedOutputs']['predictionsFile'])
         test(pipeline_id, dataset, problem, results_path,
              db_filename=self.db_filename)
 
-    def run_server(self, problem, port=None):
+    def run_server(self, problem_path, port=None):
         """Spin up the gRPC server to receive requests from a TA3 system.
 
         This is called by the ``ta2_serve`` executable. It is part of the
         TA2+TA3 evaluation.
         """
+        with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
+            problem = json.load(fp)
         self.default_problem = problem
-        with open(os.path.join(problem, 'problemDoc.json')) as fp:
-            problem_json = json.load(fp)
-        self.default_problem_id = problem_json['about']['problemID']
         if not port:
             port = 45042
         core_rpc = grpc_server.CoreService(self)
@@ -569,31 +559,19 @@ class D3mTa2(object):
         while True:
             time.sleep(60)
 
-    def new_session(self, problem=None):
-        metrics = []
-        if problem is None:
+    def new_session(self, problem_path=None):
+        if problem_path is None:
             if self.default_problem is None:
                 logger.error("Creating a session but no default problem is "
                              "set!")
             problem = self.default_problem
-            problem_id = self.default_problem_id
         else:
-            with open(os.path.join(problem, 'problemDoc.json')) as fp:
-                problem_json = json.load(fp)
-            problem_id = problem_json['about']['problemID']
-            for metric in problem_json['inputs']['performanceMetrics']:
-                metric = metric['metric']
-                try:
-                    metric = SCORES_FROM_SCHEMA[metric]
-                except KeyError:
-                    raise ValueError("Unknown metric %r" % metric)
-                metrics.append(metric)
+            with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
+                problem = json.load(fp)
 
-        session = Session(self, self.logs_root, problem, problem_id,
+        session = Session(self, self.logs_root, problem,
                           self.DBSession)
         self.sessions[session.id] = session
-        if metrics:
-            session.metrics = metrics
         return session.id
 
     def finish_session(self, session_id):
@@ -637,24 +615,29 @@ class D3mTa2(object):
         finally:
             db.close()
 
-    def build_pipelines(self, session_id, task, dataset, metrics):
+    def build_pipelines(self, session_id, task, dataset, metrics,
+                        targets=None, attributes=None):
         if not metrics:
             raise ValueError("no metrics")
         if 'TA2_USE_TEMPLATES' in os.environ:
             self.executor.submit(self._build_pipelines_from_templates,
-                                 session_id, task, dataset, metrics)
+                                 session_id, task, dataset, metrics,
+                                 targets, attributes)
         else:
             self.executor.submit(self._build_pipelines_with_generator,
-                                 session_id, task, dataset, metrics)
+                                 session_id, task, dataset, metrics,
+                                 targets, attributes)
 
     # Runs in a worker thread from executor
-    def _build_pipelines_with_generator(self, session_id, task,
-                                        dataset, metrics):
+    def _build_pipelines_with_generator(self, session_id, task, dataset,
+                                        metrics, targets, attributes):
         """Generates pipelines for the session, using the generator process.
         """
         # Start AlphaD3M process
         session = self.sessions[session_id]
         with session.lock:
+            session.targets = targets
+            session.attributes = attributes
             if session.metrics != metrics:
                 if session.metrics:
                     old = 'from %s ' % ', '.join(session.metrics)
@@ -700,12 +683,14 @@ class D3mTa2(object):
         session.tune_when_ready()
 
     # Runs in a worker thread from executor
-    def _build_pipelines_from_templates(self, session_id, task,
-                                        dataset, metrics):
+    def _build_pipelines_from_templates(self, session_id, task, dataset,
+                                        metrics, targets, attributes):
         """Generates pipelines for the session, using templates.
         """
         session = self.sessions[session_id]
         with session.lock:
+            session.targets = targets
+            session.attributes = attributes
             if session.metrics != metrics:
                 if session.metrics:
                     old = 'from %s ' % ', '.join(session.metrics)
