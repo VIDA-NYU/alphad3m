@@ -93,10 +93,11 @@ def generate(task, dataset, metrics, problem, msg_queue, DBSession):
         return msg_queue.recv()
 
     args = dict(ARGS)
+    args['dataset'] = dataset.split('/')[-1].replace('_dataset','')
     args['dataset_path'] = dataset
     args['problem_path'] = problem
     args['metric'] = problem
-    game = PipelineGame(3, args, eval_pipeline)
+    game = PipelineGame(args, None, eval_pipeline)
     nnet = NNetWrapper(game)
 
     if args.get('load_model'):

@@ -62,7 +62,7 @@ class Board():
                   1:'delete',
                   2:'substitute'}
 
-    def __init__(self, m=30, pipeline=[1,2,17], problem='CLASSIFICATION', metric='f1macro', win_threshold=0.6):
+    def __init__(self, m=30, pipeline=None, problem='CLASSIFICATION', metric='f1macro', win_threshold=0.6):
         "Set up initial board configuration."
        
         self.m = m #Number of metafeatures
@@ -71,10 +71,13 @@ class Board():
         # Create the empty board array.
         self.pieces_m = [0] * self.m
         self.pieces_p = [0] * self.p
-        if len(pipeline) == 1:
-            pipeline = [0, 0] + pipeline
-        elif len(pipeline) == 2:
-            pipeline = [0] + pipeline
+        if not pipeline is None:
+       	    if len(pipeline) == 1:
+               pipeline = [0, 0] + pipeline
+            elif len(pipeline) == 2:
+               pipeline = [0] + pipeline
+        else:
+            pipeline = [0] * self.p
         self.pieces_p = pipeline
         self.pieces_o = [0] * self.o
         if 'error' in metric.lower():

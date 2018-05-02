@@ -27,12 +27,12 @@ class PipelineGame(Game):
         self.problem_features = parse_problem_description(self.args['problem_path']+'/problemDoc.json')
         self.problem = self.problem_features['problem']['task_type'].unparse().upper()
         self.metric = self.problem_features['problem']['performance_metrics'][0]['metric'].unparse()
-        self.dataset_metafeatures = {}
+        self.dataset_metafeatures = None
         if not args.get('metafeatures_file') is None and os.path.isfile(args['metafeatures_file']):
             m_f = open(args['metafeatures_file'], 'rb')
             metafeatures = pickle.load(m_f)
-            self.dataset_metafeatures = metafeatures[args['dataset']]
-        if len(self.dataset_metafeatures) == 0:
+            self.dataset_metafeatures = metafeatures.get(args['dataset'])
+        if self.dataset_metafeatures is None:
             self.dataset_metafeatures = compute_metafeatures(os.path.join(self.args['dataset_path'], 'datasetDoc.json'), os.path.join(self.args['dataset_path'],'tables','learningData.csv'))
         #print(self.dataset_metafeatures)
         self.p = Board.get_pipeline_size()

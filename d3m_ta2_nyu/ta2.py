@@ -665,7 +665,7 @@ class D3mTa2(object):
             logger.info("Starting AlphaD3M process...")
             msg_queue = Receiver()
             proc = run_process(
-                'd3m_ta2_nyu.alphazero_pipeline_generator'
+                'd3m_ta2_nyu.alphad3m_edit'
                 '.PipelineGenerator.generate',
                 'alphad3m',
                 msg_queue,
