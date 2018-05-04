@@ -151,7 +151,7 @@ def tune(pipeline_id, metrics, problem, results_path, msg_queue, db):
     logger.info("Tuning single module %s %s %s",
                 estimator_module.id,
                 estimator_module.name, estimator_module.package)
-
+    
     tuning = HyperparameterTuning(estimator_module.name)
 
     def evaluate(hyperparameter_configuration):

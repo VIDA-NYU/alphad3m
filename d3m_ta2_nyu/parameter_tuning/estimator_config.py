@@ -54,6 +54,15 @@ def svc_config(cs):
     dual = UniformIntegerHyperparameter("dual", 0, 1, default_value=1)
     cs.add_hyperparameters([penalty,loss, C, tol, max_iter, dual])
 
+def linear_svc_config(cs):
+    penalty = CategoricalHyperparameter("penalty", ['l1', 'l2'], default_value='l2')
+    loss =CategoricalHyperparameter("loss", ['hinge', 'squared_hinge'], default_value='squared_hinge')
+    C = UniformFloatHyperparameter("C", 0.001, 1000.0, default_value=1.0)
+    tol = UniformFloatHyperparameter("tol", 1e-8, 1.0, default_value=1e-4)
+    max_iter = UniformIntegerHyperparameter("max_iter", 1, 2000, default_value=1000)
+    dual = UniformIntegerHyperparameter("dual", 0, 1, default_value=1)
+    cs.add_hyperparameters([penalty,loss, C, tol, max_iter, dual])
+
 
 
 def kneighbors_config(cs):
@@ -67,12 +76,12 @@ def kneighbors_config(cs):
 def decision_tree_config(cs):
     criterion = CategoricalHyperparameter("criterion", ['gini', 'entropy'], default_value='gini')
     splitter = CategoricalHyperparameter("splitter", ['best', 'random'], default_value='best')
-    max_depth = UniformIntegerHyperparameter("max_depth", 1, 10, default_value=None)
+    #max_depth = UniformIntegerHyperparameter("max_depth", 1, 10, default_value=None)
     min_samples_split = UniformFloatHyperparameter("min_samples_split", 0.1, 0.9, default_value=0.1)
     min_samples_leaf = UniformFloatHyperparameter("min_samples_leaf", 0.1, 0.5, default_value=0.1)
-    max_features = UniformFloatHyperparameter("max_features", 0.1, 0.9, default_value=0.1)
+    max_features = CategoricalHyperparameter("max_features", ['auto','sqrt','log2',None], default_value=None)
     presort = UniformIntegerHyperparameter("presort", 0, 1, default_value=0)
-    cs.add_hyperparameters([criterion,splitter,max_depth,min_samples_split, min_samples_leaf,max_features,presort])
+    cs.add_hyperparameters([criterion,splitter,min_samples_split, min_samples_leaf,max_features,presort])
 
 
 
@@ -80,6 +89,16 @@ def multinomial_config(cs):
     alpha = UniformFloatHyperparameter("alpha", 0.0, 1.0, default_value=1.0)
     fit_prior = UniformIntegerHyperparameter("fit_prior", 0, 1, default_value=1)
     cs.add_hyperparameters([alpha,fit_prior])
+
+def mlp_config(cs):
+    alpha = UniformFloatHyperparameter("alpha", 0.0, 1.0, default_value=1.0)
+    activation = CategoricalHyperparameter("activation", ['identity','logistic','tanh','relu'], default_value='relu')
+    solver = CategoricalHyperparameter('solver',['lbfgs','sgd','adam'], default_value= 'adam')
+    learning_rate = CategoricalHyperparameter('learning_rate', ['constant','invscaling','adaptive'], default_value='constant')
+    momentum = UniformFloatHyperparameter("momentum", 0.0, 1.0, default_value=0.9)
+    cs.add_hyperparameters([alpha,activation,solver,learning_rate,momentum])
+
+#def gp_config(cs):
 
 def logistic_regression_config(cs):
     penalty = CategoricalHyperparameter("penalty", ['l1', 'l2'], default_value='l2')
@@ -199,7 +218,7 @@ def primitive_config(cs,primitive_name):
 
 
 ESTIMATORS = {
-        'sklearn.svm.classes.LinearSVC': svc_config,
+        'sklearn.svm.classes.LinearSVC': linear_svc_config,
         'sklearn.neighbors.classification.KNeighborsClassifier': kneighbors_config,
         'sklearn.tree.tree.DecisionTreeClassifier': decision_tree_config,
         'sklearn.naive_bayes.MultinomialNB': multinomial_config,
@@ -209,5 +228,15 @@ ESTIMATORS = {
         'sklearn.linear_model.bayes.BayesianRidge': bayesian_ridge_config,
         'sklearn.linear_model.coordinate_descent.LassoCV': lasso_config,
         'sklearn.linear_model.ridge.Ridge': ridge_config,
-        'sklearn.linear_model.least_angle.Lars': lars_config
+        'sklearn.linear_model.least_angle.Lars': lars_config,
+        'sklearn.neural_network.MLPClassifier': mlp_config,
+        'sklearn.svm.SVC':svc_config,
+        #'sklearn.gaussian_process.GaussianProcessClassifier':gp_config,
+        #'sklearn.gaussian_process.kernels.RBF':rbf_config,
+        'sklearn.tree.DecisionTreeClassifier':decision_tree_config,
+        #'sklearn.ensemble.AdaBoostClassifier':ada_boost_config,
+        #'sklearn.naive_bayes.GaussianNB':gaussian_nb_config,
+        #'sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis':qda_config,
+        #'sklearn.linear_model.SGDClassifier':sgd_config
+
 }
