@@ -98,7 +98,7 @@ def mlp_config(cs):
     momentum = UniformFloatHyperparameter("momentum", 0.0, 1.0, default_value=0.9)
     cs.add_hyperparameters([alpha,activation,solver,learning_rate,momentum])
 
-#def gp_config(cs):
+
 
 def logistic_regression_config(cs):
     penalty = CategoricalHyperparameter("penalty", ['l1', 'l2'], default_value='l2')
@@ -209,11 +209,39 @@ def primitive_config(cs,primitive_name):
         cs.add_hyperparameters(parameter_list)
 
 
+def gp_config(cs):
+    warm_start = CategoricalHyperparameter('warm_start',[True,False], default_value = False)
+    multi_class = CategoricalHyperparameter('multi_class', ['one_vs_rest', 'one_vs_one'], default_value='one_vs_rest')
+    cs.add_hyperparameters([warm_start, multi_class])
 
 
+def rbf_config(cs):
+    length_scale = UniformFloatHyperparameter('length_scale', 1e-05, 1e5, default_value=1.0)
+    cs.add_hyperparameter(length_scale)
 
+def ada_boost_config(cs):
+    n_estimators = UniformFloatHyperparameter('n_estimators', 10, 200, default_value=50)
+    learning_rate = UniformFloatHyperparameter('learning_rate', 1e-5, 10., default_value=1.)
+    algorithm = CategoricalHyperparameter('algorithm', ['SAMME', 'SAMME.R'], default_value= 'SAMME.R')
+    cs.add_hyperparameters([n_estimators, learning_rate, algorithm])
 
+#def gaussian_nb_config(cs):
+#    pass
 
+def qda_config(cs):
+    tol = UniformFloatHyperparameter("tol", 1e-8, 1.0, default_value=1e-4)
+    reg_param = UniformFloatHyperparameter("reg_param", 0.0, 0.9, default_value=0.0)
+    store_covariance = CategoricalHyperparameter('store_covariance',[True,False, None], default_value = None)
+    cs.add_hyperparameters([tol, reg_param, store_covariance])
+
+def sgd_config(cs):
+    penalty = CategoricalHyperparameter("penalty", ['l1', 'l2', 'none', 'elasticnet'], default_value='l2')
+    loss = CategoricalHyperparameter("loss", ['hinge', 'squared_hinge','log', 'modified_huber', 'perceptron'], default_value='hinge')
+    alpha = UniformFloatHyperparameter("alpha", 0.00001, 1.0, default_value=0.0001)
+    fit_intercept = CategoricalHyperparameter("fit_intercept",[True,False], default_value=True)
+    warm_start = CategoricalHyperparameter('warm_start', [True, False], default_value=False)
+    learning_rate = CategoricalHyperparameter('learning_rate', ['optimal', 'constant', 'invscaling'], default_value='optimal')
+    cs.add_hyperparameters([penalty, loss, alpha, fit_intercept, warm_start, learning_rate])
 
 
 
@@ -231,12 +259,12 @@ ESTIMATORS = {
         'sklearn.linear_model.least_angle.Lars': lars_config,
         'sklearn.neural_network.MLPClassifier': mlp_config,
         'sklearn.svm.SVC':svc_config,
-        #'sklearn.gaussian_process.GaussianProcessClassifier':gp_config,
-        #'sklearn.gaussian_process.kernels.RBF':rbf_config,
+        'sklearn.gaussian_process.GaussianProcessClassifier':gp_config,
+        'sklearn.gaussian_process.kernels.RBF':rbf_config,
         'sklearn.tree.DecisionTreeClassifier':decision_tree_config,
-        #'sklearn.ensemble.AdaBoostClassifier':ada_boost_config,
+        'sklearn.ensemble.AdaBoostClassifier':ada_boost_config,
         #'sklearn.naive_bayes.GaussianNB':gaussian_nb_config,
-        #'sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis':qda_config,
-        #'sklearn.linear_model.SGDClassifier':sgd_config
+        'sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis':qda_config,
+        'sklearn.linear_model.SGDClassifier':sgd_config
 
 }
