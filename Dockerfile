@@ -11,6 +11,7 @@ RUN apt-get update -yy && \
     apt-get clean
 
 WORKDIR /usr/src/app
+RUN pip3 install -e git+https://gitlab.com/datadrivendiscovery/d3m.git@93fe530741c1aa66a8c88b21048b3b413f23ebcc#egg=d3m
 RUN pip3 install Cython==0.27.3
 COPY requirements.txt /usr/src/app/requirements.txt
 RUN pip3 install -r requirements.txt
