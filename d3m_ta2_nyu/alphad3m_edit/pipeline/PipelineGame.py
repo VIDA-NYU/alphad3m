@@ -19,6 +19,7 @@ DATA_TYPES = {'TABULAR': 1}
 
 class PipelineGame(Game):
     def __init__(self, args, pipeline, eval_pipeline):
+        self.steps = 0
         self.eval_pipeline = eval_pipeline
         self.pipeline = pipeline
         self.args = args
@@ -28,10 +29,13 @@ class PipelineGame(Game):
         self.problem = self.problem_features['problem']['task_type'].unparse().upper()
         self.metric = self.problem_features['problem']['performance_metrics'][0]['metric'].unparse()
         self.dataset_metafeatures = None
-        if not args.get('metafeatures_file') is None and os.path.isfile(args['metafeatures_file']):
-            m_f = open(args['metafeatures_file'], 'rb')
-            metafeatures = pickle.load(m_f)
-            self.dataset_metafeatures = metafeatures.get(args['dataset'])
+        metafeatures_path = args.get('metafeatures_path')
+        if not metafeatures_path is None:
+            metafeatures_file = os.path.join(metafeatures_path, args['dataset'] + '_metafeatures.pkl')
+            if os.path.isfile(metafeatures_file):
+                m_f = open(metafeatures_file, 'rb')
+                self.dataset_metafeatures = pickle.load(m_f)[args['dataset']]
+
         if self.dataset_metafeatures is None:
             self.dataset_metafeatures = compute_metafeatures(os.path.join(self.args['dataset_path'], 'datasetDoc.json'), os.path.join(self.args['dataset_path'],'tables','learningData.csv'))
         #print(self.dataset_metafeatures)
@@ -102,6 +106,7 @@ class PipelineGame(Game):
             return 0.0
         eval_val = self.evaluations.get(",".join(pipeline))
         if eval_val is None:
+            self.steps = self.steps + 1
             try:
                 eval_val = self.eval_pipeline(pipeline, 'AlphaZero eval')
             except:

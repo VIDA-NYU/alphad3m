@@ -1,4 +1,5 @@
 import os
+import sys
 import operator
 import pickle
 
@@ -25,7 +26,7 @@ ARGS = {
     'checkpoint': './temp/',
     'load_model': True,
     'load_folder_file': ('./temp/', 'best.pth.tar'),
-    'metafeatures_file': '/home/ubuntu/scripts/metafeatures.pkl'
+    'metafeatures_path': '/Users/yamuna/D3M/data/metafeatures'
 }
 
 
@@ -111,7 +112,7 @@ def generate(task, dataset, metrics, problem, msg_queue, DBSession):
     c.learn()
 
 
-def main():
+def main(dataset):
     import tempfile
     from d3m_ta2_nyu.main import setup_logging
     from d3m_ta2_nyu.ta2 import D3mTa2
@@ -124,71 +125,69 @@ def main():
              }
     pipelines_list = []
     pipelines = {}
-    with open('pipelines.txt') as f:
-        pipelines_list = [line.strip() for line in f.readlines()]
-        for pipeline in pipelines_list:
-            fields = pipeline.split(' ')
-            pipelines[fields[0]] = fields[1].split(',')
-    datasets_path = '/home/ubuntu/datasets/training_datasets'
+    if os.path.isfile('pipelines.txt'):
+        with open('pipelines.txt') as f:
+            pipelines_list = [line.strip() for line in f.readlines()]
+            for pipeline in pipelines_list:
+                fields = pipeline.split(' ')
+                pipelines[fields[0]] = fields[1].split(',')
+    datasets_path = '/Users/yamuna/D3M/data'
     dataset_names = pipelines.keys()
     args = dict(ARGS)
-    m_f = open(args['metafeatures_file'], 'rb')
-    metafeatures = pickle.load(m_f)
-    dataset_names = metafeatures.keys()	
-    out_p = open('best_pipelines.txt', 'w')
-    for dataset in dataset_names:
-        print(dataset)
-        dataset =  'LL0_1589_svmguide3'
-        out_str = dataset + ', , \n'
-        if 'LL0' in dataset:
-           dataset_path = os.path.join(datasets_path, 'LL0', dataset)
-        else:
-           dataset_path = os.path.join(datasets_path, 'LL1', dataset)
 
-        dataset_name = os.path.join(dataset_path, dataset+'_dataset')
-        problem_name = os.path.join(dataset_path, dataset+'_problem')
+    print(dataset)
 
-        storage = tempfile.mkdtemp(prefix='d3m_pipeline_eval_')
-        ta2 = D3mTa2(storage_root=storage,
-                 logs_root=os.path.join(storage, 'logs'),
-                 executables_root=os.path.join(storage, 'executables'))
-        setup_logging()
-        session_id = ta2.new_session(problem_name)
+    if 'LL0' in dataset:
+       dataset_path = os.path.join(datasets_path, 'LL0', dataset)
+    else:
+       dataset_path = os.path.join(datasets_path, 'LL1', dataset)
 
-        def eval_pipeline(strings, origin):
-            # Create the pipeline in the database
-            pipeline_id = make_pipeline_from_strings(strings, origin, dataset_name,
-                                                 ta2.DBSession)
+    dataset_name = os.path.join(dataset_path, dataset+'_dataset')
+    problem_name = os.path.join(dataset_path, dataset+'_problem')
 
-            # Evaluate the pipeline
-            return ta2.run_pipeline(session_id, pipeline_id)
+    storage = tempfile.mkdtemp(prefix='d3m_pipeline_eval_')
+    ta2 = D3mTa2(storage_root=storage,
+             logs_root=os.path.join(storage, 'logs'),
+             executables_root=os.path.join(storage, 'executables'))
+    setup_logging()
+    session_id = ta2.new_session(problem_name)
+
+    def eval_pipeline(strings, origin):
+        # Create the pipeline in the database
+        pipeline_id = make_pipeline_from_strings(strings, origin, dataset_name,
+                                             ta2.DBSession)
+
+        # Evaluate the pipeline
+        return ta2.run_pipeline(session_id, pipeline_id)
+    pipeline = None
+    if pipelines:
         pipeline = [p_enum[primitive] for primitive in pipelines[dataset]]
-        print(pipeline)
-        args['dataset'] = dataset
-        args['dataset_path'] = dataset_name
-        args['problem_path'] = problem_name
-        args['metric'] = problem_name
-        game = PipelineGame(args, pipeline, eval_pipeline)
-        nnet = NNetWrapper(game)
+    print(pipeline)
+    args['dataset'] = dataset
+    args['dataset_path'] = dataset_name
+    args['problem_path'] = problem_name
+    args['metric'] = problem_name
+    game = PipelineGame(args, pipeline, eval_pipeline)
+    nnet = NNetWrapper(game)
 
-        if args.get('load_model'):
-           model_file = os.path.join(args.get('load_folder_file')[0],
-                                  args.get('load_folder_file')[1])
-           if os.path.isfile(model_file):
-                nnet.load_checkpoint(args.get('load_folder_file')[0],
-                                 args.get('load_folder_file')[1])
+    if args.get('load_model'):
+       model_file = os.path.join(args.get('load_folder_file')[0],
+                              args.get('load_folder_file')[1])
+       if os.path.isfile(model_file):
+            nnet.load_checkpoint(args.get('load_folder_file')[0],
+                             args.get('load_folder_file')[1])
 
-        c = Coach(game, nnet, args)
-        c.learn()
-        eval_dict = game.evaluations
-        for key, value in eval_dict.items():
-            if value == float('inf') and not 'error' in game.metric.lower():
-               eval_dict[key] = 0
-        evaluations = sorted(eval_dict.items(), key=operator.itemgetter(1))
-        if not 'error' in game.metric.lower():
-            evaluations.reverse()
-        out_p.write(dataset+' '+evaluations[0][0] + ' ' + str(evaluations[0][1])+'\n')
-        break
+    c = Coach(game, nnet, args)
+    c.learn()
+    eval_dict = game.evaluations
+    for key, value in eval_dict.items():
+        if value == float('inf') and not 'error' in game.metric.lower():
+           eval_dict[key] = 0
+    evaluations = sorted(eval_dict.items(), key=operator.itemgetter(1))
+    if not 'error' in game.metric.lower():
+        evaluations.reverse()
+    out_p = open(dataset+'_best_pipelines.txt', 'w')
+    out_p.write(dataset+' '+evaluations[0][0] + ' ' + str(evaluations[0][1])+ ' ' + game.steps + '\n')
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1])
