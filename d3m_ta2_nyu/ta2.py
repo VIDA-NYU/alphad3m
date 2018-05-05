@@ -36,7 +36,7 @@ from d3m_ta2_nyu.workflow import database
 
 MAX_RUNNING_PROCESSES = 1
 
-TUNE_PIPELINES_COUNT = 3
+TUNE_PIPELINES_COUNT = 1
 TUNE_PIPELINES_COUNT_DEBUG = 1
 
 
@@ -210,8 +210,8 @@ class Session(Observable):
             top_pipelines = self.get_top_pipelines(db, metric)
             logger.info("Writing logs for %d pipelines", len(top_pipelines))
             for i, (pipeline, score) in enumerate(top_pipelines):
-                logger.info("    %d) %s %s=%s",
-                            i + 1, pipeline.id, metric, score)
+                logger.info("    %d) %s %s=%s origin=%s" ,
+                            i + 1, pipeline.id, metric, score, pipeline.origin)
                 filename = os.path.join(self._logs_dir,
                                         str(pipeline.id) + '.json')
                 obj = {
