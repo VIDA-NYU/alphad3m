@@ -26,7 +26,7 @@ ARGS = {
     'checkpoint': './temp/',
     'load_model': True,
     'load_folder_file': ('./temp/', 'best.pth.tar'),
-    'metafeatures_path': '/Users/yamuna/D3M/data/metafeatures'
+    'metafeatures_path': '/home/yk38/metafeatures'
 }
 
 
@@ -131,7 +131,7 @@ def main(dataset):
             for pipeline in pipelines_list:
                 fields = pipeline.split(' ')
                 pipelines[fields[0]] = fields[1].split(',')
-    datasets_path = '/Users/yamuna/D3M/data'
+    datasets_path = '/home/yk38/datasets/training_datasets'
     dataset_names = pipelines.keys()
     args = dict(ARGS)
 
@@ -187,7 +187,7 @@ def main(dataset):
     if not 'error' in game.metric.lower():
         evaluations.reverse()
     out_p = open(dataset+'_best_pipelines.txt', 'w')
-    out_p.write(dataset+' '+evaluations[0][0] + ' ' + str(evaluations[0][1])+ ' ' + game.steps + '\n')
+    out_p.write(dataset+' '+evaluations[0][0] + ' ' + str(evaluations[0][1])+ ' ' + str(game.steps) + '\n')
 
 if __name__ == '__main__':
     main(sys.argv[1])
