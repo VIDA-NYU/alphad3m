@@ -77,8 +77,8 @@ def decision_tree_config(cs):
     criterion = CategoricalHyperparameter("criterion", ['gini', 'entropy'], default_value='gini')
     splitter = CategoricalHyperparameter("splitter", ['best', 'random'], default_value='best')
     #max_depth = UniformIntegerHyperparameter("max_depth", 1, 10, default_value=None)
-    min_samples_split = UniformFloatHyperparameter("min_samples_split", 0.1, 0.9, default_value=0.1)
-    min_samples_leaf = UniformFloatHyperparameter("min_samples_leaf", 0.1, 0.5, default_value=0.1)
+    min_samples_split = UniformIntegerHyperparameter("min_samples_split", 2, 10, default_value=2)
+    min_samples_leaf = UniformIntegerHyperparameter("min_samples_leaf", 1, 10, default_value=1)
     max_features = CategoricalHyperparameter("max_features", ['auto','sqrt','log2',None], default_value=None)
     presort = UniformIntegerHyperparameter("presort", 0, 1, default_value=0)
     cs.add_hyperparameters([criterion,splitter,min_samples_split, min_samples_leaf,max_features,presort])
@@ -212,7 +212,8 @@ def primitive_config(cs,primitive_name):
 def gp_config(cs):
     warm_start = CategoricalHyperparameter('warm_start',[True,False], default_value = False)
     multi_class = CategoricalHyperparameter('multi_class', ['one_vs_rest', 'one_vs_one'], default_value='one_vs_rest')
-    cs.add_hyperparameters([warm_start, multi_class])
+    max_iter_predict = UniformIntegerHyperparameter('max_iter_predict',50,200,default_value = 100)
+    cs.add_hyperparameters([warm_start, multi_class,max_iter_predict])
 
 
 def rbf_config(cs):
@@ -220,7 +221,7 @@ def rbf_config(cs):
     cs.add_hyperparameter(length_scale)
 
 def ada_boost_config(cs):
-    n_estimators = UniformFloatHyperparameter('n_estimators', 10, 200, default_value=50)
+    n_estimators = UniformIntegerHyperparameter('n_estimators', 10, 200, default_value=50)
     learning_rate = UniformFloatHyperparameter('learning_rate', 1e-5, 10., default_value=1.)
     algorithm = CategoricalHyperparameter('algorithm', ['SAMME', 'SAMME.R'], default_value= 'SAMME.R')
     cs.add_hyperparameters([n_estimators, learning_rate, algorithm])
@@ -241,7 +242,8 @@ def sgd_config(cs):
     fit_intercept = CategoricalHyperparameter("fit_intercept",[True,False], default_value=True)
     warm_start = CategoricalHyperparameter('warm_start', [True, False], default_value=False)
     learning_rate = CategoricalHyperparameter('learning_rate', ['optimal', 'constant', 'invscaling'], default_value='optimal')
-    cs.add_hyperparameters([penalty, loss, alpha, fit_intercept, warm_start, learning_rate])
+    eta0 = UniformFloatHyperparameter('eta0',0.0,1.0,default_value=0.0)
+    cs.add_hyperparameters([penalty, loss, alpha, fit_intercept, warm_start, learning_rate,eta0])
 
 
 
