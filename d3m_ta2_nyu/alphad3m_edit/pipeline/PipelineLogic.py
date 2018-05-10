@@ -21,7 +21,7 @@ class Board():
         'CLASSIFICATION': {
             'sklearn.svm.classes.LinearSVC': 3,
             'sklearn.neighbors.classification.KNeighborsClassifier': 4,
-            'sklearn.tree.tree.DecisionTreeClassifier':5,
+            #'sklearn.tree.tree.DecisionTreeClassifier':5,
             'sklearn.naive_bayes.MultinomialNB':6,
             'sklearn.ensemble.forest.RandomForestClassifier':7,
             'sklearn.linear_model.logistic.LogisticRegression':8,
@@ -48,7 +48,7 @@ class Board():
             #'sklearn.linear_model.LassoCV': 26,
             'sklearn.linear_model.LassoLars': 27,
             #'sklearn.linear_model.LassoLarsCV': 28,
-            'sklearn.linear_model.LassoLarsIC': 29,
+            #'sklearn.linear_model.LassoLarsIC': 29,
             'sklearn.linear_model.LinearRegression': 30,
             'sklearn.linear_model.PassiveAggressiveRegressor': 31,
             'sklearn.linear_model.RANSACRegressor': 32,
