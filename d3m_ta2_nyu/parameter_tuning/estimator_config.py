@@ -179,7 +179,7 @@ def theil_sen_regressor_config(cs):
 
 
 def huber_regressor_config(cs):
-    epsilon = UniformFloatHyperparameter("tol", 1.0, 3.0, default_value=1.35)
+    epsilon = UniformFloatHyperparameter("epsilon", 1.0, 3.0, default_value=1.35)
     alpha = UniformFloatHyperparameter("alpha", 0.00001, 1.0, default_value=0.0001)
     fit_intercept = CategoricalHyperparameter("fit_intercept", [True, False], default_value=True)
     tol = UniformFloatHyperparameter("tol", 1e-8, 1.0, default_value=1e-5)
@@ -203,7 +203,7 @@ def lars_config(cs):
     copy_X = UniformIntegerHyperparameter("copy_X", 0, 1, default_value=1)
     positive = UniformIntegerHyperparameter("positive", 0, 1, default_value=1)
     fit_path = UniformIntegerHyperparameter("fit_path", 0, 1, default_value=1)
-    n_nonzero_coefs = UniformIntegerHyperparameter('n_nonzero_coefs', 100, np.inf, default_value=500)
+    n_nonzero_coefs = UniformIntegerHyperparameter('n_nonzero_coefs', 100, 1000, default_value=500)
     cs.add_hyperparameters([fit_intercept, normalize, copy_X, positive, fit_path, n_nonzero_coefs])
 
 
