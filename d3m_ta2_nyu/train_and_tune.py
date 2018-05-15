@@ -148,86 +148,97 @@ def tune(pipeline_id, metrics, problem, results_path, msg_queue, db):
         if module.name in ESTIMATORS.keys():
             estimator_module = module
 
-    logger.info("Tuning single module %s %s %s",
-                estimator_module.id,
-                estimator_module.name, estimator_module.package)
+    if estimator_module:
+        logger.info("Tuning single module %s %s %s",
+                    estimator_module.id,
+                    estimator_module.name, estimator_module.package)
 
-    tuning = HyperparameterTuning(estimator_module.name)
+        tuning = HyperparameterTuning(estimator_module.name)
 
-    def evaluate(hyperparameter_configuration):
+        def evaluate(hyperparameter_configuration):
+            estimator = estimator_from_cfg(hyperparameter_configuration,estimator_module.name)
+            db.add(database.PipelineParameter(
+                                pipeline=pipeline,
+                                module_id=estimator_module.id,
+                                name='hyperparams',
+                                value=pickle.dumps(estimator),
+                            )
+                )
+            scores, _ = cross_validation(
+                pipeline, metrics, data, targets, target_names, stratified_folds,
+                lambda i: None,
+                db)
+
+            # Don't store those runs
+            db.rollback()
+
+            return scores[metrics[0]] * SCORES_RANKING_ORDER[metrics[0]]
+
+        # Run tuning, gets best configuration
+        hyperparameter_configuration = tuning.tune(evaluate)
+
+        # Duplicate pipeline in database
+        new_pipeline = database.duplicate_pipeline(
+            db, pipeline,
+            "Hyperparameter tuning from pipeline %s" % pipeline_id)
+
+        # TODO: tune all modules, not only the estimator
+        estimator_module = None
+        for module in new_pipeline.modules:
+            if module.name in ESTIMATORS.keys():
+                estimator_module = module
+
         estimator = estimator_from_cfg(hyperparameter_configuration,estimator_module.name)
         db.add(database.PipelineParameter(
-                            pipeline=pipeline,
-                            module_id=estimator_module.id,
-                            name='hyperparams',
-                            value=pickle.dumps(estimator), 
-                        )
-            )
-        scores, _ = cross_validation(
-            pipeline, metrics, data, targets, target_names, stratified_folds,
+            pipeline=new_pipeline,
+            module_id=estimator_module.id,
+            name='hyperparams',
+            value=pickle.dumps(estimator),
+        ))
+        db.flush()
+
+        logger.info("Tuning done, generated new pipeline %s.", new_pipeline.id)
+        for f in os.listdir('/tmp'):
+            if 'run_1' in f:
+                shutil.rmtree('/tmp/' + f)
+
+        # Scoring step - make folds, run them through the pipeline one by one
+        # (set both training_data and test_data),
+        # get predictions from OutputPort to get cross validation scores
+        scores, predictions = cross_validation(
+            new_pipeline, metrics, data, targets, target_names, stratified_folds,
             lambda i: None,
             db)
+        logger.info("Scoring done: %s", ", ".join("%s=%s" % s
+                                                  for s in scores.items()))
 
-        # Don't store those runs
-        db.rollback()
+        # Store scores
+        scores = [database.CrossValidationScore(metric=metric,
+                                                value=numpy.mean(values))
+                  for metric, values in scores.items()]
+        crossval = database.CrossValidation(pipeline_id=new_pipeline.id,
+                                            scores=scores)
+        db.add(crossval)
 
-        return scores[metrics[0]] * SCORES_RANKING_ORDER[metrics[0]]
+        # Store predictions
+        predictions.to_csv(results_path)
 
-    # Run tuning, gets best configuration
-    hyperparameter_configuration = tuning.tune(evaluate)
+        # Training step - run pipeline on full training_data,
+        # Persist module set to write
+        logger.info("Running training on full data")
 
-    # Duplicate pipeline in database
-    new_pipeline = database.duplicate_pipeline(
-        db, pipeline,
-        "Hyperparameter tuning from pipeline %s" % pipeline_id)
+        try:
+            execute_train(db, new_pipeline, data, targets)
+        except Exception:
+            logger.exception("Error running training on full data")
+            sys.exit(1)
 
-    # TODO: tune all modules, not only the estimator
-    estimator_module = None
-    for module in new_pipeline.modules:
-        if module.name in ESTIMATORS.keys():
-            estimator_module = module
-
-    estimator = estimator_from_cfg(hyperparameter_configuration,estimator_module.name)
-    db.add(database.PipelineParameter(
-        pipeline=new_pipeline,
-        module_id=estimator_module.id,
-        name='hyperparams',
-        value=pickle.dumps(estimator),
-    ))
-    db.flush()
-
-    logger.info("Tuning done, generated new pipeline %s.", new_pipeline.id)
-
-    # Scoring step - make folds, run them through the pipeline one by one
-    # (set both training_data and test_data),
-    # get predictions from OutputPort to get cross validation scores
-    scores, predictions = cross_validation(
-        new_pipeline, metrics, data, targets, target_names, stratified_folds,
-        lambda i: None,
-        db)
-    logger.info("Scoring done: %s", ", ".join("%s=%s" % s
-                                              for s in scores.items()))
-
-    # Store scores
-    scores = [database.CrossValidationScore(metric=metric,
-                                            value=numpy.mean(values))
-              for metric, values in scores.items()]
-    crossval = database.CrossValidation(pipeline_id=new_pipeline.id,
-                                        scores=scores)
-    db.add(crossval)
-
-    # Store predictions
-    predictions.to_csv(results_path)
-
-    # Training step - run pipeline on full training_data,
-    # Persist module set to write
-    logger.info("Running training on full data")
-
-    try:
-        execute_train(db, new_pipeline, data, targets)
-    except Exception:
-        logger.exception("Error running training on full data")
+        db.commit()
+        msg_queue.send(('tuned_pipeline_id', new_pipeline.id))
+        for f in os.listdir('/tmp'):
+            if 'run_1' in f:
+                shutil.rmtree('/tmp/'+f)
+    else:
+        logger.info("No module to be tuned for pipeline %s", pipeline_id)
         sys.exit(1)
 
-    db.commit()
-    msg_queue.send(('tuned_pipeline_id', new_pipeline.id))
