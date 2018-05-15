@@ -236,8 +236,9 @@ def tune(pipeline_id, metrics, problem, results_path, msg_queue, db):
 
         db.commit()
         msg_queue.send(('tuned_pipeline_id', new_pipeline.id))
-    else:
         for f in os.listdir('/tmp'):
             if 'run_1' in f:
                 shutil.rmtree('/tmp/'+f)
+    else:
         logger.info("No module to be tuned for pipeline %s", pipeline_id)
+        sys.exit(1)
