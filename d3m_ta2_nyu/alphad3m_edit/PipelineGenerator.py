@@ -26,7 +26,7 @@ ARGS = {
     'checkpoint': './temp/',
     'load_model': True,
     'load_folder_file': ('./temp/', 'best.pth.tar'),
-    'metafeatures_path': '/home/yk38/metafeatures'
+    'metafeatures_path': '/home/ubuntu/metafeatures'
 }
 
 
@@ -57,7 +57,7 @@ def make_pipeline_from_strings(strings, origin, dataset, DBSession):
         targets = make_module('data', '0.0', 'targets')
 
         # Assuming a simple linear pipeline
-        imputer_name, encoder_name, classifier_name = strings
+        #imputer_name, encoder_name, classifier_name = strings
 
         # This will use sklearn directly, and others through the TA1 interface
         def make_primitive(name):
@@ -65,15 +65,16 @@ def make_pipeline_from_strings(strings, origin, dataset, DBSession):
                 return make_module('sklearn-builtin', '0.0', name)
             else:
                 return make_module('primitives', '0.0', name)
+        
+        primitives = []
+        for primitive in strings:
+            primitives.append(make_primitive(primitive))
 
-        imputer = make_primitive(imputer_name)
-        encoder = make_primitive(encoder_name)
-        classifier = make_primitive(classifier_name)
+        connect(data, primitives[0])
+        for i in range(0, len(primitives)-1):
+            connect(primitives[i], primitives[i+1])
 
-        connect(data, imputer)
-        connect(imputer, encoder)
-        connect(encoder, classifier)
-        connect(targets, classifier, 'targets', 'targets')
+        connect(targets, primitives[-1], 'targets', 'targets')
 
         db.add(pipeline)
         db.commit()
@@ -131,7 +132,7 @@ def main(dataset):
             for pipeline in pipelines_list:
                 fields = pipeline.split(' ')
                 pipelines[fields[0]] = fields[1].split(',')
-    datasets_path = '/home/yk38/datasets/training_datasets'
+    datasets_path = '/home/ubuntu/datasets/training_datasets'
     dataset_names = pipelines.keys()
     args = dict(ARGS)
 
