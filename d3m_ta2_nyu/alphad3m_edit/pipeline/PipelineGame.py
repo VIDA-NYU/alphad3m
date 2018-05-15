@@ -12,6 +12,7 @@ from random import uniform
 from d3m_metadata.problem import parse_problem_description
 from d3m_ta2_nyu.metafeatures.dataset import compute_metafeatures
 from pprint import pprint
+import traceback
 
 PROBLEM_TYPES = {'CLASSIFICATION': 1,
                  'REGRESSION': 2}
@@ -111,7 +112,7 @@ class PipelineGame(Game):
                 eval_val = self.eval_pipeline(pipeline, 'AlphaZero eval')
             except:
                 print('Error in Pipeline Execution ', eval_val)
-
+                traceback.print_exc()
             if eval_val is None:
                 eval_val = float('inf')
             self.evaluations[",".join(pipeline)] = eval_val
