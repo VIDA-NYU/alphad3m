@@ -2,6 +2,7 @@ from __future__ import print_function
 import sys
 import os
 import pickle
+import math
 from copy import deepcopy
 sys.path.append('..')
 from ..Game import Game
@@ -168,9 +169,9 @@ class PipelineGame(Game):
         assert(len(pi) == self.getActionSize())  # 1 for pass
         eval_val = self.getEvaluation(board)
         if 'error' in self.metric.lower():
-            return (board[:self.m+self.p+self.o], pi, self.getEvaluation(board) if self.getEvaluation(board)!= float('inf') else 100000)
+            return (board[:self.m+self.p+self.o], pi, eval_val if eval_val!= float('inf') and eval_val <= math.pow(10,15) else math.pow(10,15))
         else:
-            return (board[:self.m+self.p+self.o], pi, self.getEvaluation(board) if self.getEvaluation(board)!= float('inf') else 0)
+            return (board[:self.m+self.p+self.o], pi, eval_val if eval_val != float('inf') else 0)
 
     def display(self, b):
         n = self.p
