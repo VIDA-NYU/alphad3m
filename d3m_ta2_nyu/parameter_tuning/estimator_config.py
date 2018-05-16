@@ -388,3 +388,29 @@ def get_default_hyperparameters(estimator):
             param_dict[param.name] = param.default_value
     return param_dict
 
+
+
+def encode_hyperparameter(estimator,parameter,value):
+    if estimator in ESTIMATORS:
+        cs = ConfigurationSpace()
+        ESTIMATORS[estimator](cs)
+        for param in cs.get_hyperparameters():
+            if param.name == parameter:
+                if value in param.choices:
+                    return param.choices.index(value)
+                else:
+                    return -1
+    return -1
+
+
+def decode_hyperparameter(estimator,parameter,value):
+    if estimator in ESTIMATORS:
+        cs = ConfigurationSpace()
+        ESTIMATORS[estimator](cs)
+        for param in cs.get_hyperparameters():
+            if param.name == parameter:
+                if value in range(len(param.choices)):
+                    return param.choices[value]
+                else:
+                    return -1
+    return -1
