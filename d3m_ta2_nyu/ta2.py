@@ -261,9 +261,11 @@ class Job(object):
 
 
 class TrainJob(Job):
-    def __init__(self, session, pipeline_id):
+    def __init__(self, session, pipeline_id, store_results=True):
         Job.__init__(self, session)
         self.pipeline_id = pipeline_id
+        self.store_results = store_results
+        self.results = None
 
     def start(self, db_filename, predictions_root, **kwargs):
         self.predictions_root = predictions_root
@@ -271,8 +273,9 @@ class TrainJob(Job):
                     "(session %s has %d pipelines left to train)",
                     self.pipeline_id, self.session.id,
                     len(self.session.pipelines_training))
-        self.results = os.path.join(self.predictions_root,
-                                    '%s.csv' % self.pipeline_id)
+        if self.store_results:
+            self.results = os.path.join(self.predictions_root,
+                                        '%s.csv' % self.pipeline_id)
         self.msg = Receiver()
         self.proc = run_process('d3m_ta2_nyu.train.train', 'train', self.msg,
                                 pipeline_id=self.pipeline_id,
@@ -309,9 +312,11 @@ class TrainJob(Job):
 
 
 class TuneHyperparamsJob(Job):
-    def __init__(self, session, pipeline_id):
+    def __init__(self, session, pipeline_id, store_results=True):
         Job.__init__(self, session)
         self.pipeline_id = pipeline_id
+        self.store_results = store_results
+        self.results = None
 
     def start(self, db_filename, predictions_root, **kwargs):
         self.predictions_root = predictions_root
@@ -319,8 +324,9 @@ class TuneHyperparamsJob(Job):
                     "(session %s has %d pipelines left to tune)",
                     self.pipeline_id, self.session.id,
                     len(self.session.pipelines_tuning))
-        self.results = os.path.join(self.predictions_root,
-                                    '%s.csv' % self.pipeline_id)
+        if self.store_results:
+            self.results = os.path.join(self.predictions_root,
+                                        '%s.csv' % self.pipeline_id)
         self.msg = Receiver()
         self.proc = run_process('d3m_ta2_nyu.train_and_tune.tune',
                                 'tune', self.msg,
@@ -471,7 +477,7 @@ class D3mTa2(object):
         finally:
             db.close()
 
-    def run_pipeline(self, session_id, pipeline_id):
+    def run_pipeline(self, session_id, pipeline_id, store_results=False):
         """Train and score a single pipeline.
 
         This is used by the pipeline synthesis code.
@@ -486,7 +492,8 @@ class D3mTa2(object):
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             session.add_training_pipeline(pipeline_id)
-            self._run_queue.put(TrainJob(session, pipeline_id))
+            self._run_queue.put(TrainJob(session, pipeline_id,
+                                         store_results=False))
             session.notify('new_pipeline', pipeline_id=pipeline_id)
             while True:
                 event, kwargs = queue.get(True)

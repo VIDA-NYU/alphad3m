@@ -221,6 +221,10 @@ class CoreService(pb_core_grpc.CoreServicer):
                     for m, s in scores.items()
                     if m in self.metric2grpc
                 ]
+                if predictions:
+                    predict_result_uri = 'file://{}'.format(predictions)
+                else:
+                    predict_result_uri = ''
                 yield pb_core.PipelineCreateResult(
                     response_info=pb_core.Response(
                         status=pb_core.Status(code=pb_core.OK),
@@ -229,7 +233,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     pipeline_id=str(pipeline_id),
                     pipeline_info=pb_core.Pipeline(
                         scores=scores,
-                        predict_result_uri='file://{}'.format(predictions),
+                        predict_result_uri=predict_result_uri,
                     ),
                 )
             elif event == 'training_error':
