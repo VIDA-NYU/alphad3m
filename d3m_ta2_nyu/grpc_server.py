@@ -284,7 +284,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         queue = Queue()
         session = self._app.sessions[session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            self._app.test_pipeline(session_id, pipeline_id, dataset)
+            self._app.test_pipeline(session_id, pipeline_id, dataset, True)
 
             yield from self._pipelineexecuteresult_stream(context, queue)
 
