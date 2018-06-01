@@ -15,6 +15,7 @@ from queue import Empty, Queue
 from sqlalchemy import select
 from sqlalchemy.orm import aliased, joinedload
 import stat
+import subprocess
 import sys
 import threading
 import time
@@ -794,6 +795,32 @@ class D3mTa2(object):
         st = os.stat(filename)
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
+
+    def test_pipeline(self, session_id, pipeline_id, dataset):
+        session = self.sessions[session_id]
+        if pipeline_id not in session.pipelines:
+            raise KeyError("No such pipeline ID for session")
+
+        self.executor.submit(self._test_pipeline, session, pipeline_id,
+                             dataset)
+
+    def _test_pipeline(self, session, pipeline_id, dataset):
+        results = os.path.join(self.predictions_root,
+                               'execute-%s.csv' % uuid.uuid4())
+        proc = subprocess.Popen(
+            [sys.executable,
+             '-c',
+             'import uuid; from d3m_ta2_nyu.test import test; '
+             'test(uuid.UUID(hex=%r), %r, %r, %r, db_filename=%r)' % (
+                 pipeline_id.hex, dataset, session.problem, results,
+                 self.db_filename,
+             )
+            ]
+        )
+        ret = proc.wait()
+        session.notify('test_done',
+                       pipeline_id=pipeline_id, results_path=results,
+                       success=(ret == 0))
 
     def _classification_template(self, imputer_cat, imputer_num, encoder,
                                  classifier, dataset):

@@ -74,7 +74,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 response_info=pb_core.Response(
                     status=pb_core.Status(
                         code=pb_core.INVALID_ARGUMENT,
-                        details="Unknown task",
+                        details="Dataset is not in D3M format",
                     ),
                 ),
             )
@@ -252,9 +252,6 @@ class CoreService(pb_core_grpc.CoreServicer):
                 )
             elif event == 'done_training':
                 break
-            else:
-                logger.error("Unexpected notification event %s",
-                             event)
 
     def ExecutePipeline(self, request, context):
         session_id = UUID(hex=request.context.session_id)
@@ -267,16 +264,91 @@ class CoreService(pb_core_grpc.CoreServicer):
             return
         pipeline_id = UUID(hex=request.pipeline_id)
 
-        logger.info("Got ExecutePipeline request, session=%s", session_id)
+        dataset = request.dataset_uri
+        if not dataset.endswith('datasetDoc.json'):
+            logger.error("Dataset is not in D3M format: %s", dataset)
+            yield pb_core.PipelineExecuteResult(
+                response_info=pb_core.Response(
+                    status=pb_core.Status(
+                        code=pb_core.INVALID_ARGUMENT,
+                        details="Dataset is not in D3M format",
+                    ),
+                ),
+            )
+            return
+        dataset = dataset[:-15]
 
-        # TODO: ExecutePipeline
-        yield pb_core.PipelineExecuteResult(
-            response_info=pb_core.Response(
-                status=pb_core.Status(code=pb_core.OK),
-            ),
-            progress_info=pb_core.COMPLETED,
-            pipeline_id=str(pipeline_id),
-        )
+        logger.info("Got ExecutePipeline request, session=%s, dataset=%s",
+                    session_id, dataset)
+
+        queue = Queue()
+        session = self._app.sessions[session_id]
+        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+            self._app.test_pipeline(session_id, pipeline_id, dataset)
+
+            yield from self._pipelineexecuteresult_stream(context, queue)
+
+    def GetExecutePipelineResults(self, request, context):
+        session_id = UUID(hex=request.context.session_id)
+        if session_id not in self._app.sessions:
+            yield pb_core.PipelineExecuteResult(
+                response_info=pb_core.Response(
+                    status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
+                ),
+            )
+            return
+        pipeline_ids = [UUID(hex=i) for i in request.pipeline_ids]
+
+        logger.info("Got GetExecutePipelineResults request, session=%s",
+                    session_id)
+
+        queue = Queue()
+        session = self._app.sessions[session_id]
+        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+            yield from self._pipelineexecuteresult_stream(context, queue,
+                                                          pipeline_ids)
+
+    def _pipelineexecuteresult_stream(self, context, queue, pipeline_ids=None):
+        if pipeline_ids is None:
+            pipeline_filter = lambda p_id: True
+        else:
+            pipeline_filter = lambda p_id, s=set(pipeline_ids): p_id in s
+
+        while True:
+            if not context.is_active():
+                logger.info("Client closed ExecutePipeline stream")
+                break
+            event, kwargs = queue.get()
+            if event == 'finish_session':
+                yield pb_core.PipelineExecuteResult(
+                    response_info=pb_core.Response(
+                        status=pb_core.Status(code=pb_core.SESSION_ENDED),
+                    )
+                )
+                break
+            elif event == 'test_done':
+                pipeline_id = kwargs['pipeline_id']
+                if not pipeline_filter(pipeline_id):
+                    continue
+                results_path = kwargs['results_path']
+                if kwargs['success']:
+                    yield pb_core.PipelineExecuteResult(
+                        response_info=pb_core.Response(
+                            status=pb_core.Status(code=pb_core.OK),
+                        ),
+                        progress_info=pb_core.COMPLETED,
+                        pipeline_id=str(pipeline_id),
+                        result_uri='file://{}'.format(results_path),
+                    )
+                else:
+                    yield pb_core.PipelineExecuteResult(
+                        response_info=pb_core.Response(
+                            status=pb_core.Status(code=pb_core.ABORTED),
+                        ),
+                        progress_info=pb_core.ERRORED,
+                        pipeline_id=str(pipeline_id),
+                    )
+                break
 
     def ListPipelines(self, request, context):
         session_id = UUID(hex=request.context.session_id)
@@ -293,9 +365,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             ),
             pipeline_ids=[str(i) for i in pipelines],
         )
-
-    def GetExecutePipelineResults(self, request, context):
-        raise NotImplementedError  # TODO: GetExecutePipelineResults
 
     def ExportPipeline(self, request, context):
         session_id = UUID(hex=request.context.session_id)
