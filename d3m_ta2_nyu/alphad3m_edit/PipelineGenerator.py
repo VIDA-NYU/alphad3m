@@ -113,7 +113,9 @@ def generate(task, dataset, metrics, problem, msg_queue, DBSession):
     c.learn()
 
 
-def main(dataset):
+def main(dataset, output_path):
+    import time
+    start = time.time()
     import tempfile
     from d3m_ta2_nyu.main import setup_logging
     from d3m_ta2_nyu.ta2 import D3mTa2
@@ -187,8 +189,12 @@ def main(dataset):
     evaluations = sorted(eval_dict.items(), key=operator.itemgetter(1))
     if not 'error' in game.metric.lower():
         evaluations.reverse()
-    out_p = open(dataset+'_best_pipelines.txt', 'w')
-    out_p.write(dataset+' '+evaluations[0][0] + ' ' + str(evaluations[0][1])+ ' ' + str(game.steps) + '\n')
+    end = time.time()
+    out_p = open(os.path.join(output_path, dataset+'_best_pipelines.txt'), 'w')
+    out_p.write(dataset+' '+evaluations[0][0] + ' ' + str(evaluations[0][1])+ ' ' + str(game.steps) + ' ' + str((end-start)/60.0) + '\n')
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    output_path = '.'
+    if len(sys.argv) > 2:
+       output_path = sys.argv[2]
+    main(sys.argv[1], output_path)
