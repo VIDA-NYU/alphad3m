@@ -15,6 +15,7 @@ from queue import Empty, Queue
 from sqlalchemy import select
 from sqlalchemy.orm import aliased, joinedload
 import stat
+import subprocess
 import sys
 import threading
 import time
@@ -273,9 +274,11 @@ class Job(object):
 
 
 class TrainJob(Job):
-    def __init__(self, session, pipeline_id):
+    def __init__(self, session, pipeline_id, store_results=True):
         Job.__init__(self, session)
         self.pipeline_id = pipeline_id
+        self.store_results = store_results
+        self.results = None
 
     def start(self, db_filename, predictions_root, **kwargs):
         self.predictions_root = predictions_root
@@ -283,8 +286,9 @@ class TrainJob(Job):
                     "(session %s has %d pipelines left to train)",
                     self.pipeline_id, self.session.id,
                     len(self.session.pipelines_training))
-        self.results = os.path.join(self.predictions_root,
-                                    '%s.csv' % self.pipeline_id)
+        if self.store_results:
+            self.results = os.path.join(self.predictions_root,
+                                        '%s.csv' % self.pipeline_id)
         self.msg = Receiver()
         self.proc = run_process('d3m_ta2_nyu.train.train', 'train', self.msg,
                                 pipeline_id=self.pipeline_id,
@@ -321,9 +325,11 @@ class TrainJob(Job):
 
 
 class TuneHyperparamsJob(Job):
-    def __init__(self, session, pipeline_id):
+    def __init__(self, session, pipeline_id, store_results=True):
         Job.__init__(self, session)
         self.pipeline_id = pipeline_id
+        self.store_results = store_results
+        self.results = None
 
     def start(self, db_filename, predictions_root, **kwargs):
         self.predictions_root = predictions_root
@@ -331,8 +337,9 @@ class TuneHyperparamsJob(Job):
                     "(session %s has %d pipelines left to tune)",
                     self.pipeline_id, self.session.id,
                     len(self.session.pipelines_tuning))
-        self.results = os.path.join(self.predictions_root,
-                                    '%s.csv' % self.pipeline_id)
+        if self.store_results:
+            self.results = os.path.join(self.predictions_root,
+                                        '%s.csv' % self.pipeline_id)
         self.msg = Receiver()
         self.proc = run_process('d3m_ta2_nyu.train_and_tune.tune',
                                 'tune', self.msg,
@@ -472,7 +479,7 @@ class D3mTa2(object):
         finally:
             db.close()
 
-    def run_pipeline(self, session_id, pipeline_id):
+    def run_pipeline(self, session_id, pipeline_id, store_results=False):
         """Train and score a single pipeline.
 
         This is used by the pipeline synthesis code.
@@ -487,7 +494,8 @@ class D3mTa2(object):
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             session.add_training_pipeline(pipeline_id)
-            self._run_queue.put(TrainJob(session, pipeline_id))
+            self._run_queue.put(TrainJob(session, pipeline_id,
+                                         store_results=False))
             session.notify('new_pipeline', pipeline_id=pipeline_id)
             while True:
                 event, kwargs = queue.get(True)
@@ -780,6 +788,34 @@ class D3mTa2(object):
         st = os.stat(filename)
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
+
+    def test_pipeline(self, session_id, pipeline_id, dataset, use_all_rows):
+        session = self.sessions[session_id]
+        if pipeline_id not in session.pipelines:
+            raise KeyError("No such pipeline ID for session")
+
+        self.executor.submit(self._test_pipeline, session, pipeline_id,
+                             dataset, use_all_rows)
+
+    def _test_pipeline(self, session, pipeline_id, dataset, use_all_rows):
+        results = os.path.join(self.predictions_root,
+                               'execute-%s.csv' % uuid.uuid4())
+        proc = subprocess.Popen(
+            [sys.executable,
+             '-c',
+             'import uuid; from d3m_ta2_nyu.test import test; '
+             'test(uuid.UUID(hex=%r), %r, %r, %r, db_filename=%r, '
+             'use_all_rows=%r)' % (
+                 pipeline_id.hex, dataset, session.problem, results,
+                 self.db_filename,
+                 use_all_rows,
+             )
+            ]
+        )
+        ret = proc.wait()
+        session.notify('test_done',
+                       pipeline_id=pipeline_id, results_path=results,
+                       success=(ret == 0))
 
     def _classification_template(self, imputer, classifier, dataset,
                                  targets):

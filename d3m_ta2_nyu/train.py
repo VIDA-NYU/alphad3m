@@ -144,7 +144,11 @@ def train(pipeline_id, metrics, problem, results_path, msg_queue, db):
     db.add(crossval)
 
     # Store predictions
-    predictions.to_csv(results_path)
+    if results_path is not None:
+        logger.info("Storing predictions at %s", results_path)
+        predictions.to_csv(results_path)
+    else:
+        logger.info("NOT storing predictions")
 
     # Training step - run pipeline on full training_data,
     # Persist module set to write
