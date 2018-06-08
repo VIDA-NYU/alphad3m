@@ -4,8 +4,10 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter, \
     UniformFloatHyperparameter, UniformIntegerHyperparameter, \
     NormalFloatHyperparameter, FloatHyperparameter, IntegerHyperparameter
 import ConfigSpace.conditions
+from smac.configspace import ConfigurationSpace
 from d3m_metadata.hyperparams import Bounded, Enumeration, Uniform, UniformInt, Normal
 from d3m_ta2_nyu.workflow.module_loader import get_class
+import random
 
 
 def svm_config(cs):
@@ -358,3 +360,55 @@ ESTIMATORS = {
     'sklearn.linear_model.TheilSenRegressor': theil_sen_regressor_config
 
 }
+
+def get_random_hyperparameters(estimator):
+    param_dict = {}
+    if estimator in ESTIMATORS:
+        cs = ConfigurationSpace()
+        ESTIMATORS[estimator](cs)
+        for param in cs.get_hyperparameters():
+            if isinstance(param, CategoricalHyperparameter):
+                param_dict[param.name] = random.choice(param.choices)
+            elif isinstance(param, UniformFloatHyperparameter):
+                param_dict[param.name] = random.uniform(param.lower,param.upper)
+            else:
+                param_dict[param.name] = random.randint(param.lower, param.upper)
+    return param_dict
+
+
+def get_default_hyperparameters(estimator):
+    param_dict = {}
+    if estimator in ESTIMATORS:
+        cs = ConfigurationSpace()
+        ESTIMATORS[estimator](cs)
+        for param in cs.get_hyperparameters():
+            param_dict[param.name] = param.default_value
+    return param_dict
+
+
+
+def encode_hyperparameter(estimator,parameter,value):
+    if estimator in ESTIMATORS:
+        cs = ConfigurationSpace()
+        ESTIMATORS[estimator](cs)
+        for param in cs.get_hyperparameters():
+            if param.name == parameter:
+                if value in param.choices:
+                    return param.choices.index(value)
+                else:
+                    return -1
+    return -1
+
+
+def decode_hyperparameter(estimator,parameter,value):
+    if estimator in ESTIMATORS:
+        cs = ConfigurationSpace()
+        ESTIMATORS[estimator](cs)
+        for param in cs.get_hyperparameters():
+            if param.name == parameter:
+                if value in range(len(param.choices)):
+                    return param.choices[value]
+                else:
+                    return -1
+    return -1
+

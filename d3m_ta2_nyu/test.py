@@ -10,14 +10,20 @@ logger = logging.getLogger(__name__)
 
 
 @database.with_db
-def test(pipeline_id, dataset, problem, results_path, db):
+def test(pipeline_id, dataset, problem, results_path, db, use_all_rows=False):
     # Load data
     ds = D3MDS(dataset, problem)
     logger.info("Loaded dataset, columns: %s",
                 ", ".join(col['colName']
                           for col in ds.dataset.get_learning_data_columns()))
 
-    data = ds.get_test_data()
+    if not use_all_rows:
+        data = ds.get_test_data()
+    else:
+        logger.info("Ignoring dataSplits, testing on all rows")
+        data = ds.dataset.get_learning_data(view=None, problem=ds.problem)
+        target_cols = ds._get_target_columns(data)
+        data.drop(data.columns[target_cols], axis=1, inplace=True)
 
     # Run prediction
     try:

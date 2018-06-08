@@ -6,7 +6,8 @@ from sqlalchemy.orm import joinedload
 import sys
 import time
 import pickle
-import os, shutil
+import os
+import shutil
 
 from d3m_ta2_nyu.common import SCORES_TO_SKLEARN, SCORES_RANKING_ORDER
 from d3m_ta2_nyu.d3mds import D3MDS
@@ -222,7 +223,11 @@ def tune(pipeline_id, metrics, problem, results_path, msg_queue, db):
         db.add(crossval)
 
         # Store predictions
-        predictions.to_csv(results_path)
+        if results_path is not None:
+            logger.info("Storing predictions at %s", results_path)
+            predictions.to_csv(results_path)
+        else:
+            logger.info("NOT storing predictions")
 
         # Training step - run pipeline on full training_data,
         # Persist module set to write
@@ -236,9 +241,8 @@ def tune(pipeline_id, metrics, problem, results_path, msg_queue, db):
 
         db.commit()
         msg_queue.send(('tuned_pipeline_id', new_pipeline.id))
-        for f in os.listdir('/tmp'):
-            if 'run_1' in f:
-                shutil.rmtree('/tmp/'+f)
     else:
         logger.info("No module to be tuned for pipeline %s", pipeline_id)
         sys.exit(1)
+
+
