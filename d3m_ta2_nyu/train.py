@@ -21,7 +21,7 @@ RANDOM = 65682867  # The most random of all numbers
 MAX_SAMPLE = 50000
 
 
-def cross_validation(pipeline, metrics, dataset,
+def cross_validation(pipeline, metrics, dataset, targets,
                      progress, db):
     scores = {}
 
@@ -70,7 +70,23 @@ def cross_validation(pipeline, metrics, dataset,
 
         run_time = time.time() - start_time
 
+        # Get predicted targets
         predictions = next(iter(outputs.values()))['produce']
+
+        # Get expected targets
+        test_targets = []
+        for resID, col_name in targets:
+            test_targets.append(test_data_split[resID].loc[:, col_name])
+        test_targets = pandas.concat(test_targets, axis=1)
+
+        # FIXME: Right now pipeline returns a simple array
+        # Make it a DataFrame
+        predictions = pandas.DataFrame(
+            {
+                next(iter(targets))[1]: predictions,
+                'd3mIndex': test_targets.index
+            }
+        ).set_index('d3mIndex')
 
         # Compute score
         for metric in metrics:
@@ -80,11 +96,11 @@ def cross_validation(pipeline, metrics, dataset,
             else:
                 score_func = SCORES_TO_SKLEARN[metric]
                 scores.setdefault(metric, []).append(
-                    score_func(test_target_split, predictions))
+                    score_func(test_targets, predictions))
 
         # Store predictions
-        assert len(predictions.columns) == len(target_names)
-        predictions.columns = target_names
+        assert len(predictions.columns) == len(targets)
+        predictions.columns = [col_name for resID, col_name in targets]
         all_predictions.append(predictions)
 
     progress(FOLDS)
@@ -126,11 +142,16 @@ def train(pipeline_id, metrics, problem, results_path, msg_queue, db):
         numpy.random.RandomState(seed=RANDOM).shuffle(sample)
         dataset['0'] = dataset['0'][sample]
 
+    # Get targets
+    targets = set()
+    for target in problem['inputs']['data'][0]['targets']:
+        targets.add((target['resID'], target['colName']))
+
     # Scoring step - make folds, run them through the pipeline one by one
     # (set both training_data and test_data),
     # get predictions from OutputPort to get cross validation scores
     scores, predictions = cross_validation(
-        pipeline_id, metrics, dataset,
+        pipeline_id, metrics, dataset, targets,
         lambda i: msg_queue.send(('progress', (i + 1.0) / max_progress)),
         db)
     logger.info("Scoring done: %s", ", ".join("%s=%s" % s
@@ -155,7 +176,7 @@ def train(pipeline_id, metrics, problem, results_path, msg_queue, db):
     logger.info("Running training on full data")
 
     try:
-        execute_train(db, pipeline_id, data, targets)
+        execute_train(db, pipeline_id, dataset)
     except Exception:
         logger.exception("Error running training on full data")
         sys.exit(1)

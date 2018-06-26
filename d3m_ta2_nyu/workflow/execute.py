@@ -99,12 +99,12 @@ def execute_train(db, pipeline, dataset, crossval=False):
                        global_inputs=global_inputs)
 
 
-def execute_test(db, pipeline, data, crossval=False,
+def execute_test(db, pipeline, dataset, crossval=False,
                  from_training_run_id=None):
     pipeline = get_pipeline(db, pipeline)
 
     module_inputs = {}  # TODO: Get module inputs from database
-    global_inputs = {'data': data,
+    global_inputs = {'dataset': dataset,
                      'run_type': 'test'}
 
     if crossval:
