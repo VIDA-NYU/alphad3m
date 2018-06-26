@@ -33,6 +33,7 @@ import d3m_ta2_nyu.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
 from d3m_ta2_nyu.test import test
 from d3m_ta2_nyu.utils import Observable
 from d3m_ta2_nyu.workflow import database
+from google.protobuf.timestamp_pb2 import Timestamp
 
 
 MAX_RUNNING_PROCESSES = 1
@@ -60,6 +61,11 @@ class Session(Observable):
         self.DBSession = DBSession
         self.problem = problem
         self.metrics = []
+
+        now = time.time()
+        seconds = int(now)
+        nanos = int((now - seconds) * 10 ** 9)
+        self.start = Timestamp(seconds=seconds, nanos=nanos)
 
         # Should tuning be triggered when we are done with current pipelines?
         self._tune_when_ready = False
