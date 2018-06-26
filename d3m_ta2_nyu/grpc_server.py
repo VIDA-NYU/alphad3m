@@ -422,7 +422,6 @@ class CoreService(pb_core_grpc.CoreServicer):
     def SetProblemDoc(self, request, context):
         raise NotImplementedError  # TODO: SetProblemDoc
 
-    ###############################################################
 
     def SearchSolutions(self, request, context):
         # missing associated documentation comment in .proto file
@@ -444,7 +443,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     ),
                 ),
             )
-            
+
             '''
             return
         dataset = dataset[:-15]
@@ -648,7 +647,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             user_agent=user_agent,
             version=version
         )
-
 
 class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
     def __init__(self, app):
