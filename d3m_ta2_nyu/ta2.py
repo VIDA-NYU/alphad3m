@@ -879,7 +879,7 @@ class D3mTa2(object):
         def make_primitive_module(name):
             if name[0] == '.':
                 name = 'd3m.primitives' + name
-            return make_module('d3m', '2018.4.19rc0', name)
+            return make_module('d3m', '2018.4.18', name)
 
         def connect(from_module, to_module,
                     from_output='produce', to_input='inputs'):
