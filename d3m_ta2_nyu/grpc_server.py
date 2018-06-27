@@ -124,8 +124,10 @@ class CoreService(pb_core_grpc.CoreServicer):
                 ),
             )
             return
-        target_features = [f.feature_name for f in request.target_features]
-        predict_features = [f.feature_name for f in request.predict_features]
+        target_features = [(f.resource_id, f.feature_name)
+                           for f in request.target_features]
+        predict_features = [(f.resource_id, f.feature_name)
+                            for f in request.predict_features]
         max_pipelines = request.max_pipelines
 
         if dataset.startswith('/'):
@@ -134,10 +136,10 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         logger.info("Got CreatePipelines request, session=%s, task=%s, "
                     "dataset=%s, metrics=%s, "
-                    "target_features=%s, predict_features=%s",
+                    "target_features=%r, predict_features=%r",
                     session_id, task,
                     dataset, ", ".join(metrics),
-                    ", ".join(target_features), ", ".join(predict_features))
+                    target_features, predict_features)
 
         queue = Queue()
         session = self._app.sessions[session_id]

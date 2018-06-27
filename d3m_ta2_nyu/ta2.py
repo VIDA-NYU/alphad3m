@@ -923,10 +923,10 @@ class D3mTa2(object):
             step1 = make_primitive_module('.datasets.DatasetToDataFrame')
             connect(step0, step1)
 
-            step2 = make_primitive_module('.data.ExtractAttributes')
+            step2 = make_primitive_module('.data.ColumnParser')
             connect(step1, step2)
 
-            step3 = make_primitive_module('.data.ColumnParser')
+            step3 = make_primitive_module('.data.ExtractAttributes')
             connect(step2, step3)
 
             step4 = make_primitive_module('.data.CastToType')
@@ -936,7 +936,7 @@ class D3mTa2(object):
             connect(step4, step5)
 
             step6 = make_primitive_module('.data.ExtractTargets')
-            connect(step1, step6)
+            connect(step2, step6)
 
             step7 = make_primitive_module('.data.CastToType')
             connect(step6, step7)
@@ -982,7 +982,10 @@ class D3mTa2(object):
             # Classifier
             [
                 'd3m.primitives.common_primitives.LinearRegression',
+                'd3m.primitives.sklearn_wrap.SKDecisionTreeRegressor',
+                'd3m.primitives.sklearn_wrap.SKRandomForestRegressor',
                 'd3m.primitives.sklearn_wrap.SKRidge',
+                'd3m.primitives.sklearn_wrap.SKSGDRegressor',
             ],
         )),
         'DEBUG_REGRESSION': list(itertools.product(
@@ -991,8 +994,8 @@ class D3mTa2(object):
             ['d3m.primitives.sklearn_wrap.SKImputer'],
             # Classifier
             [
-                'd3m.primitives.common_primitives.LinearRegression',
-                'd3m.primitives.sklearn_wrap.SKRidge',
+                'd3m.primitives.sklearn_wrap.SKRandomForestRegressor',
+                'd3m.primitives.sklearn_wrap.SKSGDRegressor',
             ],
         )),
     }
