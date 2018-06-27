@@ -24,23 +24,33 @@ def _dataset(*, global_inputs, module_inputs, **kwargs):
     # Get list of targets and attributes from global inputs
     [targets] = module_inputs['targets']
     targets = pickle.loads(targets)
+    [attributes] = module_inputs['features']
+    attributes = pickle.loads(attributes)
 
     # Update dataset metadata from those
     dataset = Dataset(dataset)
     marked = 0
     for resID, res in dataset.items():
         for col_index, col_name in enumerate(res.columns):
+            types = set(
+                dataset.metadata.query([resID,
+                                        ALL_ELEMENTS,
+                                        col_index])['semantic_types'])
             if (resID, col_name) in targets:
-                types = set(
-                    dataset.metadata.query([resID,
-                                            ALL_ELEMENTS,
-                                            col_index])['semantic_types'])
-                types.discard(TYPE_ATTRIBUTE)
-                types.add(TYPE_TARGET)
-                dataset.metadata = dataset.metadata.update(
-                    [resID, ALL_ELEMENTS, col_index],
-                    {'semantic_types': tuple(types)})
                 marked += 1
+                types.add(TYPE_TARGET)
+                types.discard(TYPE_ATTRIBUTE)
+            elif attributes is None:
+                types.discard(TYPE_TARGET)
+            elif (resID, col_name) in attributes:
+                types.add(TYPE_ATTRIBUTE)
+                types.discard(TYPE_TARGET)
+            else:
+                types.discard(TYPE_ATTRIBUTE)
+                types.discard(TYPE_TARGET)
+            dataset.metadata = dataset.metadata.update(
+                [resID, ALL_ELEMENTS, col_index],
+                {'semantic_types': tuple(types)})
 
     logger.info("Marked %d columns as target", marked)
 

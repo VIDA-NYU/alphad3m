@@ -143,7 +143,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         session = self._app.sessions[session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             self._app.build_pipelines(session_id, task, dataset, metrics,
-                                      target_features)
+                                      target_features, predict_features)
             # FIXME: predict_features now ignored
 
             yield from self._pipelinecreateresult_stream(context, queue,

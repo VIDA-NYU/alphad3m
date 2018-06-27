@@ -84,15 +84,50 @@ class Session(Observable):
                 raise ValueError("Unknown metric %r" % metric)
             self.metrics.append(metric)
 
-        # Read targets from problem
-        self.targets = set()
-        assert len(self.problem['inputs']['data']) == 1
-        for target in self.problem['inputs']['data'][0]['targets']:
-            self.targets.add((target['resID'], target['colName']))
+        self._targets = None
+        self._features = None
 
     @property
     def problem_id(self):
         return self.problem['about']['problemID']
+
+    @property
+    def targets(self):
+        if self._targets is not None:
+            return set(self._targets)
+        else:
+            # Read targets from problem
+            targets = set()
+            assert len(self.problem['inputs']['data']) == 1
+            for target in self.problem['inputs']['data'][0]['targets']:
+                targets.add((target['resID'], target['colName']))
+            return targets
+
+    @targets.setter
+    def targets(self, value):
+        if value is None:
+            self._targets = None
+        elif isinstance(value, (set, list)):
+            if not value:
+                raise ValueError("Can't set targets to empty set")
+            self._targets = set(value)
+        else:
+            raise TypeError("targets should be a set or None")
+
+    @property
+    def features(self):
+        return self._features
+
+    @features.setter
+    def features(self, value):
+        if value is None:
+            self._features = None
+        elif isinstance(value, (set, list)):
+            if not value:
+                raise ValueError("Can't set features to empty set")
+            self._features = set(value)
+        else:
+            raise TypeError("features should be a set or None")
 
     def tune_when_ready(self):
         self._tune_when_ready = True
@@ -631,28 +666,28 @@ class D3mTa2(object):
             db.close()
 
     def build_pipelines(self, session_id, task, dataset, metrics,
-                        targets=None):
+                        targets=None, features=None):
         if not metrics:
             raise ValueError("no metrics")
         if 'TA2_USE_TEMPLATES' in os.environ:
             self.executor.submit(self._build_pipelines_from_templates,
                                  session_id, task, dataset, metrics,
-                                 targets)
+                                 targets, features)
         else:
             self.executor.submit(self._build_pipelines_with_generator,
                                  session_id, task, dataset, metrics,
-                                 targets)
+                                 targets, features)
 
     # Runs in a worker thread from executor
     def _build_pipelines_with_generator(self, session_id, task, dataset,
-                                        metrics, targets):
+                                        metrics, targets, features):
         """Generates pipelines for the session, using the generator process.
         """
         # Start AlphaD3M process
         session = self.sessions[session_id]
         with session.lock:
-            if targets is not None:
-                session.targets = targets
+            session.targets = targets
+            session.features = features
             if session.metrics != metrics:
                 if session.metrics:
                     old = 'from %s ' % ', '.join(session.metrics)
@@ -699,13 +734,13 @@ class D3mTa2(object):
 
     # Runs in a worker thread from executor
     def _build_pipelines_from_templates(self, session_id, task, dataset,
-                                        metrics, targets):
+                                        metrics, targets, features):
         """Generates pipelines for the session, using templates.
         """
         session = self.sessions[session_id]
         with session.lock:
-            if targets is not None:
-                session.targets = targets
+            session.targets = targets
+            session.features = features
             if session.metrics != metrics:
                 if session.metrics:
                     old = 'from %s ' % ', '.join(session.metrics)
@@ -742,7 +777,8 @@ class D3mTa2(object):
     def _build_pipeline_from_template(self, session, template, dataset):
         # Create workflow from a template
         pipeline_id = template(self, dataset=dataset,
-                               targets=session.targets)
+                               targets=session.targets,
+                               features=session.features)
 
         # Add it to the session
         session.add_training_pipeline(pipeline_id)
@@ -820,7 +856,7 @@ class D3mTa2(object):
                        success=(ret == 0))
 
     def _classification_template(self, imputer, classifier, dataset,
-                                 targets):
+                                 targets, features):
         db = self.DBSession()
 
         pipeline = database.Pipeline(
@@ -875,6 +911,10 @@ class D3mTa2(object):
             db.add(database.PipelineParameter(
                 pipeline=pipeline, module=input_data,
                 name='targets', value=pickle.dumps(targets),
+            ))
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=input_data,
+                name='features', value=pickle.dumps(features),
             ))
 
             step0 = make_primitive_module('.datasets.Denormalize')
