@@ -923,10 +923,10 @@ class D3mTa2(object):
             step1 = make_primitive_module('.datasets.DatasetToDataFrame')
             connect(step0, step1)
 
-            step2 = make_primitive_module('.data.ColumnParser')
+            step2 = make_primitive_module('.data.ExtractAttributes')
             connect(step1, step2)
 
-            step3 = make_primitive_module('.data.ExtractAttributes')
+            step3 = make_primitive_module('.data.ColumnParser')
             connect(step2, step3)
 
             step4 = make_primitive_module('.data.CastToType')
@@ -936,7 +936,7 @@ class D3mTa2(object):
             connect(step4, step5)
 
             step6 = make_primitive_module('.data.ExtractTargets')
-            connect(step2, step6)
+            connect(step1, step6)
 
             step7 = make_primitive_module('.data.CastToType')
             connect(step6, step7)
