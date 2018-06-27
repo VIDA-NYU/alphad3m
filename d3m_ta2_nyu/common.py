@@ -166,7 +166,9 @@ def _root_mean_squared_error_avg(y_true, y_pred):
 
 SCORES_TO_SKLEARN = dict(
     ACCURACY=sklearn.metrics.accuracy_score,
-    F1=sklearn.metrics.f1_score,
+    F1=lambda y_true, y_pred:
+        sklearn.metrics.f1_score(y_true, y_pred,
+                                 average='binary', pos_label='1'),
     F1_MICRO=lambda y_true, y_pred:
         sklearn.metrics.f1_score(y_true, y_pred, average='micro'),
     F1_MACRO=lambda y_true, y_pred:

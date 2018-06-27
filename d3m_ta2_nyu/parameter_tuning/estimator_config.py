@@ -1,8 +1,7 @@
 import typing
-import numpy as np
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, \
-    UniformFloatHyperparameter, UniformIntegerHyperparameter, \
-    NormalFloatHyperparameter, FloatHyperparameter, IntegerHyperparameter
+     UniformFloatHyperparameter, UniformIntegerHyperparameter, \
+     NormalFloatHyperparameter, FloatHyperparameter, IntegerHyperparameter
 import ConfigSpace.conditions
 from smac.configspace import ConfigurationSpace
 from d3m_metadata.hyperparams import Bounded, Enumeration, Uniform, UniformInt, Normal
@@ -361,6 +360,10 @@ ESTIMATORS = {
 
 }
 
+
+
+
+
 def get_random_hyperparameters(estimator):
     param_dict = {}
     if estimator in ESTIMATORS:
@@ -411,4 +414,3 @@ def decode_hyperparameter(estimator,parameter,value):
                 else:
                     return -1
     return -1
-

@@ -14,9 +14,7 @@ req = [
     'SQLAlchemy',
     'scikit-learn',
     'scikit-image',
-    'scikit-learn',
     'pandas',
-    'dsbox-datacleaning',
     'smac']
 setup(name='d3m_ta2_nyu',
       version='0.7-pre',
