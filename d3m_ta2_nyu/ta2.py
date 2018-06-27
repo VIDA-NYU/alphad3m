@@ -982,7 +982,10 @@ class D3mTa2(object):
             # Classifier
             [
                 'd3m.primitives.common_primitives.LinearRegression',
+                'd3m.primitives.sklearn_wrap.SKDecisionTreeRegressor',
+                'd3m.primitives.sklearn_wrap.SKRandomForestRegressor',
                 'd3m.primitives.sklearn_wrap.SKRidge',
+                'd3m.primitives.sklearn_wrap.SKSGDRegressor',
             ],
         )),
         'DEBUG_REGRESSION': list(itertools.product(
@@ -991,8 +994,8 @@ class D3mTa2(object):
             ['d3m.primitives.sklearn_wrap.SKImputer'],
             # Classifier
             [
-                'd3m.primitives.common_primitives.LinearRegression',
-                'd3m.primitives.sklearn_wrap.SKRidge',
+                'd3m.primitives.sklearn_wrap.SKRandomForestRegressor',
+                'd3m.primitives.sklearn_wrap.SKSGDRegressor',
             ],
         )),
     }
