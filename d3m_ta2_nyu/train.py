@@ -142,7 +142,7 @@ def train(pipeline_id, metrics, problem, results_path, msg_queue, db):
         numpy.random.RandomState(seed=RANDOM).shuffle(sample)
         dataset['0'] = dataset['0'][sample]
 
-    # Get targets
+    # Get targets from problem
     targets = set()
     for target in problem['inputs']['data'][0]['targets']:
         targets.add((target['resID'], target['colName']))
