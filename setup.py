@@ -19,7 +19,7 @@ req = [
     'dsbox-datacleaning',
     'smac']
 setup(name='d3m_ta2_nyu',
-      version='0.7-pre',
+      version='0.7',
       packages=['d3m_ta2_nyu'],
       entry_points={
           'console_scripts': [
