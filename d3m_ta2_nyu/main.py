@@ -97,7 +97,7 @@ def main_test():
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'])
         ta2.run_test(
-            dataset=config['test_data_root'],
+            dataset='file://%s' % config['dataset_schema'],
             problem_path=config['problem_root'],
             pipeline_id=uuid.UUID(hex=sys.argv[1]),
             results_root=config['results_root'])

@@ -84,7 +84,7 @@ def cross_validation(pipeline, metrics, dataset, targets,
         predictions = pandas.DataFrame(
             {
                 next(iter(targets))[1]: predictions,
-                'd3mIndex': test_targets.index
+                'd3mIndex': test_data_split[next(iter(targets))[0]]['d3mIndex'],
             }
         ).set_index('d3mIndex')
 
@@ -142,7 +142,7 @@ def train(pipeline_id, metrics, problem, results_path, msg_queue, db):
         numpy.random.RandomState(seed=RANDOM).shuffle(sample)
         dataset['0'] = dataset['0'][sample]
 
-    # Get targets
+    # Get targets from problem
     targets = set()
     for target in problem['inputs']['data'][0]['targets']:
         targets.add((target['resID'], target['colName']))
