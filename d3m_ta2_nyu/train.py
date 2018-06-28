@@ -115,7 +115,7 @@ def cross_validation(pipeline, metrics, dataset, targets,
 
 
 @database.with_db
-def train(pipeline_id, metrics, problem, results_path, msg_queue, db):
+def train(pipeline_id, metrics, targets, results_path, msg_queue, db):
     max_progress = FOLDS + 2.0
 
     # Get dataset from database
@@ -141,11 +141,6 @@ def train(pipeline_id, metrics, problem, results_path, msg_queue, db):
              numpy.repeat(False, len(dataset['0']) - MAX_SAMPLE)])
         numpy.random.RandomState(seed=RANDOM).shuffle(sample)
         dataset['0'] = dataset['0'][sample]
-
-    # Get targets from problem
-    targets = set()
-    for target in problem['inputs']['data'][0]['targets']:
-        targets.add((target['resID'], target['colName']))
 
     # Scoring step - make folds, run them through the pipeline one by one
     # (set both training_data and test_data),

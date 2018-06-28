@@ -328,7 +328,7 @@ class TrainJob(Job):
         self.proc = run_process('d3m_ta2_nyu.train.train', 'train', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 metrics=self.session.metrics,
-                                problem=self.session.problem,
+                                targets=self.session.targets,
                                 results_path=self.results,
                                 db_filename=db_filename)
         self.session.notify('training_start', pipeline_id=self.pipeline_id)
@@ -582,7 +582,13 @@ class D3mTa2(object):
         results_path = os.path.join(
             results_root,
             problem['expectedOutputs']['predictionsFile'])
-        test(pipeline_id, dataset, problem, results_path,
+
+        # Get targets from problem
+        targets = set()
+        for target in problem['inputs']['data'][0]['targets']:
+            targets.add((target['resID'], target['colName']))
+
+        test(pipeline_id, dataset, targets, results_path,
              db_filename=self.db_filename)
 
     def run_server(self, problem_path, port=None):
@@ -843,7 +849,7 @@ class D3mTa2(object):
              '-c',
              'import uuid; from d3m_ta2_nyu.test import test; '
              'test(uuid.UUID(hex=%r), %r, %r, %r, db_filename=%r)' % (
-                 pipeline_id.hex, dataset, session.problem, results,
+                 pipeline_id.hex, dataset, session.targets, results,
                  self.db_filename,
              )
             ]
