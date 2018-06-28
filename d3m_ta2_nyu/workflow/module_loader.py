@@ -29,7 +29,9 @@ def _dataset(*, global_inputs, module_inputs, **kwargs):
 
     # Update dataset metadata from those
     dataset = Dataset(dataset)
-    marked = 0
+    not_found = set(targets)
+    if attributes is not None:
+        not_found.update(attributes)
     for resID, res in dataset.items():
         for col_index, col_name in enumerate(res.columns):
             types = set(
@@ -37,14 +39,15 @@ def _dataset(*, global_inputs, module_inputs, **kwargs):
                                         ALL_ELEMENTS,
                                         col_index])['semantic_types'])
             if (resID, col_name) in targets:
-                marked += 1
                 types.add(TYPE_TARGET)
                 types.discard(TYPE_ATTRIBUTE)
+                not_found.discard((resID, col_name))
             elif attributes is None:
                 types.discard(TYPE_TARGET)
             elif (resID, col_name) in attributes:
                 types.add(TYPE_ATTRIBUTE)
                 types.discard(TYPE_TARGET)
+                not_found.discard((resID, col_name))
             else:
                 types.discard(TYPE_ATTRIBUTE)
                 types.discard(TYPE_TARGET)
@@ -52,7 +55,9 @@ def _dataset(*, global_inputs, module_inputs, **kwargs):
                 [resID, ALL_ELEMENTS, col_index],
                 {'semantic_types': tuple(types)})
 
-    logger.info("Marked %d columns as target", marked)
+    if not_found:
+        logger.warning("Specified targets/attributes missing from dataset: %r",
+                       not_found)
 
     return {'dataset': dataset}
 

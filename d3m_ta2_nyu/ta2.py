@@ -328,7 +328,7 @@ class TrainJob(Job):
         self.proc = run_process('d3m_ta2_nyu.train.train', 'train', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 metrics=self.session.metrics,
-                                problem=self.session.problem,
+                                targets=self.session.targets,
                                 results_path=self.results,
                                 db_filename=db_filename)
         self.session.notify('training_start', pipeline_id=self.pipeline_id)
@@ -582,7 +582,13 @@ class D3mTa2(object):
         results_path = os.path.join(
             results_root,
             problem['expectedOutputs']['predictionsFile'])
-        test(pipeline_id, dataset, problem, results_path,
+
+        # Get targets from problem
+        targets = set()
+        for target in problem['inputs']['data'][0]['targets']:
+            targets.add((target['resID'], target['colName']))
+
+        test(pipeline_id, dataset, targets, results_path,
              db_filename=self.db_filename)
 
     def run_server(self, problem_path, port=None):
@@ -827,26 +833,24 @@ class D3mTa2(object):
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
 
-    def test_pipeline(self, session_id, pipeline_id, dataset, use_all_rows):
+    def test_pipeline(self, session_id, pipeline_id, dataset):
         session = self.sessions[session_id]
         if pipeline_id not in session.pipelines:
             raise KeyError("No such pipeline ID for session")
 
         self.executor.submit(self._test_pipeline, session, pipeline_id,
-                             dataset, use_all_rows)
+                             dataset)
 
-    def _test_pipeline(self, session, pipeline_id, dataset, use_all_rows):
+    def _test_pipeline(self, session, pipeline_id, dataset):
         results = os.path.join(self.predictions_root,
                                'execute-%s.csv' % uuid.uuid4())
         proc = subprocess.Popen(
             [sys.executable,
              '-c',
              'import uuid; from d3m_ta2_nyu.test import test; '
-             'test(uuid.UUID(hex=%r), %r, %r, %r, db_filename=%r, '
-             'use_all_rows=%r)' % (
-                 pipeline_id.hex, dataset, session.problem, results,
+             'test(uuid.UUID(hex=%r), %r, %r, %r, db_filename=%r)' % (
+                 pipeline_id.hex, dataset, session.targets, results,
                  self.db_filename,
-                 use_all_rows,
              )
             ]
         )
@@ -923,10 +927,10 @@ class D3mTa2(object):
             step1 = make_primitive_module('.datasets.DatasetToDataFrame')
             connect(step0, step1)
 
-            step2 = make_primitive_module('.data.ExtractAttributes')
+            step2 = make_primitive_module('.data.ColumnParser')
             connect(step1, step2)
 
-            step3 = make_primitive_module('.data.ColumnParser')
+            step3 = make_primitive_module('.data.ExtractAttributes')
             connect(step2, step3)
 
             step4 = make_primitive_module('.data.CastToType')
@@ -936,7 +940,7 @@ class D3mTa2(object):
             connect(step4, step5)
 
             step6 = make_primitive_module('.data.ExtractTargets')
-            connect(step1, step6)
+            connect(step2, step6)
 
             step7 = make_primitive_module('.data.CastToType')
             connect(step6, step7)
@@ -982,7 +986,10 @@ class D3mTa2(object):
             # Classifier
             [
                 'd3m.primitives.common_primitives.LinearRegression',
+                'd3m.primitives.sklearn_wrap.SKDecisionTreeRegressor',
+                'd3m.primitives.sklearn_wrap.SKRandomForestRegressor',
                 'd3m.primitives.sklearn_wrap.SKRidge',
+                'd3m.primitives.sklearn_wrap.SKSGDRegressor',
             ],
         )),
         'DEBUG_REGRESSION': list(itertools.product(
@@ -991,8 +998,8 @@ class D3mTa2(object):
             ['d3m.primitives.sklearn_wrap.SKImputer'],
             # Classifier
             [
-                'd3m.primitives.common_primitives.LinearRegression',
-                'd3m.primitives.sklearn_wrap.SKRidge',
+                'd3m.primitives.sklearn_wrap.SKRandomForestRegressor',
+                'd3m.primitives.sklearn_wrap.SKSGDRegressor',
             ],
         )),
     }

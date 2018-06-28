@@ -27,15 +27,23 @@ build_image:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
     - docker login -u ${D3M_GITLAB_USER} -p ${D3M_GITLAB_TOKEN} registry.datadrivendiscovery.org
     - INIT="$(< d3m_ta2_nyu/__init__.py)"; echo "$INIT" | sed 's/__version__ = .*$/__version__ = '"'$(git describe)'/" >d3m_ta2_nyu/__init__.py
-    - docker pull $CI_REGISTRY_IMAGE:devel && docker build --cache-from $CI_REGISTRY_IMAGE:devel -t $IMAGE .
+    - |
+      CACHE_FROM="--cache-from devel" && docker pull $CI_REGISTRY_IMAGE:devel
+      if [ "$CI_COMMIT_REF_NAME" != devel ]; then
+        if docker pull "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"; then
+          CACHE_FROM="$CACHE_FROM --cache-from $CI_COMMIT_REF_NAME"
+        fi
+      fi
+      echo "Docker cache: $CACHE_FROM"
+    - docker build $CACHE_FROM -t $IMAGE .
     - |
       REV=$(git describe --always --tags)
       REV="$CI_COMMIT_REF_NAME-$REV"
       docker tag $IMAGE $CI_REGISTRY_IMAGE:$REV
-      docker tag $IMAGE $CI_REGISTRY_IMAGE:devel
+      docker tag $IMAGE $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
     - docker push $IMAGE
     - docker push $CI_REGISTRY_IMAGE:$REV
-    - if [ "$CI_COMMIT_REF_NAME" = devel ]; then docker push $CI_REGISTRY_IMAGE:devel; fi
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
   tags:
     - docker
 
