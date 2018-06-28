@@ -12,15 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 @database.with_db
-def test(pipeline_id, dataset, problem, results_path, db):
+def test(pipeline_id, dataset, targets, results_path, db):
     # Load data
     dataset = Dataset.load(dataset)
     logger.info("Loaded dataset")
-
-    # Get targets from problem
-    targets = set()
-    for target in problem['inputs']['data'][0]['targets']:
-        targets.add((target['resID'], target['colName']))
 
     # Run prediction
     try:
