@@ -893,16 +893,22 @@ class D3mTa2(object):
                                                from_output_name=from_output,
                                                to_input_name=to_input))
 
+        def set_hyperparams(module, **hyperparams):
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=module,
+                name='hyperparams', value=pickle.dumps(hyperparams),
+            ))
+
         try:
-            #                data
-            #                  |
-            #             -Denormalize-
-            #                  |
-            #           DatasetToDataframe
-            #                  |
-            #             ColumnParser
-            #                /     \
-            # ExtractAttributes  ExtractTargets
+            #                 data
+            #                   |
+            #              -Denormalize-
+            #                   |
+            #            DatasetToDataframe
+            #                   |
+            #              ColumnParser
+            #                 /     \
+            # Extract (attribute)  Extract (target)
             #         |               |
             #     CastToType      CastToType
             #         |               |
@@ -932,7 +938,14 @@ class D3mTa2(object):
             step2 = make_primitive_module('.data.ColumnParser')
             connect(step1, step2)
 
-            step3 = make_primitive_module('.data.ExtractAttributes')
+            step3 = make_primitive_module('.data.'
+                                          'ExtractColumnsBySemanticTypes')
+            set_hyperparams(
+                step3,
+                semantic_types=[
+                    'https://metadata.datadrivendiscovery.org/types/Attribute',
+                ],
+            )
             connect(step2, step3)
 
             step4 = make_primitive_module('.data.CastToType')
@@ -941,7 +954,14 @@ class D3mTa2(object):
             step5 = make_primitive_module(imputer)
             connect(step4, step5)
 
-            step6 = make_primitive_module('.data.ExtractTargets')
+            step6 = make_primitive_module('.data.'
+                                          'ExtractColumnsBySemanticTypes')
+            set_hyperparams(
+                step6,
+                semantic_types=[
+                    'https://metadata.datadrivendiscovery.org/types/Target',
+                ],
+            )
             connect(step2, step6)
 
             step7 = make_primitive_module('.data.CastToType')
