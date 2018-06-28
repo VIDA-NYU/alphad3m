@@ -283,7 +283,10 @@ class CoreService(pb_core_grpc.CoreServicer):
                 ),
             )
             return
-        dataset = dataset[:-15]
+
+        if dataset.startswith('/'):
+            logger.warning("Dataset is a path, turning it into a file:// URL")
+            dataset = 'file://' + dataset
 
         logger.info("Got ExecutePipeline request, session=%s, dataset=%s",
                     session_id, dataset)
@@ -291,7 +294,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         queue = Queue()
         session = self._app.sessions[session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            self._app.test_pipeline(session_id, pipeline_id, dataset, True)
+            self._app.test_pipeline(session_id, pipeline_id, dataset)
 
             yield from self._pipelineexecuteresult_stream(context, queue)
 
