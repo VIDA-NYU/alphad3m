@@ -124,8 +124,10 @@ class CoreService(pb_core_grpc.CoreServicer):
                 ),
             )
             return
-        target_features = [f.feature_name for f in request.target_features]
-        predict_features = [f.feature_name for f in request.predict_features]
+        target_features = [(f.resource_id, f.feature_name)
+                           for f in request.target_features]
+        predict_features = [(f.resource_id, f.feature_name)
+                            for f in request.predict_features]
         max_pipelines = request.max_pipelines
 
         if dataset.startswith('/'):
@@ -134,10 +136,10 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         logger.info("Got CreatePipelines request, session=%s, task=%s, "
                     "dataset=%s, metrics=%s, "
-                    "target_features=%s, predict_features=%s",
+                    "target_features=%r, predict_features=%r",
                     session_id, task,
                     dataset, ", ".join(metrics),
-                    ", ".join(target_features), ", ".join(predict_features))
+                    target_features, predict_features)
 
         queue = Queue()
         session = self._app.sessions[session_id]
@@ -281,7 +283,10 @@ class CoreService(pb_core_grpc.CoreServicer):
                 ),
             )
             return
-        dataset = dataset[:-15]
+
+        if dataset.startswith('/'):
+            logger.warning("Dataset is a path, turning it into a file:// URL")
+            dataset = 'file://' + dataset
 
         logger.info("Got ExecutePipeline request, session=%s, dataset=%s",
                     session_id, dataset)
@@ -289,7 +294,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         queue = Queue()
         session = self._app.sessions[session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            self._app.test_pipeline(session_id, pipeline_id, dataset, True)
+            self._app.test_pipeline(session_id, pipeline_id, dataset)
 
             yield from self._pipelineexecuteresult_stream(context, queue)
 

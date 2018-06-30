@@ -106,6 +106,6 @@ def _invoke(tag, target):
 
     try:
         function(msg_queue=msg_queue, **kwargs)
-    except:
+    except Exception:
         logging.exception("Uncaught exception in subprocess %s", tag)
         sys.exit(1)
