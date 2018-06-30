@@ -15,47 +15,23 @@ class Board():
     PRIMITIVES_DECODE = ['None', 'E', 'I', 'S', 'K', 'D','NB', 'T', 'LO', 'LI', 'BR', 'L', 'R', 'LA']
     PRIMITIVES = {
         'PREPROCESSING':{
-            'dsbox.datapreprocessing.cleaner.Encoder': 1,
-            'dsbox.datapreprocessing.cleaner.KNNImputation': 2
+            'd3m.primitives.dsbox.Encoder': 1,
+            'd3m.primitives.dsbox.KnnImputation': 2
         },
         'CLASSIFICATION': {
-            'sklearn.svm.classes.LinearSVC': 3,
-            'sklearn.neighbors.classification.KNeighborsClassifier': 4,
-            #'sklearn.tree.tree.DecisionTreeClassifier':5,
-            'sklearn.naive_bayes.MultinomialNB':6,
-            'sklearn.ensemble.forest.RandomForestClassifier':7,
-            'sklearn.linear_model.logistic.LogisticRegression':8,
-            'sklearn.neural_network.MLPClassifier':9,
-            'sklearn.svm.SVC':10,
-            'sklearn.gaussian_process.GaussianProcessClassifier':11,
-            'sklearn.gaussian_process.kernels.RBF':12,
-            'sklearn.tree.DecisionTreeClassifier':13,
-            'sklearn.ensemble.AdaBoostClassifier':14,
-            'sklearn.naive_bayes.GaussianNB':15,
-            'sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis':16,
-            'sklearn.linear_model.SGDClassifier':17
+            'd3m.primitives.sklearn_wrap.SKRandomForestClassifier':3,
+            'd3m.primitives.sklearn_wrap.SKDecisionTreeClassifier':4,
+            'd3m.primitives.sklearn_wrap.SKPerceptron':5,
+            'd3m.primitives.sklearn_wrap.SKGradientBoostingClassifier':6,
+            'd3m.primitives.sklearn_wrap.SKMultinomialNB':7
 
     },
         'REGRESSION': {
-            'sklearn.linear_model.ARDRegression': 18,
-            'sklearn.linear_model.BayesianRidge': 19,
-            'sklearn.linear_model.ElasticNet': 20,
-            #'sklearn.linear_model.ElasticNetCV': 21,
-            'sklearn.linear_model.HuberRegressor': 22,
-            'sklearn.linear_model.Lars': 23,
-            #'sklearn.linear_model.LarsCV': 24,
-            'sklearn.linear_model.Lasso': 25,
-            #'sklearn.linear_model.LassoCV': 26,
-            'sklearn.linear_model.LassoLars': 27,
-            #'sklearn.linear_model.LassoLarsCV': 28,
-            #'sklearn.linear_model.LassoLarsIC': 29,
-            'sklearn.linear_model.LinearRegression': 30,
-            'sklearn.linear_model.PassiveAggressiveRegressor': 31,
-            'sklearn.linear_model.RANSACRegressor': 32,
-            'sklearn.linear_model.Ridge': 33,
-            'sklearn.linear_model.RidgeCV': 34,
-            'sklearn.linear_model.SGDRegressor': 35,
-            'sklearn.linear_model.TheilSenRegressor': 36
+            'd3m.primitives.sklearn_wrap.SKPassiveAggressiveRegressor':8,
+            'd3m.primitives.sklearn_wrap.SKLinearSVR':9,
+            'd3m.primitives.sklearn_wrap.SKExtraTreesRegressor':10,
+            'd3m.primitives.sklearn_wrap.SKGradientBoostingRegressor':11,
+            'd3m.primitives.sklearn_wrap.SKRidge':12
         },
     }
     OPERATIONS = {0:'insert',

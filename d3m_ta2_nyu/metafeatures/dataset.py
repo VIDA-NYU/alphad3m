@@ -2,8 +2,8 @@ import logging
 import pandas as pd
 import json
 import os
-from d3m_metadata.container.pandas import DataFrame
-from d3metafeatureextraction import D3MetafeatureExtraction
+from d3m.container.pandas import DataFrame
+from d3m.primitives.byudml.metafeature_extraction import MetafeatureExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +19,7 @@ def compute_metafeatures(dataset_path, table_file):
                 break
     print(target_col)
     df = DataFrame(pd.read_csv(table_file))
-    names = df.columns.values
     df = df.rename(columns={target_col: "target"})
     df.drop("d3mIndex", axis=1, inplace=True)
-    metafeatures = D3MetafeatureExtraction(hyperparams=None).produce(inputs=df).value
+    metafeatures = MetafeatureExtractor(hyperparams=None).produce(inputs=df).value
     return metafeatures.values[0]

@@ -26,7 +26,7 @@ args = dict({
     'dropout': 0.3,
     'epochs': 2,
     'batch_size': 64,
-    'cuda': True,
+    'cuda': False,
     'num_channels': 512,
 })
 

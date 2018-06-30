@@ -107,7 +107,7 @@ class Coach():
             pnet.load_checkpoint(folder=self.args.get('checkpoint'), filename='temp.pth.tar')
             pmcts = MCTS(self.game, pnet, self.args)
             boards, pis, vs = list(zip(*trainExamples))
-            print([board[self.game.m:self.game.m+self.game.p] for board in boards])
+            #print([board[self.game.m:self.game.m+self.game.p] for board in boards])
             self.nnet.train(trainExamples)
             nmcts = MCTS(self.game, self.nnet, self.args)
 

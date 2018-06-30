@@ -10,10 +10,11 @@ from .PipelineLogic import Board
 import numpy as np
 from scipy.special import comb
 from random import uniform
-from d3m_metadata.problem import parse_problem_description
+from d3m.metadata.problem import parse_problem_description
 from d3m_ta2_nyu.metafeatures.dataset import compute_metafeatures
 from pprint import pprint
 import traceback
+import sys, traceback
 
 PROBLEM_TYPES = {'CLASSIFICATION': 1,
                  'REGRESSION': 2}
@@ -111,9 +112,11 @@ class PipelineGame(Game):
         if eval_val is None:
             self.steps = self.steps + 1
             try:
+                print(pipeline)
                 eval_val = self.eval_pipeline(pipeline, 'AlphaZero eval')
+                print('Evaluation = ', eval_val)
             except:
-                print('Error in Pipeline Execution ', eval_val)
+                print('ERROR IN PIPELINE EXECUTION ', eval_val)
                 traceback.print_exc()
             if eval_val is None:
                 eval_val = float('inf')
