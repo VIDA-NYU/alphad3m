@@ -10,7 +10,6 @@ import os
 import shutil
 
 from d3m_ta2_nyu.common import SCORES_TO_SKLEARN, SCORES_RANKING_ORDER
-from d3m_ta2_nyu.d3mds import D3MDS
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.execute import execute_train, execute_test
 from d3m_ta2_nyu.parameter_tuning.estimator_config import ESTIMATORS
@@ -118,9 +117,8 @@ def tune(pipeline_id, metrics, problem, results_path, msg_queue, db):
     ).one()
     dataset = pipeline.dataset
 
-    logger.info("About to run training pipeline, id=%s, dataset=%r, "
-                "problem=%r",
-                pipeline_id, dataset, problem)
+    logger.info("About to run training pipeline, id=%s, dataset=%r",
+                pipeline_id, dataset)
 
     # Load data
     ds = D3MDS(dataset, problem)

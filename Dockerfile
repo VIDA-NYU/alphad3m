@@ -1,28 +1,23 @@
-FROM ubuntu:17.10
+FROM registry.datadrivendiscovery.org/jpl/docker_images/complete:ubuntu-artful-python36-v2018.4.18-20180606-102540
+# BUILT FROM https://gitlab.datadrivendiscovery.org/jpl/docker_images/blob/ffc23588281eaa807c167cb4fef6ee906632f183/complete/ubuntu-artful-python36-v2018.4.18.dockerfile
+# BUILT FROM https://gitlab.com/datadrivendiscovery/images/blob/1765bc75c730233f10502aa748dfd7df8404fcb7/core/ubuntu-artful-python36-v2018.4.18.dockerfile
+# BUILT FROM https://gitlab.com/datadrivendiscovery/images/blob/1765bc75c730233f10502aa748dfd7df8404fcb7/base/ubuntu-artful-python36.dockerfile
+# BUILT FROM ubuntu:artful
+
 MAINTAINER "remirampin@gmail.com"
 
-ENV LC_ALL=C.UTF-8
-ENV LANG=C.UTF-8
-
 RUN apt-get update -yy && \
-    apt-get install -yy git python3.6 python3-pip python3-virtualenv swig cmake && \
+    apt-get install -yy git swig && \
     apt-get clean
 
-# Required by NIST to build Python in our image, apparently needed for their evaluation process (?)
-RUN apt-get install -yy build-essential libncursesw5-dev libreadline6-dev libssl-dev libgdbm-dev libc6-dev libsqlite3-dev tk-dev libbz2-dev zlib1g-dev
-
 WORKDIR /usr/src/app
-RUN python3 -m virtualenv -p python3.6 --system-site-packages /usr/src/app/venv && . /usr/src/app/venv/bin/activate && /usr/src/app/venv/bin/pip install -U certifi pip
-RUN /usr/src/app/venv/bin/pip install numpy==1.13.3 Cython==0.28.3
+RUN cd /usr/local/src && git clone -n https://gitlab.com/datadrivendiscovery/d3m.git && cd d3m && git checkout 93fe530741c1aa66a8c88b21048b3b413f23ebcc && sed -i 's/2018\.4\.19rc0/2018.4.18/g' d3m/__init__.py setup.py && sed -i 's/install_requires=\[/install_requires=\[] and \[/g' setup.py && pip3 install -e ../d3m
+RUN pip3 install Cython==0.28.3
 COPY requirements.txt /usr/src/app/requirements.txt
-RUN /usr/src/app/venv/bin/pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 COPY d3m_ta2_nyu /usr/src/app/d3m_ta2_nyu
 COPY setup.py README.rst /usr/src/app/
-RUN /usr/src/app/venv/bin/pip install --no-deps -e /usr/src/app
-RUN printf "#!/bin/sh\n\n/usr/src/app/venv/bin/ta2_search \"\$@\"\n" >/usr/local/bin/ta2_search && \
-    chmod +x /usr/local/bin/ta2_search && \
-    printf "#!/bin/sh\n\n/usr/src/app/venv/bin/ta2_serve \"\$@\"\n" >/usr/local/bin/ta2_serve && \
-    chmod +x /usr/local/bin/ta2_serve
+RUN pip3 install --no-deps -e /usr/src/app
 
 CMD "ta2_serve"
 

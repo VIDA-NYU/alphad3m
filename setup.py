@@ -14,12 +14,10 @@ req = [
     'SQLAlchemy',
     'scikit-learn',
     'scikit-image',
-    'scikit-learn',
     'pandas',
-    'dsbox-datacleaning',
     'smac']
 setup(name='d3m_ta2_nyu',
-      version='0.7',
+      version='0.8-pre',
       packages=['d3m_ta2_nyu'],
       entry_points={
           'console_scripts': [

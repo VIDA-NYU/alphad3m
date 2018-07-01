@@ -21,11 +21,11 @@ import threading
 import time
 import uuid
 
-from . import __version__
+from d3m.container import Dataset
 
+from d3m_ta2_nyu import __version__
 from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
     TASKS_FROM_SCHEMA
-from d3m_ta2_nyu.d3mds import D3MDataset
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
@@ -49,14 +49,13 @@ class Session(Observable):
 
     This is a TA3 session in which pipelines are created.
     """
-    def __init__(self, ta2, logs_dir, problem, problem_id, DBSession):
+    def __init__(self, ta2, logs_dir, problem, DBSession):
         Observable.__init__(self)
         self.id = uuid.uuid4()
         self._ta2 = ta2
         self._logs_dir = logs_dir
         self.DBSession = DBSession
         self.problem = problem
-        self.problem_id = problem_id
         self.metrics = []
 
         # Should tuning be triggered when we are done with current pipelines?
@@ -74,6 +73,61 @@ class Session(Observable):
         # signal should be sent once both pipelines_training and
         # pipelines_tuning are empty
         self.working = False
+
+        # Read metrics from problem
+        for metric in self.problem['inputs']['performanceMetrics']:
+            metric = metric['metric']
+            try:
+                metric = SCORES_FROM_SCHEMA[metric]
+            except KeyError:
+                logger.error("Unknown metric %r", metric)
+                raise ValueError("Unknown metric %r" % metric)
+            self.metrics.append(metric)
+
+        self._targets = None
+        self._features = None
+
+    @property
+    def problem_id(self):
+        return self.problem['about']['problemID']
+
+    @property
+    def targets(self):
+        if self._targets is not None:
+            return set(self._targets)
+        else:
+            # Read targets from problem
+            targets = set()
+            assert len(self.problem['inputs']['data']) == 1
+            for target in self.problem['inputs']['data'][0]['targets']:
+                targets.add((target['resID'], target['colName']))
+            return targets
+
+    @targets.setter
+    def targets(self, value):
+        if value is None:
+            self._targets = None
+        elif isinstance(value, (set, list)):
+            if not value:
+                raise ValueError("Can't set targets to empty set")
+            self._targets = set(value)
+        else:
+            raise TypeError("targets should be a set or None")
+
+    @property
+    def features(self):
+        return self._features
+
+    @features.setter
+    def features(self, value):
+        if value is None:
+            self._features = None
+        elif isinstance(value, (set, list)):
+            if not value:
+                raise ValueError("Can't set features to empty set")
+            self._features = set(value)
+        else:
+            raise TypeError("features should be a set or None")
 
     def tune_when_ready(self):
         self._tune_when_ready = True
@@ -198,13 +252,6 @@ class Session(Observable):
             return
         metric = self.metrics[0]
 
-        try:
-            with open(os.path.join(self.problem, 'problemDoc.json')) as fp:
-                problem_id = json.load(fp)['about']['problemID']
-        except (IOError, KeyError):
-            logger.error("Error reading problemID from problem JSON")
-            problem_id = 'problem_id_unset'
-
         written = 0
         db = self.DBSession()
         try:
@@ -216,7 +263,7 @@ class Session(Observable):
                 filename = os.path.join(self._logs_dir,
                                         str(pipeline.id) + '.json')
                 obj = {
-                    'problem_id': problem_id,
+                    'problem_id': self.problem_id,
                     'pipeline_rank': i + 1,
                     'name': str(pipeline.id),
                     'primitives': [
@@ -281,7 +328,7 @@ class TrainJob(Job):
         self.proc = run_process('d3m_ta2_nyu.train.train', 'train', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 metrics=self.session.metrics,
-                                problem=self.session.problem,
+                                targets=self.session.targets,
                                 results_path=self.results,
                                 db_filename=db_filename)
         self.session.notify('training_start', pipeline_id=self.pipeline_id)
@@ -289,9 +336,9 @@ class TrainJob(Job):
     def poll(self):
         if self.proc.poll() is None:
             return False
-        logger.info("Pipeline training process done, returned %d "
-                    "(pipeline: %s)",
-                    self.proc.returncode, self.pipeline_id)
+        log = logger.info if self.proc.returncode == 0 else logger.error
+        log("Pipeline training process done, returned %d (pipeline: %s)",
+            self.proc.returncode, self.pipeline_id)
         if self.proc.returncode == 0:
             self.session.notify('training_success',
                                 pipeline_id=self.pipeline_id,
@@ -341,9 +388,9 @@ class TuneHyperparamsJob(Job):
     def poll(self):
         if self.proc.poll() is None:
             return False
-        logger.info("Pipeline tuning process done, returned %d "
-                    "(pipeline: %s)",
-                    self.proc.returncode, self.pipeline_id)
+        log = logger.info if self.proc.returncode == 0 else logger.error
+        log("Pipeline tuning process done, returned %d (pipeline: %s)",
+            self.proc.returncode, self.pipeline_id)
         if self.proc.returncode == 0:
             logger.info("New pipeline: %s)", self.tuned_pipeline_id)
             self.session.notify('tuning_success',
@@ -393,7 +440,6 @@ class D3mTa2(object):
                            " ***")
             logger.warning("**************************************************"
                            "****")
-        self.default_problem_id = 'problem_id_unset'
         self.default_problem = None
         self.storage = os.path.abspath(storage_root)
         if not os.path.exists(self.storage):
@@ -427,17 +473,19 @@ class D3mTa2(object):
 
         logger.info("TA2 started, version=%s", __version__)
 
-    def run_search(self, dataset, problem):
+    def run_search(self, dataset, problem_path):
         """Run the search phase: create pipelines, train and score them.
 
         This is called by the ``ta2_search`` executable, it is part of the
         evaluation.
         """
+        if dataset[0] == '/':
+            dataset = 'file://' + dataset
         # Read problem
-        with open(os.path.join(problem, 'problemDoc.json')) as fp:
-            problem_json = json.load(fp)
-        problem_id = problem_json['about']['problemID']
-        task = problem_json['about']['taskType']
+        with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
+            problem = json.load(fp)
+        problem_id = problem['about']['problemID']
+        task = problem['about']['taskType']
         if task not in TASKS_FROM_SCHEMA:
             logger.error("Unknown task %r", task)
             sys.exit(1)
@@ -445,33 +493,21 @@ class D3mTa2(object):
         if task not in ('CLASSIFICATION', 'REGRESSION'):  # TODO
             logger.error("Unsupported task %s requested", task)
             sys.exit(148)
-        metrics = []
-        for metric in problem_json['inputs']['performanceMetrics']:
-            metric = metric['metric']
-            try:
-                metric = SCORES_FROM_SCHEMA[metric]
-            except KeyError:
-                logger.error("Unknown metric %r", metric)
-                sys.exit(1)
-            metrics.append(metric)
-        logger.info("Dataset: %s, task: %s, metrics: %s",
-                    dataset, task, ", ".join(metrics))
 
         # Create pipelines
-        session = Session(self, self.logs_root, problem, problem_id,
-                          self.DBSession)
-        session.metrics = metrics
+        session = Session(self, self.logs_root, problem, self.DBSession)
+        logger.info("Dataset: %s, task: %s, metrics: %s",
+                    dataset, task, ", ".join(session.metrics))
         self.sessions[session.id] = session
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            self.build_pipelines(session.id, task, dataset,
-                                 metrics)
+            self.build_pipelines(session.id, task, dataset, session.metrics)
             while queue.get(True)[0] != 'done_training':
                 pass
 
         db = self.DBSession()
         try:
-            pipelines = session.get_top_pipelines(db, metrics[0])
+            pipelines = session.get_top_pipelines(db, session.metrics[0])
 
             for pipeline, score in itertools.islice(pipelines, 20):
                 self.write_executable(pipeline)
@@ -532,34 +568,38 @@ class D3mTa2(object):
         finally:
             db.close()
 
-    def run_test(self, dataset, problem, pipeline_id, results_root):
+    def run_test(self, dataset, problem_path, pipeline_id, results_root):
         """Run a previously trained pipeline.
 
         This is called by the generated executables, it is part of the
         evaluation.
         """
         logger.info("About to run test")
-        with open(os.path.join(problem, 'problemDoc.json')) as fp:
-            problem_json = json.load(fp)
-        problem_id = problem_json['about']['problemID']
+        with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
+            problem = json.load(fp)
         if not os.path.exists(results_root):
             os.makedirs(results_root)
         results_path = os.path.join(
             results_root,
-            problem_json['expectedOutputs']['predictionsFile'])
-        test(pipeline_id, dataset, problem, results_path,
+            problem['expectedOutputs']['predictionsFile'])
+
+        # Get targets from problem
+        targets = set()
+        for target in problem['inputs']['data'][0]['targets']:
+            targets.add((target['resID'], target['colName']))
+
+        test(pipeline_id, dataset, targets, results_path,
              db_filename=self.db_filename)
 
-    def run_server(self, problem, port=None):
+    def run_server(self, problem_path, port=None):
         """Spin up the gRPC server to receive requests from a TA3 system.
 
         This is called by the ``ta2_serve`` executable. It is part of the
         TA2+TA3 evaluation.
         """
+        with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
+            problem = json.load(fp)
         self.default_problem = problem
-        with open(os.path.join(problem, 'problemDoc.json')) as fp:
-            problem_json = json.load(fp)
-        self.default_problem_id = problem_json['about']['problemID']
         if not port:
             port = 45042
         core_rpc = grpc_server.CoreService(self)
@@ -575,31 +615,19 @@ class D3mTa2(object):
         while True:
             time.sleep(60)
 
-    def new_session(self, problem=None):
-        metrics = []
-        if problem is None:
+    def new_session(self, problem_path=None):
+        if problem_path is None:
             if self.default_problem is None:
                 logger.error("Creating a session but no default problem is "
                              "set!")
             problem = self.default_problem
-            problem_id = self.default_problem_id
         else:
-            with open(os.path.join(problem, 'problemDoc.json')) as fp:
-                problem_json = json.load(fp)
-            problem_id = problem_json['about']['problemID']
-            for metric in problem_json['inputs']['performanceMetrics']:
-                metric = metric['metric']
-                try:
-                    metric = SCORES_FROM_SCHEMA[metric]
-                except KeyError:
-                    raise ValueError("Unknown metric %r" % metric)
-                metrics.append(metric)
+            with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
+                problem = json.load(fp)
 
-        session = Session(self, self.logs_root, problem, problem_id,
+        session = Session(self, self.logs_root, problem,
                           self.DBSession)
         self.sessions[session.id] = session
-        if metrics:
-            session.metrics = metrics
         return session.id
 
     def finish_session(self, session_id):
@@ -643,24 +671,29 @@ class D3mTa2(object):
         finally:
             db.close()
 
-    def build_pipelines(self, session_id, task, dataset, metrics):
+    def build_pipelines(self, session_id, task, dataset, metrics,
+                        targets=None, features=None):
         if not metrics:
             raise ValueError("no metrics")
         if 'TA2_USE_TEMPLATES' in os.environ:
             self.executor.submit(self._build_pipelines_from_templates,
-                                 session_id, task, dataset, metrics)
+                                 session_id, task, dataset, metrics,
+                                 targets, features)
         else:
             self.executor.submit(self._build_pipelines_with_generator,
-                                 session_id, task, dataset, metrics)
+                                 session_id, task, dataset, metrics,
+                                 targets, features)
 
     # Runs in a worker thread from executor
-    def _build_pipelines_with_generator(self, session_id, task,
-                                        dataset, metrics):
+    def _build_pipelines_with_generator(self, session_id, task, dataset,
+                                        metrics, targets, features):
         """Generates pipelines for the session, using the generator process.
         """
         # Start AlphaD3M process
         session = self.sessions[session_id]
         with session.lock:
+            session.targets = targets
+            session.features = features
             if session.metrics != metrics:
                 if session.metrics:
                     old = 'from %s ' % ', '.join(session.metrics)
@@ -706,12 +739,14 @@ class D3mTa2(object):
         session.tune_when_ready()
 
     # Runs in a worker thread from executor
-    def _build_pipelines_from_templates(self, session_id, task,
-                                        dataset, metrics):
+    def _build_pipelines_from_templates(self, session_id, task, dataset,
+                                        metrics, targets, features):
         """Generates pipelines for the session, using templates.
         """
         session = self.sessions[session_id]
         with session.lock:
+            session.targets = targets
+            session.features = features
             if session.metrics != metrics:
                 if session.metrics:
                     old = 'from %s ' % ', '.join(session.metrics)
@@ -747,7 +782,9 @@ class D3mTa2(object):
 
     def _build_pipeline_from_template(self, session, template, dataset):
         # Create workflow from a template
-        pipeline_id = template(self, dataset=dataset)
+        pipeline_id = template(self, dataset=dataset,
+                               targets=session.targets,
+                               features=session.features)
 
         # Add it to the session
         session.add_training_pipeline(pipeline_id)
@@ -796,26 +833,24 @@ class D3mTa2(object):
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
 
-    def test_pipeline(self, session_id, pipeline_id, dataset, use_all_rows):
+    def test_pipeline(self, session_id, pipeline_id, dataset):
         session = self.sessions[session_id]
         if pipeline_id not in session.pipelines:
             raise KeyError("No such pipeline ID for session")
 
         self.executor.submit(self._test_pipeline, session, pipeline_id,
-                             dataset, use_all_rows)
+                             dataset)
 
-    def _test_pipeline(self, session, pipeline_id, dataset, use_all_rows):
+    def _test_pipeline(self, session, pipeline_id, dataset):
         results = os.path.join(self.predictions_root,
                                'execute-%s.csv' % uuid.uuid4())
         proc = subprocess.Popen(
             [sys.executable,
              '-c',
              'import uuid; from d3m_ta2_nyu.test import test; '
-             'test(uuid.UUID(hex=%r), %r, %r, %r, db_filename=%r, '
-             'use_all_rows=%r)' % (
-                 pipeline_id.hex, dataset, session.problem, results,
+             'test(uuid.UUID(hex=%r), %r, %r, %r, db_filename=%r)' % (
+                 pipeline_id.hex, dataset, session.targets, results,
                  self.db_filename,
-                 use_all_rows,
              )
             ]
         )
@@ -824,27 +859,16 @@ class D3mTa2(object):
                        pipeline_id=pipeline_id, results_path=results,
                        success=(ret == 0))
 
-    def _classification_template(self, imputer_cat, imputer_num, encoder,
-                                 classifier, dataset):
+    def _classification_template(self, imputer, classifier, dataset,
+                                 targets, features):
         db = self.DBSession()
 
         pipeline = database.Pipeline(
-            origin="classification_template(imputer_cat=%s, imputer_num=%s, "
-                   "encoder=%s, classifier=%s)" % (
-                       imputer_cat, imputer_num, encoder, classifier),
+            origin="classification_template(imputer=%s, classifier=%s)" % (
+                       imputer, classifier),
             dataset=dataset)
 
-        ds = D3MDataset(dataset)
-        columns = ds.get_learning_data_columns()
-        # colType one of: integer, real, string, boolean, categorical, dateTime
-        categorical = [c['colName']
-                       for c in columns
-                       if ('attribute' in c['role'] and
-                           c['colType'] not in ['integer', 'real'])]
-        numerical = [c['colName']
-                     for c in columns
-                     if ('attribute' in c['role'] and
-                         c['colType'] in ['integer', 'real'])]
+        dataset = Dataset.load(dataset)
 
         def make_module(package, version, name):
             pipeline_module = database.PipelineModule(
@@ -857,13 +881,12 @@ class D3mTa2(object):
             return make_module('data','0.0', name)
 
         def make_primitive_module(name):
-            if name.startswith('sklearn'):
-                return make_module('sklearn-builtin', '0.0', name)
-            else:
-                return make_module('primitives', '0.0', name)
+            if name[0] == '.':
+                name = 'd3m.primitives' + name
+            return make_module('d3m', '2018.4.18', name)
 
         def connect(from_module, to_module,
-                    from_output='data', to_input='data'):
+                    from_output='produce', to_input='inputs'):
             db.add(database.PipelineConnection(pipeline=pipeline,
                                                from_module=from_module,
                                                to_module=to_module,
@@ -871,66 +894,60 @@ class D3mTa2(object):
                                                to_input_name=to_input))
 
         try:
-            data = make_data_module('data')
-            targets = make_data_module('targets')
+            #                data
+            #                  |
+            #              Denormalize
+            #                  |
+            #           DatasetToDataframe
+            #                  |
+            #             ColumnParser
+            #                /     \
+            # ExtractAttributes  ExtractTargets
+            #         |               |
+            #     CastToType      CastToType
+            #         |               |
+            #     [imputer]           |
+            #            \            /
+            #             [classifier]
+            # TODO: Use pipeline input for this
+            # TODO: Have execution set metadata from problem, don't hardcode
+            input_data = make_data_module('dataset')
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=input_data,
+                name='targets', value=pickle.dumps(targets),
+            ))
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=input_data,
+                name='features', value=pickle.dumps(features),
+            ))
 
-            # If we have to split the data for imputation
-            if (categorical and numerical and
-                    (imputer_cat or imputer_num or encoder)):
-                # Split the data
-                data_cat = make_data_module('get_columns')
-                db.add(database.PipelineParameter(
-                    pipeline=pipeline, module=data_cat,
-                    name='columns', value=pickle.dumps(categorical),
-                ))
-                connect(data, data_cat)
+            step0 = make_primitive_module('.datasets.Denormalize')
+            connect(input_data, step0, from_output='dataset')
 
-                data_num = make_data_module('get_columns')
-                db.add(database.PipelineParameter(
-                    pipeline=pipeline, module=data_num,
-                    name='columns', value=pickle.dumps(numerical),
-                ))
-                connect(data, data_num)
+            step1 = make_primitive_module('.datasets.DatasetToDataFrame')
+            connect(step0, step1)
 
-                # Add imputers
-                if imputer_cat:
-                    imputer_cat = make_primitive_module(imputer_cat)
-                    connect(data_cat, imputer_cat)
-                    data_cat = imputer_cat
-                if imputer_num:
-                    imputer_num = make_primitive_module(imputer_num)
-                    connect(data_num, imputer_num)
-                    data_num = imputer_num
+            step2 = make_primitive_module('.data.ColumnParser')
+            connect(step1, step2)
 
-                # Add encoder
-                if encoder:
-                    encoder = make_primitive_module(encoder)
-                    connect(data_cat, encoder)
-                    data_cat = encoder
+            step3 = make_primitive_module('.data.ExtractAttributes')
+            connect(step2, step3)
 
-                # Merge data
-                data = make_data_module('merge_columns')
-                connect(data_cat, data)
-                connect(data_num, data)
-            # If we don't have to split
-            else:
-                if categorical and (imputer_cat or encoder):
-                    if imputer_cat:
-                        imputer = make_primitive_module(imputer_cat)
-                        connect(data, imputer)
-                        data = imputer
-                    if encoder:
-                        encoder = make_primitive_module(encoder)
-                        connect(data, encoder)
-                        data = encoder
-                elif numerical and imputer_num:
-                    imputer = make_primitive_module(imputer_num)
-                    connect(data, imputer)
-                    data = imputer
+            step4 = make_primitive_module('.data.CastToType')
+            connect(step3, step4)
 
-            classifier = make_primitive_module(classifier)
-            connect(data, classifier)
-            connect(targets, classifier, 'targets', 'targets')
+            step5 = make_primitive_module(imputer)
+            connect(step4, step5)
+
+            step6 = make_primitive_module('.data.ExtractTargets')
+            connect(step2, step6)
+
+            step7 = make_primitive_module('.data.CastToType')
+            connect(step6, step7)
+
+            step8 = make_primitive_module(classifier)
+            connect(step5, step8)
+            connect(step7, step8, to_input='outputs')
 
             db.add(pipeline)
             db.commit()
@@ -941,82 +958,48 @@ class D3mTa2(object):
     TEMPLATES = {
         'CLASSIFICATION': list(itertools.product(
             [_classification_template],
-            # Imputer for categorical data
-            [None],
-            # Imputer for numerical data
-            [
-                'dsbox.datapreprocessing.cleaner.KNNImputation',
-                'sklearn.preprocessing.Imputer',
-            ],
-            # Encoder for categorical data
-            [
-                'sklearn.preprocessing.LabelBinarizer',
-            ],
+            # Imputer
+            ['d3m.primitives.sklearn_wrap.SKImputer'],
             # Classifier
             [
-                'sklearn.svm.classes.LinearSVC',
-                'sklearn.neighbors.classification.KNeighborsClassifier',
-                'sklearn.naive_bayes.MultinomialNB',
-                'sklearn.ensemble.forest.RandomForestClassifier',
-                'sklearn.linear_model.logistic.LogisticRegression'
+                'd3m.primitives.sklearn_wrap.SKLinearSVC',
+                'd3m.primitives.sklearn_wrap.SKKNeighborsClassifier',
+                'd3m.primitives.sklearn_wrap.SKMultinomialNB',
+                'd3m.primitives.sklearn_wrap.SKRandomForestClassifier',
+                'd3m.primitives.sklearn_wrap.SKLogisticRegression',
             ],
         )),
         'DEBUG_CLASSIFICATION': list(itertools.product(
             [_classification_template],
-            # Imputer for categorical data
-            [None],
-            # Imputer for numerical data
-            [
-                'sklearn.preprocessing.Imputer',
-            ],
-            # Encoder for categorical data
-            [
-                'sklearn.preprocessing.LabelBinarizer',
-            ],
+            # Imputer
+            ['d3m.primitives.sklearn_wrap.SKImputer'],
             # Classifier
             [
-                'sklearn.svm.classes.LinearSVC',
-                'sklearn.neighbors.classification.KNeighborsClassifier',
+                'd3m.primitives.sklearn_wrap.SKLinearSVC',
+                'd3m.primitives.sklearn_wrap.SKKNeighborsClassifier',
             ],
         )),
         'REGRESSION': list(itertools.product(
             [_classification_template],
-            # Imputer for categorical data
-            [None],
-            # Imputer for numerical data
-            [
-                'dsbox.datapreprocessing.cleaner.KNNImputation',
-                'sklearn.preprocessing.Imputer',
-            ],
-            # Encoder for categorical data
-            [
-                'sklearn.preprocessing.LabelBinarizer',
-            ],
+            # Imputer
+            ['d3m.primitives.sklearn_wrap.SKImputer'],
             # Classifier
             [
-                'sklearn.linear_model.base.LinearRegression',
-                'sklearn.linear_model.bayes.BayesianRidge',
-                'sklearn.linear_model.coordinate_descent.LassoCV',
-                'sklearn.linear_model.ridge.Ridge',
-                'sklearn.linear_model.least_angle.Lars',
+                'd3m.primitives.common_primitives.LinearRegression',
+                'd3m.primitives.sklearn_wrap.SKDecisionTreeRegressor',
+                'd3m.primitives.sklearn_wrap.SKRandomForestRegressor',
+                'd3m.primitives.sklearn_wrap.SKRidge',
+                'd3m.primitives.sklearn_wrap.SKSGDRegressor',
             ],
         )),
         'DEBUG_REGRESSION': list(itertools.product(
             [_classification_template],
-            # Imputer for categorical data
-            [None],
-            # Imputer for numerical data
-            [
-                'dsbox.datapreprocessing.cleaner.KNNImputation',
-                'sklearn.preprocessing.Imputer',
-            ],
-            # Encoder for categorical data
-            [
-                'sklearn.preprocessing.LabelBinarizer',
-            ],
+            # Imputer
+            ['d3m.primitives.sklearn_wrap.SKImputer'],
             # Classifier
             [
-                'sklearn.linear_model.base.LinearRegression',
+                'd3m.primitives.sklearn_wrap.SKRandomForestRegressor',
+                'd3m.primitives.sklearn_wrap.SKSGDRegressor',
             ],
         )),
     }
