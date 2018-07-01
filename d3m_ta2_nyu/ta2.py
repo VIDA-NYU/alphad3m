@@ -915,6 +915,8 @@ class D3mTa2(object):
             #     [imputer]           |
             #            \            /
             #             [classifier]
+            #                   |
+            #           ConstructPredictions
             # TODO: Use pipeline input for this
             # TODO: Have execution set metadata from problem, don't hardcode
             input_data = make_data_module('dataset')
@@ -960,6 +962,7 @@ class D3mTa2(object):
                 step6,
                 semantic_types=[
                     'https://metadata.datadrivendiscovery.org/types/Target',
+                    'https://metadata.datadrivendiscovery.org/types/PrimaryKey',
                 ],
             )
             connect(step2, step6)
@@ -970,6 +973,10 @@ class D3mTa2(object):
             step8 = make_primitive_module(classifier)
             connect(step5, step8)
             connect(step7, step8, to_input='outputs')
+
+            step9 = make_primitive_module('.data.ConstructPredictions')
+            connect(step8, step9)
+            connect(step7, step9, to_input='reference')
 
             db.add(pipeline)
             db.commit()
