@@ -27,7 +27,7 @@ ARGS = {
     'checkpoint': './temp/',
     'load_model': False,
     'load_folder_file': ('./temp/', 'best.pth.tar'),
-    'metafeatures_path': '/d3m/data/metafeatures'
+    'metafeatures_path': '/d3m/data//metafeatures'
 }
 
 
@@ -107,19 +107,19 @@ def make_pipeline_from_strings(primitives, origin, dataset, targets, features, D
         step4 = make_primitive_module('.data.CastToType')
         connect(step3, step4)
 
-        # step = prev_step = step4
-        # preprocessors = []
-        # if len(primitives) > 1:
-        #     preprocessors = primitives[0:len(primitives)-2]
-        # classifier = primitives[len(primitives)-1]
-        # for preprocessor in preprocessors:
-        #     step = make_primitive_module(preprocessor)
-        #     connect(prev_step, step)
-        #     prev_step = step
+        step = prev_step = step4
+        preprocessors = []
+        if len(primitives) > 1:
+            preprocessors = primitives[0:len(primitives)-2]
+        classifier = primitives[len(primitives)-1]
+        for preprocessor in preprocessors:
+            step = make_primitive_module(preprocessor)
+            connect(prev_step, step)
+            prev_step = step
 
-        imputer = 'd3m.primitives.dsbox.KnnImputation'
-        step5 = make_primitive_module(imputer)
-        connect(step4, step5)
+        #imputer = 'd3m.primitives.dsbox.KnnImputation'
+        #step5 = make_primitive_module(imputer)
+        #connect(step4, step5)
 
         step6 = make_primitive_module('.data.ExtractTargets')
         connect(step1, step6)
@@ -129,8 +129,8 @@ def make_pipeline_from_strings(primitives, origin, dataset, targets, features, D
 
         classifier = 'd3m.primitives.sklearn_wrap.SKRandomForestClassifier'
         step8 = make_primitive_module(classifier)
-        #connect(step, step8)
-        connect(step4, step8)
+        connect(step, step8)
+        #connect(step4, step8)
         connect(step7, step8, to_input='outputs')
 
         db.add(pipeline)
