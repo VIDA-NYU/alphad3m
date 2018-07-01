@@ -28,9 +28,8 @@ class PipelineGame(Game):
         self.args = args
         self.evaluations = {}
         self.curr_evaluations = {}
-        self.problem_features = parse_problem_description(self.args['problem_path']+'/problemDoc.json')
-        self.problem = self.problem_features['problem']['task_type'].unparse().upper()
-        self.metric = self.problem_features['problem']['performance_metrics'][0]['metric'].unparse()
+        self.problem = self.args['problem']['about']['taskType'].upper()
+        self.metric = self.args['problem']['inputs']['performanceMetrics'][0]['metric']
         self.dataset_metafeatures = None
         metafeatures_path = args.get('metafeatures_path')
         if not metafeatures_path is None:

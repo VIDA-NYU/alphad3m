@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import operator
@@ -154,8 +155,9 @@ def generate(task, dataset, metrics, problem, msg_queue, DBSession):
 
     args = dict(ARGS)
     args['dataset'] = dataset.split('/')[-1].replace('_dataset','')
-    args['dataset_path'] = dataset
-    args['problem_path'] = problem
+    assert dataset.startswith('file://')
+    args['dataset_path'] = os.path.dirname(dataset[7:])
+    args['problem'] = problem
     args['metric'] = problem
     game = PipelineGame(args, None, eval_pipeline)
     nnet = NNetWrapper(game)
@@ -227,7 +229,8 @@ def main(dataset, output_path):
     print(pipeline)
     args['dataset'] = dataset
     args['dataset_path'] = dataset_name
-    args['problem_path'] = problem_name
+    with open(os.path.join(problem_name, 'problemDoc.json')) as fp:
+        args['problem'] = json.load(fp)
     args['metric'] = problem_name
     game = PipelineGame(args, pipeline, eval_pipeline)
     nnet = NNetWrapper(game)
