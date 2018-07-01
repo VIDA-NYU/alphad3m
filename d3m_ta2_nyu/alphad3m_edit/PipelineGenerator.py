@@ -127,7 +127,8 @@ def make_pipeline_from_strings(primitives, origin, dataset, targets, features, D
         step7 = make_primitive_module('.data.CastToType')
         connect(step6, step7)
 
-        classifier = 'd3m.primitives.sklearn_wrap.SKRandomForestClassifier'
+        #classifier = 'd3m.primitives.sklearn_wrap.SKRandomForestClassifier'
+        print('CLASSIFIER ', classifier)
         step8 = make_primitive_module(classifier)
         connect(step, step8)
         #connect(step4, step8)
