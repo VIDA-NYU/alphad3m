@@ -29,7 +29,6 @@ from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
-import d3m_ta2_nyu.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
 from d3m_ta2_nyu.test import test
 from d3m_ta2_nyu.utils import Observable
 from d3m_ta2_nyu.workflow import database
@@ -703,12 +702,9 @@ class D3mTa2(object):
         if not port:
             port = 45042
         core_rpc = grpc_server.CoreService(self)
-        dataflow_rpc = grpc_server.DataflowService(self)
         server = grpc.server(self.executor)
         pb_core_grpc.add_CoreServicer_to_server(
             core_rpc, server)
-        pb_dataflow_grpc.add_DataflowExtServicer_to_server(
-            dataflow_rpc, server)
         server.add_insecure_port('[::]:%d' % port)
         logger.info("Started gRPC server on port %d", port)
         server.start()

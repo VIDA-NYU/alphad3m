@@ -18,7 +18,6 @@ from . import __version__
 
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
-import d3m_ta2_nyu.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
 import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
 
 logger = logging.getLogger(__name__)
@@ -648,6 +647,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             version=version
         )
 
+
 class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
     def __init__(self, app):
         self._app = app
+
