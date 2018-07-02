@@ -900,25 +900,26 @@ class D3mTa2(object):
             ))
 
         try:
-            #                 data
-            #                   |
-            #              -Denormalize-
-            #                   |
-            #            DatasetToDataframe
-            #                   |
-            #              ColumnParser
-            #                 /     \
-            # Extract (attribute)  Extract (target)
-            #         |               |
-            #     CastToType      CastToType
-            #         |               |
-            #     [imputer]           |
-            #            \            /
-            #             [classifier]
-            #                   |
-            #           ConstructPredictions
+            #                          data
+            #                            |
+            #                       -Denormalize-
+            #                            |
+            #                     DatasetToDataframe
+            #                            |
+            #                        ColumnParser
+            #                       /     |     \
+            #                     /       |       \
+            #                   /         |         \
+            # Extract (attribute)  Extract (target)  |
+            #         |               |              |
+            #     CastToType      CastToType         |
+            #         |               |              |
+            #     [imputer]           |             /
+            #            \            /           /
+            #             [classifier]          /
+            #                       |         /
+            #                   ConstructPredictions
             # TODO: Use pipeline input for this
-            # TODO: Have execution set metadata from problem, don't hardcode
             input_data = make_data_module('dataset')
             db.add(database.PipelineParameter(
                 pipeline=pipeline, module=input_data,
@@ -962,7 +963,6 @@ class D3mTa2(object):
                 step6,
                 semantic_types=[
                     'https://metadata.datadrivendiscovery.org/types/Target',
-                    'https://metadata.datadrivendiscovery.org/types/PrimaryKey',
                 ],
             )
             connect(step2, step6)
@@ -976,7 +976,7 @@ class D3mTa2(object):
 
             step9 = make_primitive_module('.data.ConstructPredictions')
             connect(step8, step9)
-            connect(step7, step9, to_input='reference')
+            connect(step2, step9, to_input='reference')
 
             db.add(pipeline)
             db.commit()
