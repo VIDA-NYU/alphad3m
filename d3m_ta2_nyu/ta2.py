@@ -703,6 +703,10 @@ class D3mTa2(object):
                 logger.info("Set metrics to %s %s(for session %s)",
                             metrics, old, session_id)
 
+            # Force working=True so we get 'done_training' even if no pipeline
+            # gets created
+            session.working = True
+
             logger.info("Starting AlphaD3M process...")
             msg_queue = Receiver()
             proc = run_process(

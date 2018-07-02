@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import operator
@@ -31,8 +32,7 @@ ARGS = {
 }
 
 
-#def make_pipeline_from_strings(strings, origin, dataset, DBSession):
-def make_pipeline_from_strings(primitives, origin, dataset, targets, features, DBSession):
+def make_pipeline_from_strings(primitives, origin, dataset, targets=None, features=None, DBSession=None):
     db = DBSession()
 
 
@@ -122,7 +122,8 @@ def make_pipeline_from_strings(primitives, origin, dataset, targets, features, D
         step7 = make_primitive_module('.data.CastToType')
         connect(step6, step7)
 
-        classifier = 'd3m.primitives.sklearn_wrap.SKRandomForestClassifier'
+        #classifier = 'd3m.primitives.sklearn_wrap.SKRandomForestClassifier'
+        print('CLASSIFIER ', classifier)
         step8 = make_primitive_module(classifier)
         connect(step, step8)
         connect(step7, step8, to_input='outputs')
@@ -137,21 +138,20 @@ def make_pipeline_from_strings(primitives, origin, dataset, targets, features, D
 
 @database.with_sessionmaker
 def generate(task, dataset, metrics, problem, msg_queue, DBSession):
-    args = dict(ARGS)
-    dataset_name = args['dataset'] = dataset.split('/')[-1].replace('_dataset', '')
-    args['dataset_path'] = dataset
-    args['problem_path'] = problem
-    args['metric'] = problem
-
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
-        #pipeline_id = make_pipeline_from_strings(strings, dataset, DBSession)
-        pipeline_id = make_pipeline_from_strings(strings, origin, 'file://' + dataset_name + '/datasetDoc.json',
-                                                 session.targets, session.features, DBSession)
+        pipeline_id = make_pipeline_from_strings(strings, origin, dataset, DBSession=DBSession)
 
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
+
+    args = dict(ARGS)
+    args['dataset'] = dataset.split('/')[-1].replace('_dataset','')
+    assert dataset.startswith('file://')
+    args['dataset_path'] = os.path.dirname(dataset[7:])
+    args['problem'] = problem
+    args['metric'] = problem
 
     game = PipelineGame(args, None, eval_pipeline)
     nnet = NNetWrapper(game)
@@ -224,7 +224,8 @@ def main(dataset, output_path):
     print(pipeline)
     args['dataset'] = dataset
     args['dataset_path'] = dataset_name
-    args['problem_path'] = problem_name
+    with open(os.path.join(problem_name, 'problemDoc.json')) as fp:
+        args['problem'] = json.load(fp)
     args['metric'] = problem_name
     game = PipelineGame(args, pipeline, eval_pipeline, compute_metafeatures)
     nnet = NNetWrapper(game)
