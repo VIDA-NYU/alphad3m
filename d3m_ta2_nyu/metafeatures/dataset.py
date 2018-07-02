@@ -18,11 +18,11 @@ class ComputeMetafeatures():
 
     def __init__(self, dataset, targets=None, features=None, DBSession=None):
         self.dataset = dataset
-        self.db = DBSession()
+        self.DBSession = DBSession
         self.targets = targets
         self.features = features
 
-    def _create_metafeatures_pipeline(self, origin):
+    def _create_metafeatures_pipeline(self, db, origin):
 
         pipeline = database.Pipeline(
             origin=origin,
@@ -32,7 +32,7 @@ class ComputeMetafeatures():
             pipeline_module = database.PipelineModule(
                 pipeline=pipeline,
                 package=package, version=version, name=name)
-            self.db.add(pipeline_module)
+            db.add(pipeline_module)
             return pipeline_module
 
         def make_data_module(name):
@@ -45,49 +45,47 @@ class ComputeMetafeatures():
 
         def connect(from_module, to_module,
                     from_output='produce', to_input='inputs'):
-            self.db.add(database.PipelineConnection(pipeline=pipeline,
+            db.add(database.PipelineConnection(pipeline=pipeline,
                                                from_module=from_module,
                                                to_module=to_module,
                                                from_output_name=from_output,
                                                to_input_name=to_input))
 
-        try:
-            input_data = make_data_module('dataset')
-            self.db.add(database.PipelineParameter(
-                pipeline=pipeline, module=input_data,
-                name='targets', value=pickle.dumps(self.targets),
-            ))
-            self.db.add(database.PipelineParameter(
-                pipeline=pipeline, module=input_data,
-                name='features', value=pickle.dumps(self.features),
-            ))
+        input_data = make_data_module('dataset')
+        db.add(database.PipelineParameter(
+            pipeline=pipeline, module=input_data,
+            name='targets', value=pickle.dumps(self.targets),
+        ))
+        db.add(database.PipelineParameter(
+            pipeline=pipeline, module=input_data,
+            name='features', value=pickle.dumps(self.features),
+        ))
 
-            step0 = make_primitive_module('.datasets.Denormalize')
-            connect(input_data, step0, from_output='dataset')
+        step0 = make_primitive_module('.datasets.Denormalize')
+        connect(input_data, step0, from_output='dataset')
 
-            step1 = make_primitive_module('.datasets.DatasetToDataFrame')
-            connect(step0, step1)
+        step1 = make_primitive_module('.datasets.DatasetToDataFrame')
+        connect(step0, step1)
 
-            step2 = make_primitive_module('.data.ColumnParser')
-            connect(step1, step2)
+        step2 = make_primitive_module('.data.ColumnParser')
+        connect(step1, step2)
 
-            step3 = make_primitive_module('d3m.primitives.byudml.metafeature_extraction.MetafeatureExtractor')
-            connect(step2, step3)
+        step3 = make_primitive_module('d3m.primitives.byudml.metafeature_extraction.MetafeatureExtractor')
+        connect(step2, step3)
 
-            self.db.add(pipeline)
-            self.db.commit()
-            print('PIPELINE ID: ', pipeline.id)
-            return pipeline.id
-        finally:
-            self.db.close()
+        db.add(pipeline)
+        db.flush()
+        print('PIPELINE ID: ', pipeline.id)
+        return pipeline.id
 
     def compute_metafeatures(self, origin):
-        pipeline_id = self._create_metafeatures_pipeline(origin)
+        db = self.DBSession()
+        pipeline_id = self._create_metafeatures_pipeline(db, origin)
         # Run training
         logger.info("Computing Metafeatures")
         try:
             dataset = Dataset.load(self.dataset)
-            train_run, outputs = execute_train(self.db, pipeline_id, dataset)
+            train_run, outputs = execute_train(db, pipeline_id, dataset)
             metafeatures_values = {}
             for key, value in outputs.items():
                 metafeatures_results = value['produce'].metadata.query(())['data_metafeatures']
@@ -105,9 +103,9 @@ class ComputeMetafeatures():
         except Exception:
             logger.exception("Error running Metafeatures")
             sys.exit(1)
-        assert train_run is not None
-
-        self.db.close()
+        finally:
+            db.rollback()
+            db.close()
 
     # def compute_metafeatures_OLD(self, dataset_path, table_file):
     #     f = open(dataset_path)
