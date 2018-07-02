@@ -465,7 +465,7 @@ class TuneHyperparamsJob(Job):
                                 'tune', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 metrics=self.session.metrics,
-                                problem=self.session.problem,
+                                targets=self.session.targets,
                                 results_path=self.results,
                                 db_filename=db_filename)
         self.session.notify('tuning_start', pipeline_id=self.pipeline_id)

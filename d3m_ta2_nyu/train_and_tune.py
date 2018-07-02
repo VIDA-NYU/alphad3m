@@ -8,12 +8,13 @@ import time
 import pickle
 import os
 import shutil
+from d3m.container import Dataset
 
 from d3m_ta2_nyu.common import SCORES_TO_SKLEARN, SCORES_RANKING_ORDER
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.execute import execute_train, execute_test
-from d3m_ta2_nyu.parameter_tuning.estimator_config import ESTIMATORS
-from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, estimator_from_cfg
+from d3m_ta2_nyu.parameter_tuning.estimator_config import is_estimator
+from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, hyperparams_from_cfg
 
 
 logger = logging.getLogger(__name__)
@@ -25,16 +26,14 @@ RANDOM = 65682867  # The most random of all numbers
 MAX_SAMPLE = 1000
 
 
-def cross_validation(pipeline, metrics, data, targets, target_names,
-                     stratified_folds, progress, db):
+def cross_validation(pipeline, metrics, dataset, targets,
+                     progress, db):
     scores = {}
 
-    if stratified_folds:
-        splits = StratifiedKFold(n_splits=FOLDS, shuffle=True,
-                                 random_state=RANDOM).split(data, targets)
-    else:
-        splits = KFold(n_splits=FOLDS, shuffle=True,
-                       random_state=RANDOM).split(data, targets)
+    first_res_id = next(iter(dataset))
+
+    splits = KFold(n_splits=FOLDS, shuffle=True,
+                   random_state=RANDOM).split(dataset[first_res_id])
 
     all_predictions = []
 
@@ -44,14 +43,12 @@ def cross_validation(pipeline, metrics, data, targets, target_names,
         progress(i)
 
         # Do the split
-        # Note that 'data' is a DataFrame but 'targets' is an array
-        # (this is what d3mds.py returns)
-        # For the dataframe, we need to map from row number to d3mIndex
-        train_data_split = data.loc[data.index[train_split]]
-        test_data_split = data.loc[data.index[test_split]]
-
-        train_target_split = targets[train_split]
-        test_target_split = targets[test_split]
+        resources = dict(dataset)
+        resources[first_res_id] = resources[first_res_id].iloc[train_split]
+        train_data_split = Dataset(resources, dataset.metadata)
+        resources = dict(dataset)
+        resources[first_res_id] = resources[first_res_id].iloc[test_split]
+        test_data_split = Dataset(resources, dataset.metadata)
 
         start_time = time.time()
 
@@ -59,7 +56,7 @@ def cross_validation(pipeline, metrics, data, targets, target_names,
         logger.info("Training on fold")
         try:
             train_run, outputs = execute_train(
-                db, pipeline, train_data_split, train_target_split,
+                db, pipeline, train_data_split,
                 crossval=True)
         except Exception:
             logger.exception("Error running training on fold")
@@ -78,7 +75,23 @@ def cross_validation(pipeline, metrics, data, targets, target_names,
 
         run_time = time.time() - start_time
 
-        predictions = next(iter(outputs.values()))['predictions']
+        # Get predicted targets
+        predictions = next(iter(outputs.values()))['produce']
+
+        # Get expected targets
+        test_targets = []
+        for resID, col_name in targets:
+            test_targets.append(test_data_split[resID].loc[:, col_name])
+        test_targets = pandas.concat(test_targets, axis=1)
+
+        # FIXME: Right now pipeline returns a simple array
+        # Make it a DataFrame
+        predictions = pandas.DataFrame(
+            {
+                next(iter(targets))[1]: predictions,
+                'd3mIndex': test_data_split[next(iter(targets))[0]]['d3mIndex'],
+            }
+        ).set_index('d3mIndex')
 
         # Compute score
         for metric in metrics:
@@ -88,11 +101,11 @@ def cross_validation(pipeline, metrics, data, targets, target_names,
             else:
                 score_func = SCORES_TO_SKLEARN[metric]
                 scores.setdefault(metric, []).append(
-                    score_func(test_target_split, predictions))
+                    score_func(test_targets, predictions))
 
         # Store predictions
-        assert len(predictions.columns) == len(target_names)
-        predictions.columns = target_names
+        assert len(predictions.columns) == len(targets)
+        predictions.columns = [col_name for resID, col_name in targets]
         all_predictions.append(predictions)
 
     progress(FOLDS)
@@ -107,7 +120,7 @@ def cross_validation(pipeline, metrics, data, targets, target_names,
 
 
 @database.with_db
-def tune(pipeline_id, metrics, problem, results_path, msg_queue, db):
+def tune(pipeline_id, metrics, targets, results_path, msg_queue, db):
     # Load pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -121,31 +134,23 @@ def tune(pipeline_id, metrics, problem, results_path, msg_queue, db):
                 pipeline_id, dataset)
 
     # Load data
-    ds = D3MDS(dataset, problem)
-    logger.info("Loaded dataset, columns: %s",
-                ", ".join(col['colName']
-                          for col in ds.dataset.get_learning_data_columns()))
+    dataset = Dataset.load(dataset)
+    logger.info("Loaded dataset")
 
-    data = ds.get_train_data()
-    targets = ds.get_train_targets()
-    target_names = [t['colName'] for t in ds.problem.get_targets()]
-
-    if len(data) > MAX_SAMPLE:
+    if len(dataset['0']) > MAX_SAMPLE:
         # Sample the dataset to stay reasonably fast
-        logger.info("Sampling down data from %d to %d", len(data), MAX_SAMPLE)
-        sample = numpy.concatenate([numpy.repeat(True, MAX_SAMPLE),
-                                    numpy.repeat(False, len(data) - MAX_SAMPLE)])
+        logger.info("Sampling down data from %d to %d",
+                    len(dataset['0']), MAX_SAMPLE)
+        sample = numpy.concatenate(
+            [numpy.repeat(True, MAX_SAMPLE),
+             numpy.repeat(False, len(dataset['0']) - MAX_SAMPLE)])
         numpy.random.RandomState(seed=RANDOM).shuffle(sample)
-        data = data[sample]
-        targets = targets[sample]
-
-    stratified_folds = \
-        ds.problem.prDoc['about']['taskType'] == 'classification'
+        dataset['0'] = dataset['0'][sample]
 
     # TODO: tune all modules, not only the estimator
     estimator_module = None
     for module in pipeline.modules:
-        if module.name in ESTIMATORS.keys():
+        if is_estimator(module.name):
             estimator_module = module
 
     if estimator_module:
@@ -153,19 +158,19 @@ def tune(pipeline_id, metrics, problem, results_path, msg_queue, db):
                     estimator_module.id,
                     estimator_module.name, estimator_module.package)
 
-        tuning = HyperparameterTuning(estimator_module.name)
+        tuning = HyperparameterTuning([estimator_module.name])
 
         def evaluate(hyperparameter_configuration):
-            estimator = estimator_from_cfg(hyperparameter_configuration,estimator_module.name)
+            hy = hyperparams_from_cfg(estimator_module.name,hyperparameter_configuration)
             db.add(database.PipelineParameter(
                                 pipeline=pipeline,
                                 module_id=estimator_module.id,
                                 name='hyperparams',
-                                value=pickle.dumps(estimator),
+                                value=pickle.dumps(hy),
                             )
                 )
             scores, _ = cross_validation(
-                pipeline, metrics, data, targets, target_names, stratified_folds,
+                pipeline, metrics, dataset, targets,
                 lambda i: None,
                 db)
 
@@ -184,16 +189,16 @@ def tune(pipeline_id, metrics, problem, results_path, msg_queue, db):
 
         # TODO: tune all modules, not only the estimator
         estimator_module = None
-        for module in new_pipeline.modules:
-            if module.name in ESTIMATORS.keys():
+        for module in pipeline.modules:
+            if is_estimator(module.name):
                 estimator_module = module
 
-        estimator = estimator_from_cfg(hyperparameter_configuration,estimator_module.name)
+        hy = hyperparams_from_cfg(estimator_module.name,hyperparameter_configuration)
         db.add(database.PipelineParameter(
             pipeline=new_pipeline,
             module_id=estimator_module.id,
             name='hyperparams',
-            value=pickle.dumps(estimator),
+            value=pickle.dumps(hy),
         ))
         db.flush()
 
@@ -206,7 +211,7 @@ def tune(pipeline_id, metrics, problem, results_path, msg_queue, db):
         # (set both training_data and test_data),
         # get predictions from OutputPort to get cross validation scores
         scores, predictions = cross_validation(
-            new_pipeline, metrics, data, targets, target_names, stratified_folds,
+            new_pipeline, metrics, dataset, targets,
             lambda i: None,
             db)
         logger.info("Scoring done: %s", ", ".join("%s=%s" % s
@@ -232,7 +237,7 @@ def tune(pipeline_id, metrics, problem, results_path, msg_queue, db):
         logger.info("Running training on full data")
 
         try:
-            execute_train(db, new_pipeline, data, targets)
+            execute_train(db, new_pipeline, dataset)
         except Exception:
             logger.exception("Error running training on full data")
             sys.exit(1)
