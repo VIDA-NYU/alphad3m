@@ -113,6 +113,7 @@ def make_pipeline_from_strings(primitives, origin, dataset, targets=None, featur
         preprocessors = []
         if len(primitives) > 1:
             preprocessors = primitives[0:len(primitives)-2]
+        logger.info("PREPROCESSORS %s", preprocessors)
         classifier = primitives[len(primitives)-1]
         for preprocessor in preprocessors:
             step = make_primitive_module(preprocessor)
@@ -239,8 +240,8 @@ def main(dataset_uri, problem_path, output_path):
     if not 'error' in game.metric.lower():
         evaluations.reverse()
     end = time.time()
-    out_p = open(os.path.join(output_path, dataset+'_best_pipelines.txt'), 'w')
-    out_p.write(dataset+' '+evaluations[0][0] + ' ' + str(evaluations[0][1])+ ' ' + str(game.steps) + ' ' + str((end-start)/60.0) + '\n')
+    out_p = open(os.path.join(output_path, args['dataset']+'_best_pipelines.txt'), 'w')
+    out_p.write(args['dataset']+' '+evaluations[0][0] + ' ' + str(evaluations[0][1])+ ' ' + str(game.steps) + ' ' + str((end-start)/60.0) + '\n')
 
 if __name__ == '__main__':
     output_path = '.'
