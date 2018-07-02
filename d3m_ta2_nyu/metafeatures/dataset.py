@@ -10,6 +10,7 @@ from d3m.primitives.byudml.metafeature_extraction import MetafeatureExtractor
 from d3m_ta2_nyu.workflow.execute import execute_train
 from d3m_ta2_nyu.workflow import database
 from d3m.container import Dataset
+from d3m.metadata import base as metadata_base
 from pprint import pprint
 logger = logging.getLogger(__name__)
 
@@ -17,16 +18,41 @@ logger = logging.getLogger(__name__)
 class ComputeMetafeatures():
 
     def __init__(self, dataset, targets=None, features=None, DBSession=None):
-        self.dataset = dataset
+        self.dataset = Dataset.load(dataset)
+        self.dataset_uri = dataset
         self.db = DBSession()
         self.targets = targets
         self.features = features
+
+    def _add_target_columns_metadata(self):
+        print('TARGETS ',self.targets)
+        print('DATASET ', self.dataset.metadata)
+        for target in self.targets:
+            resource_id = target[0]
+            target_name = target[1]
+            for column_index in range(self.dataset.metadata.query((resource_id, metadata_base.ALL_ELEMENTS))['dimension']['length']):
+                if self.dataset.metadata.query((resource_id, metadata_base.ALL_ELEMENTS, column_index)).get('name',
+                                                                                                None) == target_name:
+                    semantic_types = list(self.dataset.metadata.query(
+                        (resource_id, metadata_base.ALL_ELEMENTS, column_index)).get('semantic_types', []))
+
+                    if 'https://metadata.datadrivendiscovery.org/types/Target' not in semantic_types:
+                        semantic_types.append('https://metadata.datadrivendiscovery.org/types/Target')
+                        self.dataset.metadata = self.dataset.metadata.update(
+                            (resource_id, metadata_base.ALL_ELEMENTS, column_index),
+                            {'semantic_types': semantic_types})
+
+                    if 'https://metadata.datadrivendiscovery.org/types/TrueTarget' not in semantic_types:
+                        semantic_types.append('https://metadata.datadrivendiscovery.org/types/TrueTarget')
+                        self.dataset.metadata = self.dataset.metadata.update(
+                            (resource_id, metadata_base.ALL_ELEMENTS, column_index),
+                            {'semantic_types': semantic_types})
 
     def _create_metafeatures_pipeline(self, origin):
 
         pipeline = database.Pipeline(
             origin=origin,
-            dataset=self.dataset)
+            dataset=self.dataset_uri)
 
         def make_module(package, version, name):
             pipeline_module = database.PipelineModule(
@@ -82,12 +108,15 @@ class ComputeMetafeatures():
             self.db.close()
 
     def compute_metafeatures(self, origin):
+        # Add true and suggested targets
+        self._add_target_columns_metadata()
+        # Create the metafeatures computing pipeline
         pipeline_id = self._create_metafeatures_pipeline(origin)
         # Run training
         logger.info("Computing Metafeatures")
         try:
-            dataset = Dataset.load(self.dataset)
-            train_run, outputs = execute_train(self.db, pipeline_id, dataset)
+
+            train_run, outputs = execute_train(self.db, pipeline_id, self.dataset)
             metafeatures_values = {}
             for key, value in outputs.items():
                 metafeatures_results = value['produce'].metadata.query(())['data_metafeatures']
