@@ -429,7 +429,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         # Remi said we can just consider the first one, otherwise we can just crash
         problem_input = request.problem.inputs[0]
 
-        dataset = problem_input.dataset_id
+        dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
             logger.error("Dataset is not in D3M format: %s", dataset)
             # TODO check the correct error message
@@ -445,7 +445,6 @@ class CoreService(pb_core_grpc.CoreServicer):
 
             '''
             return
-        dataset = dataset[:-15]
         task = request.problem.problem.task_type
         if task not in self.grpc2task:
             logger.error("Got unknown task %r", task)
@@ -478,13 +477,13 @@ class CoreService(pb_core_grpc.CoreServicer):
 
             '''
             return
-        metrics = request.problem.problem.performance_metrics.metrics
-        if any(m not in self.grpc2metric for m in metrics):
+        metrics = request.problem.problem.performance_metrics
+        if any(m.metric not in self.grpc2metric for m in metrics):
             logger.warning("Got metrics that we don't know about: %s",
-                           ", ".join(m for m in metrics
-                                     if m not in self.grpc2metric))
-        metrics = [self.grpc2metric[m] for m in metrics
-                   if m in self.grpc2metric]
+                           ", ".join(m.metric for m in metrics
+                                     if m.metric not in self.grpc2metric))
+        metrics = [self.grpc2metric[m.metric] for m in metrics
+                   if m.metric in self.grpc2metric]
         if not metrics:
             logger.error("Didn't get any metrics we know")
             # TODO check the correct error message
@@ -500,11 +499,9 @@ class CoreService(pb_core_grpc.CoreServicer):
 
             '''
             return
-        target_features = request.target_features
-        max_pipelines = request.max_pipelines
 
-        if dataset.startswith('file:///'):
-            dataset = dataset[7:]
+        if not dataset.startswith('file://'):
+            dataset = 'file://'+dataset
 
         logger.info("Got CreatePipelines request, session=%s, task=%s, "
                     "dataset=%s, metrics=%s, ",
@@ -517,7 +514,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             self._app.build_pipelines(search_id, task, dataset, metrics)
 
         return pb_core.SearchSolutionsResponse(
-            search_id=search_id
+            search_id=search_id.hex
         )
 
     def GetSearchSolutionsResults(self, request, context):

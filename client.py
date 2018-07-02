@@ -12,6 +12,8 @@ import d3m_ta2_nyu.proto.value_pb2 as pb_value
 import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
 import d3m_ta2_nyu.proto.pipeline_pb2 as pb_pipeline
 
+from d3m_ta2_nyu.common import TASKS_FROM_SCHEMA, SCORES_FROM_SCHEMA
+
 
 class LoggingStub(object):
     def __init__(self, stub):
@@ -68,6 +70,8 @@ def main():
     TASK_SUBTYPES = {n: v for n, v in pb_problem.TaskSubtype.items()}
     METRICS = {n: v for n, v in pb_problem.PerformanceMetric.items()}
 
+
+
     solutions = core.SearchSolutions(pb_core.SearchSolutionsRequest(
         user_agent='ta3_stub',
         version=version,
@@ -84,7 +88,7 @@ def main():
                                            .upper()],
                 performance_metrics=[
                     pb_problem.ProblemPerformanceMetric(
-                        metric=METRICS[e['metric'].upper()],
+                        metric=METRICS[SCORES_FROM_SCHEMA[e['metric']].upper()],
                     )
                     for e in problem['inputs']['performanceMetrics']
                 ],
@@ -142,9 +146,11 @@ def main():
         )],
     ))
 
+    # Now search solutions return only the search id
+    '''
     for solution in solutions:
         pass
-
+    '''
 
 if __name__ == '__main__':
     main()
