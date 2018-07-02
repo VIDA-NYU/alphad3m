@@ -1,5 +1,8 @@
 import math
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 class MCTS():
     """
@@ -41,7 +44,7 @@ class MCTS():
             probs = [0]*len(counts)
             probs[bestA]=1
             if np.sum(probs) == 0:
-                print('PROB ZEROz')
+                logger.info('PROB ZERO')
             return probs
 
         counts = [x**(1./temp) for x in counts]
@@ -50,7 +53,7 @@ class MCTS():
         else:
             probs = [x/float(sum(counts)) for x in counts]
         if np.sum(probs) == 0:
-            print('PROB ZERO')
+            logger.info('PROB ZERO')
         return probs
 
 
@@ -89,7 +92,7 @@ class MCTS():
         if s not in self.Ps:
             # leaf node
             self.Ps[s], v = self.nnet.predict(canonicalBoard)
-            print('Value ', v)
+            logger.info("Value %s", v)
             valids = self.game.getValidMoves(canonicalBoard, 1)
             self.Ps[s] = self.Ps[s]*valids      # masking invalid moves
             self.Ps[s] /= np.sum(self.Ps[s])    # renormalize
@@ -129,7 +132,6 @@ class MCTS():
         next_s, next_player = self.game.getNextState(canonicalBoard, player, a)
         next_s = self.game.getCanonicalForm(next_s, next_player)
 
-        #print('NEXT STATE SEARCH RECURSION')
         v = self.search(next_s, next_player, problem)
 
         if (s,a) in self.Qsa:

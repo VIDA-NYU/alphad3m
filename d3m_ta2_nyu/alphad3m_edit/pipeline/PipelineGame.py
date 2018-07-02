@@ -1,4 +1,5 @@
 from __future__ import print_function
+import logging
 import sys
 import os
 import pickle
@@ -18,6 +19,8 @@ import sys, traceback
 PROBLEM_TYPES = {'CLASSIFICATION': 1,
                  'REGRESSION': 2}
 DATA_TYPES = {'TABULAR': 1}
+
+logger = logging.getLogger(__name__)
 
 class PipelineGame(Game):
     def __init__(self, args, pipeline, eval_pipeline, compute_metafeatures):
@@ -39,8 +42,6 @@ class PipelineGame(Game):
 
         if self.dataset_metafeatures is None:
             self.dataset_metafeatures = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
-            print(self.dataset_metafeatures)
-        #print(self.dataset_metafeatures)
         self.dataset_metafeatures = list(np.nan_to_num(np.asarray(self.dataset_metafeatures)))
         self.p = Board.get_pipeline_size()
         self.m = len(self.dataset_metafeatures)+2
@@ -94,8 +95,8 @@ class PipelineGame(Game):
         if not ignore_prev_moves:
             b.previous_moves = b.get_previous_moves(board)
         legalMoves =  b.get_legal_moves(self.problem)
-        print(b.pieces_p)
-        print([b.valid_moves[i] for i in range(0, len(legalMoves)) if legalMoves[i] == 1])
+        logger.info("%s", b.pieces_p)
+        logger.info("%s", [b.valid_moves[i] for i in range(0, len(legalMoves)) if legalMoves[i] == 1])
         return np.array(legalMoves)
 
     def getEvaluation(self, board):
@@ -111,17 +112,15 @@ class PipelineGame(Game):
         if eval_val is None:
             self.steps = self.steps + 1
             try:
-                print(pipeline)
+                logger.info("%s", pipeline)
                 eval_val = self.eval_pipeline(pipeline, 'AlphaD3M_Edit_eval')
-                print('Evaluation = ', eval_val)
+                logger.info("Evaluation = %s", eval_val)
             except:
-                print('ERROR IN PIPELINE EXECUTION ', eval_val)
+                logger.info("ERROR IN PIPELINE EXECUTION %s", eval_val)
                 traceback.print_exc()
             if eval_val is None:
                 eval_val = float('inf')
             self.evaluations[",".join(pipeline)] = eval_val
-        #if 'error' in self.metric.lower():
-        #    eval_val = -1 * eval_val        
         return eval_val
     
     def getGameEnded(self, board, player, eval_val=None):
@@ -145,14 +144,12 @@ class PipelineGame(Game):
         b.previous_moves = b.get_previous_moves(board)
         eval_val = self.getEvaluation(board)
         if b.findWin(player, eval_val):
-            print('EVALUATIONS ')
-            pprint(self.evaluations)
-            print('findwin',player)
+            logger.info("EVALUATIONS %s", self.evaluations)
+            logger.info('findwin %s',player)
             return 1
         if b.findWin(-player, eval_val):
-            print('EVALUATIONS ')
-            pprint(self.evaluations)
-            print('findwin',-player)
+            logger.info("EVALUATIONS %s", self.evaluations)
+            logger.info('findwin %s', player)
             return -1
         if b.has_legal_moves():
             return 0

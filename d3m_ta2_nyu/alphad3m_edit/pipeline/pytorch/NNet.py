@@ -1,3 +1,4 @@
+import logging
 import argparse
 import os
 import shutil
@@ -20,6 +21,8 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 
 from .PipelineNNet import PipelineNNet as onnet
+
+logger = logging.getLogger(__name__)
 
 args = dict({
     'lr': 0.001,
@@ -45,7 +48,7 @@ class NNetWrapper(NeuralNet):
         optimizer = optim.Adam(self.nnet.parameters())
 
         for epoch in range(args.get('epochs')):
-            print('EPOCH ::: ' + str(epoch+1))
+            logger.info('EPOCH ::: ' + str(epoch+1))
             self.nnet.train()
             data_time = AverageMeter()
             batch_time = AverageMeter()
@@ -75,7 +78,6 @@ class NNetWrapper(NeuralNet):
                 data_time.update(time.time() - end)
 
                 # compute output
-                #print(boards)
                 out_pi, out_v = self.nnet(boards)
                 l_pi = self.loss_pi(target_pis, out_pi)
                 l_v = self.loss_v(target_vs, out_v)
@@ -116,7 +118,6 @@ class NNetWrapper(NeuralNet):
         """
         # timing
         start = time.time()
-        #print('BOARD\n', board)
 
         # preparing input
         board = torch.from_numpy(np.array(board[0:self.board_size], dtype='f')).cuda().float() if args.get('cuda') else torch.from_numpy(np.array(board[0:self.board_size], dtype='f'))
@@ -128,10 +129,7 @@ class NNetWrapper(NeuralNet):
         self.nnet.eval()
         pi, v = self.nnet(board)
 
-        #print('PROBABILITY ', torch.exp(pi).data.cpu().numpy()[0])
-        #print('VALUE ',  v.data.cpu().numpy()[0])
-
-        print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
+        logger.info('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
         return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0][0]
 
     def loss_pi(self, targets, outputs):
@@ -143,10 +141,10 @@ class NNetWrapper(NeuralNet):
     def save_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
         filepath = os.path.join(folder, filename)
         if not os.path.exists(folder):
-            print("Checkpoint Directory does not exist! Making directory {}".format(folder))
+            logger.error("Checkpoint Directory does not exist! Making directory {}".format(folder))
             os.mkdir(folder)
         else:
-            print("Checkpoint Directory exists! ")
+            logger.info("Checkpoint Directory exists! ")
         torch.save({
             'state_dict' : self.nnet.state_dict(),
         }, filepath)

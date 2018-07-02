@@ -1,9 +1,12 @@
+import logging
 from collections import deque
 from .Arena import Arena
 from .MCTS import MCTS
 import numpy as np
 from .pytorch_classification.utils import Bar, AverageMeter
 import time
+
+logger = logging.getLogger(__name__)
 
 class Coach():
     """
@@ -35,7 +38,6 @@ class Coach():
         """
         trainExamples = []
         self.board = self.game.getInitBoard()
-        #print('BOARD ', self.board)
         self.curPlayer = 1
         episodeStep = 0
         
@@ -53,8 +55,8 @@ class Coach():
             for i in range(self.game.m+self.game.p+self.game.o, len(canonicalBoard)):
                 canonicalBoard[i] = 0
             valids = self.game.getValidMoves(canonicalBoard, 1, True)
-            print(valids)
-            print(pi)
+            logger.info("%s", valids)
+            logger.info("%s", pi)
             pi = pi*valids
 
             if np.sum(pi) == 0:
@@ -82,7 +84,7 @@ class Coach():
         trainExamples = deque([], maxlen=self.args.get('maxlenOfQueue'))
         for i in range(self.args.get('numIters')):
             # bookkeeping
-            print('------ITER ' + str(i+1) + '------')
+            logger.info('------ITER ' + str(i+1) + '------')
             eps_time = AverageMeter()
             bar = Bar('Self Play', max=self.args.get('numEps'))
             end = time.time()
@@ -107,24 +109,21 @@ class Coach():
             pnet.load_checkpoint(folder=self.args.get('checkpoint'), filename='temp.pth.tar')
             pmcts = MCTS(self.game, pnet, self.args)
             boards, pis, vs = list(zip(*trainExamples))
-            #print([board[self.game.m:self.game.m+self.game.p] for board in boards])
             self.nnet.train(trainExamples)
             nmcts = MCTS(self.game, self.nnet, self.args)
 
-            print('PITTING AGAINST PREVIOUS VERSION')
-            #print(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)))
+            logger.info('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
                           lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game, self.game.display)
             pwins, nwins = arena.playGames(self.args.get('arenaCompare'))
 
-            print('EVALUATIONS ', self.game.evaluations)
-            print('NEW/PREV WINS : ' + str(nwins) + '/' + str(pwins))
-            #print('ARGS ', self.args)
+            logger.info('EVALUATIONS %s', self.game.evaluations)
+            logger.info('NEW/PREV WINS : ' + str(nwins) + '/' + str(pwins))
             if float(nwins)/(pwins+nwins) < self.args['updateThreshold']:
-                print('REJECTING NEW MODEL')
+                logger.info('REJECTING NEW MODEL')
                 self.nnet = pnet
 
             else:
-                print('ACCEPTING NEW MODEL')
+                logger.info('ACCEPTING NEW MODEL')
                 self.nnet.save_checkpoint(folder=self.args['checkpoint'], filename='checkpoint_' + str(i) + '.pth.tar')
                 self.nnet.save_checkpoint(folder=self.args['checkpoint'], filename='best.pth.tar')

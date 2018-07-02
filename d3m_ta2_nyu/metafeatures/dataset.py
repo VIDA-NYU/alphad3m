@@ -11,7 +11,6 @@ from d3m_ta2_nyu.workflow.execute import execute_train
 from d3m_ta2_nyu.workflow import database
 from d3m.container import Dataset
 from d3m.metadata import base as metadata_base
-from pprint import pprint
 logger = logging.getLogger(__name__)
 
 
@@ -99,7 +98,7 @@ class ComputeMetafeatures():
 
         db.add(pipeline)
         db.flush()
-        print('PIPELINE ID: ', pipeline.id)
+        logger.info(origin + ' PIPELINE ID: %s', pipeline.id)
         return pipeline.id
 
     def compute_metafeatures(self, origin):
@@ -123,9 +122,6 @@ class ComputeMetafeatures():
                                 metafeatures_values[metafeatures_key+'_'+ k] = v
                     else:
                         metafeatures_values[metafeatures_key] = metafeatures_value
-
-                print('OUTPUTS VALUE ')
-                pprint(metafeatures_values)
             return list(metafeatures_values.values())
         except Exception:
             logger.exception("Error running Metafeatures")
@@ -134,18 +130,3 @@ class ComputeMetafeatures():
             db.rollback()
             db.close()
 
-    # def compute_metafeatures_OLD(self, dataset_path, table_file):
-    #     f = open(dataset_path)
-    #     dataset_info = json.load(f)
-    #     target_col = 'Class'
-    #     for res in dataset_info['dataResources']:
-    #         for col in res['columns']:
-    #             if 'suggestedTarget' in col['role']:
-    #                 target_col = col['colName']
-    #                 break
-    #     print(target_col)
-    #     df = DataFrame(pd.read_csv(table_file))
-    #     df = df.rename(columns={target_col: "target"})
-    #     df.drop("d3mIndex", axis=1, inplace=True)
-    #     metafeatures = MetafeatureExtractor(hyperparams=None).produce(inputs=df).value
-    #     return metafeatures.values[0]

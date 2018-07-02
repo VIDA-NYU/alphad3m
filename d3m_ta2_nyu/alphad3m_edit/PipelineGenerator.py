@@ -3,6 +3,7 @@ import os
 import sys
 import operator
 import pickle
+import logging
 
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
@@ -14,6 +15,8 @@ from .Coach import Coach
 from .pipeline.PipelineGame import PipelineGame
 from .pipeline.pytorch.NNet import NNetWrapper
 from d3m_ta2_nyu.metafeatures.dataset import ComputeMetafeatures
+
+logger = logging.getLogger(__name__)
 
 ARGS = {
     'numIters': 3,
@@ -128,7 +131,7 @@ def make_pipeline_from_strings(primitives, origin, dataset, targets=None, featur
 
         db.add(pipeline)
         db.commit()
-        print('PIPELINE ID: ', pipeline.id)
+        logger.info(origin + ' PIPELINE ID: %s', pipeline.id)
         return pipeline.id
     finally:
         db.close()
@@ -154,6 +157,8 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
     args['dataset_path'] = os.path.dirname(dataset[7:])
     args['problem'] = problem
 
+    taskType = self.args['problem']['about']['taskType'].upper()
+
     game = PipelineGame(args, None, eval_pipeline, compute_metafeatures)
     nnet = NNetWrapper(game)
 
@@ -168,11 +173,10 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
     c.learn()
 
 
-def main(dataset, output_path):
+def main(dataset_uri, problem_path, output_path):
     import time
     start = time.time()
     import tempfile
-    from d3m_ta2_nyu.main import setup_logging
     from d3m_ta2_nyu.ta2 import D3mTa2
 
     p_enum = {
@@ -181,7 +185,7 @@ def main(dataset, output_path):
                  'sklearn.linear_model.SGDClassifier':17,
             	 'sklearn.linear_model.SGDRegressor': 35     
              }
-    pipelines_list = []
+
     pipelines = {}
     if os.path.isfile('pipelines.txt'):
         with open('pipelines.txt') as f:
@@ -189,45 +193,32 @@ def main(dataset, output_path):
             for pipeline in pipelines_list:
                 fields = pipeline.split(' ')
                 pipelines[fields[0]] = fields[1].split(',')
-    datasets_path = '/d3m/data'
-    dataset_names = pipelines.keys()
     args = dict(ARGS)
-
-    print(dataset)
-
-    if 'LL0' in dataset:
-       dataset_path = os.path.join(datasets_path, 'LL0', dataset)
-    else:
-       dataset_path = os.path.join(datasets_path, 'LL1', dataset)
-
-    dataset_name = os.path.join(dataset_path, dataset+'_dataset')
-    problem_name = os.path.join(dataset_path, dataset+'_problem')
 
     storage = tempfile.mkdtemp(prefix='d3m_pipeline_eval_')
     ta2 = D3mTa2(storage_root=storage,
              logs_root=os.path.join(storage, 'logs'),
              executables_root=os.path.join(storage, 'executables'))
-    setup_logging()
-    session_id = ta2.new_session(problem_name)
+
+    session_id = ta2.new_session(problem_path)
     session = ta2.sessions[session_id]
-    compute_metafeatures = ComputeMetafeatures('file://'+dataset_name+'/datasetDoc.json', session.targets, session.features, ta2.DBSession)
+    compute_metafeatures = ComputeMetafeatures(os.path.join(dataset_uri, 'datasetDoc.json'), session.targets, session.features, ta2.DBSession)
 
     def eval_pipeline(strings, origin):
-        print('CALLING EVAL PIPELINE')
         # Create the pipeline in the database
-        pipeline_id = make_pipeline_from_strings(strings, origin, 'file://'+dataset_name+'/datasetDoc.json',
+        pipeline_id = make_pipeline_from_strings(strings, origin, os.path.join(dataset_uri, 'datasetDoc.json'),
                                                  session.targets, session.features, ta2.DBSession)
         # Evaluate the pipeline
         return ta2.run_pipeline(session_id, pipeline_id)
     pipeline = None
     if pipelines:
         pipeline = [p_enum[primitive] for primitive in pipelines[dataset]]
-    print(pipeline)
-    args['dataset'] = dataset
-    args['dataset_path'] = dataset_name
-    with open(os.path.join(problem_name, 'problemDoc.json')) as fp:
+    logger.info(pipeline)
+    args['dataset'] = dataset_uri.split('/')[-1].replace('_dataset', '')
+    assert dataset_uri.startswith('file://')
+    args['dataset_path'] = os.path.dirname(dataset_uri[7:])
+    with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
         args['problem'] = json.load(fp)
-    args['metric'] = problem_name
     game = PipelineGame(args, pipeline, eval_pipeline, compute_metafeatures)
     nnet = NNetWrapper(game)
 
@@ -253,6 +244,6 @@ def main(dataset, output_path):
 
 if __name__ == '__main__':
     output_path = '.'
-    if len(sys.argv) > 2:
-       output_path = sys.argv[2]
-    main(sys.argv[1], output_path)
+    if len(sys.argv) > 3:
+       output_path = sys.argv[3]
+    main(sys.argv[1], sys.argv[2], output_path)
