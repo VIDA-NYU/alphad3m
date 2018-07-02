@@ -135,11 +135,14 @@ def make_pipeline_from_strings(primitives, origin, dataset, targets=None, featur
 
 
 @database.with_sessionmaker
-def generate(task, dataset, metrics, problem, msg_queue, DBSession):
-    compute_metafeatures = ComputeMetafeatures(dataset, DBSession)
+def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSession):
+    # FIXME: don't use 'problem' argument
+    compute_metafeatures = ComputeMetafeatures(dataset, targets, features, DBSession)
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = make_pipeline_from_strings(strings, origin, dataset, DBSession=DBSession)
+        pipeline_id = make_pipeline_from_strings(strings, origin,
+                                                 dataset, targets, features,
+                                                 DBSession=DBSession)
 
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))

@@ -718,6 +718,8 @@ class D3mTa2(object):
                 dataset=dataset,
                 metrics=metrics,
                 problem=session.problem,
+                targets=session.targets,
+                features=session.features,
                 db_filename=self.db_filename,
             )
 
