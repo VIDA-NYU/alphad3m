@@ -12,7 +12,7 @@ from d3m.container import Dataset
 from .Coach import Coach
 from .pipeline.PipelineGame import PipelineGame
 from .pipeline.pytorch.NNet import NNetWrapper
-
+from d3m_ta2_nyu.metafeatures.dataset import ComputeMetafeatures
 
 ARGS = {
     'numIters': 3,
@@ -35,11 +35,10 @@ ARGS = {
 def make_pipeline_from_strings(primitives, origin, dataset, targets, features, DBSession):
     db = DBSession()
 
+
     pipeline = database.Pipeline(
         origin=origin,
         dataset=dataset)
-
-    dataset = Dataset.load(dataset)
 
     def make_module(package, version, name):
         pipeline_module = database.PipelineModule(
@@ -117,10 +116,6 @@ def make_pipeline_from_strings(primitives, origin, dataset, targets, features, D
             connect(prev_step, step)
             prev_step = step
 
-        #imputer = 'd3m.primitives.dsbox.KnnImputation'
-        #step5 = make_primitive_module(imputer)
-        #connect(step4, step5)
-
         step6 = make_primitive_module('.data.ExtractTargets')
         connect(step1, step6)
 
@@ -130,7 +125,6 @@ def make_pipeline_from_strings(primitives, origin, dataset, targets, features, D
         classifier = 'd3m.primitives.sklearn_wrap.SKRandomForestClassifier'
         step8 = make_primitive_module(classifier)
         connect(step, step8)
-        #connect(step4, step8)
         connect(step7, step8, to_input='outputs')
 
         db.add(pipeline)
@@ -143,19 +137,22 @@ def make_pipeline_from_strings(primitives, origin, dataset, targets, features, D
 
 @database.with_sessionmaker
 def generate(task, dataset, metrics, problem, msg_queue, DBSession):
+    args = dict(ARGS)
+    dataset_name = args['dataset'] = dataset.split('/')[-1].replace('_dataset', '')
+    args['dataset_path'] = dataset
+    args['problem_path'] = problem
+    args['metric'] = problem
+
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = make_pipeline_from_strings(strings, dataset, DBSession)
+        #pipeline_id = make_pipeline_from_strings(strings, dataset, DBSession)
+        pipeline_id = make_pipeline_from_strings(strings, origin, 'file://' + dataset_name + '/datasetDoc.json',
+                                                 session.targets, session.features, DBSession)
 
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    args = dict(ARGS)
-    args['dataset'] = dataset.split('/')[-1].replace('_dataset','')
-    args['dataset_path'] = dataset
-    args['problem_path'] = problem
-    args['metric'] = problem
     game = PipelineGame(args, None, eval_pipeline)
     nnet = NNetWrapper(game)
 
@@ -212,6 +209,7 @@ def main(dataset, output_path):
     setup_logging()
     session_id = ta2.new_session(problem_name)
     session = ta2.sessions[session_id]
+    compute_metafeatures = ComputeMetafeatures('file://'+dataset_name+'/datasetDoc.json', session.targets, session.features, ta2.DBSession)
 
     def eval_pipeline(strings, origin):
         print('CALLING EVAL PIPELINE')
@@ -228,7 +226,7 @@ def main(dataset, output_path):
     args['dataset_path'] = dataset_name
     args['problem_path'] = problem_name
     args['metric'] = problem_name
-    game = PipelineGame(args, pipeline, eval_pipeline)
+    game = PipelineGame(args, pipeline, eval_pipeline, compute_metafeatures)
     nnet = NNetWrapper(game)
 
     if args.get('load_model'):

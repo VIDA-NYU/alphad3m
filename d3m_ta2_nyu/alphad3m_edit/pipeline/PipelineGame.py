@@ -11,7 +11,6 @@ import numpy as np
 from scipy.special import comb
 from random import uniform
 from d3m.metadata.problem import parse_problem_description
-from d3m_ta2_nyu.metafeatures.dataset import compute_metafeatures
 from pprint import pprint
 import traceback
 import sys, traceback
@@ -21,7 +20,7 @@ PROBLEM_TYPES = {'CLASSIFICATION': 1,
 DATA_TYPES = {'TABULAR': 1}
 
 class PipelineGame(Game):
-    def __init__(self, args, pipeline, eval_pipeline):
+    def __init__(self, args, pipeline, eval_pipeline, compute_metafeatures):
         self.steps = 0
         self.eval_pipeline = eval_pipeline
         self.pipeline = pipeline
@@ -40,7 +39,8 @@ class PipelineGame(Game):
                 self.dataset_metafeatures = pickle.load(m_f)[args['dataset']]
 
         if self.dataset_metafeatures is None:
-            self.dataset_metafeatures = compute_metafeatures(os.path.join(self.args['dataset_path'], 'datasetDoc.json'), os.path.join(self.args['dataset_path'],'tables','learningData.csv'))
+            self.dataset_metafeatures = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
+            print(self.dataset_metafeatures)
         #print(self.dataset_metafeatures)
         self.dataset_metafeatures = list(np.nan_to_num(np.asarray(self.dataset_metafeatures)))
         self.p = Board.get_pipeline_size()
@@ -113,7 +113,7 @@ class PipelineGame(Game):
             self.steps = self.steps + 1
             try:
                 print(pipeline)
-                eval_val = self.eval_pipeline(pipeline, 'AlphaZero eval')
+                eval_val = self.eval_pipeline(pipeline, 'AlphaD3M_Edit_eval')
                 print('Evaluation = ', eval_val)
             except:
                 print('ERROR IN PIPELINE EXECUTION ', eval_val)
