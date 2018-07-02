@@ -163,7 +163,7 @@ def train(pipeline_id, metrics, targets, results_path, msg_queue, db):
     # Store predictions
     if results_path is not None:
         logger.info("Storing predictions at %s", results_path)
-        predictions.to_csv(results_path)
+        predictions.sort_index().to_csv(results_path)
     else:
         logger.info("NOT storing predictions")
 
