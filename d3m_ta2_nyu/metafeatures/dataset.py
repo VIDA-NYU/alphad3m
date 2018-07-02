@@ -20,13 +20,11 @@ class ComputeMetafeatures():
     def __init__(self, dataset, targets=None, features=None, DBSession=None):
         self.dataset = Dataset.load(dataset)
         self.dataset_uri = dataset
-        self.db = DBSession()
+        self.DBSession = DBSession
         self.targets = targets
         self.features = features
 
     def _add_target_columns_metadata(self):
-        print('TARGETS ',self.targets)
-        print('DATASET ', self.dataset.metadata)
         for target in self.targets:
             resource_id = target[0]
             target_name = target[1]
@@ -48,7 +46,7 @@ class ComputeMetafeatures():
                             (resource_id, metadata_base.ALL_ELEMENTS, column_index),
                             {'semantic_types': semantic_types})
 
-    def _create_metafeatures_pipeline(self, origin):
+    def _create_metafeatures_pipeline(self, db, origin):
 
         pipeline = database.Pipeline(
             origin=origin,
@@ -105,15 +103,16 @@ class ComputeMetafeatures():
         return pipeline.id
 
     def compute_metafeatures(self, origin):
+        db = self.DBSession()
         # Add true and suggested targets
         self._add_target_columns_metadata()
         # Create the metafeatures computing pipeline
-        pipeline_id = self._create_metafeatures_pipeline(origin)
+        pipeline_id = self._create_metafeatures_pipeline(db, origin)
         # Run training
         logger.info("Computing Metafeatures")
         try:
 
-            train_run, outputs = execute_train(self.db, pipeline_id, self.dataset)
+            train_run, outputs = execute_train(db, pipeline_id, self.dataset)
             metafeatures_values = {}
             for key, value in outputs.items():
                 metafeatures_results = value['produce'].metadata.query(())['data_metafeatures']
