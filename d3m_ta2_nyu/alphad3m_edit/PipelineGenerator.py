@@ -112,7 +112,7 @@ def make_pipeline_from_strings(primitives, origin, dataset, targets=None, featur
         step = prev_step = step4
         preprocessors = []
         if len(primitives) > 1:
-            preprocessors = primitives[0:len(primitives)-2]
+            preprocessors = primitives[0:len(primitives)-1]
         classifier = primitives[len(primitives)-1]
         for preprocessor in preprocessors:
             step = make_primitive_module(preprocessor)
