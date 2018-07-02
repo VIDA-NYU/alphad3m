@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class ComputeMetafeatures():
 
-    def __init__(self, dataset, targets, features, DBSession):
+    def __init__(self, dataset, targets=None, features=None, DBSession=None):
         self.dataset = dataset
         self.db = DBSession()
         self.targets = targets

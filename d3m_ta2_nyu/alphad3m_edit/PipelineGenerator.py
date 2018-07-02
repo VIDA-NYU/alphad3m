@@ -28,7 +28,7 @@ ARGS = {
     'checkpoint': './temp/',
     'load_model': False,
     'load_folder_file': ('./temp/', 'best.pth.tar'),
-    'metafeatures_path': '/d3m/data//metafeatures'
+    'metafeatures_path': '/d3m/data/metafeatures'
 }
 
 
@@ -122,8 +122,6 @@ def make_pipeline_from_strings(primitives, origin, dataset, targets=None, featur
         step7 = make_primitive_module('.data.CastToType')
         connect(step6, step7)
 
-        #classifier = 'd3m.primitives.sklearn_wrap.SKRandomForestClassifier'
-        print('CLASSIFIER ', classifier)
         step8 = make_primitive_module(classifier)
         connect(step, step8)
         connect(step7, step8, to_input='outputs')
@@ -138,6 +136,7 @@ def make_pipeline_from_strings(primitives, origin, dataset, targets=None, featur
 
 @database.with_sessionmaker
 def generate(task, dataset, metrics, problem, msg_queue, DBSession):
+    compute_metafeatures = ComputeMetafeatures(dataset, DBSession)
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
         pipeline_id = make_pipeline_from_strings(strings, origin, dataset, DBSession=DBSession)
@@ -153,7 +152,7 @@ def generate(task, dataset, metrics, problem, msg_queue, DBSession):
     args['problem'] = problem
     args['metric'] = problem
 
-    game = PipelineGame(args, None, eval_pipeline)
+    game = PipelineGame(args, None, eval_pipeline, compute_metafeatures)
     nnet = NNetWrapper(game)
 
     if args.get('load_model'):
