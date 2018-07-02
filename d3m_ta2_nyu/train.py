@@ -38,11 +38,14 @@ def cross_validation(pipeline, metrics, dataset, targets,
         progress(i)
 
         # Do the split
+        # FIXME: Use a primitive for this
         resources = dict(dataset)
-        resources[first_res_id] = resources[first_res_id].iloc[train_split]
+        resources[first_res_id] = resources[first_res_id].iloc[train_split] \
+            .reset_index(drop=True)
         train_data_split = Dataset(resources, dataset.metadata)
         resources = dict(dataset)
-        resources[first_res_id] = resources[first_res_id].iloc[test_split]
+        resources[first_res_id] = resources[first_res_id].iloc[test_split] \
+            .reset_index(drop=True)
         test_data_split = Dataset(resources, dataset.metadata)
 
         start_time = time.time()
@@ -72,23 +75,23 @@ def cross_validation(pipeline, metrics, dataset, targets,
 
         # Get predicted targets
         predictions = next(iter(outputs.values()))['produce']
+        predictions = predictions.set_index('d3mIndex')
 
         # Get expected targets
-        test_targets = []
+        test_targets = [test_data_split['0']['d3mIndex']]
         for resID, col_name in targets:
             test_targets.append(test_data_split[resID].loc[:, col_name])
-        test_targets = pandas.concat(test_targets, axis=1)
+        test_targets = pandas.concat(test_targets, axis=1) \
+            .set_index('d3mIndex')
 
-        # FIXME: Right now pipeline returns a simple array
-        # Make it a DataFrame
-        predictions = pandas.DataFrame(
-            {
-                next(iter(targets))[1]: predictions,
-                'd3mIndex': test_data_split[next(iter(targets))[0]]['d3mIndex'],
-            }
-        ).set_index('d3mIndex')
+        assert len(predictions.columns) == len(targets)
+
+        # FIXME: ConstructPredictions doesn't set the right column names
+        # https://gitlab.com/datadrivendiscovery/common-primitives/issues/25
+        predictions.columns = [col_name for resID, col_name in targets]
 
         # Compute score
+        # FIXME: Use a primitive for this
         for metric in metrics:
             # Special case
             if metric == 'EXECUTION_TIME':
@@ -99,8 +102,6 @@ def cross_validation(pipeline, metrics, dataset, targets,
                     score_func(test_targets, predictions))
 
         # Store predictions
-        assert len(predictions.columns) == len(targets)
-        predictions.columns = [col_name for resID, col_name in targets]
         all_predictions.append(predictions)
 
     progress(FOLDS)
