@@ -153,7 +153,6 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
     assert dataset.startswith('file://')
     args['dataset_path'] = os.path.dirname(dataset[7:])
     args['problem'] = problem
-    args['metric'] = problem
 
     game = PipelineGame(args, None, eval_pipeline, compute_metafeatures)
     nnet = NNetWrapper(game)
