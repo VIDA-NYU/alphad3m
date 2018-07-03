@@ -14,6 +14,8 @@ from d3m.container import Dataset
 from .Coach import Coach
 from .pipeline.PipelineGame import PipelineGame
 from .pipeline.pytorch.NNet import NNetWrapper
+from .GenerateD3MPipelines import GenerateD3MPipelines
+
 from d3m_ta2_nyu.metafeatures.dataset import ComputeMetafeatures
 
 logger = logging.getLogger(__name__)
@@ -35,106 +37,6 @@ ARGS = {
 }
 
 
-def make_pipeline_from_strings(primitives, origin, dataset, targets=None, features=None, DBSession=None):
-    db = DBSession()
-
-
-    pipeline = database.Pipeline(
-        origin=origin,
-        dataset=dataset)
-
-    def make_module(package, version, name):
-        pipeline_module = database.PipelineModule(
-            pipeline=pipeline,
-            package=package, version=version, name=name)
-        db.add(pipeline_module)
-        return pipeline_module
-
-    def make_data_module(name):
-        return make_module('data', '0.0', name)
-
-    def make_primitive_module(name):
-        if name[0] == '.':
-            name = 'd3m.primitives' + name
-        return make_module('d3m', '2018.4.18', name)
-
-    def connect(from_module, to_module,
-                from_output='produce', to_input='inputs'):
-        db.add(database.PipelineConnection(pipeline=pipeline,
-                                           from_module=from_module,
-                                           to_module=to_module,
-                                           from_output_name=from_output,
-                                           to_input_name=to_input))
-
-    try:
-        #                data
-        #                  |
-        #              Denormalize
-        #                  |
-        #           DatasetToDataframe
-        #                  |
-        #             ColumnParser
-        #                /     \
-        # ExtractAttributes  ExtractTargets
-        #         |               |
-        #     CastToType      CastToType
-        #         |               |
-        #     [imputer]           |
-        #            \            /
-        #             [classifier]
-        # TODO: Use pipeline input for this
-        # TODO: Have execution set metadata from problem, don't hardcode
-        input_data = make_data_module('dataset')
-        db.add(database.PipelineParameter(
-            pipeline=pipeline, module=input_data,
-            name='targets', value=pickle.dumps(targets),
-        ))
-        db.add(database.PipelineParameter(
-            pipeline=pipeline, module=input_data,
-            name='features', value=pickle.dumps(features),
-        ))
-
-        step0 = make_primitive_module('.datasets.Denormalize')
-        connect(input_data, step0, from_output='dataset')
-
-        step1 = make_primitive_module('.datasets.DatasetToDataFrame')
-        connect(step0, step1)
-
-        step2 = make_primitive_module('.data.ExtractAttributes')
-        connect(step1, step2)
-
-        step3 = make_primitive_module('.data.ColumnParser')
-        connect(step2, step3)
-
-        step4 = make_primitive_module('.data.CastToType')
-        connect(step3, step4)
-
-        step = prev_step = step4
-        preprocessors = []
-        if len(primitives) > 1:
-            preprocessors = primitives[0:len(primitives)-1]
-        classifier = primitives[len(primitives)-1]
-        for preprocessor in preprocessors:
-            step = make_primitive_module(preprocessor)
-            connect(prev_step, step)
-            prev_step = step
-
-        step6 = make_primitive_module('.data.ExtractTargets')
-        connect(step1, step6)
-
-        step7 = make_primitive_module('.data.CastToType')
-        connect(step6, step7)
-
-        step8 = make_primitive_module(classifier)
-        connect(step, step8)
-        connect(step7, step8, to_input='outputs')
-
-        db.add(pipeline)
-        db.commit()
-        logger.info(origin + ' PIPELINE ID: %s', pipeline.id)
-        return pipeline.id
-    finally:
-        db.close()
 
 
 @database.with_sessionmaker
@@ -143,7 +45,7 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
     compute_metafeatures = ComputeMetafeatures(dataset, targets, features, DBSession)
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = make_pipeline_from_strings(strings, origin,
+        pipeline_id = GenerateD3MPipelines.make_pipeline_from_strings(strings, origin,
                                                  dataset, targets, features,
                                                  DBSession=DBSession)
 
@@ -206,19 +108,42 @@ def main(dataset_uri, problem_path, output_path):
 
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = make_pipeline_from_strings(strings, origin, os.path.join(dataset_uri, 'datasetDoc.json'),
+        pipeline_id = GenerateD3MPipelines.make_pipeline_from_strings(strings, origin, os.path.join(dataset_uri, 'datasetDoc.json'),
                                                  session.targets, session.features, ta2.DBSession)
         # Evaluate the pipeline
         return ta2.run_pipeline(session_id, pipeline_id)
+
+    def eval_audio_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = GenerateD3MPipelines.make_audio_pipeline_from_strings(origin,
+                                                                      os.path.join(dataset_uri, 'datasetDoc.json'),
+                                                                      session.targets, session.features, ta2.DBSession)
+        # Evaluate the pipeline
+        return ta2.run_pipeline(session_id, pipeline_id)
+
     pipeline = None
     if pipelines:
         pipeline = [p_enum[primitive] for primitive in pipelines[dataset]]
     logger.info(pipeline)
     args['dataset'] = dataset_uri.split('/')[-1].replace('_dataset', '')
     assert dataset_uri.startswith('file://')
-    args['dataset_path'] = os.path.dirname(dataset_uri[7:])
+    args['dataset_path'] = dataset_uri[7:]
+    print(dataset_uri)
+    print(args['dataset_path'])
     with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
         args['problem'] = json.load(fp)
+
+    f = open(os.path.join(args['dataset_path'], 'datasetDoc.json'))
+    datasetDoc = json.load(f)
+    data_resources = datasetDoc["dataResources"]
+    data_types = []
+    for data_res in data_resources:
+        data_types.append(data_res["resType"])
+
+    if "audio" in data_types:
+        eval_audio_pipeline("ALPHAD3M")
+        return
+
     game = PipelineGame(args, pipeline, eval_pipeline, compute_metafeatures)
     nnet = NNetWrapper(game)
 
