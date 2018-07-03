@@ -60,6 +60,7 @@ class HyperparameterTuning(object):
                 self.runcount *= len(param.choices)
             else:
                 self.runcount *= (param.upper - param.lower)
+        self.runcount = min(self.runcount,100)
 
     def tune(self, runner):
         # Scenario object
