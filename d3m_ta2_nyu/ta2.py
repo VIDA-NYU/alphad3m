@@ -883,7 +883,7 @@ class D3mTa2(object):
         def make_primitive_module(name):
             if name[0] == '.':
                 name = 'd3m.primitives' + name
-            return make_module('d3m', '2018.4.18', name)
+            return make_module('d3m', '2018.6.5', name)
 
         def connect(from_module, to_module,
                     from_output='produce', to_input='inputs'):
@@ -893,24 +893,33 @@ class D3mTa2(object):
                                                from_output_name=from_output,
                                                to_input_name=to_input))
 
+        def set_hyperparams(module, **hyperparams):
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=module,
+                name='hyperparams', value=pickle.dumps(hyperparams),
+            ))
+
         try:
-            #                data
-            #                  |
-            #              Denormalize
-            #                  |
-            #           DatasetToDataframe
-            #                  |
-            #             ColumnParser
-            #                /     \
-            # ExtractAttributes  ExtractTargets
-            #         |               |
-            #     CastToType      CastToType
-            #         |               |
-            #     [imputer]           |
-            #            \            /
-            #             [classifier]
+            #                          data
+            #                            |
+            #                       -Denormalize-
+            #                            |
+            #                     DatasetToDataframe
+            #                            |
+            #                        ColumnParser
+            #                       /     |     \
+            #                     /       |       \
+            #                   /         |         \
+            # Extract (attribute)  Extract (target)  |
+            #         |               |              |
+            #     CastToType      CastToType         |
+            #         |               |              |
+            #     [imputer]           |             /
+            #            \            /           /
+            #             [classifier]          /
+            #                       |         /
+            #                   ConstructPredictions
             # TODO: Use pipeline input for this
-            # TODO: Have execution set metadata from problem, don't hardcode
             input_data = make_data_module('dataset')
             db.add(database.PipelineParameter(
                 pipeline=pipeline, module=input_data,
@@ -921,16 +930,25 @@ class D3mTa2(object):
                 name='features', value=pickle.dumps(features),
             ))
 
-            step0 = make_primitive_module('.datasets.Denormalize')
-            connect(input_data, step0, from_output='dataset')
+            # FIXME: Denormalize?
+            #step0 = make_primitive_module('.datasets.Denormalize')
+            #connect(input_data, step0, from_output='dataset')
 
             step1 = make_primitive_module('.datasets.DatasetToDataFrame')
-            connect(step0, step1)
+            connect(input_data, step1, from_output='dataset')
+            #connect(step0, step1)
 
             step2 = make_primitive_module('.data.ColumnParser')
             connect(step1, step2)
 
-            step3 = make_primitive_module('.data.ExtractAttributes')
+            step3 = make_primitive_module('.data.'
+                                          'ExtractColumnsBySemanticTypes')
+            set_hyperparams(
+                step3,
+                semantic_types=[
+                    'https://metadata.datadrivendiscovery.org/types/Attribute',
+                ],
+            )
             connect(step2, step3)
 
             step4 = make_primitive_module('.data.CastToType')
@@ -939,7 +957,14 @@ class D3mTa2(object):
             step5 = make_primitive_module(imputer)
             connect(step4, step5)
 
-            step6 = make_primitive_module('.data.ExtractTargets')
+            step6 = make_primitive_module('.data.'
+                                          'ExtractColumnsBySemanticTypes')
+            set_hyperparams(
+                step6,
+                semantic_types=[
+                    'https://metadata.datadrivendiscovery.org/types/Target',
+                ],
+            )
             connect(step2, step6)
 
             step7 = make_primitive_module('.data.CastToType')
@@ -948,6 +973,10 @@ class D3mTa2(object):
             step8 = make_primitive_module(classifier)
             connect(step5, step8)
             connect(step7, step8, to_input='outputs')
+
+            step9 = make_primitive_module('.data.ConstructPredictions')
+            connect(step8, step9)
+            connect(step2, step9, to_input='reference')
 
             db.add(pipeline)
             db.commit()
