@@ -5,8 +5,8 @@
 
 # See https://datadrivendiscovery.org/wiki/display/gov/2018+Summer+Evaluation+-+Execution+Process
 
-if [ -z "$D3MINPUT" ]; then
-    echo "\$D3MINPUT is not set" >&2
+if [ -z "$D3MINPUTDIR" ]; then
+    echo "\$D3MINPUTDIR is not set" >&2
     exit 1
 fi
 
