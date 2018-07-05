@@ -20,7 +20,8 @@ RUN pip3 install -r requirements.txt
 COPY d3m_ta2_nyu /usr/src/app/d3m_ta2_nyu
 COPY setup.py README.rst /usr/src/app/
 RUN pip3 install --no-deps -e /usr/src/app
+COPY eval.sh /usr/local/bin/eval.sh
 
-CMD "ta2_serve"
+CMD "/usr/local/bin/eval.sh"
 
-EXPOSE 50051
+EXPOSE 45042
