@@ -64,7 +64,7 @@ class ComputeMetafeatures():
         def make_primitive_module(name):
             if name[0] == '.':
                 name = 'd3m.primitives' + name
-            return make_module('d3m', '2018.4.18', name)
+            return make_module('d3m', '2018.6.5', name)
 
         def connect(from_module, to_module,
                     from_output='produce', to_input='inputs'):
@@ -84,11 +84,13 @@ class ComputeMetafeatures():
             name='features', value=pickle.dumps(self.features),
         ))
 
-        step0 = make_primitive_module('.datasets.Denormalize')
-        connect(input_data, step0, from_output='dataset')
+        # FIXME: Denormalize?
+        #step0 = make_primitive_module('.datasets.Denormalize')
+        #connect(input_data, step0, from_output='dataset')
 
         step1 = make_primitive_module('.datasets.DatasetToDataFrame')
-        connect(step0, step1)
+        connect(input_data, step1, from_output='dataset')
+        #connect(step0, step1)
 
         step2 = make_primitive_module('.data.ColumnParser')
         connect(step1, step2)

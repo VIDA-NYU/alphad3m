@@ -59,8 +59,6 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
     args['dataset_path'] = os.path.dirname(dataset[7:])
     args['problem'] = problem
 
-    taskType = self.args['problem']['about']['taskType'].upper()
-
     game = PipelineGame(args, None, eval_pipeline, compute_metafeatures)
     nnet = NNetWrapper(game)
 
