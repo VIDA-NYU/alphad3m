@@ -37,7 +37,7 @@ build_image:
       echo "Docker cache: $CACHE_FROM"
     - docker build $CACHE_FROM -t $IMAGE .
     - |
-      REV=$(git describe --always --tags)
+      REV=$(git describe)
       REV="$CI_COMMIT_REF_NAME-$REV"
       docker tag $IMAGE $CI_REGISTRY_IMAGE:$REV
       docker tag $IMAGE $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
