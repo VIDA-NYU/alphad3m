@@ -242,7 +242,7 @@ class Session(Observable):
 
             if tune:
                 # Found some pipelines to tune, do that
-                logger.info("Found %d pipelines to tune:", len(tune))
+                logger.warning("Found %d pipelines to tune", len(tune))
                 for pipeline_id in tune:
                     logger.info("    %s", pipeline_id)
                     self._ta2._run_queue.put(
@@ -273,7 +273,7 @@ class Session(Observable):
 
             if train:
                 # Found some pipelines to train, do that
-                logger.info("Found %d pipelines to train:", len(train))
+                logger.warning("Found %d pipelines to train", len(train))
                 for pipeline_id in train:
                     logger.info("    %s", pipeline_id)
                     self._ta2._run_queue.put(
@@ -299,7 +299,7 @@ class Session(Observable):
         db = self.DBSession()
         try:
             top_pipelines = self.get_top_pipelines(db, metric)
-            logger.info("Writing logs for %d pipelines", len(top_pipelines))
+            logger.warning("Writing logs for %d pipelines", len(top_pipelines))
             for i, (pipeline, score) in enumerate(top_pipelines):
                 logger.info("    %d) %s %s=%s origin=%s" ,
                             i + 1, pipeline.id, metric, score, pipeline.origin)
@@ -563,7 +563,7 @@ class D3mTa2(object):
         self._run_thread.setDaemon(True)
         self._run_thread.start()
 
-        logger.info("TA2 started, version=%s", __version__)
+        logger.warning("TA2 started, version=%s", __version__)
 
     def run_search(self, dataset, problem_path):
         """Run the search phase: create pipelines, score and train them.
@@ -833,7 +833,7 @@ class D3mTa2(object):
                 raise RuntimeError("Got unknown message from generator "
                                    "process: %r" % msg)
 
-        logger.info("Generator process exited with %r", proc.returncode)
+        logger.warning("Generator process exited with %r", proc.returncode)
         session.tune_when_ready()
 
     # Runs in a worker thread from executor
@@ -875,7 +875,7 @@ class D3mTa2(object):
                     logger.exception("Error building pipeline from %r",
                                      template)
             session.tune_when_ready()
-            logger.info("Pipeline creation completed")
+            logger.warning("Pipeline creation completed")
             session.check_status()
 
     def _build_pipeline_from_template(self, session, template, dataset):
