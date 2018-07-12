@@ -461,11 +461,11 @@ class TuneHyperparamsJob(Job):
             self.results = os.path.join(self.predictions_root,
                                         '%s.csv' % self.pipeline_id)
         self.msg = Receiver()
-        self.proc = run_process('d3m_ta2_nyu.train_and_tune.tune',
+        self.proc = run_process('d3m_ta2_nyu.tune_and_score.tune',
                                 'tune', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 metrics=self.session.metrics,
-                                problem=self.session.problem,
+                                targets=self.session.targets,
                                 results_path=self.results,
                                 db_filename=db_filename)
         self.session.notify('tuning_start', pipeline_id=self.pipeline_id)
