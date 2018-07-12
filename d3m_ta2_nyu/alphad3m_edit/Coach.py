@@ -1,11 +1,12 @@
+import logging
 from collections import deque
-import numpy as np
-import time
-
 from .Arena import Arena
 from .MCTS import MCTS
+import numpy as np
 from .pytorch_classification.utils import Bar, AverageMeter
+import time
 
+logger = logging.getLogger(__name__)
 
 class Coach():
     """
@@ -37,37 +38,40 @@ class Coach():
         """
         trainExamples = []
         self.board = self.game.getInitBoard()
-        #print('BOARD ', self.board,'\n', np.array(self.board[0:self.game.n]))
         self.curPlayer = 1
         episodeStep = 0
-
+        
         while episodeStep <= 100:
+            self.game.display(self.board)
             episodeStep += 1
-            #print('COACH - EPISODE STEP ', episodeStep)
-            #self.game.display(self.board)
             canonicalBoard = self.game.getCanonicalForm(self.board,self.curPlayer)
             temp = int(episodeStep < self.args.get('tempThreshold'))
 
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
             sym = self.game.getTrainExamples(canonicalBoard, pi)
-            for b,p in sym:
-                trainExamples.append([b, self.curPlayer, p, None])
 
+            trainExamples.append(sym)
+
+            for i in range(self.game.m+self.game.p+self.game.o, len(canonicalBoard)):
+                canonicalBoard[i] = 0
+            valids = self.game.getValidMoves(canonicalBoard, 1, True)
+            logger.info("%s", valids)
+            logger.info("%s", pi)
+            pi = pi*valids
+
+            if np.sum(pi) == 0:
+                break
+
+            if np.sum(pi) != 1:
+                pi /= np.sum(pi)
             action = np.random.choice(len(pi), p=pi)
-            #print('ACTION ', action)
-            #self.game.display(self.board)
-            self.board, self.curPlayer = self.game.getNextState(self.board, self.curPlayer, action)
-            self.game.display(self.board)
-            r = self.game.getGameEnded(self.board, self.curPlayer)
-            print('win_threshold ', sorted(list(self.game.evaluations.values()))[-1], ' evaluations ', self.game.evaluations)
-            if r!=0:
-                print('findwin',self.curPlayer)
-            #print('IN EXECUTE EPISODE WHILE LOOP ', r)
-            #print(trainExamples)
-            if r!=0:
-                return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
-        return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
 
+            self.board, self.curPlayer = self.game.getNextState(self.board, self.curPlayer, action)
+            r = self.game.getGameEnded(self.board, self.curPlayer)
+            if r!=0:
+               break
+        return trainExamples
+    
     def learn(self):
         """
         Performs numIters iterations with numEps episodes of self-play in each
@@ -80,7 +84,7 @@ class Coach():
         trainExamples = deque([], maxlen=self.args.get('maxlenOfQueue'))
         for i in range(self.args.get('numIters')):
             # bookkeeping
-            print('------ITER ' + str(i+1) + '------')
+            logger.info('------ITER ' + str(i+1) + '------')
             eps_time = AverageMeter()
             bar = Bar('Self Play', max=self.args.get('numEps'))
             end = time.time()
@@ -89,6 +93,8 @@ class Coach():
                 self.mcts = MCTS(self.game, self.nnet, self.args)   # reset search tree
                 trainExamples += self.executeEpisode()
 
+
+
                 # bookkeeping + plot progress
                 eps_time.update(time.time() - end)
                 end = time.time()
@@ -96,29 +102,28 @@ class Coach():
                                                                                                            total=bar.elapsed_td, eta=bar.eta_td)
                 bar.next()
             bar.finish()
-
+            
             # training new network, keeping a copy of the old one
             self.nnet.save_checkpoint(folder=self.args.get('checkpoint'), filename='temp.pth.tar')
             pnet = self.nnet.__class__(self.game)
             pnet.load_checkpoint(folder=self.args.get('checkpoint'), filename='temp.pth.tar')
             pmcts = MCTS(self.game, pnet, self.args)
+            boards, pis, vs = list(zip(*trainExamples))
             self.nnet.train(trainExamples)
             nmcts = MCTS(self.game, self.nnet, self.args)
 
-            print('PITTING AGAINST PREVIOUS VERSION')
-            print(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)))
+            logger.info('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
-                          lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
+                          lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game, self.game.display)
             pwins, nwins = arena.playGames(self.args.get('arenaCompare'))
 
-            print('EVALUATIONS ', self.game.evaluations)
-            print('NEW/PREV WINS : ' + str(nwins) + '/' + str(pwins))
-            #print('ARGS ', self.args)
+            logger.info('EVALUATIONS %s', self.game.evaluations)
+            logger.info('NEW/PREV WINS : ' + str(nwins) + '/' + str(pwins))
             if float(nwins)/(pwins+nwins) < self.args['updateThreshold']:
-                print('REJECTING NEW MODEL')
+                logger.info('REJECTING NEW MODEL')
                 self.nnet = pnet
 
             else:
-                print('ACCEPTING NEW MODEL')
+                logger.info('ACCEPTING NEW MODEL')
                 self.nnet.save_checkpoint(folder=self.args['checkpoint'], filename='checkpoint_' + str(i) + '.pth.tar')
                 self.nnet.save_checkpoint(folder=self.args['checkpoint'], filename='best.pth.tar')

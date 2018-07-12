@@ -1,14 +1,28 @@
-import numpy as np
+import logging
+import argparse
 import os
+import shutil
 import time
-import torch
-from torch.autograd import Variable
-import torch.optim as optim
-
-from .PipelineNNet import PipelineNNet as onnet
+import random
+import numpy as np
+import math
+import sys
+sys.path.append('../../')
+#from utils import *
 from ...pytorch_classification.utils import Bar, AverageMeter
 from ...NeuralNet import NeuralNet
 
+import argparse
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torchvision import datasets, transforms
+from torch.autograd import Variable
+
+from .PipelineNNet import PipelineNNet as onnet
+
+logger = logging.getLogger(__name__)
 
 args = dict({
     'lr': 0.001,
@@ -22,9 +36,8 @@ args = dict({
 class NNetWrapper(NeuralNet):
     def __init__(self, game):
         self.nnet = onnet(game, args)
-        self.board_x, self.board_y = game.getBoardSize()
         self.action_size = game.getActionSize()
-
+        self.board_size = game.getBoardSize()
         if args.get('cuda'):
             self.nnet.cuda()
 
@@ -35,7 +48,7 @@ class NNetWrapper(NeuralNet):
         optimizer = optim.Adam(self.nnet.parameters())
 
         for epoch in range(args.get('epochs')):
-            print('EPOCH ::: ' + str(epoch+1))
+            logger.info('EPOCH ::: ' + str(epoch+1))
             self.nnet.train()
             data_time = AverageMeter()
             batch_time = AverageMeter()
@@ -49,19 +62,17 @@ class NNetWrapper(NeuralNet):
 
             while batch_idx < int(len(examples)/batch_size):
                 sample_ids = np.random.randint(len(examples), size=batch_size)
-                #print('SAMPLE IDS ', sample_ids, ' ', examples[0])
                 boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
-                boards = [board[0:self.board_x] for board in boards]
-                #print('\n\nBOARDS\n', boards)
                 boards = torch.FloatTensor(np.array(boards).astype(np.float64))
                 target_pis = torch.FloatTensor(np.array(pis))
                 target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
 
-                # predict
+                #  predict
                 if args.get('cuda'):
-                    boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
+                    boards, target_pis, target_vs = Variable(boards.contiguous().cuda(),requires_grad=True), Variable(target_pis.contiguous().cuda(), requires_grad=True), Variable(target_vs.contiguous().cuda(),requires_grad=True)
                 else:
-                    boards, target_pis, target_vs = Variable(boards), Variable(target_pis), Variable(target_vs)
+                    boards, target_pis, target_vs = Variable(boards), Variable(target_pis),  Variable(target_vs)
+
 
                 # measure data loading time
                 data_time.update(time.time() - end)
@@ -107,23 +118,19 @@ class NNetWrapper(NeuralNet):
         """
         # timing
         start = time.time()
-        print('\n\n\nBOARD\n', [r[1] for r in board[0:self.board_x]])
 
         # preparing input
-        board = torch.from_numpy(np.array(board[0:self.board_x], dtype='f')).cuda().double() if args.get('cuda') else torch.from_numpy(np.array(board[0:self.board_x], dtype='f'))
+        board = torch.from_numpy(np.array(board[0:self.board_size], dtype='f')).cuda().float() if args.get('cuda') else torch.from_numpy(np.array(board[0:self.board_size], dtype='f'))
         #board = torch.FloatTensor(board[0:self.board_x])
         if args.get('cuda'): board = board.contiguous().cuda()
         board = Variable(board, volatile=True)
-        board = board.view(1, self.board_x, self.board_y)
+        board = board.view(1, self.board_size)
 
         self.nnet.eval()
         pi, v = self.nnet(board)
 
-        print('\n\n\nPROBABILITY\n', torch.exp(pi).data.cpu().numpy()[0])
-        print('\n\n\nVALUE\n',  v.data.cpu().numpy()[0])
-
-        print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
-        return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0]
+        logger.info('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
+        return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0][0]
 
     def loss_pi(self, targets, outputs):
         return -torch.sum(targets*outputs)/targets.size()[0]
@@ -134,10 +141,10 @@ class NNetWrapper(NeuralNet):
     def save_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
         filepath = os.path.join(folder, filename)
         if not os.path.exists(folder):
-            print("Checkpoint Directory does not exist! Making directory {}".format(folder))
+            logger.error("Checkpoint Directory does not exist! Making directory {}".format(folder))
             os.mkdir(folder)
         else:
-            print("Checkpoint Directory exists! ")
+            logger.info("Checkpoint Directory exists! ")
         torch.save({
             'state_dict' : self.nnet.state_dict(),
         }, filepath)

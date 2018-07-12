@@ -1,3 +1,6 @@
+import numpy as np
+import copy
+
 class Arena():
     """
     An Arena class where any 2 agents can be pit against each other.
@@ -48,7 +51,7 @@ class Arena():
         if verbose:
             assert(self.display)
             print("Turn ", str(it), "Player ", str(curPlayer))
-            self.display(board)
+            #self.display(board)
         #return self.game.getGameEnded(board, 1) and curPlayer == 1
         return self.game.getGameEnded(board, 1)
 

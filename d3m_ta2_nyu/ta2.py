@@ -258,8 +258,8 @@ class Session(Observable):
             top_pipelines = self.get_top_pipelines(db, metric)
             logger.info("Writing logs for %d pipelines", len(top_pipelines))
             for i, (pipeline, score) in enumerate(top_pipelines):
-                logger.info("    %d) %s %s=%s",
-                            i + 1, pipeline.id, metric, score)
+                logger.info("    %d) %s %s=%s origin=%s" ,
+                            i + 1, pipeline.id, metric, score, pipeline.origin)
                 filename = os.path.join(self._logs_dir,
                                         str(pipeline.id) + '.json')
                 obj = {
@@ -710,10 +710,14 @@ class D3mTa2(object):
                 logger.info("Set metrics to %s %s(for session %s)",
                             metrics, old, session_id)
 
+            # Force working=True so we get 'done_training' even if no pipeline
+            # gets created
+            session.working = True
+
             logger.info("Starting AlphaD3M process...")
             msg_queue = Receiver()
             proc = run_process(
-                'd3m_ta2_nyu.alphazero_pipeline_generator'
+                'd3m_ta2_nyu.alphad3m_edit'
                 '.PipelineGenerator.generate',
                 'alphad3m',
                 msg_queue,
@@ -721,6 +725,8 @@ class D3mTa2(object):
                 dataset=dataset,
                 metrics=metrics,
                 problem=session.problem,
+                targets=session.targets,
+                features=session.features,
                 db_filename=self.db_filename,
             )
 
