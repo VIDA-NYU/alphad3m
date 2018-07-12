@@ -40,6 +40,9 @@ MAX_RUNNING_PROCESSES = 1
 TUNE_PIPELINES_COUNT = 3
 TUNE_PIPELINES_COUNT_DEBUG = 1
 
+TRAIN_PIPELINES_COUNT = 10
+TRAIN_PIPELINES_COUNT_DEBUG = 5
+
 
 logger = logging.getLogger(__name__)
 
@@ -63,15 +66,16 @@ class Session(Observable):
 
         # All the pipelines that belong to this session
         self.pipelines = set()
-        # The pipelines currently in the queue for training
-        self.pipelines_training = set()
+        # The pipelines currently in the queue for scoring
+        self.pipelines_scoring = set()
         # The pipelines in the queue for hyperparameter tuning
         self.pipelines_tuning = set()
         # Pipelines already tuned, and pipelines created through tuning
         self.tuned_pipelines = set()
-        # Flag indicating we started training & tuning, and a 'done_training'
-        # signal should be sent once both pipelines_training and
-        # pipelines_tuning are empty
+        # Pipelines in the queue for training
+        self.pipelines_training = set()
+        # Flag indicating we started scoring, tuning & training, and a
+        # 'done_training' signal should be sent once no pipeline is pending
         self.working = False
 
         # Read metrics from problem
@@ -133,15 +137,15 @@ class Session(Observable):
         self._tune_when_ready = True
         self.check_status()
 
-    def add_training_pipeline(self, pipeline_id):
+    def add_scoring_pipeline(self, pipeline_id):
         with self.lock:
             self.working = True
             self.pipelines.add(pipeline_id)
-            self.pipelines_training.add(pipeline_id)
+            self.pipelines_scoring.add(pipeline_id)
 
-    def pipeline_training_done(self, pipeline_id):
+    def pipeline_scoring_done(self, pipeline_id):
         with self.lock:
-            self.pipelines_training.discard(pipeline_id)
+            self.pipelines_scoring.discard(pipeline_id)
             self.check_status()
 
     def pipeline_tuning_done(self, old_pipeline_id, new_pipeline_id=None):
@@ -153,7 +157,12 @@ class Session(Observable):
                 self.tuned_pipelines.add(new_pipeline_id)
             self.check_status()
 
-    def get_top_pipelines(self, db, metric, limit=None):
+    def pipeline_training_done(self, pipeline_id):
+        with self.lock:
+            self.pipelines_training.discard(pipeline_id)
+            self.check_status()
+
+    def get_top_pipelines(self, db, metric, limit=None, only_trained=True):
         # SELECT pipelines.*
         # FROM pipelines
         # WHERE (
@@ -187,11 +196,12 @@ class Session(Observable):
         q = (
             db.query(pipeline, crossval_score)
             .filter(pipeline.id.in_(self.pipelines))
-            .filter(pipeline.trained)
             .options(joinedload(pipeline.modules),
                      joinedload(pipeline.connections))
             .order_by(crossval_score_order)
         )
+        if only_trained:
+            q = q.filter(pipeline.trained)
         if limit is not None:
             q = q.limit(limit)
         return q.all()
@@ -205,14 +215,16 @@ class Session(Observable):
             if not self.working:
                 return
             # If pipelines are still in the queue
-            if self.pipelines_training or self.pipelines_tuning:
+            if (self.pipelines_scoring or self.pipelines_tuning or
+                    self.pipelines_training):
                 return
 
-            # If we are out of pipelines to train, maybe submit pipelines for
-            # tuning
-            logger.info("Session %s: training done", self.id)
-
             db = self.DBSession()
+
+            # If we are out of pipelines to score, maybe submit pipelines for
+            # tuning
+            logger.info("Session %s: scoring done", self.id)
+
             tune = []
             try:
                 tune_nb = TUNE_PIPELINES_COUNT
@@ -221,7 +233,7 @@ class Session(Observable):
                 if tune_nb:
                     top_pipelines = self.get_top_pipelines(
                         db, self.metrics[0],
-                        tune_nb)
+                        tune_nb, only_trained=False)
                     for pipeline, _ in top_pipelines:
                         if pipeline.id not in self.tuned_pipelines:
                             tune.append(pipeline.id)
@@ -239,6 +251,37 @@ class Session(Observable):
                     self.pipelines_tuning.add(pipeline_id)
                 return
             logger.info("Found no pipeline to tune")
+
+            # If we are out of pipelines to tune, maybe submit pipelines for
+            # training
+            logger.info("Session %s: tuning done", self.id)
+
+            train = []
+            try:
+                train_nb = TRAIN_PIPELINES_COUNT
+                if 'TA2_DEBUG_BE_FAST' in os.environ:
+                    train_nb = TRAIN_PIPELINES_COUNT_DEBUG
+                if train_nb:
+                    top_pipelines = self.get_top_pipelines(
+                        db, self.metrics[0],
+                        train_nb, only_trained=False)
+                    for pipeline, _ in top_pipelines:
+                        if not pipeline.trained:
+                            train.append(pipeline.id)
+            finally:
+                db.close()
+
+            if train:
+                # Found some pipelines to train, do that
+                logger.info("Found %d pipelines to train:", len(train))
+                for pipeline_id in train:
+                    logger.info("    %s", pipeline_id)
+                    self._ta2._run_queue.put(
+                        TrainJob(self, pipeline_id)
+                    )
+                    self.pipelines_training.add(pipeline_id)
+                return
+            logger.info("Found no pipeline to train")
 
             # Session is done (but new pipelines might be added later)
             self.working = False
@@ -308,7 +351,7 @@ class Job(object):
         raise NotImplementedError
 
 
-class TrainJob(Job):
+class ScoreJob(Job):
     def __init__(self, session, pipeline_id, store_results=True):
         Job.__init__(self, session)
         self.pipeline_id = pipeline_id
@@ -317,19 +360,62 @@ class TrainJob(Job):
 
     def start(self, db_filename, predictions_root, **kwargs):
         self.predictions_root = predictions_root
-        logger.info("Running training pipeline for %s "
-                    "(session %s has %d pipelines left to train)",
+        logger.info("Scoring pipeline for %s "
+                    "(session %s has %d pipelines left to score)",
                     self.pipeline_id, self.session.id,
-                    len(self.session.pipelines_training))
+                    len(self.session.pipelines_scoring))
         if self.store_results:
             self.results = os.path.join(self.predictions_root,
                                         '%s.csv' % self.pipeline_id)
         self.msg = Receiver()
-        self.proc = run_process('d3m_ta2_nyu.train.train', 'train', self.msg,
+        self.proc = run_process('d3m_ta2_nyu.score.score', 'score', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 metrics=self.session.metrics,
                                 targets=self.session.targets,
                                 results_path=self.results,
+                                db_filename=db_filename)
+        self.session.notify('scoring_start', pipeline_id=self.pipeline_id)
+
+    def poll(self):
+        if self.proc.poll() is None:
+            return False
+        log = logger.info if self.proc.returncode == 0 else logger.error
+        log("Pipeline scoring process done, returned %d (pipeline: %s)",
+            self.proc.returncode, self.pipeline_id)
+        if self.proc.returncode == 0:
+            self.session.notify('scoring_success',
+                                pipeline_id=self.pipeline_id,
+                                predict_result=self.results)
+        else:
+            self.session.notify('scoring_error',
+                                pipeline_id=self.pipeline_id)
+        self.session.pipeline_scoring_done(self.pipeline_id)
+        return True
+
+    def message(self, msg, arg):
+        if msg == 'progress':
+            # TODO: Report progress
+            logger.info("Scoring pipeline %s: %.0f%%",
+                        self.pipeline_id, arg * 100)
+        else:
+            logger.error("Unexpected message from scoring process %s",
+                         msg)
+
+
+class TrainJob(Job):
+    def __init__(self, session, pipeline_id):
+        Job.__init__(self, session)
+        self.pipeline_id = pipeline_id
+
+    def start(self, db_filename, predictions_root, **kwargs):
+        self.predictions_root = predictions_root
+        logger.info("Training pipeline for %s "
+                    "(session %s has %d pipelines left to train)",
+                    self.pipeline_id, self.session.id,
+                    len(self.session.pipelines_training))
+        self.msg = Receiver()
+        self.proc = run_process('d3m_ta2_nyu.train.train', 'train', self.msg,
+                                pipeline_id=self.pipeline_id,
                                 db_filename=db_filename)
         self.session.notify('training_start', pipeline_id=self.pipeline_id)
 
@@ -341,8 +427,7 @@ class TrainJob(Job):
             self.proc.returncode, self.pipeline_id)
         if self.proc.returncode == 0:
             self.session.notify('training_success',
-                                pipeline_id=self.pipeline_id,
-                                predict_result=self.results)
+                                pipeline_id=self.pipeline_id)
         else:
             self.session.notify('training_error',
                                 pipeline_id=self.pipeline_id)
@@ -396,7 +481,7 @@ class TuneHyperparamsJob(Job):
             self.session.notify('tuning_success',
                                 old_pipeline_id=self.pipeline_id,
                                 new_pipeline_id=self.tuned_pipeline_id)
-            self.session.notify('training_success',
+            self.session.notify('scoring_success',
                                 pipeline_id=self.tuned_pipeline_id,
                                 predict_result=self.results)
             self.session.pipeline_tuning_done(self.pipeline_id,
@@ -410,7 +495,7 @@ class TuneHyperparamsJob(Job):
     def message(self, msg, arg):
         if msg == 'progress':
             # TODO: Report progress
-            logger.info("Training pipeline %s: %.0f%%",
+            logger.info("Tuning pipeline %s: %.0f%%",
                         self.pipeline_id, arg * 100)
         elif msg == 'tuned_pipeline_id':
             self.tuned_pipeline_id = arg
@@ -481,7 +566,7 @@ class D3mTa2(object):
         logger.info("TA2 started, version=%s", __version__)
 
     def run_search(self, dataset, problem_path):
-        """Run the search phase: create pipelines, train and score them.
+        """Run the search phase: create pipelines, score and train them.
 
         This is called by the ``ta2_search`` executable, it is part of the
         evaluation.
@@ -522,7 +607,7 @@ class D3mTa2(object):
             db.close()
 
     def run_pipeline(self, session_id, pipeline_id, store_results=False):
-        """Train and score a single pipeline.
+        """Score a single pipeline.
 
         This is used by the pipeline synthesis code.
         """
@@ -532,21 +617,21 @@ class D3mTa2(object):
         metric = session.metrics[0]
         logger.info("Running single pipeline, metric: %s", metric)
 
-        # Add the pipeline to the session, train, and score it
+        # Add the pipeline to the session, score it
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            session.add_training_pipeline(pipeline_id)
-            self._run_queue.put(TrainJob(session, pipeline_id,
+            session.add_scoring_pipeline(pipeline_id)
+            self._run_queue.put(ScoreJob(session, pipeline_id,
                                          store_results=False))
             session.notify('new_pipeline', pipeline_id=pipeline_id)
             while True:
                 event, kwargs = queue.get(True)
                 if event == 'done_training':
                     raise RuntimeError("Never got pipeline results")
-                elif (event == 'training_error' and
+                elif (event == 'scoring_error' and
                         kwargs['pipeline_id'] == pipeline_id):
                     return None
-                elif (event == 'training_success' and
+                elif (event == 'scoring_success' and
                         kwargs['pipeline_id'] == pipeline_id):
                     break
 
@@ -800,10 +885,10 @@ class D3mTa2(object):
                                features=session.features)
 
         # Add it to the session
-        session.add_training_pipeline(pipeline_id)
+        session.add_scoring_pipeline(pipeline_id)
 
         logger.info("Created pipeline %s", pipeline_id)
-        self._run_queue.put(TrainJob(session, pipeline_id))
+        self._run_queue.put(ScoreJob(session, pipeline_id))
         session.notify('new_pipeline', pipeline_id=pipeline_id)
 
     # Runs in a background thread
