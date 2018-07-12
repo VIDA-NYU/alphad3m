@@ -47,7 +47,7 @@ class Cache(object):
                     .filter(database.Output.output_name == key)
                     .join(database.Output.run)
                     .filter(database.Run.pipeline_id == self.run.pipeline_id)
-                    .filter(database.Run.special == True)
+                    .filter(database.Run.special)
                     .order_by(database.Run.date.desc())
                 ).first()
                 if value is None:

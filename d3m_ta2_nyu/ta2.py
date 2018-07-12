@@ -301,7 +301,7 @@ class Session(Observable):
             top_pipelines = self.get_top_pipelines(db, metric)
             logger.warning("Writing logs for %d pipelines", len(top_pipelines))
             for i, (pipeline, score) in enumerate(top_pipelines):
-                logger.info("    %d) %s %s=%s origin=%s" ,
+                logger.info("    %d) %s %s=%s origin=%s",
                             i + 1, pipeline.id, metric, score, pipeline.origin)
                 filename = os.path.join(self._logs_dir,
                                         str(pipeline.id) + '.json')
@@ -576,7 +576,6 @@ class D3mTa2(object):
         # Read problem
         with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
             problem = json.load(fp)
-        problem_id = problem['about']['problemID']
         task = problem['about']['taskType']
         if task not in TASKS_FROM_SCHEMA:
             logger.error("Unknown task %r", task)
@@ -943,13 +942,14 @@ class D3mTa2(object):
         results = os.path.join(self.predictions_root,
                                'execute-%s.csv' % uuid.uuid4())
         proc = subprocess.Popen(
-            [sys.executable,
-             '-c',
-             'import uuid; from d3m_ta2_nyu.test import test; '
-             'test(uuid.UUID(hex=%r), %r, %r, %r, db_filename=%r)' % (
-                 pipeline_id.hex, dataset, session.targets, results,
-                 self.db_filename,
-             )
+            [
+                sys.executable,
+                '-c',
+                'import uuid; from d3m_ta2_nyu.test import test; '
+                'test(uuid.UUID(hex=%r), %r, %r, %r, db_filename=%r)' % (
+                    pipeline_id.hex, dataset, session.targets, results,
+                    self.db_filename,
+                ),
             ]
         )
         ret = proc.wait()
@@ -976,7 +976,7 @@ class D3mTa2(object):
             return pipeline_module
 
         def make_data_module(name):
-            return make_module('data','0.0', name)
+            return make_module('data', '0.0', name)
 
         def make_primitive_module(name):
             if name[0] == '.':

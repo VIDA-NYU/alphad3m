@@ -42,8 +42,8 @@ class PipelineModule(UuidMixin, Base):
     package = Column(String, nullable=False)
     version = Column(String, nullable=False)
     name = Column(String, nullable=False)
-    #connections_from = relationship('PipelineConnection')
-    #connections_to = relationship('PipelineConnection')
+    # connections_from = relationship('PipelineConnection')
+    # connections_to = relationship('PipelineConnection')
 
 
 class PipelineConnection(Base):

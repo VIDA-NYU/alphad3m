@@ -73,12 +73,11 @@ def tune(pipeline_id, metrics, targets, results_path, msg_queue, db):
         hy = hyperparams_from_cfg(estimator_module.name,
                                   hyperparameter_configuration)
         db.add(database.PipelineParameter(
-                            pipeline=pipeline,
-                            module_id=estimator_module.id,
-                            name='hyperparams',
-                            value=pickle.dumps(hy),
-                        )
-            )
+            pipeline=pipeline,
+            module_id=estimator_module.id,
+            name='hyperparams',
+            value=pickle.dumps(hy),
+        ))
         scores, _ = cross_validation(
             pipeline, metrics, dataset, targets,
             lambda i: None,

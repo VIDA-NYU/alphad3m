@@ -19,7 +19,8 @@ class Receiver(object):
     def __init__(self):
         self._listener = socket.socket(getattr(socket, 'AF_UNIX'))
         try:
-            self._listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self._listener.setsockopt(socket.SOL_SOCKET,
+                                      socket.SO_REUSEADDR, 1)
             address = multiprocessing.connection.arbitrary_address('AF_UNIX')
             self._listener.bind(address)
             self._listener.listen(1)
@@ -64,7 +65,7 @@ class Receiver(object):
 
 def run_process(target, tag, msg_queue, **kwargs):
     """Call a Python function by name in a subprocess.
-    
+
     :param target: Fully-qualified name of function to call.
     :param tag: Tag to add to logger to identify that process.
     :return: A `subprocess.Popen` object.

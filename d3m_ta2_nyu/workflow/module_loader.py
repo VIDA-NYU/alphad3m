@@ -63,9 +63,8 @@ def _dataset(*, global_inputs, module_inputs, **kwargs):
 
 
 def _primitive_arguments(primitive, method):
-    return set(primitive.metadata.query() \
-        ['primitive_code']['instance_methods'][method]['arguments'])
-
+    methods = primitive.metadata.query()['primitive_code']['instance_methods']
+    return set(methods[method]['arguments'])
 
 
 def _loader_d3m_primitive(name, version):
@@ -80,12 +79,11 @@ def _loader_d3m_primitive(name, version):
     # FIXME: Use primitive UUIDs?
     klass = get_class(name)
 
-
     def wrapper(*, module_inputs, global_inputs, cache, **kwargs):
         # Find the hyperparams class
-        import typing
-        hyperparams_class = klass.metadata.query() \
-            ['primitive_code']['class_type_arguments']['Hyperparams']
+        primitive_type_args = \
+            klass.metadata.query()['primitive_code']['class_type_arguments']
+        hyperparams_class = primitive_type_args['Hyperparams']
 
         # Get default hyperparams
         hyperparams = hyperparams_class.defaults()
