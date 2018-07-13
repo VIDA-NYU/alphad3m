@@ -19,7 +19,7 @@ in
         exec "$D3MTESTOPT" "$D3MINPUTDIR/test_config.json"
     ;;
     ta2ta3)
-        export CONFIG_JSON="{\"temp_storage_root\": \"$D3MOUTPUTDIR\", \"pipeline_logs_root\": \"$D3MOUTPUTDIR/pipelines\", \"executables_root\": \"$D3MOUTPUTDIR/executables\", \"timeout\": \"$D3MTIMEOUT\", \"cpus\": \"$D3MCPU\", \"ram\": \"$D3MRAM\"}"
+        export CONFIG_JSON="{\"temp_storage_root\": \"$D3MOUTPUTDIR/supporting_files\", \"pipeline_logs_root\": \"$D3MOUTPUTDIR/pipelines\", \"executables_root\": \"$D3MOUTPUTDIR/executables\", \"timeout\": \"$D3MTIMEOUT\", \"cpus\": \"$D3MCPU\", \"ram\": \"$D3MRAM\", \"shared_storage_root\": \"$D3MOUTPUTDIR\"}"
         # FIXME: For now, we need a config, to read problem info
         export CONFIG_JSON="$(cat "$D3MINPUTDIR/search_config.json")"
         exec ta2_serve 45042

@@ -37,6 +37,7 @@ def main_search():
             config = json.load(config_file)
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
+            shared_root=config.get('shared_storage_root'),
             logs_root=config['pipeline_logs_root'],
             executables_root=config['executables_root'])
         ta2.run_search(
@@ -81,6 +82,7 @@ def main_serve():
             port = int(sys.argv[1])
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
+            shared_root=config.get('shared_storage_root'),
             logs_root=config['pipeline_logs_root'],
             executables_root=config['executables_root'])
         ta2.run_server(config['problem_root'], port)

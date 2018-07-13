@@ -505,7 +505,7 @@ class TuneHyperparamsJob(Job):
 
 
 class D3mTa2(object):
-    def __init__(self, storage_root, supporting_files=None,
+    def __init__(self, storage_root, shared_root=None,
                  logs_root=None, executables_root=None):
         if 'TA2_DEBUG_BE_FAST' in os.environ:
             logger.warning("**************************************************"
@@ -529,16 +529,16 @@ class D3mTa2(object):
         self.storage = os.path.abspath(storage_root)
         if not os.path.exists(self.storage):
             os.makedirs(self.storage)
-        self.predictions_root = os.path.join(self.storage, 'tmp_predictions')
+        if shared_root is not None:
+            self.shared_root = shared_root
+        else:
+            self.shared_root = self.storage
+        if not os.path.exists(self.shared_root):
+            os.makedirs(self.shared_root)
+        self.predictions_root = os.path.join(self.shared_root,
+                                             'tmp_predictions')
         if not os.path.exists(self.predictions_root):
             os.mkdir(self.predictions_root)
-        if supporting_files is not None:
-            self.supporting_files = supporting_files
-        else:
-            self.supporting_files = os.path.join(self.storage,
-                                                 'supporting_files')
-        if not os.path.exists(self.supporting_files):
-            os.makedirs(self.supporting_files)
         if logs_root is not None:
             self.logs_root = os.path.abspath(logs_root)
         else:
@@ -552,7 +552,7 @@ class D3mTa2(object):
         if self.executables_root and not os.path.exists(self.executables_root):
             os.makedirs(self.executables_root)
 
-        self.db_filename = os.path.join(self.supporting_files, 'db.sqlite3')
+        self.db_filename = os.path.join(self.storage, 'db.sqlite3')
         self.dbengine, self.DBSession = database.connect(self.db_filename)
 
         self.sessions = {}
