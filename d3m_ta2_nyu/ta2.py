@@ -730,6 +730,11 @@ class D3mTa2(object):
         session = self.sessions.pop(session_id)
         session.notify('finish_session')
 
+    def stop_session(self, session_id):
+        # TODO Stop the search (or not)
+        session = self.sessions[session_id]
+        session.notify('stop_session')
+
     def get_workflow(self, session_id, pipeline_id):
         if pipeline_id not in self.sessions[session_id].pipelines:
             raise KeyError("No such pipeline ID for session")
@@ -894,6 +899,12 @@ class D3mTa2(object):
         logger.info("Created pipeline %s", pipeline_id)
         self._run_queue.put(ScoreJob(session, pipeline_id))
         session.notify('new_pipeline', pipeline_id=pipeline_id)
+
+    def fit_solution(self,session_id, pipeline_id):
+        # Add it to the session
+        session = self.sessions[session_id]
+        session.add_training_pipeline(pipeline_id)
+        self._run_queue.put(TrainJob(session, pipeline_id))
 
     # Runs in a background thread
     def _pipeline_running_thread(self):
