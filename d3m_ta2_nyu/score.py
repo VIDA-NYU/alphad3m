@@ -17,7 +17,7 @@ MAX_SAMPLE = 50000
 
 @database.with_db
 def score(pipeline_id, metrics, targets, results_path, msg_queue, db):
-    max_progress = FOLDS + 2.0
+    max_progress = FOLDS
 
     # Get dataset from database
     dataset, = (
@@ -45,7 +45,7 @@ def score(pipeline_id, metrics, targets, results_path, msg_queue, db):
 
     scores, predictions = cross_validation(
         pipeline_id, metrics, dataset, targets,
-        lambda i: msg_queue.send(('progress', (i + 1.0) / max_progress)),
+        lambda i: msg_queue.send(('progress', i / max_progress)),
         db, FOLDS)
     logger.info("Scoring done: %s", ", ".join("%s=%s" % s
                                               for s in scores.items()))
