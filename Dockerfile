@@ -9,7 +9,7 @@ FROM registry.datadrivendiscovery.org/jpl/docker_images/complete:ubuntu-artful-p
 MAINTAINER "remirampin@gmail.com"
 
 RUN apt-get update -yy && \
-    apt-get install -yy git swig && \
+    apt-get install -yy git swig sqlite3 && \
     apt-get clean
 
 WORKDIR /usr/src/app
