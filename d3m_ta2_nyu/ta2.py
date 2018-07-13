@@ -175,7 +175,7 @@ class Session(Observable):
         # ORDER BY (
         #     SELECT cross_validation_scores.value
         #     FROM cross_validation_scores
-        #     INNER JOIN cross_validation ON cross_validations.id =
+        #     INNER JOIN cross_validations ON cross_validations.id =
         #         cross_validation_scores.cross_validation_id
         #     WHERE cross_validation_scores.metric = 'F1_MACRO' AND
         #         cross_validations.pipeline_id = pipelines.id
