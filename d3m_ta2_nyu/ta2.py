@@ -74,6 +74,8 @@ class Session(Observable):
         self.tuned_pipelines = set()
         # Pipelines in the queue for training
         self.pipelines_training = set()
+        # Pipelines already trained
+        self.trained_pipelines = set()
         # Flag indicating we started scoring, tuning & training, and a
         # 'done_training' signal should be sent once no pipeline is pending
         self.working = False
@@ -160,6 +162,7 @@ class Session(Observable):
     def pipeline_training_done(self, pipeline_id):
         with self.lock:
             self.pipelines_training.discard(pipeline_id)
+            self.trained_pipelines.add(pipeline_id)
             self.check_status()
 
     def get_top_pipelines(self, db, metric, limit=None, only_trained=True):
@@ -266,7 +269,7 @@ class Session(Observable):
                         db, self.metrics[0],
                         train_nb, only_trained=False)
                     for pipeline, _ in top_pipelines:
-                        if not pipeline.trained:
+                        if pipeline.id not in self.trained_pipelines:
                             train.append(pipeline.id)
             finally:
                 db.close()
