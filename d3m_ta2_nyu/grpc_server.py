@@ -140,6 +140,7 @@ class CoreService(pb_core_grpc.CoreServicer):
 
     def _fitsolutionresult_stream(self, context, queue,
                                      session, pipeline_ids=None):
+        logger.info('fitting result for pipeline id: '+str(pipeline_ids[0]))
         if pipeline_ids is None:
             pipeline_filter = lambda p_id: True
         else:
@@ -147,7 +148,7 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         while True:
             if not context.is_active():
-                logger.info("Client closed GetSearchSolutionsResults stream")
+                logger.info("Client closed GetFitSolutionsResults stream")
                 break
             event, kwargs = queue.get()
             if event == 'training_start':
@@ -156,9 +157,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     continue
                 yield pb_core.GetFitSolutionResultsResponse(
                     progress=pb_core.Progress(
-                        state=pb_core.RUNNING,
-                        status='Fitting solution',
-                        start=session.start
+                        state=pb_core.RUNNING
                     ),
                     fitted_solution_id=str(pipeline_id),
                 )
@@ -168,21 +167,17 @@ class CoreService(pb_core_grpc.CoreServicer):
                     continue
                 yield pb_core.GetFitSolutionResultsResponse(
                     progress=pb_core.Progress(
-                        state=pb_core.RUNNING,
-                        status='Solution fitted',
-                        start=session.start
+                        state=pb_core.COMPLETED
                     ),
                     fitted_solution_id=str(pipeline_id),
-                )#TODO not sure if it is Running or Completed
+                )
             elif event == 'training_error':
                 pipeline_id = kwargs['pipeline_id']
                 if not pipeline_filter(pipeline_id):
                     continue
-                yield pb_core.GetSearchSolutionsResultsResponse(
+                yield pb_core.GetFitSolutionResultsResponse(
                     progress=pb_core.Progress(
-                        state=pb_core.RUNNING,
-                        status='Solution fit failed',
-                        start=session.start
+                        state=pb_core.ERRORED
                     ),
                     fitted_solution_id=str(pipeline_id),
                 )
@@ -243,68 +238,53 @@ class CoreService(pb_core_grpc.CoreServicer):
                 break
 
 
+    def _producesolutionresult_stream(self, context, queue, session, pipeline_ids=None):
+        if pipeline_ids is None:
+            pipeline_filter = lambda p_id: True
+        else:
+            pipeline_filter = lambda p_id, s=set(pipeline_ids): p_id in s
 
-    def ListPipelines(self, request, context):
-        session_id = UUID(hex=request.context.session_id)
-        if session_id not in self._app.sessions:
-            return pb_core.PipelineListResult(
-                status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
-            )
-        session = self._app.sessions[session_id]
-        with session.lock:
-            pipelines = list(session.pipelines)
-        return pb_core.PipelineListResult(
-            response_info=pb_core.Response(
-                status=pb_core.Status(code=pb_core.OK),
-            ),
-            pipeline_ids=[str(i) for i in pipelines],
-        )
-
-    def ExportPipeline(self, request, context):
-        session_id = UUID(hex=request.context.session_id)
-        if session_id not in self._app.sessions:
-            return pb_core.Response(
-                status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
-            )
-        session = self._app.sessions[session_id]
-        pipeline_id = UUID(hex=request.pipeline_id)
-        with session.lock:
-            if pipeline_id not in session.pipelines:
-                return pb_core.Response(
-                    status=pb_core.Status(
-                        code=pb_core.INVALID_ARGUMENT,
-                        details="No such pipeline"),
+        while True:
+            if not context.is_active():
+                logger.info("Client closed ExecutePipeline stream")
+                break
+            event, kwargs = queue.get()
+            logger.info("Event: %s Args: %s ",str(event),str(kwargs))
+            if event == 'finish_session':
+                yield pb_core.GetScoreSolutionResultsResponse(
+                    progress=pb_core.Progress(
+                        state=pb_core.COMPLETED,
+                    )
                 )
-            pipeline = self._app.get_workflow(session_id, pipeline_id)
-            if not pipeline.trained:
-                return pb_core.Response(
-                    status=pb_core.Status(
-                        code=pb_core.UNAVAILABLE,
-                        details="This pipeline is not trained yet"),
-                )
-            uri = request.pipeline_exec_uri
-            if uri.startswith('file:///'):
-                uri = uri[7:]
-            if not uri:
-                uri = None
-            elif os.path.splitext(os.path.basename(uri))[0] != pipeline_id:
-                logger.warning("Got ExportPipeline request with "
-                               "pipeline_exec_uri which doesn't match the "
-                               "pipeline ID! This means the executable will "
-                               "not match the log file.")
-                logger.warning("pipeline_id=%r pipeline_exec_uri=%r",
-                               pipeline_id, request.pipeline_exec_uri)
-            self._app.write_executable(pipeline, filename=uri)
-        return pb_core.Response(
-            status=pb_core.Status(code=pb_core.OK)
-        )
+                break
+            elif event == 'test_done':
+                pipeline_id = kwargs['pipeline_id']
+                predictions = kwargs.get('predict_result', None)
+                if not pipeline_filter(pipeline_id):
+                    logger.info("Continuing id: "+pipeline_id.hex)
+                    continue
 
-    def SetProblemDoc(self, request, context):
-        raise NotImplementedError  # TODO: SetProblemDoc
+                if predictions:
+                    predict_result_uri = 'file://{}'.format(predictions)
+                else:
+                    predict_result_uri = ''
+
+                if kwargs['success']:
+                    yield pb_core.GetProduceSolutionResultsResponse(
+                        progress=pb_core.Progress(
+                            state=pb_core.COMPLETED,
+                        ),
+                    )
+                else:
+                    yield pb_core.GetProduceSolutionResultsResponse(
+                        progress=pb_core.Progress(
+                            state=pb_core.ERRORED,
+                        )
+                    )
+                break
 
 
     def SearchSolutions(self, request, context):
-        # missing associated documentation comment in .proto file
         search_id = self._app.new_session()
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
@@ -321,38 +301,16 @@ class CoreService(pb_core_grpc.CoreServicer):
             )
 
             '''
+
             return
         task = request.problem.problem.task_type
         if task not in self.grpc2task:
             logger.error("Got unknown task %r", task)
-            # TODO check the correct error message
-            '''
-            yield pb_core.PipelineCreateResult(
-                response_info=pb_core.Response(
-                    status=pb_core.Status(
-                        code=pb_core.INVALID_ARGUMENT,
-                        details="Dataset is not in D3M format",
-                    ),
-                ),
-            )
-
-            '''
             return
         task = self.grpc2task[task]
         if task not in ('CLASSIFICATION', 'REGRESSION'):  # TODO
             logger.error("Unsupported task %s requested", task)
             # TODO check the correct error message
-            '''
-            yield pb_core.PipelineCreateResult(
-                response_info=pb_core.Response(
-                    status=pb_core.Status(
-                        code=pb_core.INVALID_ARGUMENT,
-                        details="Dataset is not in D3M format",
-                    ),
-                ),
-            )
-
-            '''
             return
         metrics = request.problem.problem.performance_metrics
         if any(m.metric not in self.grpc2metric for m in metrics):
@@ -363,18 +321,6 @@ class CoreService(pb_core_grpc.CoreServicer):
                    if m.metric in self.grpc2metric]
         if not metrics:
             logger.error("Didn't get any metrics we know")
-            # TODO check the correct error message
-            '''
-            yield pb_core.PipelineCreateResult(
-                response_info=pb_core.Response(
-                    status=pb_core.Status(
-                        code=pb_core.INVALID_ARGUMENT,
-                        details="Dataset is not in D3M format",
-                    ),
-                ),
-            )
-
-            '''
             return
 
         if not dataset.startswith('file://'):
@@ -398,14 +344,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         # missing associated documentation comment in .proto file
         session_id = UUID(hex=request.search_id)
         if session_id not in self._app.sessions:
-            # TODO check best response
-            '''
-            yield pb_core.PipelineCreateResult(
-                response_info=pb_core.Response(
-                    status=pb_core.Status(code=pb_core.SESSION_UNKNOWN),
-                ),
-            )
-            '''
             return
 
         session = self._app.sessions[session_id]
@@ -434,12 +372,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.info("Search stopped: %s", session_id)
         return pb_core.StopSearchSolutionsResponse()
 
-    def DescribeSolution(self, request, context):
-        # missing associated documentation comment in .proto file
-        pass
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
 
     def ScoreSolution(self, request, context):
         pipeline_id = UUID(hex=request.solution_id)
@@ -457,16 +389,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
             logger.error("Dataset is not in D3M format: %s", dataset)
-            '''
-            yield pb_core.PipelineExecuteResult(
-                response_info=pb_core.Response(
-                    status=pb_core.Status(
-                        code=pb_core.INVALID_ARGUMENT,
-                        details="Dataset is not in D3M format",
-                    ),
-                ),
-            )
-            '''
             return
 
         if dataset.startswith('/'):
@@ -522,23 +444,13 @@ class CoreService(pb_core_grpc.CoreServicer):
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
             logger.error("Dataset is not in D3M format: %s", dataset)
-            '''
-            yield pb_core.PipelineExecuteResult(
-                response_info=pb_core.Response(
-                    status=pb_core.Status(
-                        code=pb_core.INVALID_ARGUMENT,
-                        details="Dataset is not in D3M format",
-                    ),
-                ),
-            )
-            '''
             return
 
         if dataset.startswith('/'):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
 
-        logger.info("Got ExecutePipeline request, session=%s, dataset=%s",
+        logger.info("Got FitSolution request, session=%s, dataset=%s",
                     session_id, dataset)
 
         queue = Queue()
@@ -571,26 +483,99 @@ class CoreService(pb_core_grpc.CoreServicer):
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             yield from self._fitsolutionresult_stream(context, queue, session,
                                                         [pipeline_id])
+
     def ProduceSolution(self, request, context):
-        # missing associated documentation comment in .proto file
-        pass
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        pipeline_id = UUID(hex=request.fitted_solution_id)
+        session_id = None
+        for session_key in self._app.sessions:
+            session = self._app.sessions[session_key]
+            if pipeline_id in session.pipelines:
+                session_id = session.id
+                break
+        if session_id is None:
+            logger.error("Solution id not found: %s", request.fitted_solution_id)
+            return
+
+        dataset = request.inputs[0].dataset_uri
+        if not dataset.endswith('datasetDoc.json'):
+            logger.error("Dataset is not in D3M format: %s", dataset)
+            return
+
+        if dataset.startswith('/'):
+            logger.warning("Dataset is a path, turning it into a file:// URL")
+            dataset = 'file://' + dataset
+
+        logger.info("Got ProduceSolution request, session=%s, dataset=%s",
+                    session_id, dataset)
+
+        queue = Queue()
+        session = self._app.sessions[session_id]
+        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+            self._app.test_pipeline(session_id, pipeline_id, dataset)
+
+        return pb_core.ProduceSolutionResponse(
+            request_id=request.fitted_solution_id
+        )
 
     def GetProduceSolutionResults(self, request, context):
         # missing associated documentation comment in .proto file
-        pass
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        logger.info("Got GetProduceSolutionResults request, request=%s",
+                    request.request_id)
+
+        pipeline_id = UUID(hex=request.request_id)
+        session_id = None
+        for session_key in self._app.sessions:
+            session = self._app.sessions[session_key]
+            if pipeline_id in session.pipelines:
+                session_id = session.id
+                break
+        if session_id is None:
+            logger.error("Request id not found: %s", request.request_id)
+            return
+
+        queue = Queue()
+        session = self._app.sessions[session_id]
+        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+            yield from self._producesolutionresult_stream(context, queue, session,
+                                                        [pipeline_id])
+
 
     def SolutionExport(self, request, context):
-        # missing associated documentation comment in .proto file
-        pass
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        pipeline_id = UUID(hex=request.fitted_solution_id)
+        session_id = None
+        for session_key in self._app.sessions:
+            session = self._app.sessions[session_key]
+            with session.lock:
+                if pipeline_id in session.pipelines:
+                    session_id = session.id
+                    break
+        if session_id is None:
+            logger.error("Solution id not found: %s", request.fitted_solution_id)
+            return
+        session = self._app.sessions[session_id]
+        with session.lock:
+            pipeline = self._app.get_workflow(session_id, pipeline_id)
+            if not pipeline.trained:
+                logger.error("Solution not fitted: %s", request.fitted_solution_id)
+                return
+            self._app.write_executable(pipeline)
+        return pb_core.SolutionExportResponse()
+
+
+
+    def Hello(self, request, context):
+        version = pb_core.DESCRIPTOR.GetOptions().Extensions[
+            pb_core.protocol_version]
+        user_agent = "ta2_stub %s" % __version__
+
+        logger.info("Responding Hello! with user_agent=[%s] "
+                    "and protocol version=[%s])",
+                    user_agent, version)
+
+        return pb_core.HelloResponse(
+            user_agent=user_agent,
+            version=version
+        )
 
     def UpdateProblem(self, request, context):
         # missing associated documentation comment in .proto file
@@ -606,19 +591,21 @@ class CoreService(pb_core_grpc.CoreServicer):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+
+    def DescribeSolution(self, request, context):
+        # missing associated documentation comment in .proto file
+        pass
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def Hello(self, request, context):
         version = pb_core.DESCRIPTOR.GetOptions().Extensions[
             pb_core.protocol_version]
         user_agent = "nyu_ta2 %s" % __version__
 
-        logger.info("Responding Hello! with user_agent=[%s] "
-                    "and protocol version=[%s])",
-                    user_agent, version)
 
-        return pb_core.HelloResponse(
-            user_agent=user_agent,
-            version=version
-        )
+
 
 
 class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
