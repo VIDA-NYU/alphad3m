@@ -196,6 +196,7 @@ class Session(Observable):
         q = (
             db.query(pipeline, crossval_score)
             .filter(pipeline.id.in_(self.pipelines))
+            .filter(crossval_score != None)
             .options(joinedload(pipeline.modules),
                      joinedload(pipeline.connections))
             .order_by(crossval_score_order)
