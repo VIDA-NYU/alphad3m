@@ -323,11 +323,7 @@ class Session(Observable):
 
 
 class Job(object):
-    __id_gen = 1
-
     def __init__(self, session):
-        self.id = Job.__id_gen
-        Job.__id_gen += 1
         self.session = session
         self.msg = None
 
