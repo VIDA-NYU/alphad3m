@@ -1,5 +1,6 @@
 import importlib
 import logging
+import os
 import pickle
 
 
@@ -84,6 +85,20 @@ def _loader_d3m_primitive(name, version):
     # FIXME: Use primitive UUIDs?
     klass = get_class(name)
 
+    # Map static data
+    if 'D3M_PRIMITIVE_STATIC' in os.environ:
+        statics = os.environ['D3M_PRIMITIVE_STATIC']
+        if not os.path.exists(statics):
+            logger.error("$D3M_PRIMITIVE_STATIC points to non-existent path")
+        volumes = {
+            installation['key']: os.path.join(statics,
+                                              installation['file_digest'])
+            for installation in klass.metadata.query().get('installation', [])
+            if installation['type'] in ['FILE', 'TGZ']
+        }
+    else:
+        volumes = {}
+
     def wrapper(*, module_inputs, global_inputs, cache, **kwargs):
         # Find the hyperparams class
         primitive_type_args = \
@@ -99,6 +114,9 @@ def _loader_d3m_primitive(name, version):
             custom_hyperparams = pickle.loads(custom_hyperparams)
             hyperparams = hyperparams_class(hyperparams,
                                             **custom_hyperparams)
+        cstr_kwargs = dict(hyperparams=hyperparams)
+        if volumes:
+            cstr_kwargs['volumes'] = volumes
 
         if global_inputs['run_type'] == 'train':
             # Figure out which arguments are meant for which method
@@ -122,7 +140,7 @@ def _loader_d3m_primitive(name, version):
                     logger.warning("Unused argument: %r", param)
 
             # Create the primitive
-            primitive = klass(hyperparams=hyperparams)
+            primitive = klass(**cstr_kwargs)
 
             # Train the primitive
             primitive.set_training_data(**training_args)
@@ -154,7 +172,7 @@ def _loader_d3m_primitive(name, version):
 
             # Load back the primitive
             params = pickle.loads(cache.get('params'))
-            primitive = klass(hyperparams=hyperparams)
+            primitive = klass(**cstr_kwargs)
             primitive.set_params(params=params)
 
             # Transform data
