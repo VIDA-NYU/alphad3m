@@ -21,8 +21,6 @@ import threading
 import time
 import uuid
 
-from d3m.container import Dataset
-
 from d3m_ta2_nyu import __version__
 from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
     TASKS_FROM_SCHEMA
@@ -30,7 +28,6 @@ from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
-from d3m_ta2_nyu.test import test
 from d3m_ta2_nyu.utils import Observable
 from d3m_ta2_nyu.workflow import database
 
@@ -682,8 +679,17 @@ class D3mTa2(object):
         for target in problem['inputs']['data'][0]['targets']:
             targets.add((target['resID'], target['colName']))
 
-        test(pipeline_id, dataset, targets, results_path,
-             db_filename=self.db_filename)
+        subprocess.check_call(
+            [
+                sys.executable,
+                '-c',
+                'import uuid; from d3m_ta2_nyu.test import test; '
+                'test(uuid.UUID(hex=%r), %r, %r, %r, db_filename=%r)' % (
+                    pipeline_id.hex, dataset, targets, results_path,
+                    self.db_filename,
+                )
+            ]
+        )
 
     def run_server(self, problem_path, port=None):
         """Spin up the gRPC server to receive requests from a TA3 system.
@@ -968,8 +974,6 @@ class D3mTa2(object):
             origin="classification_template(imputer=%s, classifier=%s)" % (
                        imputer, classifier),
             dataset=dataset)
-
-        dataset = Dataset.load(dataset)
 
         def make_module(package, version, name):
             pipeline_module = database.PipelineModule(
