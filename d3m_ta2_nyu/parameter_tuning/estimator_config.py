@@ -9,7 +9,7 @@ from d3m.metadata.hyperparams import Bounded, Enumeration, Uniform, UniformInt, 
 PRIMITIVES = index.search()
 
 def primitive_config(cs, primitive_name):
-    PrimitiveClass = PRIMITIVES[primitive_name]
+    PrimitiveClass = index.get_primitive(primitive_name)
     HyperparameterClass = typing.get_type_hints(PrimitiveClass.__init__)['hyperparams']
     if HyperparameterClass:
         config = HyperparameterClass.configuration
@@ -19,7 +19,7 @@ def primitive_config(cs, primitive_name):
             if isinstance(config[p], Bounded):
                 lower = config[p].lower
                 upper = config[p].upper
-                default = config[p].default
+                default = config[p].get_default()
                 if type(default) == int:
                     cs_param = IntegerHyperparameter(parameter_name, lower, upper, default_value=default)
                 else:
@@ -28,24 +28,24 @@ def primitive_config(cs, primitive_name):
             elif isinstance(config[p], Uniform):
                 lower = config[p].lower
                 upper = config[p].upper
-                default = config[p].default
+                default = config[p].get_default()
                 cs_param = UniformFloatHyperparameter(parameter_name, lower, upper, default_value=default)
                 parameter_list.append(cs_param)
             elif isinstance(config[p], UniformInt):
                 lower = config[p].lower
                 upper = config[p].upper
-                default = config[p].default
+                default = config[p].get_default()
                 cs_param = UniformIntegerHyperparameter(parameter_name, lower, upper, default_value=default)
                 parameter_list.append(cs_param)
             elif isinstance(config[p], Normal):
                 lower = config[p].lower
                 upper = config[p].upper
-                default = config[p].default
+                default = config[p].get_default()
                 cs_param = NormalFloatHyperparameter(parameter_name, lower, upper, default_value=default)
                 parameter_list.append(cs_param)
             elif isinstance(config[p], Enumeration):
                 values = config[p].values
-                default = config[p].default
+                default = config[p].get_default()
                 cs_param = CategoricalHyperparameter(parameter_name, values, default_value=default)
                 parameter_list.append(cs_param)
         cs.add_hyperparameters(parameter_list)
@@ -68,7 +68,7 @@ def decode_hyperparameter(estimator,parameter,value):
 def is_estimator(name):
     if name not in PRIMITIVES:
         return False
-    klass = PRIMITIVES[name]
-    family = klass.metadata.to_json()['primitive_family']
+    klass = index.get_primitive(name)
+    family = klass.metadata.to_json_structure()['primitive_family']
     return family == 'CLASSIFICATION' or family == 'REGRESSION'
 

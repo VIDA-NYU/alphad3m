@@ -171,6 +171,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     ),
                     fitted_solution_id=str(pipeline_id),
                 )
+                break
             elif event == 'training_error':
                 pipeline_id = kwargs['pipeline_id']
                 if not pipeline_filter(pipeline_id):
@@ -181,6 +182,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     ),
                     fitted_solution_id=str(pipeline_id),
                 )
+                break
             elif event == 'done_training':
                 break
 
@@ -599,16 +601,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def Hello(self, request, context):
-        version = pb_core.DESCRIPTOR.GetOptions().Extensions[
-            pb_core.protocol_version]
-        user_agent = "nyu_ta2 %s" % __version__
 
 
 
-
-
-class DataflowService(pb_dataflow_grpc.DataflowExtServicer):
-    def __init__(self, app):
-        self._app = app
 

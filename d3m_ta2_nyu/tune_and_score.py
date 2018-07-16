@@ -98,7 +98,7 @@ def tune(pipeline_id, metrics, targets, results_path, msg_queue, db):
 
     # TODO: tune all modules, not only the estimator
     estimator_module = None
-    for module in pipeline.modules:
+    for module in new_pipeline.modules:
         if is_estimator(module.name):
             estimator_module = module
 
