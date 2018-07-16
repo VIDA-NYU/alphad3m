@@ -20,6 +20,11 @@ from d3m_ta2_nyu.metafeatures.dataset import ComputeMetafeatures
 
 logger = logging.getLogger(__name__)
 
+def setup_logging():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s:%(levelname)s:TA2:%(name)s:%(message)s")
+
 ARGS = {
     'numIters': 3,
     'numEps': 100,
@@ -35,9 +40,6 @@ ARGS = {
     'load_folder_file': ('./temp/', 'best.pth.tar'),
     'metafeatures_path': '/d3m/data/metafeatures'
 }
-
-
-
 
 @database.with_sessionmaker
 def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSession):
@@ -74,6 +76,8 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
 
 
 def main(dataset_uri, problem_path, output_path):
+    setup_logging()
+
     import time
     start = time.time()
     import tempfile
@@ -126,8 +130,8 @@ def main(dataset_uri, problem_path, output_path):
     args['dataset'] = dataset_uri.split('/')[-1].replace('_dataset', '')
     assert dataset_uri.startswith('file://')
     args['dataset_path'] = dataset_uri[7:]
-    print(dataset_uri)
-    print(args['dataset_path'])
+    logger.info(dataset_uri)
+    logger.info(args['dataset_path'])
     with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
         args['problem'] = json.load(fp)
 
@@ -163,7 +167,9 @@ def main(dataset_uri, problem_path, output_path):
         evaluations.reverse()
     end = time.time()
     out_p = open(os.path.join(output_path, args['dataset']+'_best_pipelines.txt'), 'w')
-    out_p.write(args['dataset']+' '+evaluations[0][0] + ' ' + str(evaluations[0][1])+ ' ' + str(game.steps) + ' ' + str((end-start)/60.0) + '\n')
+    best_result = args['dataset']+' '+evaluations[0][0] + ' ' + str(evaluations[0][1])+ ' ' + str(game.steps) + ' ' + str((end-start)/60.0)
+    logger.info(best_result)
+    out_p.write(best_result )
 
 if __name__ == '__main__':
     output_path = '.'

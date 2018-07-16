@@ -1,20 +1,21 @@
-from __future__ import print_function
+#from __future__ import print_function
+
 import logging
 import sys
 import os
 import pickle
 import math
-from copy import deepcopy
-sys.path.append('..')
-from ..Game import Game
-from .PipelineLogic import Board
 import numpy as np
 from scipy.special import comb
 from random import uniform
-from d3m.metadata.problem import parse_problem_description
-from pprint import pprint
+from copy import deepcopy
 import traceback
-import sys, traceback
+sys.path.append('..')
+
+from ..Game import Game
+from .PipelineLogic import Board
+
+from d3m.metadata.problem import parse_problem_description
 
 PROBLEM_TYPES = {'CLASSIFICATION': 1,
                  'REGRESSION': 2}
@@ -176,9 +177,11 @@ class PipelineGame(Game):
         n = self.p
         #print(b)
         board = b[self.m:self.m+self.p]
-        print('PIPELINE ', board)
-        print(" -----------------------")
+        logger.info("PIPELINE %s", board)
+        logger.info(" -----------------------")
+        pipeline = ""
         for b in board:
-            print(b, "|",end="")    # print the row #
-        print('\n')
-        print("   -----------------------")
+            pipeline = pipeline + str(b) + '|'    # print the row #
+        logger.info(pipeline)
+        logger.info("\n")
+        logger.info(" -----------------------")
