@@ -33,6 +33,14 @@ class Pipeline(UuidMixin, Base):
     connections = relationship('PipelineConnection')
     runs = relationship('Run')
 
+    def __eq__(self, other):
+        return type(other) is Pipeline and other.id == self.id
+
+    def __repr__(self):
+        return '<Pipeline %r>' % self.id
+
+    __str__ = __repr__
+
 
 class PipelineModule(UuidMixin, Base):
     __tablename__ = 'pipeline_modules'

@@ -19,9 +19,15 @@ variables:
 services:
   - docker:dind
 
+test:
+  stage: test
+  image: $IMAGE
+  script:
+    - python3 tests.py
+
 build_image:
   stage: build
-  image: ruby:2.2
+  image: python:3
   script:
     - curl -Lo /tmp/docker.tgz https://get.docker.com/builds/Linux/x86_64/docker-17.05.0-ce.tgz && tar -xf /tmp/docker.tgz -C /usr/local && rm /tmp/docker.tgz && export PATH=/usr/local/docker:$PATH && export DOCKER_HOST=tcp://docker:2375
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com

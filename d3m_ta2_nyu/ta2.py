@@ -163,23 +163,6 @@ class Session(Observable):
             self.check_status()
 
     def get_top_pipelines(self, db, metric, limit=None, only_trained=True):
-        # SELECT pipelines.*
-        # FROM pipelines
-        # WHERE (
-        #     SELECT COUNT(runs.id)
-        #     FROM runs
-        #     WHERE runs.pipeline_id = pipelines.id AND
-        #         runs.special = 0 AND
-        #         runs.type = 'TRAIN'
-        # ) != 0
-        # ORDER BY (
-        #     SELECT cross_validation_scores.value
-        #     FROM cross_validation_scores
-        #     INNER JOIN cross_validations ON cross_validations.id =
-        #         cross_validation_scores.cross_validation_id
-        #     WHERE cross_validation_scores.metric = 'F1_MACRO' AND
-        #         cross_validations.pipeline_id = pipelines.id
-        # ) DESC;
         pipeline = aliased(database.Pipeline)
         crossval_score = (
             select([database.CrossValidationScore.value])
