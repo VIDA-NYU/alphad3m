@@ -67,7 +67,7 @@ def main_serve():
             with open(os.environ['CONFIG_JSON_PATH']) as config_file:
                 config = json.load(config_file)
         elif 'CONFIG_JSON' in os.environ:
-            config = json.load(os.environ['CONFIG_JSON'])
+            config = json.loads(os.environ['CONFIG_JSON'])
         elif 'JSON_CONFIG' is os.environ:
             logger.warning("The correct environment variable is now "
                            "CONFIG_JSON. Please update your configuration")
