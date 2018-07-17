@@ -5,12 +5,12 @@ logic, converting to/from protobuf messages. No GRPC or protobuf objects should
 leave this module.
 """
 
+import calendar
+import datetime
 import logging
-import os
 from queue import Queue
 from uuid import UUID
 import grpc
-import time
 from google.protobuf.timestamp_pb2 import Timestamp
 
 
@@ -23,6 +23,18 @@ import d3m_ta2_nyu.proto.value_pb2 as pb_value
 
 
 logger = logging.getLogger(__name__)
+
+
+def to_timestamp(dt):
+    """Converts a UTC datetime object into a gRPC Timestamp.
+
+    :param dt: Time to convert, or None for now.
+    :type dt: datetime.datetime | None
+    """
+    if dt is None:
+        dt = datetime.datetime.utcnow()
+    return Timestamp(seconds=calendar.timegm(dt.timetuple()),
+                     nanos=dt.microsecond * 1000)
 
 
 class CoreService(pb_core_grpc.CoreServicer):
@@ -49,16 +61,12 @@ class CoreService(pb_core_grpc.CoreServicer):
                 break
             event, kwargs = queue.get()
             if event == 'finish_session':
-                now = time.time()
-                seconds = int(now)
-                nanos = int((now - seconds) * 10 ** 9)
-                end = Timestamp(seconds=seconds, nanos=nanos)
                 yield pb_core.GetSearchSolutionsResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.COMPLETED,
                         status='End of search solution',
-                        start=session.start,
-                        end=end
+                        start=to_timestamp(session.start),
+                        end=to_timestamp(None),
                     )
                 )
                 break

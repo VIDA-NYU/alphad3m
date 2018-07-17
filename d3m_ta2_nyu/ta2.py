@@ -5,6 +5,7 @@ back to this process via a Queue.
 """
 
 from concurrent import futures
+import datetime
 import grpc
 import itertools
 import json
@@ -32,7 +33,6 @@ import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 from d3m_ta2_nyu.test import test
 from d3m_ta2_nyu.utils import Observable
 from d3m_ta2_nyu.workflow import database
-from google.protobuf.timestamp_pb2 import Timestamp
 
 
 MAX_RUNNING_PROCESSES = 1
@@ -64,7 +64,7 @@ class Session(Observable):
         now = time.time()
         seconds = int(now)
         nanos = int((now - seconds) * 10 ** 9)
-        self.start = Timestamp(seconds=seconds, nanos=nanos)
+        self.start = datetime.datetime.utcnow()
 
         # Should tuning be triggered when we are done with current pipelines?
         self._tune_when_ready = False
