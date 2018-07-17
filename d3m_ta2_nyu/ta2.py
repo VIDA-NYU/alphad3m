@@ -58,9 +58,6 @@ class Session(Observable):
         self.problem = problem
         self.metrics = []
 
-        now = time.time()
-        seconds = int(now)
-        nanos = int((now - seconds) * 10 ** 9)
         self.start = datetime.datetime.utcnow()
 
         # Should tuning be triggered when we are done with current pipelines?
