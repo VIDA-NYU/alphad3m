@@ -887,7 +887,7 @@ class D3mTa2(object):
             remove = []
             for job in running_jobs.values():
                 if job.check():
-                    remove.append(job.id)
+                    remove.append(id(job))
             for job_id in remove:
                 del running_jobs[job_id]
 
@@ -900,7 +900,7 @@ class D3mTa2(object):
                 else:
                     job.start(db_filename=self.db_filename,
                               predictions_root=self.predictions_root)
-                    running_jobs[job.id] = job
+                    running_jobs[id(job)] = job
 
             time.sleep(3)
 
