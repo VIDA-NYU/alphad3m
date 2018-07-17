@@ -126,12 +126,12 @@ def main(dataset_uri, problem_path, output_path):
     pipeline = None
     if pipelines:
         pipeline = [p_enum[primitive] for primitive in pipelines[dataset]]
-    logger.info(pipeline)
+    logger.info("pipeline: %s", pipeline)
     args['dataset'] = dataset_uri.split('/')[-1].replace('_dataset', '')
     assert dataset_uri.startswith('file://')
     args['dataset_path'] = dataset_uri[7:]
-    logger.info(dataset_uri)
-    logger.info(args['dataset_path'])
+    logger.info("dataset URI: %s", dataset_uri)
+    logger.info("dataset path: %s", args['dataset_path'])
     with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
         args['problem'] = json.load(fp)
 
@@ -168,7 +168,7 @@ def main(dataset_uri, problem_path, output_path):
     end = time.time()
     out_p = open(os.path.join(output_path, args['dataset']+'_best_pipelines.txt'), 'w')
     best_result = args['dataset']+' '+evaluations[0][0] + ' ' + str(evaluations[0][1])+ ' ' + str(game.steps) + ' ' + str((end-start)/60.0)
-    logger.info(best_result)
+    logger.info("best result: %s", best_result)
     out_p.write(best_result )
 
 if __name__ == '__main__':

@@ -177,11 +177,6 @@ class PipelineGame(Game):
         n = self.p
         #print(b)
         board = b[self.m:self.m+self.p]
-        logger.info("PIPELINE %s", board)
         logger.info(" -----------------------")
-        pipeline = ""
-        for b in board:
-            pipeline = pipeline + str(b) + '|'    # print the row #
-        logger.info(pipeline)
-        logger.info("\n")
+        logger.info("PIPELINE %s", '|'.join(str(e) for e in board))
         logger.info(" -----------------------")

@@ -84,7 +84,7 @@ class Coach():
         trainExamples = deque([], maxlen=self.args.get('maxlenOfQueue'))
         for i in range(self.args.get('numIters')):
             # bookkeeping
-            logger.info('------ITER ' + str(i+1) + '------')
+            logger.info('------ITER %d------', i + 1)
             eps_time = AverageMeter()
             bar = Bar('Self Play', max=self.args.get('numEps'))
             end = time.time()
@@ -118,7 +118,7 @@ class Coach():
             pwins, nwins = arena.playGames(self.args.get('arenaCompare'))
 
             logger.info('EVALUATIONS %s', self.game.evaluations)
-            logger.info('NEW/PREV WINS : ' + str(nwins) + '/' + str(pwins))
+            logger.info('NEW/PREV WINS : %s/%s', nwins, pwins)
             if float(nwins)/(pwins+nwins) < self.args['updateThreshold']:
                 logger.info('REJECTING NEW MODEL')
                 self.nnet = pnet

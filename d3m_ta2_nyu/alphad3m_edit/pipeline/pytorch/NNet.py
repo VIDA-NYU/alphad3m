@@ -48,7 +48,7 @@ class NNetWrapper(NeuralNet):
         optimizer = optim.Adam(self.nnet.parameters())
 
         for epoch in range(args.get('epochs')):
-            logger.info('EPOCH ::: ' + str(epoch+1))
+            logger.info('EPOCH ::: %d', epoch + 1)
             self.nnet.train()
             data_time = AverageMeter()
             batch_time = AverageMeter()
@@ -129,7 +129,7 @@ class NNetWrapper(NeuralNet):
         self.nnet.eval()
         pi, v = self.nnet(board)
 
-        logger.info('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
+        logger.info('PREDICTION TIME TAKEN : %.3f', time.time() - start)
         return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0][0]
 
     def loss_pi(self, targets, outputs):
@@ -141,10 +141,10 @@ class NNetWrapper(NeuralNet):
     def save_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
         filepath = os.path.join(folder, filename)
         if not os.path.exists(folder):
-            logger.error("Checkpoint Directory does not exist! Making directory {}".format(folder))
+            logger.error("Checkpoint Directory does not exist! Making directory %s", folder)
             os.mkdir(folder)
         else:
-            logger.info("Checkpoint Directory exists! ")
+            logger.info("Checkpoint Directory exists!")
         torch.save({
             'state_dict' : self.nnet.state_dict(),
         }, filepath)
