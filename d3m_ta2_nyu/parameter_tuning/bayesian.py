@@ -8,8 +8,11 @@ from smac.facade.smac_facade import SMAC
 # Import SMAC-utilities
 from smac.scenario.scenario import Scenario
 
-from d3m_ta2_nyu.parameter_tuning.estimator_config import PRIMITIVES, primitive_config
+from d3m_ta2_nyu.parameter_tuning.estimator_config import primitive_config
 from d3m_ta2_nyu.workflow.module_loader import get_class
+
+from d3m import index
+
 
 
 
@@ -30,7 +33,7 @@ def cfg_from_primitives(primitives):
 
 
 def hyperparams_from_cfg(name, cfg):
-    PrimitiveClass = PRIMITIVES[name]
+    PrimitiveClass = index.get_primitive(name)
     HyperparameterClass = typing.get_type_hints(PrimitiveClass.__init__)['hyperparams']
     hyperparameter_config = HyperparameterClass.configuration
 
@@ -41,7 +44,7 @@ def hyperparams_from_cfg(name, cfg):
         if cfg_key in cfg:
             kw_args[key] = cfg[cfg_key]
         else:
-            kw_args[key] = hyperparameter_config[key].default
+            kw_args[key] = hyperparameter_config[key].get_default()
 
     hy = HyperparameterClass(**kw_args)
     return hy

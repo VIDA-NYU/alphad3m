@@ -5,6 +5,7 @@ back to this process via a Queue.
 """
 
 from concurrent import futures
+import datetime
 import grpc
 import itertools
 import json
@@ -27,7 +28,6 @@ from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
-import d3m_ta2_nyu.proto.dataflow_ext_pb2_grpc as pb_dataflow_grpc
 from d3m_ta2_nyu.utils import Observable
 from d3m_ta2_nyu.workflow import database
 
@@ -57,6 +57,11 @@ class Session(Observable):
         self.DBSession = DBSession
         self.problem = problem
         self.metrics = []
+
+        now = time.time()
+        seconds = int(now)
+        nanos = int((now - seconds) * 10 ** 9)
+        self.start = datetime.datetime.utcnow()
 
         # Should tuning be triggered when we are done with current pipelines?
         self._tune_when_ready = False
@@ -683,12 +688,9 @@ class D3mTa2(object):
         if not port:
             port = 45042
         core_rpc = grpc_server.CoreService(self)
-        dataflow_rpc = grpc_server.DataflowService(self)
         server = grpc.server(self.executor)
         pb_core_grpc.add_CoreServicer_to_server(
             core_rpc, server)
-        pb_dataflow_grpc.add_DataflowExtServicer_to_server(
-            dataflow_rpc, server)
         server.add_insecure_port('[::]:%d' % port)
         logger.info("Started gRPC server on port %d", port)
         server.start()
@@ -713,6 +715,11 @@ class D3mTa2(object):
     def finish_session(self, session_id):
         session = self.sessions.pop(session_id)
         session.notify('finish_session')
+
+    def stop_session(self, session_id):
+        # TODO Stop the search (or not)
+        session = self.sessions[session_id]
+        session.notify('stop_session')
 
     def get_workflow(self, session_id, pipeline_id):
         if pipeline_id not in self.sessions[session_id].pipelines:
@@ -878,6 +885,12 @@ class D3mTa2(object):
         logger.info("Created pipeline %s", pipeline_id)
         self._run_queue.put(ScoreJob(session, pipeline_id))
         session.notify('new_pipeline', pipeline_id=pipeline_id)
+
+    def fit_solution(self,session_id, pipeline_id):
+        # Add it to the session
+        session = self.sessions[session_id]
+        #session.add_training_pipeline(pipeline_id)
+        self._run_queue.put(TrainJob(session, pipeline_id))
 
     # Runs in a background thread
     def _pipeline_running_thread(self):
