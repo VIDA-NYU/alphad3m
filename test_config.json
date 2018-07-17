@@ -1,0 +1,13 @@
+
+{
+    "temp_storage_root": "/output/supporting_files",
+    "executables_root": "/output/executables",
+    "dataset_schema": "/input/dataset_TEST/datasetDoc.json",
+    "problem_schema": "/input/problem_TEST/problemDoc.json",
+    "test_data_root": "/input/dataset_TEST",
+    "problem_root": "/input/problem_TEST",
+    "results_root": "/output/results",
+    "timeout": "30",
+    "cpus": "4",
+    "ram": "4Gi"
+}
