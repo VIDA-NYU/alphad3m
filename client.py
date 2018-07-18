@@ -63,7 +63,7 @@ def main():
 
     with open(sys.argv[1]) as config:
         config = json.load(config)
-    with open(config['problem_schema']) as problem:
+    with open(sys.argv[2]) as problem:
         problem = json.load(problem)
 
     TASK_TYPES = {n: v for n, v in pb_problem.TaskType.items()}

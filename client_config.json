@@ -1,6 +1,0 @@
-{
-    "dataset_schema": "/home/remram/Documents/programming/d3m/data/seed_datasets_current/uu4_SPECT/TRAIN/dataset_TRAIN/datasetDoc.json",
-    "problem_schema": "/home/remram/Documents/programming/d3m/data/seed_datasets_current/uu4_SPECT/TRAIN/problem_TRAIN/problemDoc.json",
-    "training_data_root": "/home/remram/Documents/programming/d3m/data/seed_datasets_current/uu4_SPECT/TRAIN/dataset_TRAIN",
-    "problem_root": "/home/remram/Documents/programming/d3m/data/seed_datasets_current/uu4_SPECT/TRAIN/problem_TRAIN"
-}
