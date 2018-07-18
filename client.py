@@ -71,8 +71,7 @@ def main():
     METRICS = {n: v for n, v in pb_problem.PerformanceMetric.items()}
 
 
-
-    solutions = core.SearchSolutions(pb_core.SearchSolutionsRequest(
+    search = core.SearchSolutions(pb_core.SearchSolutionsRequest(
         user_agent='ta3_stub',
         version=version,
         time_bound=10.0,
@@ -146,11 +145,12 @@ def main():
         )],
     ))
 
-    # Now search solutions return only the search id
-    '''
+    solutions = core.GetSearchSolutionsResults(pb_core.GetSearchSolutionsResultsRequest(
+        search_id=search.search_id
+    ))
     for solution in solutions:
         pass
-    '''
+
 
 if __name__ == '__main__':
     main()

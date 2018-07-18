@@ -85,7 +85,7 @@ def main_serve():
             shared_root=config.get('shared_storage_root'),
             logs_root=config['pipeline_logs_root'],
             executables_root=config['executables_root'])
-        ta2.run_server(config['problem_root'], port)
+        ta2.run_server(port)
 
 
 def main_test():

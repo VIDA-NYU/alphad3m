@@ -49,7 +49,7 @@ def _printmsg_out(msg, name):
 def _printmsg_in(msg, name):
     logger.info("> %s", name)
     for line in str(msg).splitlines():
-        logger.info("< | %s", line)
+        logger.info("> | %s", line)
     logger.info("  ------------------")
 
 
@@ -85,6 +85,16 @@ def log_service(klass):
     return klass
 
 
+def error(context, code, format, *args):
+    message = format % args
+    context.set_code(code)
+    context.set_details(message)
+    if code == grpc.StatusCode.NOT_FOUND:
+        return KeyError(message)
+    else:
+        return ValueError(message)
+
+
 @log_service
 class CoreService(pb_core_grpc.CoreServicer):
     grpc2metric = dict((k, v) for v, k in pb_problem.PerformanceMetric.items()
@@ -97,39 +107,29 @@ class CoreService(pb_core_grpc.CoreServicer):
         self._app = app
 
     def SearchSolutions(self, request, context):
-        search_id = self._app.new_session()
+        if len(request.inputs) > 1:
+            raise error(context, grpc.StatusCode.UNIMPLEMENTED,
+                        "Search with more than 1 input is not supported")
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details("Dataset is not in D3M format")
-            raise ValueError("Dataset is not in D3M format: %s" % dataset)
-
-        task = request.problem.problem.task_type
-        if task not in self.grpc2task:
-            logger.error("Got unknown task %r", task)
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details("Got unknown task %r" % task)
-            raise ValueError("Got unknown task %r" % task)
-        task = self.grpc2task[task]
-        metrics = request.problem.problem.performance_metrics
-        if any(m.metric not in self.grpc2metric for m in metrics):
-            logger.warning("Got metrics that we don't know about: %s",
-                           ", ".join(m.metric for m in metrics
-                                     if m.metric not in self.grpc2metric))
-        metrics = [self.grpc2metric[m.metric] for m in metrics
-                   if m.metric in self.grpc2metric]
-        if not metrics:
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details("Didn't get any metrics we know")
-            raise ValueError("Didn't get any metrics we know")
-
+            raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
+                        "Dataset is not in D3M format: %s", dataset)
         if not dataset.startswith('file://'):
             dataset = 'file://'+dataset
+
+        # TODO: Read problem from gRPC
+        import json
+        with open('/input/seed_datasets_current/uu4_SPECT/TRAIN/problem_TRAIN/problemDoc.json') as fp:
+            problem = json.load(fp)
+
+        search_id = self._app.new_session(problem)
 
         queue = Queue()
         session = self._app.sessions[search_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            self._app.build_pipelines(search_id, task, dataset, metrics)
+            self._app.build_pipelines(search_id,
+                                      session.problem['about']['taskType'],
+                                      dataset, session.metrics)
 
         return pb_core.SearchSolutionsResponse(
             search_id=search_id.hex
@@ -138,9 +138,8 @@ class CoreService(pb_core_grpc.CoreServicer):
     def GetSearchSolutionsResults(self, request, context):
         session_id = UUID(hex=request.search_id)
         if session_id not in self._app.sessions:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details("Unknown search")
-            raise KeyError("Unknown search ID %r" % session_id)
+            raise error(context, grpc.StatusCode.NOT_FOUND,
+                        "Unknown search ID %r", session_id)
 
         session = self._app.sessions[session_id]
         queue = Queue()
@@ -254,16 +253,13 @@ class CoreService(pb_core_grpc.CoreServicer):
                 session_id = session.id
                 break
         if session_id is None:
-            logger.error("Solution ID not found: %s", request.solution_id)
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details("Solution ID not found")
-            raise KeyError("Unknown solution ID %s", request.solution_id)
+            raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
+                        "Unknown solution ID %s", request.solution_id)
 
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details("Dataset is not in D3M format")
-            raise ValueError("Dataset is not in D3M format: %s" % dataset)
+            raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
+                        "Dataset is not in D3M format: %s", dataset)
 
         if dataset.startswith('/'):
             logger.warning("Dataset is a path, turning it into a file:// URL")
@@ -290,9 +286,8 @@ class CoreService(pb_core_grpc.CoreServicer):
                 session_id = session.id
                 break
         if session_id is None:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details("Unknown ID")
-            raise KeyError("Unknown ID %r" % request.request_id)
+            raise error(context, grpc.StatusCode.NOT_FOUND,
+                        "Unknown ID %r", request.request_id)
 
         queue = Queue()
         session = self._app.sessions[session_id]
@@ -309,15 +304,13 @@ class CoreService(pb_core_grpc.CoreServicer):
                 session_id = session.id
                 break
         if session_id is None:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details("Solution ID not found")
-            raise KeyError("Unknown solution ID %s" % request.solution_id)
+            raise error(context, grpc.StatusCode.NOT_FOUND,
+                        "Unknown solution ID %s", request.solution_id)
 
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details("Dataset is not in D3M format")
-            raise ValueError("Dataset is not in D3M format: %s" % dataset)
+            raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
+                        "Dataset is not in D3M format: %s", dataset)
 
         if dataset.startswith('/'):
             logger.warning("Dataset is a path, turning it into a file:// URL")
@@ -341,9 +334,8 @@ class CoreService(pb_core_grpc.CoreServicer):
                 session_id = session.id
                 break
         if session_id is None:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details("Unknown ID")
-            raise KeyError("Unknown ID %r" % request.request_id)
+            raise error(context, grpc.StatusCode.NOT_FOUND,
+                        "Unknown ID %r", request.request_id)
 
         queue = Queue()
         session = self._app.sessions[session_id]
@@ -397,16 +389,13 @@ class CoreService(pb_core_grpc.CoreServicer):
                 session_id = session.id
                 break
         if session_id is None:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details("Unknown ID")
-            raise ValueError("Unknown solution ID %r" %
-                             request.fitted_solution_id)
+            raise error(context, grpc.StatusCode.NOT_FOUND,
+                        "Unknown solution ID %r", request.fitted_solution_id)
 
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details("Dataset is not in D3M format")
-            raise ValueError("Dataset is not in D3M format: %s" % dataset)
+            raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
+                        "Dataset is not in D3M format: %s", dataset)
 
         if dataset.startswith('/'):
             logger.warning("Dataset is a path, turning it into a file:// URL")
@@ -430,9 +419,8 @@ class CoreService(pb_core_grpc.CoreServicer):
                 session_id = session.id
                 break
         if session_id is None:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details("Unknown ID")
-            raise KeyError("Unknown ID %r" % request.request_id)
+            raise error(context, grpc.StatusCode.NOT_FOUND,
+                        "Unknown ID %r", request.request_id)
 
         queue = Queue()
         session = self._app.sessions[session_id]
@@ -491,18 +479,15 @@ class CoreService(pb_core_grpc.CoreServicer):
                     session_id = session.id
                     break
         if session_id is None:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details("Solution ID not found")
-            raise KeyError("Unknown solution ID %r" %
-                           request.fitted_solution_id)
+            raise error(context, grpc.StatusCode.NOT_FOUND,
+                        "Unknown solution ID %r", request.fitted_solution_id)
         session = self._app.sessions[session_id]
         with session.lock:
             pipeline = self._app.get_workflow(session_id, pipeline_id)
             if not pipeline.trained:
-                context.set_code(grpc.StatusCode.NOT_FOUND)
-                context.set_details("Solution not fitted")
-                raise ValueError("Solution not fitted: %r" %
-                                 request.fitted_solution_id)
+                raise error(context, grpc.StatusCode.NOT_FOUND,
+                            "Solution not fitted: %r",
+                            request.fitted_solution_id)
             self._app.write_executable(pipeline)
         return pb_core.SolutionExportResponse()
 
