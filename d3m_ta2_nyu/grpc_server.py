@@ -196,7 +196,6 @@ class CoreService(pb_core_grpc.CoreServicer):
 
     def _fitsolutionresult_stream(self, context, queue,
                                      session, pipeline_ids=None):
-        logger.info('fitting result for pipeline id: '+str(pipeline_ids[0]))
         if pipeline_ids is None:
             pipeline_filter = lambda p_id: True
         else:
@@ -254,7 +253,6 @@ class CoreService(pb_core_grpc.CoreServicer):
                 logger.info("Client closed ExecutePipeline stream")
                 break
             event, kwargs = queue.get()
-            logger.info("Event: %s Args: %s ",str(event),str(kwargs))
             if event == 'finish_session':
                 yield pb_core.GetScoreSolutionResultsResponse(
                     progress=pb_core.Progress(
@@ -265,7 +263,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             elif event == 'test_done':
                 pipeline_id = kwargs['pipeline_id']
                 if not pipeline_filter(pipeline_id):
-                    logger.info("Continuing id: "+pipeline_id.hex)
                     continue
                 if kwargs['success']:
                     scores = self._app.get_pipeline_scores(session.id, pipeline_id)
@@ -307,7 +304,6 @@ class CoreService(pb_core_grpc.CoreServicer):
                 logger.info("Client closed ExecutePipeline stream")
                 break
             event, kwargs = queue.get()
-            logger.info("Event: %s Args: %s ",str(event),str(kwargs))
             if event == 'finish_session':
                 yield pb_core.GetScoreSolutionResultsResponse(
                     progress=pb_core.Progress(
@@ -319,7 +315,6 @@ class CoreService(pb_core_grpc.CoreServicer):
                 pipeline_id = kwargs['pipeline_id']
                 predictions = kwargs.get('predict_result', None)
                 if not pipeline_filter(pipeline_id):
-                    logger.info("Continuing id: "+pipeline_id.hex)
                     continue
 
                 if predictions:
@@ -384,11 +379,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         if not dataset.startswith('file://'):
             dataset = 'file://'+dataset
 
-        logger.info("Got CreatePipelines request, session=%s, task=%s, "
-                    "dataset=%s, metrics=%s, ",
-                    search_id, task,
-                    dataset, ", ".join(metrics))
-
         queue = Queue()
         session = self._app.sessions[search_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
@@ -405,8 +395,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             return
 
         session = self._app.sessions[session_id]
-        logger.info("Got GetSearchSolutionsResults request, search id=%s",
-                    session_id)
         queue = Queue()
 
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
@@ -466,10 +454,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         )
 
     def GetScoreSolutionResults(self, request, context):
-        # missing associated documentation comment in .proto file
-        logger.info("Got GetScoreSolutionResults request, request=%s",
-                    request.request_id)
-
         pipeline_id = UUID(hex=request.request_id)
         session_id = None
         for session_key in self._app.sessions:
@@ -508,9 +492,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
 
-        logger.info("Got FitSolution request, session=%s, dataset=%s",
-                    session_id, dataset)
-
         queue = Queue()
         session = self._app.sessions[session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
@@ -521,10 +502,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         )
 
     def GetFitSolutionResults(self, request, context):
-        # missing associated documentation comment in .proto file
-        logger.info("Got GetFitSolutionResults request, request=%s",
-                    request.request_id)
-
         pipeline_id = UUID(hex=request.request_id)
         session_id = None
         for session_key in self._app.sessions:
@@ -563,9 +540,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
 
-        logger.info("Got ProduceSolution request, session=%s, dataset=%s",
-                    session_id, dataset)
-
         queue = Queue()
         session = self._app.sessions[session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
@@ -576,10 +550,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         )
 
     def GetProduceSolutionResults(self, request, context):
-        # missing associated documentation comment in .proto file
-        logger.info("Got GetProduceSolutionResults request, request=%s",
-                    request.request_id)
-
         pipeline_id = UUID(hex=request.request_id)
         session_id = None
         for session_key in self._app.sessions:
@@ -625,10 +595,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         version = pb_core.DESCRIPTOR.GetOptions().Extensions[
             pb_core.protocol_version]
         user_agent = "nyu_ta2 %s" % __version__
-
-        logger.info("Responding Hello! with user_agent=[%s] "
-                    "and protocol version=[%s])",
-                    user_agent, version)
 
         return pb_core.HelloResponse(
             user_agent=user_agent,
