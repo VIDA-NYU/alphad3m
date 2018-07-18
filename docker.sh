@@ -31,7 +31,7 @@ case "$1" in
     test)
         MODE=test
         INPUT="$2"
-        TESTOPT="$3"
+        TESTOPT="/output/executables/$3"
         shift 3
     ;;
     *)
