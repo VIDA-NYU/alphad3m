@@ -6,9 +6,12 @@ leave this module.
 """
 
 import calendar
+import collections
 import datetime
+import functools
 import logging
 from queue import Queue
+import string
 from uuid import UUID
 import grpc
 from google.protobuf.timestamp_pb2 import Timestamp
@@ -37,6 +40,51 @@ def to_timestamp(dt):
                      nanos=dt.microsecond * 1000)
 
 
+def _printmsg_out(msg, name):
+    logger.info("< %s", name)
+    for line in str(msg).splitlines():
+        logger.info("< | %s", line)
+    logger.info("  ------------------")
+
+
+def _printmsg_in(msg, name):
+    logger.info("> %s", name)
+    for line in str(msg).splitlines():
+        logger.info("< | %s", line)
+    logger.info("  ------------------")
+
+
+def _wrap(func):
+    name = func.__name__
+
+    @functools.wraps(func)
+    def wrapped(self, request, context):
+        _printmsg_in(request, name)
+        ret = func(self, request, context)
+        if isinstance(ret, collections.Iterable):
+            return _wrap_stream(ret, name)
+        else:
+            _printmsg_out(ret, name)
+            return ret
+
+    return wrapped
+
+
+def _wrap_stream(gen, name):
+    for msg in gen:
+        _printmsg_out(msg, name)
+
+
+def log_service(klass):
+    base, = klass.__bases__
+    for name in dir(base):
+        if name[0] not in string.ascii_uppercase:
+            continue
+        setattr(klass, name, _wrap(klass.__dict__[name]))
+    return klass
+
+
+@log_service
 class CoreService(pb_core_grpc.CoreServicer):
     grpc2metric = dict((k, v) for v, k in pb_problem.PerformanceMetric.items()
                        if k != pb_problem.METRIC_UNDEFINED)
@@ -608,8 +656,3 @@ class CoreService(pb_core_grpc.CoreServicer):
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
-
-
-
-
-
