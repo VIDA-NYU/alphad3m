@@ -18,6 +18,7 @@ from uuid import UUID
 
 from . import __version__
 
+from d3m_ta2_nyu.common import TASKS_FROM_SCHEMA
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
@@ -119,16 +120,17 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         # TODO: Read problem from gRPC
         import json
-        with open('/input/seed_datasets_current/uu4_SPECT/TRAIN/problem_TRAIN/problemDoc.json') as fp:
+        with open('/input/problem_TRAIN/problemDoc.json') as fp:
             problem = json.load(fp)
 
         search_id = self._app.new_session(problem)
 
         queue = Queue()
         session = self._app.sessions[search_id]
+        task = TASKS_FROM_SCHEMA[session.problem['about']['taskType']]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             self._app.build_pipelines(search_id,
-                                      session.problem['about']['taskType'],
+                                      task,
                                       dataset, session.metrics)
 
         return pb_core.SearchSolutionsResponse(

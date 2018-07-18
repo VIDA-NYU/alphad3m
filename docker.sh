@@ -21,8 +21,8 @@ TESTOPT=""
 case "$1" in
     ta3)
         MODE=ta2ta3
-        INPUT=""
-        shift 1
+        INPUT="$2"
+        shift 2
     ;;
     search)
         MODE=search
@@ -36,7 +36,7 @@ case "$1" in
         shift 3
     ;;
     *)
-        echo "Usage:\n  $(basename $0) ta3" >&2
+        echo "Usage:\n  $(basename $0) ta3 seed_datasets_current/uu4_SPECT/TRAIN" >&2
         echo "  $(basename $0) search seed_datasets_current/uu4_SPECT/TRAIN" >&2
         echo "  $(basename $0) test seed_datasets_current/uu4_SPECT/TEST 0123-4567-89abcdef" >&2
         exit 2
