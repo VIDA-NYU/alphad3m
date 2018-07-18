@@ -45,9 +45,9 @@ logger = logging.getLogger(__name__)
 
 
 class Session(Observable):
-    """A session, in the GRPC meaning.
+    """A session, in the gRPC meaning.
 
-    This is a TA3 session in which pipelines are created.
+    This corresponds to a search in which pipelines are created.
     """
     def __init__(self, ta2, logs_dir, problem, DBSession):
         Observable.__init__(self)
@@ -76,7 +76,7 @@ class Session(Observable):
         # Pipelines already trained
         self.trained_pipelines = set()
         # Flag indicating we started scoring, tuning & training, and a
-        # 'done_training' signal should be sent once no pipeline is pending
+        # 'done_searching' signal should be sent once no pipeline is pending
         self.working = False
 
         # Read metrics from problem
@@ -273,7 +273,7 @@ class Session(Observable):
             self.working = False
 
             self.write_logs()
-            self.notify('done_training')
+            self.notify('done_searching')
 
     def write_logs(self):
         if not self.metrics:
@@ -574,7 +574,7 @@ class D3mTa2(object):
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             self.build_pipelines(session.id, task, dataset, session.metrics)
-            while queue.get(True)[0] != 'done_training':
+            while queue.get(True)[0] != 'done_searching':
                 pass
 
         db = self.DBSession()
@@ -606,7 +606,7 @@ class D3mTa2(object):
             session.notify('new_pipeline', pipeline_id=pipeline_id)
             while True:
                 event, kwargs = queue.get(True)
-                if event == 'done_training':
+                if event == 'done_searching':
                     raise RuntimeError("Never got pipeline results")
                 elif (event == 'scoring_error' and
                         kwargs['pipeline_id'] == pipeline_id):
@@ -773,7 +773,7 @@ class D3mTa2(object):
                 logger.info("Set metrics to %s %s(for session %s)",
                             metrics, old, session_id)
 
-            # Force working=True so we get 'done_training' even if no pipeline
+            # Force working=True so we get 'done_searching' even if no pipeline
             # gets created
             session.working = True
 
@@ -833,7 +833,7 @@ class D3mTa2(object):
                             metrics, old, session_id)
 
             logger.info("Creating pipelines from templates...")
-            # Force working=True so we get 'done_training' even if no pipeline
+            # Force working=True so we get 'done_searching' even if no pipeline
             # gets created
             session.working = True
             template_name = task

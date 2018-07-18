@@ -228,7 +228,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         ),
                         solution_id=str(pipeline_id),
                     )
-                elif event == 'done_training':
+                elif event == 'done_searching':
                     break
 
     def EndSearchSolutions(self, request, context):
@@ -385,7 +385,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         fitted_solution_id=str(pipeline_id),
                     )
                     break
-                elif event == 'done_training':
+                elif event == 'done_searching':
                     break
 
     def ProduceSolution(self, request, context):
