@@ -9,13 +9,11 @@ import calendar
 import collections
 import datetime
 import functools
+from google.protobuf.timestamp_pb2 import Timestamp
 import logging
 from queue import Queue
 import string
 from uuid import UUID
-import grpc
-from google.protobuf.timestamp_pb2 import Timestamp
-
 
 from . import __version__
 
@@ -95,248 +93,6 @@ class CoreService(pb_core_grpc.CoreServicer):
     def __init__(self, app):
         self._app = app
 
-
-    def _pipelinecreateresult_stream(self, context, queue,
-                                     session, pipeline_ids=None):
-        if pipeline_ids is None:
-            pipeline_filter = lambda p_id: True
-        else:
-            pipeline_filter = lambda p_id, s=set(pipeline_ids): p_id in s
-
-        while True:
-            if not context.is_active():
-                logger.info("Client closed GetSearchSolutionsResults stream")
-                break
-            event, kwargs = queue.get()
-            if event == 'finish_session':
-                yield pb_core.GetSearchSolutionsResultsResponse(
-                    progress=pb_core.Progress(
-                        state=pb_core.COMPLETED,
-                        status='End of search solution',
-                        start=to_timestamp(session.start),
-                        end=to_timestamp(None),
-                    )
-                )
-                break
-            elif event == 'new_pipeline':
-                pipeline_id = kwargs['pipeline_id']
-                if not pipeline_filter(pipeline_id):
-                    continue
-                yield pb_core.GetSearchSolutionsResultsResponse(
-                    done_ticks=3,
-                    all_ticks=3,
-                    progress=pb_core.Progress(
-                        state=pb_core.RUNNING,
-                        status='New solution',
-                        start=session.start
-                    ), #TODO not sure if it is Pending or Running
-                    solution_id=str(pipeline_id),
-                )
-            elif event == 'training_start':
-                pipeline_id = kwargs['pipeline_id']
-                if not pipeline_filter(pipeline_id):
-                    continue
-                yield pb_core.GetSearchSolutionsResultsResponse(
-                    done_ticks=3,
-                    all_ticks=3,
-                    progress=pb_core.Progress(
-                        state=pb_core.RUNNING,
-                        status='Training solution',
-                        start=session.start
-                    ),
-                    solution_id=str(pipeline_id),
-                )
-            elif event == 'training_success':
-                pipeline_id = kwargs['pipeline_id']
-                predictions = kwargs.get('predict_result', None)
-                if not pipeline_filter(pipeline_id):
-                    continue
-                scores = self._app.get_pipeline_scores(session.id, pipeline_id)
-                scores = [pb_core.SolutionSearchScore(
-                                scores=[pb_core.Score(
-                                    metric=pb_problem.ProblemPerformanceMetric(metric=self.metric2grpc[m],
-                                                                               k=0,
-                                                                               pos_label=''),
-                                    value=pb_value.Value(double=s),
-                                )
-                                for m, s in scores.items()
-                                if m in self.metric2grpc
-                                ],
-                         )
-                    ]
-                yield pb_core.GetSearchSolutionsResultsResponse(
-                    done_ticks=3,
-                    all_ticks=3,
-                    progress=pb_core.Progress(
-                        state=pb_core.RUNNING,
-                        status='Solution trained',
-                        start=session.start
-                    ),
-                    solution_id=str(pipeline_id),
-                    scores=scores
-
-                )#TODO not sure if it is Running or Completed
-            elif event == 'training_error':
-                pipeline_id = kwargs['pipeline_id']
-                if not pipeline_filter(pipeline_id):
-                    continue
-                yield pb_core.GetSearchSolutionsResultsResponse(
-                    done_ticks=3,
-                    all_ticks=3,
-                    progress=pb_core.Progress(
-                        state=pb_core.RUNNING,
-                        status='Solution training failed',
-                        start=session.start
-                    ),
-                    solution_id=str(pipeline_id),
-                )
-            elif event == 'done_training':
-                break
-
-
-    def _fitsolutionresult_stream(self, context, queue,
-                                     session, pipeline_ids=None):
-        if pipeline_ids is None:
-            pipeline_filter = lambda p_id: True
-        else:
-            pipeline_filter = lambda p_id, s=set(pipeline_ids): p_id in s
-
-        while True:
-            if not context.is_active():
-                logger.info("Client closed GetFitSolutionsResults stream")
-                break
-            event, kwargs = queue.get()
-            if event == 'training_start':
-                pipeline_id = kwargs['pipeline_id']
-                if not pipeline_filter(pipeline_id):
-                    continue
-                yield pb_core.GetFitSolutionResultsResponse(
-                    progress=pb_core.Progress(
-                        state=pb_core.RUNNING
-                    ),
-                    fitted_solution_id=str(pipeline_id),
-                )
-            elif event == 'training_success':
-                pipeline_id = kwargs['pipeline_id']
-                if not pipeline_filter(pipeline_id):
-                    continue
-                yield pb_core.GetFitSolutionResultsResponse(
-                    progress=pb_core.Progress(
-                        state=pb_core.COMPLETED
-                    ),
-                    fitted_solution_id=str(pipeline_id),
-                )
-                break
-            elif event == 'training_error':
-                pipeline_id = kwargs['pipeline_id']
-                if not pipeline_filter(pipeline_id):
-                    continue
-                yield pb_core.GetFitSolutionResultsResponse(
-                    progress=pb_core.Progress(
-                        state=pb_core.ERRORED
-                    ),
-                    fitted_solution_id=str(pipeline_id),
-                )
-                break
-            elif event == 'done_training':
-                break
-
-
-    def _pipelinescoreresult_stream(self, context, queue, session, pipeline_ids=None):
-        if pipeline_ids is None:
-            pipeline_filter = lambda p_id: True
-        else:
-            pipeline_filter = lambda p_id, s=set(pipeline_ids): p_id in s
-
-        while True:
-            if not context.is_active():
-                logger.info("Client closed ExecutePipeline stream")
-                break
-            event, kwargs = queue.get()
-            if event == 'finish_session':
-                yield pb_core.GetScoreSolutionResultsResponse(
-                    progress=pb_core.Progress(
-                        state=pb_core.COMPLETED,
-                    )
-                )
-                break
-            elif event == 'test_done':
-                pipeline_id = kwargs['pipeline_id']
-                if not pipeline_filter(pipeline_id):
-                    continue
-                if kwargs['success']:
-                    scores = self._app.get_pipeline_scores(session.id, pipeline_id)
-
-                    scores=[pb_core.Score(
-                            metric=pb_problem.ProblemPerformanceMetric(metric=self.metric2grpc[m],
-                                                                       k=0,
-                                                                       pos_label=''),
-                            value=pb_value.Value(double=s),
-                        )
-                            for m, s in scores.items()
-                            if m in self.metric2grpc
-                        ]
-
-
-                    yield pb_core.GetScoreSolutionResultsResponse(
-                        progress=pb_core.Progress(
-                            state=pb_core.COMPLETED,
-                        ),
-                        scores=scores
-                    )
-                else:
-                    yield pb_core.GetScoreSolutionResultsResponse(
-                        progress=pb_core.Progress(
-                            state=pb_core.ERRORED,
-                        )
-                    )
-                break
-
-
-    def _producesolutionresult_stream(self, context, queue, session, pipeline_ids=None):
-        if pipeline_ids is None:
-            pipeline_filter = lambda p_id: True
-        else:
-            pipeline_filter = lambda p_id, s=set(pipeline_ids): p_id in s
-
-        while True:
-            if not context.is_active():
-                logger.info("Client closed ExecutePipeline stream")
-                break
-            event, kwargs = queue.get()
-            if event == 'finish_session':
-                yield pb_core.GetScoreSolutionResultsResponse(
-                    progress=pb_core.Progress(
-                        state=pb_core.COMPLETED,
-                    )
-                )
-                break
-            elif event == 'test_done':
-                pipeline_id = kwargs['pipeline_id']
-                predictions = kwargs.get('predict_result', None)
-                if not pipeline_filter(pipeline_id):
-                    continue
-
-                if predictions:
-                    predict_result_uri = 'file://{}'.format(predictions)
-                else:
-                    predict_result_uri = ''
-
-                if kwargs['success']:
-                    yield pb_core.GetProduceSolutionResultsResponse(
-                        progress=pb_core.Progress(
-                            state=pb_core.COMPLETED,
-                        ),
-                    )
-                else:
-                    yield pb_core.GetProduceSolutionResultsResponse(
-                        progress=pb_core.Progress(
-                            state=pb_core.ERRORED,
-                        )
-                    )
-                break
-
-
     def SearchSolutions(self, request, context):
         search_id = self._app.new_session()
         dataset = request.inputs[0].dataset_uri
@@ -398,9 +154,90 @@ class CoreService(pb_core_grpc.CoreServicer):
         queue = Queue()
 
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            yield from self._pipelinecreateresult_stream(context, queue,
-                                                         session,
-                                                         session.pipelines)
+            while True:
+                if not context.is_active():
+                    logger.info(
+                        "Client closed GetSearchSolutionsResults stream")
+                    break
+                event, kwargs = queue.get()
+                if event == 'finish_session':
+                    yield pb_core.GetSearchSolutionsResultsResponse(
+                        progress=pb_core.Progress(
+                            state=pb_core.COMPLETED,
+                            status='End of search solution',
+                            start=to_timestamp(session.start),
+                            end=to_timestamp(None),
+                        )
+                    )
+                    break
+                elif event == 'new_pipeline':
+                    pipeline_id = kwargs['pipeline_id']
+                    yield pb_core.GetSearchSolutionsResultsResponse(
+                        done_ticks=3,
+                        all_ticks=3,
+                        progress=pb_core.Progress(
+                            state=pb_core.RUNNING,
+                            status='New solution',
+                            start=session.start
+                        ),  # TODO not sure if it is Pending or Running
+                        solution_id=str(pipeline_id),
+                    )
+                elif event == 'training_start':
+                    pipeline_id = kwargs['pipeline_id']
+                    yield pb_core.GetSearchSolutionsResultsResponse(
+                        done_ticks=3,
+                        all_ticks=3,
+                        progress=pb_core.Progress(
+                            state=pb_core.RUNNING,
+                            status='Training solution',
+                            start=session.start
+                        ),
+                        solution_id=str(pipeline_id),
+                    )
+                elif event == 'training_success':
+                    pipeline_id = kwargs['pipeline_id']
+                    predictions = kwargs.get('predict_result', None)
+                    scores = self._app.get_pipeline_scores(session.id,
+                                                           pipeline_id)
+                    scores = [pb_core.SolutionSearchScore(
+                        scores=[pb_core.Score(
+                            metric=pb_problem.ProblemPerformanceMetric(
+                                metric=self.metric2grpc[m],
+                                k=0,
+                                pos_label=''),
+                            value=pb_value.Value(double=s),
+                        )
+                            for m, s in scores.items()
+                            if m in self.metric2grpc
+                        ],
+                    )
+                    ]
+                    yield pb_core.GetSearchSolutionsResultsResponse(
+                        done_ticks=3,
+                        all_ticks=3,
+                        progress=pb_core.Progress(
+                            state=pb_core.RUNNING,
+                            status='Solution trained',
+                            start=session.start
+                        ),
+                        solution_id=str(pipeline_id),
+                        scores=scores
+
+                    )  # TODO not sure if it is Running or Completed
+                elif event == 'training_error':
+                    pipeline_id = kwargs['pipeline_id']
+                    yield pb_core.GetSearchSolutionsResultsResponse(
+                        done_ticks=3,
+                        all_ticks=3,
+                        progress=pb_core.Progress(
+                            state=pb_core.RUNNING,
+                            status='Solution training failed',
+                            start=session.start
+                        ),
+                        solution_id=str(pipeline_id),
+                    )
+                elif event == 'done_training':
+                    break
 
     def EndSearchSolutions(self, request, context):
         # missing associated documentation comment in .proto file
@@ -418,7 +255,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.info("Search stopped: %s", session_id)
         return pb_core.StopSearchSolutionsResponse()
 
-
     def ScoreSolution(self, request, context):
         pipeline_id = UUID(hex=request.solution_id)
         session_id = None
@@ -430,7 +266,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         if session_id is None:
             logger.error("Solution id not found: %s", request.solution_id)
             return
-
 
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
@@ -502,11 +337,11 @@ class CoreService(pb_core_grpc.CoreServicer):
         )
 
     def GetFitSolutionResults(self, request, context):
-        pipeline_id = UUID(hex=request.request_id)
+        req_pipeline_id = UUID(hex=request.request_id)
         session_id = None
         for session_key in self._app.sessions:
             session = self._app.sessions[session_key]
-            if pipeline_id in session.pipelines:
+            if req_pipeline_id in session.pipelines:
                 session_id = session.id
                 break
         if session_id is None:
@@ -516,8 +351,45 @@ class CoreService(pb_core_grpc.CoreServicer):
         queue = Queue()
         session = self._app.sessions[session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            yield from self._fitsolutionresult_stream(context, queue, session,
-                                                        [pipeline_id])
+            while True:
+                if not context.is_active():
+                    logger.info("Client closed GetFitSolutionsResults stream")
+                    break
+                event, kwargs = queue.get()
+                if event == 'training_start':
+                    pipeline_id = kwargs['pipeline_id']
+                    if pipeline_id != req_pipeline_id:
+                        continue
+                    yield pb_core.GetFitSolutionResultsResponse(
+                        progress=pb_core.Progress(
+                            state=pb_core.RUNNING
+                        ),
+                        fitted_solution_id=str(pipeline_id),
+                    )
+                elif event == 'training_success':
+                    pipeline_id = kwargs['pipeline_id']
+                    if pipeline_id != req_pipeline_id:
+                        continue
+                    yield pb_core.GetFitSolutionResultsResponse(
+                        progress=pb_core.Progress(
+                            state=pb_core.COMPLETED
+                        ),
+                        fitted_solution_id=str(pipeline_id),
+                    )
+                    break
+                elif event == 'training_error':
+                    pipeline_id = kwargs['pipeline_id']
+                    if pipeline_id != req_pipeline_id:
+                        continue
+                    yield pb_core.GetFitSolutionResultsResponse(
+                        progress=pb_core.Progress(
+                            state=pb_core.ERRORED
+                        ),
+                        fitted_solution_id=str(pipeline_id),
+                    )
+                    break
+                elif event == 'done_training':
+                    break
 
     def ProduceSolution(self, request, context):
         pipeline_id = UUID(hex=request.fitted_solution_id)
@@ -550,11 +422,11 @@ class CoreService(pb_core_grpc.CoreServicer):
         )
 
     def GetProduceSolutionResults(self, request, context):
-        pipeline_id = UUID(hex=request.request_id)
+        req_pipeline_id = UUID(hex=request.request_id)
         session_id = None
         for session_key in self._app.sessions:
             session = self._app.sessions[session_key]
-            if pipeline_id in session.pipelines:
+            if req_pipeline_id in session.pipelines:
                 session_id = session.id
                 break
         if session_id is None:
@@ -564,9 +436,49 @@ class CoreService(pb_core_grpc.CoreServicer):
         queue = Queue()
         session = self._app.sessions[session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            yield from self._producesolutionresult_stream(context, queue, session,
-                                                        [pipeline_id])
+            while True:
+                if not context.is_active():
+                    logger.info("Client closed ExecutePipeline stream")
+                    break
+                event, kwargs = queue.get()
+                if event == 'finish_session':
+                    yield pb_core.GetScoreSolutionResultsResponse(
+                        progress=pb_core.Progress(
+                            state=pb_core.COMPLETED,
+                        )
+                    )
+                    break
+                elif event == 'test_done':
+                    pipeline_id = kwargs['pipeline_id']
+                    if pipeline_id != req_pipeline_id:
+                        continue
+                    if kwargs['success']:
+                        scores = self._app.get_pipeline_scores(session.id, pipeline_id)
 
+                        scores=[pb_core.Score(
+                                metric=pb_problem.ProblemPerformanceMetric(metric=self.metric2grpc[m],
+                                                                           k=0,
+                                                                           pos_label=''),
+                                value=pb_value.Value(double=s),
+                            )
+                                for m, s in scores.items()
+                                if m in self.metric2grpc
+                            ]
+
+
+                        yield pb_core.GetScoreSolutionResultsResponse(
+                            progress=pb_core.Progress(
+                                state=pb_core.COMPLETED,
+                            ),
+                            scores=scores
+                        )
+                    else:
+                        yield pb_core.GetScoreSolutionResultsResponse(
+                            progress=pb_core.Progress(
+                                state=pb_core.ERRORED,
+                            )
+                        )
+                    break
 
     def SolutionExport(self, request, context):
         pipeline_id = UUID(hex=request.fitted_solution_id)
@@ -589,8 +501,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             self._app.write_executable(pipeline)
         return pb_core.SolutionExportResponse()
 
-
-
     def Hello(self, request, context):
         version = pb_core.DESCRIPTOR.GetOptions().Extensions[
             pb_core.protocol_version]
@@ -601,24 +511,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             version=version
         )
 
-    def UpdateProblem(self, request, context):
-        # missing associated documentation comment in .proto file
-        pass
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
     def ListPrimitives(self, request, context):
-        # missing associated documentation comment in .proto file
-        pass
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
+        raise NotImplementedError
 
     def DescribeSolution(self, request, context):
-        # missing associated documentation comment in .proto file
-        pass
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        raise NotImplementedError
