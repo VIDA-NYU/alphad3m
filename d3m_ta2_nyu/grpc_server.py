@@ -73,6 +73,7 @@ def _wrap(func):
 def _wrap_stream(gen, name):
     for msg in gen:
         _printmsg_out(msg, name)
+        yield msg
 
 
 def log_service(klass):
@@ -171,11 +172,11 @@ class CoreService(pb_core_grpc.CoreServicer):
                         progress=pb_core.Progress(
                             state=pb_core.RUNNING,
                             status='New solution',
-                            start=session.start
+                            start=to_timestamp(session.start),
                         ),  # TODO not sure if it is Pending or Running
                         solution_id=str(pipeline_id),
                     )
-                elif event == 'training_start':
+                elif event == 'scoring_start':
                     pipeline_id = kwargs['pipeline_id']
                     yield pb_core.GetSearchSolutionsResultsResponse(
                         done_ticks=3,
@@ -183,41 +184,42 @@ class CoreService(pb_core_grpc.CoreServicer):
                         progress=pb_core.Progress(
                             state=pb_core.RUNNING,
                             status='Training solution',
-                            start=session.start
+                            start=to_timestamp(session.start),
                         ),
                         solution_id=str(pipeline_id),
                     )
-                elif event == 'training_success':
+                elif event == 'scoring_success':
                     pipeline_id = kwargs['pipeline_id']
                     predictions = kwargs.get('predict_result', None)
                     scores = self._app.get_pipeline_scores(session.id,
                                                            pipeline_id)
-                    scores = [pb_core.SolutionSearchScore(
-                        scores=[pb_core.Score(
+                    scores = [
+                        pb_core.Score(
                             metric=pb_problem.ProblemPerformanceMetric(
                                 metric=self.metric2grpc[m],
                                 k=0,
                                 pos_label=''),
-                            value=pb_value.Value(double=s),
+                            value=pb_value.Value(
+                                raw=pb_value.ValueRaw(double=s)
+                            ),
                         )
-                            for m, s in scores.items()
-                            if m in self.metric2grpc
-                        ],
-                    )
+                        for m, s in scores.items()
+                        if m in self.metric2grpc
                     ]
+                    scores = [pb_core.SolutionSearchScore(scores=scores)]
                     yield pb_core.GetSearchSolutionsResultsResponse(
                         done_ticks=3,
                         all_ticks=3,
                         progress=pb_core.Progress(
                             state=pb_core.RUNNING,
                             status='Solution trained',
-                            start=session.start
+                            start=to_timestamp(session.start),
                         ),
                         solution_id=str(pipeline_id),
                         scores=scores
 
                     )  # TODO not sure if it is Running or Completed
-                elif event == 'training_error':
+                elif event == 'scoring_error':
                     pipeline_id = kwargs['pipeline_id']
                     yield pb_core.GetSearchSolutionsResultsResponse(
                         done_ticks=3,
@@ -225,7 +227,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         progress=pb_core.Progress(
                             state=pb_core.RUNNING,
                             status='Solution training failed',
-                            start=session.start
+                            start=to_timestamp(session.start),
                         ),
                         solution_id=str(pipeline_id),
                     )
