@@ -34,10 +34,10 @@ build_image:
     - docker login -u ${D3M_GITLAB_USER} -p ${D3M_GITLAB_TOKEN} registry.datadrivendiscovery.org
     - INIT="$(< d3m_ta2_nyu/__init__.py)"; echo "$INIT" | sed 's/__version__ = .*$/__version__ = '"'$(git describe)'/" >d3m_ta2_nyu/__init__.py
     - |
-      CACHE_FROM="--cache-from devel" && docker pull $CI_REGISTRY_IMAGE:devel
+      CACHE_FROM="--cache-from $CI_REGISTRY_IMAGE:devel" && docker pull $CI_REGISTRY_IMAGE:devel
       if [ "$CI_COMMIT_REF_NAME" != devel ]; then
         if docker pull "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"; then
-          CACHE_FROM="$CACHE_FROM --cache-from $CI_COMMIT_REF_NAME"
+          CACHE_FROM="$CACHE_FROM --cache-from $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
         fi
       fi
       echo "Docker cache: $CACHE_FROM"
