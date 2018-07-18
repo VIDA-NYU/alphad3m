@@ -79,6 +79,8 @@ def log_service(klass):
     for name in dir(base):
         if name[0] not in string.ascii_uppercase:
             continue
+        if name not in klass.__dict__:
+            continue
         setattr(klass, name, _wrap(klass.__dict__[name]))
     return klass
 
