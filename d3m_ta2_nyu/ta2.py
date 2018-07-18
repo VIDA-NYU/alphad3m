@@ -661,17 +661,16 @@ class D3mTa2(object):
         for target in problem['inputs']['data'][0]['targets']:
             targets.add((target['resID'], target['colName']))
 
-        subprocess.check_call(
-            [
-                sys.executable,
-                '-c',
-                'import uuid; from d3m_ta2_nyu.test import test; '
-                'test(uuid.UUID(hex=%r), %r, %r, %r, db_filename=%r)' % (
-                    pipeline_id.hex, dataset, targets, results_path,
-                    self.db_filename,
-                )
-            ]
-        )
+        mgs_queue = Receiver()
+        proc = run_process('d3m_ta2_nyu.test.test', 'test', mgs_queue,
+                           pipeline_id=pipeline_id,
+                           dataset=dataset,
+                           targets=targets,
+                           results_path=results_path,
+                           db_filename=self.db_filename)
+        ret = proc.wait()
+        if ret != 0:
+            raise subprocess.CalledProcessError(ret, 'd3m_ta2_nyu.test.test')
 
     def run_server(self, problem_path, port=None):
         """Spin up the gRPC server to receive requests from a TA3 system.
@@ -940,17 +939,13 @@ class D3mTa2(object):
     def _test_pipeline(self, session, pipeline_id, dataset):
         results = os.path.join(self.predictions_root,
                                'execute-%s.csv' % uuid.uuid4())
-        proc = subprocess.Popen(
-            [
-                sys.executable,
-                '-c',
-                'import uuid; from d3m_ta2_nyu.test import test; '
-                'test(uuid.UUID(hex=%r), %r, %r, %r, db_filename=%r)' % (
-                    pipeline_id.hex, dataset, session.targets, results,
-                    self.db_filename,
-                ),
-            ]
-        )
+        msg_queue = Receiver()
+        proc = run_process('d3m_ta2_nyu.test.test', 'test', msg_queue,
+                           pipeline_id=pipeline_id,
+                           dataset=dataset,
+                           targets=session.targets,
+                           results_path=results,
+                           db_filename=self.db_filename)
         ret = proc.wait()
         session.notify('test_done',
                        pipeline_id=pipeline_id, results_path=results,

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 @database.with_db
-def test(pipeline_id, dataset, targets, results_path, db):
+def test(pipeline_id, dataset, targets, results_path, msg_queue, db):
     # Load data
     dataset = Dataset.load(dataset)
     logger.info("Loaded dataset")
