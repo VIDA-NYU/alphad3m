@@ -27,16 +27,19 @@ def test(pipeline_id, dataset, targets, results_path, msg_queue, db):
 
     # Get predicted targets
     predictions = next(iter(outputs.values()))['produce']
-
-    # FIXME: Right now pipeline returns a simple array
-    # Make it a DataFrame
-    predictions = pandas.DataFrame(
-        {
-            next(iter(targets))[1]: predictions,
-            'd3mIndex': dataset[next(iter(targets))[0]]['d3mIndex'],
-        }
-    ).set_index('d3mIndex')
+    predictions = predictions.set_index('d3mIndex')
 
     assert len(predictions.columns) == len(targets)
+
+    # FIXME: ConstructPredictions doesn't set the right column names
+    # https://gitlab.com/datadrivendiscovery/common-primitives/issues/25
     predictions.columns = [col_name for resID, col_name in targets]
-    predictions.to_csv(results_path)
+
+    # Store predictions
+    if results_path is not None:
+        logger.info("Storing predictions at %s", results_path)
+        predictions.sort_index().to_csv(results_path)
+    else:
+        logger.info("NOT storing predictions")
+
+    db.commit()
