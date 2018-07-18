@@ -507,7 +507,6 @@ class D3mTa2(object):
                            " ***")
             logger.warning("**************************************************"
                            "****")
-        self.default_problem = None
         self.storage = os.path.abspath(storage_root)
         if not os.path.exists(self.storage):
             os.makedirs(self.storage)
@@ -672,15 +671,12 @@ class D3mTa2(object):
         if ret != 0:
             raise subprocess.CalledProcessError(ret, 'd3m_ta2_nyu.test.test')
 
-    def run_server(self, problem_path, port=None):
+    def run_server(self, port=None):
         """Spin up the gRPC server to receive requests from a TA3 system.
 
         This is called by the ``ta2_serve`` executable. It is part of the
         TA2+TA3 evaluation.
         """
-        with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
-            problem = json.load(fp)
-        self.default_problem = problem
         if not port:
             port = 45042
         core_rpc = grpc_server.CoreService(self)
@@ -693,16 +689,7 @@ class D3mTa2(object):
         while True:
             time.sleep(60)
 
-    def new_session(self, problem_path=None):
-        if problem_path is None:
-            if self.default_problem is None:
-                logger.error("Creating a session but no default problem is "
-                             "set!")
-            problem = self.default_problem
-        else:
-            with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
-                problem = json.load(fp)
-
+    def new_session(self, problem):
         session = Session(self, self.logs_root, problem,
                           self.DBSession)
         self.sessions[session.id] = session
