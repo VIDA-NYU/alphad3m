@@ -576,7 +576,7 @@ class CoreService(pb_core_grpc.CoreServicer):
     def Hello(self, request, context):
         version = pb_core.DESCRIPTOR.GetOptions().Extensions[
             pb_core.protocol_version]
-        user_agent = "ta2_stub %s" % __version__
+        user_agent = "nyu_ta2 %s" % __version__
 
         logger.info("Responding Hello! with user_agent=[%s] "
                     "and protocol version=[%s])",
