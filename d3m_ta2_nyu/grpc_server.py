@@ -19,7 +19,8 @@ from uuid import UUID
 
 from . import __version__
 
-from d3m_ta2_nyu.common import SCORES_RANKING_ORDER, TASKS_FROM_SCHEMA
+from d3m_ta2_nyu.common import SCORES_RANKING_ORDER, TASKS_FROM_SCHEMA, \
+    SCORES_TO_SCHEMA, TASKS_TO_SCHEMA, TASKS_SUBTYPE_TO_SCHEMA
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
@@ -104,11 +105,14 @@ def error(context, code, format, *args):
 
 @log_service
 class CoreService(pb_core_grpc.CoreServicer):
-    grpc2metric = dict((k, v) for v, k in pb_problem.PerformanceMetric.items()
-                       if k != pb_problem.METRIC_UNDEFINED)
+    grpc2metric = {k: v for v, k in pb_problem.PerformanceMetric.items()
+                   if k != pb_problem.METRIC_UNDEFINED}
     metric2grpc = dict(pb_problem.PerformanceMetric.items())
-    grpc2task = dict((k, v) for v, k in pb_problem.TaskType.items()
-                     if k != pb_problem.TASK_TYPE_UNDEFINED)
+
+    grpc2task = {k: v for v, k in pb_problem.TaskType.items()
+                 if k != pb_problem.TASK_TYPE_UNDEFINED}
+    grpc2tasksubtype = {k: v for v, k in pb_problem.TaskSubtype.items()
+                        if k != pb_problem.TASK_TYPE_UNDEFINED}
 
     def __init__(self, app):
         self._app = app
@@ -124,10 +128,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         if not dataset.startswith('file://'):
             dataset = 'file://'+dataset
 
-        # TODO: Read problem from gRPC
-        import json
-        with open('/input/problem_TRAIN/problemDoc.json') as fp:
-            problem = json.load(fp)
+        problem = self._convert_problem(context, request.problem)
 
         search_id = self._app.new_session(problem)
 
@@ -574,3 +575,57 @@ class CoreService(pb_core_grpc.CoreServicer):
 
     def DescribeSolution(self, request, context):
         raise NotImplementedError
+
+    def _convert_problem(self, context, problem):
+        task = problem.problem.task_type
+        if task not in self.grpc2task:
+            raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
+                        "Got unknown task %r", task)
+        task = self.grpc2task[task]
+
+        metrics = problem.problem.performance_metrics
+        if any(m.metric not in self.grpc2metric for m in metrics):
+            logger.warning("Got metrics that we don't know about: %s",
+                           ", ".join(m.metric for m in metrics
+                                     if m.metric not in self.grpc2metric))
+
+        metrics = [{'metric': SCORES_TO_SCHEMA[self.grpc2metric[m.metric]]}
+                   for m in metrics
+                   if m.metric in self.grpc2metric]
+        if not metrics:
+            raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
+                        "Didn't get any metrics we know")
+
+        return {
+            'about': {
+                'problemID': problem.problem.id,
+                'problemVersion': problem.problem.version,
+                'problemDescription': problem.problem.description,
+                "taskType": TASKS_TO_SCHEMA.get(task, ''),
+                "taskSubType": TASKS_SUBTYPE_TO_SCHEMA.get(
+                    self.grpc2tasksubtype.get(problem.problem.task_type),
+                    ''),
+                "problemSchemaVersion": "3.0",
+                "problemVersion": "1.0",
+                "problemName": problem.problem.name,
+            },
+            'inputs': {
+                'performanceMetrics': metrics,
+                'data': [
+                    {
+                        'datasetID': i.dataset_id,
+                        'targets': [
+                            {
+                                'targetIndex': t.target_index,
+                                'resID': t.resource_id,
+                                'colIndex': t.column_index,
+                                'colName': t.column_name,
+
+                            }
+                            for t in i.targets
+                        ],
+                    }
+                    for i in problem.inputs
+                ],
+            },
+        }

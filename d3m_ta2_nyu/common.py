@@ -61,6 +61,8 @@ SCORES_FROM_SCHEMA = {
     #'precisionAtTopK': None,
 }
 
+SCORES_TO_SCHEMA = {v: k for k, v in SCORES_FROM_SCHEMA.items()}
+
 # 1 if lower values of that metric indicate a better classifier, -1 otherwise
 SCORES_RANKING_ORDER = dict(
     ACCURACY=-1,
@@ -92,3 +94,18 @@ TASKS_FROM_SCHEMA = {
     'timeSeriesForecasting': 'TIME_SERIES_FORECASTING',
     'collaborativeFiltering': 'COLLABORATIVE_FILTERING',
 }
+
+TASKS_TO_SCHEMA = {v: k for k, v in TASKS_FROM_SCHEMA.items()}
+
+TASKS_SUBTYPE_FROM_SCHEMA = {
+    'none': 'NONE',
+    'binary': 'BINARY',
+    'multiClass': 'MULTICLASS',
+    'multiLabel': 'MULTILABEL',
+    'univariate': 'UNIVARIATE',
+    'multivariate': 'MULTIVARIATE',
+    'overlaping': 'OVERLAPPING',
+    'nonoverlaping': 'NONOVERLAPPING',
+}
+
+TASKS_SUBTYPE_TO_SCHEMA = {v: k for k, v in TASKS_SUBTYPE_FROM_SCHEMA.items()}
