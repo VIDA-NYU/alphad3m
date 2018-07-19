@@ -12,7 +12,7 @@ import d3m_ta2_nyu.proto.value_pb2 as pb_value
 import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
 import d3m_ta2_nyu.proto.pipeline_pb2 as pb_pipeline
 
-from d3m_ta2_nyu.common import TASKS_FROM_SCHEMA, SCORES_FROM_SCHEMA
+from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA
 
 
 class LoggingStub(object):
@@ -70,7 +70,7 @@ def main():
     TASK_SUBTYPES = {n: v for n, v in pb_problem.TaskSubtype.items()}
     METRICS = {n: v for n, v in pb_problem.PerformanceMetric.items()}
 
-
+    # Do a search
     search = core.SearchSolutions(pb_core.SearchSolutionsRequest(
         user_agent='ta3_stub',
         version=version,
@@ -145,11 +145,49 @@ def main():
         )],
     ))
 
-    solutions = core.GetSearchSolutionsResults(pb_core.GetSearchSolutionsResultsRequest(
+    results = core.GetSearchSolutionsResults(pb_core.GetSearchSolutionsResultsRequest(
         search_id=search.search_id
     ))
+    solutions = {}
+    for result in results:
+        if result.solution_id:
+            solutions[result.solution_id] = (
+                result.internal_score,
+                result.scores,
+            )
+
+    # Score all found solutions
     for solution in solutions:
-        pass
+        response = core.ScoreSolution(pb_core.ScoreSolutionRequest(
+            solution_id=solution,
+            inputs=[pb_value.Value(
+                dataset_uri='file://%s' % config['dataset_schema'],
+            )],
+            performance_metrics=[
+                pb_problem.ProblemPerformanceMetric(
+                    metric=METRICS[SCORES_FROM_SCHEMA[e['metric']].upper()],
+                )
+                for e in problem['inputs']['performanceMetrics']
+            ],
+            users=[pb_core.SolutionRunUser(
+                id='stub',
+                choosen=False,
+                reason="test run",
+            )],
+            configuration=pb_core.ScoringConfiguration(
+                method=pb_core.K_FOLD,
+                folds=4,
+                train_test_ratio=0.75,
+                shuffle=True,
+            ),
+        ))
+        results = core.GetScoreSolutionResults(
+            pb_core.GetScoreSolutionResultsRequest(
+                request_id=response.request_id,
+            )
+        )
+        for _ in results:
+            pass
 
 
 if __name__ == '__main__':
