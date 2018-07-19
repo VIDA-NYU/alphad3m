@@ -34,7 +34,7 @@ class TestSession(unittest.TestCase):
 
         db = cls._ta2.DBSession()
         cls._pipelines = []
-        for i in range(4):
+        for i in range(5):
             pipeline = database.Pipeline(origin="unittest %d" % i,
                                          dataset='file:///data/test.csv')
             db.add(pipeline)
@@ -50,6 +50,15 @@ class TestSession(unittest.TestCase):
                                                from_output_name='output',
                                                to_input_name='input'))
             cls._pipelines.append(pipeline)
+        db.add(database.CrossValidation(
+            pipeline_id=cls._pipelines[4].id,
+            scores=[
+                database.CrossValidationScore(metric='F1_MACRO',
+                                              value=55.0),
+                database.CrossValidationScore(metric='EXECUTION_TIME',
+                                              value=0.2),
+            ],
+        ))
         db.commit()
 
     @classmethod
@@ -145,16 +154,7 @@ class TestSession(unittest.TestCase):
         session.pipeline_tuning_done(self._pipelines[0].id)
         ta2._run_queue.put.assert_not_called()
         session.pipeline_tuning_done(self._pipelines[1].id)
-        ta2._run_queue.put.assert_called()
-
-        # Check training jobs were submitted
-        self.assertTrue(all(type(get_job(c)) is TrainJob
-                            for c in ta2._run_queue.put.mock_calls))
-        self.assertEqual(
-            [get_job(c).pipeline_id for c in ta2._run_queue.put.mock_calls],
-            [self._pipelines[0].id, self._pipelines[1].id]
-        )
-        ta2._run_queue.put.reset_mock()
+        ta2._run_queue.put.assert_not_called()
 
         # Finish training
         run1 = database.Run(pipeline_id=self._pipelines[1].id,
@@ -163,8 +163,6 @@ class TestSession(unittest.TestCase):
                             type=database.RunType.TRAIN)
         db.add(run1)
         db.commit()
-        session.pipeline_training_done(self._pipelines[0].id)
-        session.pipeline_training_done(self._pipelines[1].id)
         ta2._run_queue.put.assert_not_called()
 
         # Get top pipelines
