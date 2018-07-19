@@ -35,7 +35,8 @@ from d3m_ta2_nyu.workflow import database
 MAX_RUNNING_PROCESSES = 1
 
 TUNE_PIPELINES_COUNT = 3
-TUNE_PIPELINES_COUNT_DEBUG = 0
+if 'TA2_DEBUG_BE_FAST' in os.environ:
+    TUNE_PIPELINES_COUNT = 0
 
 TRAIN_PIPELINES_COUNT = 10
 TRAIN_PIPELINES_COUNT_DEBUG = 5
@@ -214,8 +215,6 @@ class Session(Observable):
             tune = []
             try:
                 tune_nb = TUNE_PIPELINES_COUNT
-                if 'TA2_DEBUG_BE_FAST' in os.environ:
-                    tune_nb = TUNE_PIPELINES_COUNT_DEBUG
                 if tune_nb:
                     top_pipelines = self.get_top_pipelines(
                         db, self.metrics[0],
@@ -530,9 +529,6 @@ class D3mTa2(Observable):
             logger.error("Unknown task %r", task)
             sys.exit(1)
         task = TASKS_FROM_SCHEMA[task]
-        if task not in ('CLASSIFICATION', 'REGRESSION'):  # TODO
-            logger.error("Unsupported task %s requested", task)
-            sys.exit(148)
 
         # Create pipelines
         session = Session(self, self.logs_root, problem, self.DBSession)

@@ -28,7 +28,6 @@ class Cache(object):
                                     output_name=key, value=value))
 
     def get(self, key):
-        # TODO: record Input?
         try:
             if self.from_run_id is not None:
                 # Get Output from the given run with the correct module and key
@@ -103,7 +102,7 @@ def execute_test(db, pipeline, dataset, crossval=False,
                  from_training_run_id=None):
     pipeline = get_pipeline(db, pipeline)
 
-    module_inputs = {}  # TODO: Get module inputs from database
+    module_inputs = {}
     global_inputs = {'dataset': dataset,
                      'run_type': 'test'}
 
