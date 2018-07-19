@@ -28,7 +28,7 @@ from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
-from d3m_ta2_nyu.utils import Observable
+from d3m_ta2_nyu.utils import Observable, ProgressStatus
 from d3m_ta2_nyu.workflow import database
 
 
@@ -153,6 +153,17 @@ class Session(Observable):
                 self.pipelines.add(new_pipeline_id)
                 self.tuned_pipelines.add(new_pipeline_id)
             self.check_status()
+
+    @property
+    def progress(self):
+        return ProgressStatus(
+            current=len(self.pipelines) - len(self.pipelines_scoring),
+            total=(
+                len(self.pipelines)
+                + TUNE_PIPELINES_COUNT
+                - len(self.tuned_pipelines)/2
+            ),
+        )
 
     def get_top_pipelines(self, db, metric, limit=None, only_trained=True):
         pipeline = aliased(database.Pipeline)

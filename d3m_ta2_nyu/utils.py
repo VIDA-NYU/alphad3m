@@ -49,3 +49,20 @@ class Observable(object):
                     observer(event, **kwargs)
                 except Exception:
                     logging.exception("Error in observer")
+
+
+class ProgressStatus(object):
+    def __init__(self, current, total=1.0):
+        self.current = max(0.0, min(current, total))
+        if total <= 0.0:
+            self.total = 1.0
+        else:
+            self.total = total
+
+    @property
+    def ratio(self):
+        return self.current / self.total
+
+    @property
+    def percentage(self):
+        return '%d%%' % int(self.current / self.total)
