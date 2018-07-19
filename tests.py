@@ -8,7 +8,7 @@ import unittest
 from unittest import mock
 
 from d3m_ta2_nyu.workflow import database
-from d3m_ta2_nyu.ta2 import D3mTa2, Session, TuneHyperparamsJob, TrainJob
+from d3m_ta2_nyu.ta2 import D3mTa2, Session, TuneHyperparamsJob
 
 
 class TestSession(unittest.TestCase):
