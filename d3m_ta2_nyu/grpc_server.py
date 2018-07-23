@@ -121,6 +121,11 @@ class CoreService(pb_core_grpc.CoreServicer):
         if len(request.inputs) > 1:
             raise error(context, grpc.StatusCode.UNIMPLEMENTED,
                         "Search with more than 1 input is not supported")
+        expected_version = pb_core.DESCRIPTOR.GetOptions().Extensions[
+            pb_core.protocol_version]
+        if request.version != expected_version:
+            logger.error("TA3 is using a different protocol version: %r "
+                         "(us: %r)", request.version, expected_version)
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
             raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
