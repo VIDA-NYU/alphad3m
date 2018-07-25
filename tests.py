@@ -46,15 +46,15 @@ class TestSession(unittest.TestCase):
         cls._problem = {
             'about': {'problemID': 'unittest_problem'},
             'inputs': {
-            #    'inputs': {
-            #        'data': [
-            #            {
-            #                'targets': [
-            #                    {'resID': '0', 'colName': 'targets'},
-            #                ],
-            #            },
-            #        ],
-            #    },
+                # 'inputs': {
+                #     'data': [
+                #         {
+                #             'targets': [
+                #                 {'resID': '0', 'colName': 'targets'},
+                #             ],
+                #         },
+                #     ],
+                # },
                 'performanceMetrics': [{'metric': 'f1Macro'}],
             }
         }
@@ -208,8 +208,6 @@ class TestPipelineConversion(unittest.TestCase):
         cls._ta2 = D3mTa2(storage_root=cls._tmp, logs_root=cls._tmp)
 
     def test_convert_classification_template(self):
-        from d3m_ta2_nyu.sql_uuid import UuidMixin
-
         def seq_uuid():
             seq_uuid.count += 1
             return uuid.UUID(int=seq_uuid.count)
