@@ -64,7 +64,7 @@ class ComputeMetafeatures():
         def make_primitive_module(name):
             if name[0] == '.':
                 name = 'd3m.primitives' + name
-            return make_module('d3m', '2018.6.5', name)
+            return make_module('d3m', '2018.7.10', name)
 
         def connect(from_module, to_module,
                     from_output='produce', to_input='inputs'):
