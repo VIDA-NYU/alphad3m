@@ -12,22 +12,13 @@ def get_class(name):
     return getattr(importlib.import_module(package), classname)
 
 
-def _dataset(*, global_inputs, module_inputs, **kwargs):
+def load_dataset(dataset, targets, attributes):
     from d3m.container import Dataset
     from d3m.metadata.base import ALL_ELEMENTS
 
     TYPE_TARGET = 'https://metadata.datadrivendiscovery.org/types/Target'
     TYPE_T_TARGET = 'https://metadata.datadrivendiscovery.org/types/TrueTarget'
     TYPE_ATTRIBUTE = 'https://metadata.datadrivendiscovery.org/types/Attribute'
-
-    # Get dataset from global inputs
-    dataset = global_inputs['dataset']
-
-    # Get list of targets and attributes from global inputs
-    [targets] = module_inputs['targets']
-    targets = pickle.loads(targets)
-    [attributes] = module_inputs['features']
-    attributes = pickle.loads(attributes)
 
     # Update dataset metadata from those
     dataset = Dataset(dataset)
@@ -67,7 +58,20 @@ def _dataset(*, global_inputs, module_inputs, **kwargs):
         logger.warning("Specified targets/attributes missing from dataset: %r",
                        not_found)
 
-    return {'dataset': dataset}
+    return dataset
+
+
+def _dataset(*, global_inputs, module_inputs, **kwargs):
+    # Get dataset from global inputs
+    dataset = global_inputs['dataset']
+
+    # Get list of targets and attributes from global inputs
+    [targets] = module_inputs['targets']
+    targets = pickle.loads(targets)
+    [attributes] = module_inputs['features']
+    attributes = pickle.loads(attributes)
+
+    return {'dataset': load_dataset(dataset, targets, attributes)}
 
 
 def _primitive_arguments(primitive, method):
