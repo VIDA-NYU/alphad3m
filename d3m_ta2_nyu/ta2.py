@@ -214,17 +214,14 @@ class Session(Observable):
             logger.info("Session %s: scoring done", self.id)
 
             tune = []
-            try:
-                tune_nb = TUNE_PIPELINES_COUNT
-                if tune_nb:
-                    top_pipelines = self.get_top_pipelines(
-                        db, self.metrics[0],
-                        tune_nb, only_trained=False)
-                    for pipeline, _ in top_pipelines:
-                        if pipeline.id not in self.tuned_pipelines:
-                            tune.append(pipeline.id)
-            finally:
-                db.close()
+            tune_nb = TUNE_PIPELINES_COUNT
+            if tune_nb:
+                top_pipelines = self.get_top_pipelines(
+                    db, self.metrics[0],
+                    tune_nb, only_trained=False)
+                for pipeline, _ in top_pipelines:
+                    if pipeline.id not in self.tuned_pipelines:
+                        tune.append(pipeline.id)
 
             if tune:
                 # Found some pipelines to tune, do that
@@ -240,8 +237,20 @@ class Session(Observable):
 
             # Session is done (but new pipelines might be added later)
             self.working = False
-
             self.notify('done_searching')
+
+            logger.warning("Search done")
+            if self.metrics:
+                metric = self.metrics[0]
+                top_pipelines = self.get_top_pipelines(db, metric,
+                                                       only_trained=False)
+                logger.warning("Found %d pipelines", len(top_pipelines))
+                for i, (pipeline, score) in enumerate(top_pipelines):
+                    logger.info("    %d) %s %s=%s origin=%s",
+                                i + 1, pipeline.id, metric, score,
+                                pipeline.origin)
+
+            db.close()
 
     def write_log(self, pipeline_id):
         if self._logs_dir is None:
