@@ -30,6 +30,7 @@ from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 from d3m_ta2_nyu.utils import Observable, ProgressStatus
 from d3m_ta2_nyu.workflow import database
+from d3m_ta2_nyu.workflow.convert import to_d3m_json
 
 
 MAX_RUNNING_PROCESSES = 1
@@ -287,16 +288,8 @@ class Session(Observable):
                            pipeline_id, metric, score, pipeline.origin)
 
             filename = os.path.join(self._logs_dir, '%s.json' % pipeline_id)
-            obj = {
-                'problem_id': self.problem_id,
-                'pipeline_rank': normalize_score(metric, score, 'desc'),
-                'name': str(pipeline.id),
-                'primitives': [
-                    module.name
-                    for module in pipeline.modules
-                    if module.package == 'd3m'
-                ],
-            }
+            obj = to_d3m_json(pipeline)
+            obj['pipeline_rank'] = normalize_score(metric, score, 'desc')
             with open(filename, 'w') as fp:
                 json.dump(obj, fp)
         finally:
