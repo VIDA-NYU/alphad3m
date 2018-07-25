@@ -24,7 +24,7 @@ import uuid
 
 from d3m_ta2_nyu import __version__
 from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
-    TASKS_FROM_SCHEMA
+    TASKS_FROM_SCHEMA, normalize_score
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
@@ -144,6 +144,7 @@ class Session(Observable):
     def pipeline_scoring_done(self, pipeline_id):
         with self.lock:
             self.pipelines_scoring.discard(pipeline_id)
+            self.write_log(pipeline_id)
             self.check_status()
 
     def pipeline_tuning_done(self, old_pipeline_id, new_pipeline_id=None):
@@ -240,38 +241,55 @@ class Session(Observable):
             # Session is done (but new pipelines might be added later)
             self.working = False
 
-            self.write_logs()
             self.notify('done_searching')
 
-    def write_logs(self):
-        if not self.metrics:
-            logger.error("Can't write logs for session, no metric is set!")
+    def write_log(self, pipeline_id):
+        if self._logs_dir is None:
+            logger.info("Not writing log file")
             return
+
         metric = self.metrics[0]
 
-        written = 0
         db = self.DBSession()
         try:
-            top_pipelines = self.get_top_pipelines(db, metric)
-            logger.warning("Writing logs for %d pipelines", len(top_pipelines))
-            for i, (pipeline, score) in enumerate(top_pipelines):
-                logger.info("    %d) %s %s=%s origin=%s",
-                            i + 1, pipeline.id, metric, score, pipeline.origin)
-                filename = os.path.join(self._logs_dir,
-                                        str(pipeline.id) + '.json')
-                obj = {
-                    'problem_id': self.problem_id,
-                    'pipeline_rank': i + 1,
-                    'name': str(pipeline.id),
-                    'primitives': [
-                        module.name
-                        for module in pipeline.modules
-                        if module.package in ('primitives', 'sklearn-builtin')
-                    ],
-                }
-                with open(filename, 'w') as fp:
-                    json.dump(obj, fp)
-                written += 1
+            # Get pipeline
+            pipeline = db.query(database.Pipeline).get(pipeline_id)
+
+            # Find most recent cross-validation
+            crossval_id = (
+                select([database.CrossValidation.id])
+                .where(database.CrossValidation.pipeline_id == pipeline_id)
+                .order_by(database.CrossValidation.date.desc())
+            ).as_scalar()
+            # Get score from that cross-validation
+            score = (
+                db.query(database.CrossValidationScore)
+                .filter(database.CrossValidationScore.cross_validation_id ==
+                        crossval_id)
+                .filter(database.CrossValidationScore.metric == metric)
+            ).one_or_none()
+            if score is None:
+                logger.error("Can't write log for pipeline %s, not scored for "
+                             "%s", pipeline_id, metric)
+                return
+            score = score.value
+
+            logger.warning("Writing log for pipeline %s %s=%s origin=%s",
+                           pipeline_id, metric, score, pipeline.origin)
+
+            filename = os.path.join(self._logs_dir, '%s.json' % pipeline_id)
+            obj = {
+                'problem_id': self.problem_id,
+                'pipeline_rank': normalize_score(metric, score, 'desc'),
+                'name': str(pipeline.id),
+                'primitives': [
+                    module.name
+                    for module in pipeline.modules
+                    if module.package == 'd3m'
+                ],
+            }
+            with open(filename, 'w') as fp:
+                json.dump(obj, fp)
         finally:
             db.close()
 
