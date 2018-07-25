@@ -6,9 +6,11 @@ import shutil
 import tempfile
 import unittest
 from unittest import mock
+import uuid
 
-from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.ta2 import D3mTa2, Session, TuneHyperparamsJob
+from d3m_ta2_nyu.workflow import database
+from d3m_ta2_nyu.workflow import convert
 
 
 class TestSession(unittest.TestCase):
@@ -39,10 +41,10 @@ class TestSession(unittest.TestCase):
                                          dataset='file:///data/test.csv')
             db.add(pipeline)
             mod1 = database.PipelineModule(pipeline=pipeline, name='first',
-                                           package='unittest', version='0.0')
+                                           package='d3m', version='0.0')
             db.add(mod1)
             mod2 = database.PipelineModule(pipeline=pipeline, name='second',
-                                           package='unittest', version='0.0')
+                                           package='d3m', version='0.0')
             db.add(mod2)
             db.add(database.PipelineConnection(pipeline=pipeline,
                                                from_module=mod1,
@@ -168,6 +170,193 @@ class TestSession(unittest.TestCase):
         # Get top pipelines
         self.assertEqual(session.get_top_pipelines(db, 'F1_MACRO'),
                          [(self._pipelines[1], 17.0)])
+
+
+class TestPipelineConversion(unittest.TestCase):
+    maxDiff = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.mkdtemp(prefix='d3m_unittest_')
+        cls._ta2 = D3mTa2(storage_root=cls._tmp, logs_root=cls._tmp)
+
+    def test_convert_classification_template(self):
+        from d3m_ta2_nyu.sql_uuid import UuidMixin
+
+        def seq_uuid():
+            seq_uuid.count += 1
+            return uuid.UUID(int=seq_uuid.count)
+
+        seq_uuid.count = 0
+
+        # Build a pipeline using the first template
+        func, imputer, classifier = self._ta2.TEMPLATES['CLASSIFICATION'][0]
+        with mock.patch('uuid.uuid4', seq_uuid):
+            pipeline_id = func(
+                self._ta2, imputer, classifier,
+                'file:///nonexistent/datasetDoc.json',
+                {('0', 'target')}, {('0', 'attr1'), ('0', 'attr2')})
+
+        # Convert it
+        db = self._ta2.DBSession()
+        pipeline = db.query(database.Pipeline).get(pipeline_id)
+        pipeline_json = convert.to_d3m_json(pipeline)
+
+        created = pipeline_json['created']
+        self.assertRegex(created,
+                         '20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]T'
+                         '[0-9][0-9]:[0-9][0-9]:[0-9][0-9]Z')
+
+        # Check output
+        self.assertEqual(
+            pipeline_json,
+            {
+                'context': 'TESTING',
+                'created': created,
+                'id': '00000000-0000-0000-0000-000000000001',
+                'inputs': [{'name': 'input dataset'}],
+                'outputs': [{'data': 'steps.8.produce', 'name': 'predictions'}],
+                'schema': 'https://metadata.datadrivendiscovery.org/schemas/'
+                          'v0/pipeline.json',
+                'steps': [
+                    {
+                        'type': 'PRIMITIVE',
+                        'primitive': {
+                            'name': 'd3m.primitives.datasets.'
+                                    'DatasetToDataFrame',
+                        },
+                        'arguments': {
+                            'inputs': {
+                                'data': 'inputs.0.dataset',
+                                'type': 'CONTAINER'},
+                        },
+                        'outputs': [{'id': 'produce'}]
+                    },
+                    {
+                        'type': 'PRIMITIVE',
+                        'primitive': {
+                            'name': 'd3m.primitives.data.ColumnParser',
+                        },
+                        'arguments': {
+                            'inputs': {
+                                'data': 'steps.0.produce',
+                                'type': 'CONTAINER',
+                            },
+                        },
+                        'outputs': [{'id': 'produce'}],
+                    },
+                    {
+                        'type': 'PRIMITIVE',
+                        'primitive': {
+                            'name': 'd3m.primitives.data.'
+                                          'ExtractColumnsBySemanticTypes',
+                        },
+                        'arguments': {
+                            'inputs': {
+                                'data': 'steps.1.produce',
+                                'type': 'CONTAINER',
+                            },
+                        },
+                        'hyperparams': {
+                            'semantic_types': ['https://metadata.datadrivendiscovery'
+                                               '.org/types/Attribute'],
+                        },
+                        'outputs': [{'id': 'produce'}],
+                    },
+                    {
+                        'type': 'PRIMITIVE',
+                        'primitive': {
+                            'name': 'd3m.primitives.data.CastToType',
+                        },
+                        'arguments': {
+                            'inputs': {
+                                'data': 'steps.2.produce',
+                                'type': 'CONTAINER',
+                            },
+                        },
+                        'outputs': [{'id': 'produce'}],
+                    },
+                    {
+                        'type': 'PRIMITIVE',
+                        'primitive': {
+                            'name': imputer,
+                        },
+                        'arguments': {
+                            'inputs': {
+                                'data': 'steps.3.produce',
+                                'type': 'CONTAINER',
+                            },
+                        },
+                        'outputs': [{'id': 'produce'}],
+                    },
+                    {
+                        'type': 'PRIMITIVE',
+                        'primitive': {
+                            'name': 'd3m.primitives.data.'
+                                    'ExtractColumnsBySemanticTypes',
+                        },
+                        'arguments': {
+                            'inputs': {
+                                'data': 'steps.1.produce',
+                                'type': 'CONTAINER',
+                            },
+                        },
+                        'hyperparams': {
+                            'semantic_types': ['https://metadata.datadrivendiscovery'
+                                               '.org/types/Target'],
+                        },
+                        'outputs': [{'id': 'produce'}],
+                    },
+                    {
+                        'type': 'PRIMITIVE',
+                        'primitive': {
+                            'name': 'd3m.primitives.data.CastToType',
+                        },
+                        'arguments': {
+                            'inputs': {
+                                'data': 'steps.5.produce',
+                                'type': 'CONTAINER',
+                            },
+                        },
+                        'outputs': [{'id': 'produce'}],
+                    },
+                    {
+                        'type': 'PRIMITIVE',
+                        'primitive': {
+                            'name': classifier,
+                        },
+                        'arguments': {
+                            'inputs': {
+                                'data': 'steps.4.produce',
+                                'type': 'CONTAINER',
+                            },
+                            'outputs': {
+                                'data': 'steps.6.produce',
+                                'type': 'CONTAINER',
+                            }
+                        },
+                        'outputs': [{'id': 'produce'}],
+                    },
+                    {
+                        'type': 'PRIMITIVE',
+                        'primitive': {
+                            'name': 'd3m.primitives.data.ConstructPredictions',
+                        },
+                        'arguments': {
+                            'inputs': {
+                                'data': 'steps.7.produce',
+                                'type': 'CONTAINER',
+                            },
+                            'reference': {
+                                'data': 'steps.1.produce',
+                                'type': 'CONTAINER',
+                            },
+                        },
+                        'outputs': [{'id': 'produce'}],
+                    },
+                ],
+            },
+        )
 
 
 if __name__ == '__main__':
