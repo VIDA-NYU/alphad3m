@@ -2,6 +2,7 @@
     "temp_storage_root": "/output/supporting_files",
     "pipeline_logs_root": "/output/pipelines",
     "executables_root": "/output/executables",
+    "shared_storage_root": "/output",
     "dataset_schema": "/input/dataset_TRAIN/datasetDoc.json",
     "problem_schema": "/input/problem_TRAIN/problemDoc.json",
     "training_data_root": "/input/dataset_TRAIN",

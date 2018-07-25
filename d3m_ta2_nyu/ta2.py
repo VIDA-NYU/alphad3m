@@ -341,7 +341,7 @@ class ScoreJob(Job):
                     "(session %s has %d pipelines left to score)",
                     self.pipeline_id, self.session.id,
                     len(self.session.pipelines_scoring))
-        if self.store_results:
+        if self.store_results and self.predictions_root is not None:
             self.results = os.path.join(self.predictions_root,
                                         '%s.csv' % self.pipeline_id)
         self.msg = Receiver()
@@ -385,8 +385,7 @@ class TrainJob(Job):
         self.ta2 = ta2
         self.pipeline_id = pipeline_id
 
-    def start(self, db_filename, predictions_root, **kwargs):
-        self.predictions_root = predictions_root
+    def start(self, db_filename, **kwargs):
         logger.info("Training pipeline for %s", self.pipeline_id)
         self.msg = Receiver()
         self.proc = run_process('d3m_ta2_nyu.train.train', 'train', self.msg,
@@ -432,7 +431,7 @@ class TuneHyperparamsJob(Job):
                     "(session %s has %d pipelines left to tune)",
                     self.pipeline_id, self.session.id,
                     len(self.session.pipelines_tuning))
-        if self.store_results:
+        if self.store_results and self.predictions_root is not None:
             self.results = os.path.join(self.predictions_root,
                                         '%s.csv' % self.pipeline_id)
         self.msg = Receiver()
@@ -506,14 +505,15 @@ class D3mTa2(Observable):
             os.makedirs(self.storage)
         if shared_root is not None:
             self.shared_root = shared_root
+            if not os.path.exists(self.shared_root):
+                os.makedirs(self.shared_root)
+            self.predictions_root = os.path.join(self.shared_root,
+                                                 'tmp_predictions')
+            if not os.path.exists(self.predictions_root):
+                os.mkdir(self.predictions_root)
         else:
-            self.shared_root = self.storage
-        if not os.path.exists(self.shared_root):
-            os.makedirs(self.shared_root)
-        self.predictions_root = os.path.join(self.shared_root,
-                                             'tmp_predictions')
-        if not os.path.exists(self.predictions_root):
-            os.mkdir(self.predictions_root)
+            self.shared_root = None
+            self.predictions_root = None
         if logs_root is not None:
             self.logs_root = os.path.abspath(logs_root)
         else:
@@ -609,7 +609,7 @@ class D3mTa2(Observable):
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             session.add_scoring_pipeline(pipeline_id)
             self._run_queue.put(ScoreJob(session, pipeline_id,
-                                         store_results=False))
+                                         store_results=store_results))
             session.notify('new_pipeline', pipeline_id=pipeline_id)
             while True:
                 event, kwargs = queue.get(True)
