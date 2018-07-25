@@ -114,6 +114,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         self._app = app
 
     def SearchSolutions(self, request, context):
+        """Create a `Session` and start generating & scoring pipelines.
+        """
         if len(request.inputs) > 1:
             raise error(context, grpc.StatusCode.UNIMPLEMENTED,
                         "Search with more than 1 input is not supported")
@@ -146,6 +148,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         )
 
     def GetSearchSolutionsResults(self, request, context):
+        """Get the created pipelines and scores.
+        """
         session_id = UUID(hex=request.search_id)
         if session_id not in self._app.sessions:
             raise error(context, grpc.StatusCode.NOT_FOUND,
@@ -213,6 +217,9 @@ class CoreService(pb_core_grpc.CoreServicer):
             for pipeline_id in session.pipelines:
                 yield solution(pipeline_id)
 
+            if not session.working:
+                return
+
             # Send updates by listening to notifications on session
             while True:
                 if not context.is_active():
@@ -244,6 +251,8 @@ class CoreService(pb_core_grpc.CoreServicer):
                                    status="Solution scoring failed")
 
     def EndSearchSolutions(self, request, context):
+        """Stop the search and delete the `Session`.
+        """
         session_id = UUID(hex=request.search_id)
         if session_id in self._app.sessions:
             self._app.finish_session(session_id)
@@ -251,6 +260,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         return pb_core.EndSearchSolutionsResponse()
 
     def StopSearchSolutions(self, request, context):
+        """Stop the search without deleting the `Session`.
+        """
         session_id = UUID(hex=request.search_id)
         if session_id in self._app.sessions:
             self._app.stop_session(session_id)
@@ -258,6 +269,10 @@ class CoreService(pb_core_grpc.CoreServicer):
         return pb_core.StopSearchSolutionsResponse()
 
     def ScoreSolution(self, request, context):
+        """Request scores for a pipeline.
+
+        If the scores exist, return them immediately.
+        """
         pipeline_id = UUID(hex=request.solution_id)
         session_id = None
         for session_key in self._app.sessions:
@@ -289,10 +304,13 @@ class CoreService(pb_core_grpc.CoreServicer):
             self._app.test_pipeline(session_id, pipeline_id, dataset)
 
         return pb_core.ScoreSolutionResponse(
+            # TODO: Figure out an ID for this
             request_id=request.solution_id
         )
 
     def GetScoreSolutionResults(self, request, context):
+        """Wait for the requested scores to be available.
+        """
         req_pipeline_id = UUID(hex=request.request_id)
         session_id = None
         for session_key in self._app.sessions:
@@ -307,7 +325,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         queue = Queue()
         session = self._app.sessions[session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            # TODO: Find existing result
+            # TODO: Find existing result, and possibly return
 
             while True:
                 if not context.is_active():
@@ -358,6 +376,10 @@ class CoreService(pb_core_grpc.CoreServicer):
                     break
 
     def FitSolution(self, request, context):
+        """Train a pipeline on a dataset.
+
+        This will make it available for testing and exporting.
+        """
         pipeline_id = UUID(hex=request.solution_id)
         session_id = None
         for session_key in self._app.sessions:
@@ -384,10 +406,13 @@ class CoreService(pb_core_grpc.CoreServicer):
             self._app.fit_solution(session_id, pipeline_id)
 
         return pb_core.FitSolutionResponse(
+            # TODO: Figure out an ID for this
             request_id=request.solution_id
         )
 
     def GetFitSolutionResults(self, request, context):
+        """Wait for training to be done.
+        """
         req_pipeline_id = UUID(hex=request.request_id)
         session_id = None
         for session_key in self._app.sessions:
@@ -402,7 +427,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         queue = Queue()
         session = self._app.sessions[session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            # TODO: Find existing result
+            # TODO: Find existing result, and possibly return
 
             while True:
                 if not context.is_active():
@@ -445,6 +470,8 @@ class CoreService(pb_core_grpc.CoreServicer):
                     break
 
     def ProduceSolution(self, request, context):
+        """Run testing from a trained pipeline.
+        """
         pipeline_id = UUID(hex=request.fitted_solution_id)
         session_id = None
         for session_key in self._app.sessions:
@@ -471,10 +498,13 @@ class CoreService(pb_core_grpc.CoreServicer):
             self._app.test_pipeline(session_id, pipeline_id, dataset)
 
         return pb_core.ProduceSolutionResponse(
+            # TODO: Figure out an ID for this
             request_id=request.fitted_solution_id
         )
 
     def GetProduceSolutionResults(self, request, context):
+        """Wait for the requested test run to be done.
+        """
         req_pipeline_id = UUID(hex=request.request_id)
         session_id = None
         for session_key in self._app.sessions:
@@ -489,7 +519,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         queue = Queue()
         session = self._app.sessions[session_id]
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            # TODO: Find existing result
+            # TODO: Find existing result, and possibly return
 
             while True:
                 if not context.is_active():
@@ -540,6 +570,8 @@ class CoreService(pb_core_grpc.CoreServicer):
                     break
 
     def SolutionExport(self, request, context):
+        """Export a trained pipeline as an executable.
+        """
         pipeline_id = UUID(hex=request.fitted_solution_id)
         session_id = None
         for session_key in self._app.sessions:
@@ -578,6 +610,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         raise NotImplementedError
 
     def _convert_problem(self, context, problem):
+        """Convert the problem from the gRPC message to the JSON schema.
+        """
         task = problem.problem.task_type
         if task not in self.grpc2task:
             raise error(context, grpc.StatusCode.INVALID_ARGUMENT,

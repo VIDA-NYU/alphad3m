@@ -697,12 +697,12 @@ class D3mTa2(Observable):
 
     def finish_session(self, session_id):
         session = self.sessions.pop(session_id)
+        # TODO: stop alphad3m
         session.notify('finish_session')
 
     def stop_session(self, session_id):
-        # TODO Stop the search (or not)
         session = self.sessions[session_id]
-        session.notify('stop_session')
+        # TODO: stop alphad3m, set working=False
 
     def get_workflow(self, session_id, pipeline_id):
         if pipeline_id not in self.sessions[session_id].pipelines:
