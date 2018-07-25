@@ -109,3 +109,14 @@ TASKS_SUBTYPE_FROM_SCHEMA = {
 }
 
 TASKS_SUBTYPE_TO_SCHEMA = {v: k for k, v in TASKS_SUBTYPE_FROM_SCHEMA.items()}
+
+
+def normalize_score(metric, score, order):
+    """Normalize the score to a value between 0 and 1.
+
+    :param order: Either ``"asc"`` (higher the better) or ``"desc"`` (lower the
+        better).
+    """
+    order = dict(asc=1.0, desc=-1.0)[order]
+    order *= SCORES_RANKING_ORDER[metric]
+    return 1.0/(1.0 + math.exp(order * score))

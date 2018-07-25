@@ -19,8 +19,8 @@ from uuid import UUID
 
 from . import __version__
 
-from d3m_ta2_nyu.common import SCORES_RANKING_ORDER, TASKS_FROM_SCHEMA, \
-    SCORES_TO_SCHEMA, TASKS_TO_SCHEMA, TASKS_SUBTYPE_TO_SCHEMA
+from d3m_ta2_nyu.common import TASKS_FROM_SCHEMA, \
+    SCORES_TO_SCHEMA, TASKS_TO_SCHEMA, TASKS_SUBTYPE_TO_SCHEMA, normalize_score
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
@@ -40,10 +40,6 @@ def to_timestamp(dt):
         dt = datetime.datetime.utcnow()
     return Timestamp(seconds=calendar.timegm(dt.timetuple()),
                      nanos=dt.microsecond * 1000)
-
-
-def sigmoid(x):
-    return 1.0/(1.0 + math.exp(-x))
 
 
 def _printmsg_out(msg, name):
@@ -179,9 +175,9 @@ class CoreService(pb_core_grpc.CoreServicer):
                 )
             else:
                 if session.metrics and session.metrics[0] in scores:
-                    internal_score = scores[session.metrics[0]]
-                    order = SCORES_RANKING_ORDER[session.metrics[0]]
-                    internal_score = sigmoid(-order * internal_score)
+                    metric = session.metrics[0]
+                    internal_score = normalize_score(metric, scores[metric],
+                                                     'asc')
                 else:
                     internal_score = float('nan')
                 scores = [
