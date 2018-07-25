@@ -1,7 +1,13 @@
 """Convert to/from the JSON representation.
 """
 
+import importlib
 import pickle
+
+
+def get_class(name):
+    package, classname = name.rsplit('.', 1)
+    return getattr(importlib.import_module(package), classname)
 
 
 def _add_step(steps, modules, params, module_to_step, mod):
@@ -23,12 +29,17 @@ def _add_step(steps, modules, params, module_to_step, mod):
                          modules[conn.from_module_id])
         inputs[conn.to_input_name] = '%s.%s' % (step, conn.from_output_name)
 
+    klass = get_class(mod.name)
+    primitive_desc = {
+        key: value
+        for key, value in klass.metadata.query().items()
+        if key in {'id', 'version', 'python_path', 'name', 'digest'}
+    }
+
     # Create step description
     step = {
         'type': 'PRIMITIVE',
-        'primitive': {
-            'name': mod.name,
-        },
+        'primitive': primitive_desc,
         'arguments': {
             name: {
                 'type': 'CONTAINER',

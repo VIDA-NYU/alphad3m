@@ -2,6 +2,7 @@
 
 Those are supposed to be run without data or primitives available.
 """
+
 import shutil
 import tempfile
 import unittest
@@ -11,6 +12,30 @@ import uuid
 from d3m_ta2_nyu.ta2 import D3mTa2, Session, TuneHyperparamsJob
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow import convert
+
+
+class FakePrimitiveBuilder(object):
+    def __init__(self, name):
+        self._name = name
+
+    def __call__(self):
+        return self
+
+    @property
+    def metadata(self):
+        return self
+
+    def query(self):
+        return {
+            'name': self._name.rsplit('.', 1)[-1],
+            'id': '%s-mocked' % self._name,
+            'digest': '00000000',
+            'installation': 'mock',
+            'description': "This has been mocked out for unit-testing",
+        }
+
+
+FakePrimitive = FakePrimitiveBuilder('FakePrimitive')
 
 
 class TestSession(unittest.TestCase):
@@ -40,10 +65,12 @@ class TestSession(unittest.TestCase):
             pipeline = database.Pipeline(origin="unittest %d" % i,
                                          dataset='file:///data/test.csv')
             db.add(pipeline)
-            mod1 = database.PipelineModule(pipeline=pipeline, name='first',
+            mod1 = database.PipelineModule(pipeline=pipeline,
+                                           name='tests.FakePrimitive',
                                            package='d3m', version='0.0')
             db.add(mod1)
-            mod2 = database.PipelineModule(pipeline=pipeline, name='second',
+            mod2 = database.PipelineModule(pipeline=pipeline,
+                                           name='tests.FakePrimitive',
                                            package='d3m', version='0.0')
             db.add(mod2)
             db.add(database.PipelineConnection(pipeline=pipeline,
@@ -200,7 +227,9 @@ class TestPipelineConversion(unittest.TestCase):
         # Convert it
         db = self._ta2.DBSession()
         pipeline = db.query(database.Pipeline).get(pipeline_id)
-        pipeline_json = convert.to_d3m_json(pipeline)
+        with mock.patch('d3m_ta2_nyu.workflow.convert.get_class',
+                        FakePrimitiveBuilder):
+            pipeline_json = convert.to_d3m_json(pipeline)
 
         created = pipeline_json['created']
         self.assertRegex(created,
@@ -222,8 +251,10 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'name': 'd3m.primitives.datasets.'
-                                    'DatasetToDataFrame',
+                            'id': 'd3m.primitives.datasets.'
+                                  'DatasetToDataFrame-mocked',
+                            'name': 'DatasetToDataFrame',
+                            'digest': '00000000',
                         },
                         'arguments': {
                             'inputs': {
@@ -235,7 +266,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'name': 'd3m.primitives.data.ColumnParser',
+                            'id': 'd3m.primitives.data.ColumnParser-mocked',
+                            'name': 'ColumnParser',
+                            'digest': '00000000',
                         },
                         'arguments': {
                             'inputs': {
@@ -248,8 +281,10 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'name': 'd3m.primitives.data.'
-                                          'ExtractColumnsBySemanticTypes',
+                            'id': 'd3m.primitives.data.'
+                                  'ExtractColumnsBySemanticTypes-mocked',
+                            'name': 'ExtractColumnsBySemanticTypes',
+                            'digest': '00000000',
                         },
                         'arguments': {
                             'inputs': {
@@ -266,7 +301,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'name': 'd3m.primitives.data.CastToType',
+                            'id': 'd3m.primitives.data.CastToType-mocked',
+                            'name': 'CastToType',
+                            'digest': '00000000',
                         },
                         'arguments': {
                             'inputs': {
@@ -279,7 +316,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'name': imputer,
+                            'id': imputer + '-mocked',
+                            'name': imputer.rsplit('.', 1)[-1],
+                            'digest': '00000000',
                         },
                         'arguments': {
                             'inputs': {
@@ -292,8 +331,10 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'name': 'd3m.primitives.data.'
-                                    'ExtractColumnsBySemanticTypes',
+                            'id': 'd3m.primitives.data.'
+                                  'ExtractColumnsBySemanticTypes-mocked',
+                            'name': 'ExtractColumnsBySemanticTypes',
+                            'digest': '00000000',
                         },
                         'arguments': {
                             'inputs': {
@@ -310,7 +351,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'name': 'd3m.primitives.data.CastToType',
+                            'id': 'd3m.primitives.data.CastToType-mocked',
+                            'name': 'CastToType',
+                            'digest': '00000000',
                         },
                         'arguments': {
                             'inputs': {
@@ -323,7 +366,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'name': classifier,
+                            'id': classifier + '-mocked',
+                            'name': classifier.rsplit('.', 1)[-1],
+                            'digest': '00000000',
                         },
                         'arguments': {
                             'inputs': {
@@ -340,7 +385,10 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'name': 'd3m.primitives.data.ConstructPredictions',
+                            'id': 'd3m.primitives.data.'
+                                  'ConstructPredictions-mocked',
+                            'name': 'ConstructPredictions',
+                            'digest': '00000000',
                         },
                         'arguments': {
                             'inputs': {
