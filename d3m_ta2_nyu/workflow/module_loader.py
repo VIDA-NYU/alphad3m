@@ -16,6 +16,7 @@ def _dataset(*, global_inputs, module_inputs, **kwargs):
     from d3m.metadata.base import ALL_ELEMENTS
 
     TYPE_TARGET = 'https://metadata.datadrivendiscovery.org/types/Target'
+    TYPE_T_TARGET = 'https://metadata.datadrivendiscovery.org/types/TrueTarget'
     TYPE_ATTRIBUTE = 'https://metadata.datadrivendiscovery.org/types/Attribute'
 
     # Get dataset from global inputs
@@ -40,17 +41,21 @@ def _dataset(*, global_inputs, module_inputs, **kwargs):
                                         col_index])['semantic_types'])
             if (resID, col_name) in targets:
                 types.add(TYPE_TARGET)
+                types.add(TYPE_T_TARGET)
                 types.discard(TYPE_ATTRIBUTE)
                 not_found.discard((resID, col_name))
             elif attributes is None:
                 types.discard(TYPE_TARGET)
+                types.discard(TYPE_T_TARGET)
             elif (resID, col_name) in attributes:
                 types.add(TYPE_ATTRIBUTE)
                 types.discard(TYPE_TARGET)
+                types.discard(TYPE_T_TARGET)
                 not_found.discard((resID, col_name))
             else:
                 types.discard(TYPE_ATTRIBUTE)
                 types.discard(TYPE_TARGET)
+                types.discard(TYPE_T_TARGET)
             dataset.metadata = dataset.metadata.update(
                 [resID, ALL_ELEMENTS, col_index],
                 {'semantic_types': tuple(types)})

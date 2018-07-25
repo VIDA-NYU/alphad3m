@@ -244,7 +244,9 @@ class TestPipelineConversion(unittest.TestCase):
                 'created': created,
                 'id': '00000000-0000-0000-0000-000000000001',
                 'inputs': [{'name': 'input dataset'}],
-                'outputs': [{'data': 'steps.8.produce', 'name': 'predictions'}],
+                'outputs': [
+                    {'data': 'steps.8.produce', 'name': 'predictions'},
+                ],
                 'schema': 'https://metadata.datadrivendiscovery.org/schemas/'
                           'v0/pipeline.json',
                 'steps': [
@@ -293,8 +295,10 @@ class TestPipelineConversion(unittest.TestCase):
                             },
                         },
                         'hyperparams': {
-                            'semantic_types': ['https://metadata.datadrivendiscovery'
-                                               '.org/types/Attribute'],
+                            'semantic_types': [
+                                'https://metadata.datadrivendiscovery.org/'
+                                'types/Attribute',
+                            ],
                         },
                         'outputs': [{'id': 'produce'}],
                     },
@@ -343,8 +347,10 @@ class TestPipelineConversion(unittest.TestCase):
                             },
                         },
                         'hyperparams': {
-                            'semantic_types': ['https://metadata.datadrivendiscovery'
-                                               '.org/types/Target'],
+                            'semantic_types': [
+                                'https://metadata.datadrivendiscovery.org/'
+                                'types/Target',
+                            ],
                         },
                         'outputs': [{'id': 'produce'}],
                     },
