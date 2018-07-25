@@ -243,11 +243,26 @@ class TestPipelineConversion(unittest.TestCase):
                 'id': '00000000-0000-0000-0000-000000000001',
                 'inputs': [{'name': 'input dataset'}],
                 'outputs': [
-                    {'data': 'steps.8.produce', 'name': 'predictions'},
+                    {'data': 'steps.9.produce', 'name': 'predictions'},
                 ],
                 'schema': 'https://metadata.datadrivendiscovery.org/schemas/'
                           'v0/pipeline.json',
                 'steps': [
+                    {
+                        'type': 'PRIMITIVE',
+                        'primitive': {
+                            'id': 'd3m.primitives.datasets.Denormalize-mocked',
+                            'name': 'Denormalize',
+                            'digest': '00000000',
+                        },
+                        'arguments': {
+                            'inputs': {
+                                'data': 'inputs.0.dataset',
+                                'type': 'CONTAINER',
+                            },
+                        },
+                        'outputs': [{'id': 'produce'}],
+                    },
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
@@ -258,7 +273,7 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'arguments': {
                             'inputs': {
-                                'data': 'inputs.0.dataset',
+                                'data': 'steps.0.produce',
                                 'type': 'CONTAINER'},
                         },
                         'outputs': [{'id': 'produce'}]
@@ -272,7 +287,7 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'arguments': {
                             'inputs': {
-                                'data': 'steps.0.produce',
+                                'data': 'steps.1.produce',
                                 'type': 'CONTAINER',
                             },
                         },
@@ -288,7 +303,7 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'arguments': {
                             'inputs': {
-                                'data': 'steps.1.produce',
+                                'data': 'steps.2.produce',
                                 'type': 'CONTAINER',
                             },
                         },
@@ -309,7 +324,7 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'arguments': {
                             'inputs': {
-                                'data': 'steps.2.produce',
+                                'data': 'steps.3.produce',
                                 'type': 'CONTAINER',
                             },
                         },
@@ -324,7 +339,7 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'arguments': {
                             'inputs': {
-                                'data': 'steps.3.produce',
+                                'data': 'steps.4.produce',
                                 'type': 'CONTAINER',
                             },
                         },
@@ -340,7 +355,7 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'arguments': {
                             'inputs': {
-                                'data': 'steps.1.produce',
+                                'data': 'steps.2.produce',
                                 'type': 'CONTAINER',
                             },
                         },
@@ -361,7 +376,7 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'arguments': {
                             'inputs': {
-                                'data': 'steps.5.produce',
+                                'data': 'steps.6.produce',
                                 'type': 'CONTAINER',
                             },
                         },
@@ -376,11 +391,11 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'arguments': {
                             'inputs': {
-                                'data': 'steps.4.produce',
+                                'data': 'steps.5.produce',
                                 'type': 'CONTAINER',
                             },
                             'outputs': {
-                                'data': 'steps.6.produce',
+                                'data': 'steps.7.produce',
                                 'type': 'CONTAINER',
                             }
                         },
@@ -396,11 +411,11 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'arguments': {
                             'inputs': {
-                                'data': 'steps.7.produce',
+                                'data': 'steps.8.produce',
                                 'type': 'CONTAINER',
                             },
                             'reference': {
-                                'data': 'steps.1.produce',
+                                'data': 'steps.2.produce',
                                 'type': 'CONTAINER',
                             },
                         },
