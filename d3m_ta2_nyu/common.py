@@ -117,6 +117,9 @@ def normalize_score(metric, score, order):
     :param order: Either ``"asc"`` (higher the better) or ``"desc"`` (lower the
         better).
     """
-    order = dict(asc=1.0, desc=-1.0)[order]
-    order *= SCORES_RANKING_ORDER[metric]
-    return 1.0/(1.0 + math.exp(order * score))
+    order_mult = dict(asc=1.0, desc=-1.0)[order]
+    order_mult *= SCORES_RANKING_ORDER[metric]
+    try:
+        return 1.0/(1.0 + math.exp(order_mult * score))
+    except ArithmeticError:  # OverflowError can happen with weird scores
+        return dict(asc=0.0, desc=1.0)[order]
