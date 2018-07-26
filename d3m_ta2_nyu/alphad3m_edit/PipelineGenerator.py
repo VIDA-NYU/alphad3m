@@ -58,36 +58,70 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
     def eval_audio_pipeline(origin):
         # Create the pipeline in the database
         pipeline_id = GenerateD3MPipelines.make_audio_pipeline_from_strings(origin,
-                                                                      os.path.join(dataset, 'datasetDoc.json'),
-                                                                      targets, features, DBSession=DBSession)
+                                                                            dataset,
+                                                                            targets, features, DBSession=DBSession)
         # Evaluate the pipeline
-        return ta2.run_pipeline(session_id, pipeline_id)
+        msg_queue.send(('eval', pipeline_id))
+        return msg_queue.recv()
 
     def eval_graphMatch_pipeline(origin):
         # Create the pipeline in the database
         pipeline_id = GenerateD3MPipelines.make_graphMatching_pipeline_from_strings(origin,
-                                                                                    os.path.join(dataset,
-                                                                                                 'datasetDoc.json'),
+                                                                                    dataset,
                                                                                     targets, features,
                                                                                     DBSession=DBSession)
         # Evaluate the pipeline
-        return ta2.run_pipeline(session_id, pipeline_id)
+        msg_queue.send(('eval', pipeline_id))
+        return msg_queue.recv()
 
     def eval_communityDetection_pipeline(origin):
         # Create the pipeline in the database
         pipeline_id = GenerateD3MPipelines.make_communityDetection_pipeline_from_strings(origin,
-                                                                                         os.path.join(dataset,
-                                                                                                      'datasetDoc.json'),
+                                                                                         dataset,
                                                                                          targets, features,
                                                                                          DBSession=DBSession)
         # Evaluate the pipeline
-        return ta2.run_pipeline(session_id, pipeline_id)
+        msg_queue.send(('eval', pipeline_id))
+        return msg_queue.recv()
+
+    def eval_image_regression_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = GenerateD3MPipelines.make_image_regression_pipeline_from_strings(origin,
+                                                                                         dataset,
+                                                                                         targets, features,
+                                                                                         DBSession=DBSession)
+        # Evaluate the pipeline
+        msg_queue.send(('eval', pipeline_id))
+        return msg_queue.recv()
 
     args = dict(ARGS)
     args['dataset'] = dataset.split('/')[-1].replace('_dataset','')
     assert dataset.startswith('file://')
     args['dataset_path'] = os.path.dirname(dataset[7:])
     args['problem'] = problem
+
+    f = open(os.path.join(args['dataset_path'], 'datasetDoc.json'))
+    datasetDoc = json.load(f)
+    data_resources = datasetDoc["dataResources"]
+    data_types = []
+    for data_res in data_resources:
+        data_types.append(data_res["resType"])
+
+    if "audio" in data_types:
+        eval_audio_pipeline("ALPHAD3M")
+        return
+
+    if "graph" in data_types and "graphMatching" in args['problem']['about']['taskType']:
+        eval_graphMatch_pipeline("ALPHAD3M")
+        return
+    if "graph" in data_types and "communityDetection" in args['problem']['about']['taskType']:
+        eval_communityDetection_pipeline("ALPHAD3M")
+        return
+
+    logger.info('DATA TYPE %s', data_types)
+    if "image" in data_types and "regression" in args['problem']['about']['taskType']:
+        eval_image_regression_pipeline("ALPHAD3M")
+        return
 
     game = PipelineGame(args, None, eval_pipeline, compute_metafeatures)
     nnet = NNetWrapper(game)
