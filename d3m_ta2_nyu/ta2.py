@@ -335,8 +335,10 @@ class ScoreJob(Job):
                     self.pipeline_id, self.session.id,
                     len(self.session.pipelines_scoring))
         if self.store_results and self.predictions_root is not None:
-            self.results = os.path.join(self.predictions_root,
-                                        '%s.csv' % self.pipeline_id)
+            subdir = os.path.join(self.predictions_root, str(self.pipeline_id))
+            if not os.path.exists(subdir):
+                os.mkdir(subdir)
+            self.results = os.path.join(subdir, 'predictions.csv')
         self.msg = Receiver()
         self.proc = run_process('d3m_ta2_nyu.score.score', 'score', self.msg,
                                 pipeline_id=self.pipeline_id,
@@ -425,8 +427,10 @@ class TuneHyperparamsJob(Job):
                     self.pipeline_id, self.session.id,
                     len(self.session.pipelines_tuning))
         if self.store_results and self.predictions_root is not None:
-            self.results = os.path.join(self.predictions_root,
-                                        '%s.csv' % self.pipeline_id)
+            subdir = os.path.join(self.predictions_root, str(self.pipeline_id))
+            if not os.path.exists(subdir):
+                os.mkdir(subdir)
+            self.results = os.path.join(subdir, 'predictions.csv')
         self.msg = Receiver()
         self.proc = run_process('d3m_ta2_nyu.tune_and_score.tune',
                                 'tune', self.msg,
@@ -925,7 +929,7 @@ class D3mTa2(Observable):
 
     def _test_pipeline(self, session, pipeline_id, dataset):
         results = os.path.join(self.predictions_root,
-                               'execute-%s.csv' % uuid.uuid4())
+                               'execute-%s' % uuid.uuid4(), 'predictions.csv')
         msg_queue = Receiver()
         proc = run_process('d3m_ta2_nyu.test.test', 'test', msg_queue,
                            pipeline_id=pipeline_id,
