@@ -133,6 +133,12 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         problem = self._convert_problem(context, request.problem)
 
+        timeout = request.time_bound
+        if timeout > 0.5:
+            timeout = timeout * 60.0  # Minutes
+        else:
+            timeout = None
+
         search_id = self._app.new_session(problem)
 
         queue = Queue()
@@ -141,7 +147,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             self._app.build_pipelines(search_id,
                                       task,
-                                      dataset, session.metrics)
+                                      dataset, session.metrics,
+                                      timeout=timeout)
 
         return pb_core.SearchSolutionsResponse(
             search_id=str(search_id),

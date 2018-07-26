@@ -532,7 +532,7 @@ class D3mTa2(Observable):
 
         logger.warning("TA2 started, version=%s", __version__)
 
-    def run_search(self, dataset, problem_path):
+    def run_search(self, dataset, problem_path, timeout=None):
         """Run the search phase: create pipelines, score and train them.
 
         This is called by the ``ta2_search`` executable, it is part of the
@@ -556,7 +556,8 @@ class D3mTa2(Observable):
         self.sessions[session.id] = session
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
-            self.build_pipelines(session.id, task, dataset, session.metrics)
+            self.build_pipelines(session.id, task, dataset, session.metrics,
+                                 timeout=timeout)
             while queue.get(True)[0] != 'done_searching':
                 pass
 
@@ -741,7 +742,7 @@ class D3mTa2(Observable):
             db.close()
 
     def build_pipelines(self, session_id, task, dataset, metrics,
-                        targets=None, features=None):
+                        targets=None, features=None, timeout=None):
         if not metrics:
             raise ValueError("no metrics")
         if 'TA2_USE_TEMPLATES' in os.environ:
@@ -751,11 +752,11 @@ class D3mTa2(Observable):
         else:
             self.executor.submit(self._build_pipelines_with_generator,
                                  session_id, task, dataset, metrics,
-                                 targets, features)
+                                 targets, features, timeout)
 
     # Runs in a worker thread from executor
     def _build_pipelines_with_generator(self, session_id, task, dataset,
-                                        metrics, targets, features):
+                                        metrics, targets, features, timeout):
         """Generates pipelines for the session, using the generator process.
         """
         # Start AlphaD3M process
@@ -792,8 +793,17 @@ class D3mTa2(Observable):
                 db_filename=self.db_filename,
             )
 
+        if timeout is not None:
+            timeout = time.time() + timeout
+
         # Now we wait for pipelines to be sent over the pipe
         while proc.poll() is None:
+            if timeout is not None and time.time() > timeout:
+                logger.error("Reached search timeout (%d seconds), sending "
+                             "SIGTERM to generator process")
+                proc.terminate()
+                timeout = None
+
             try:
                 msg, *args = msg_queue.recv(3)
             except Empty:

@@ -40,7 +40,13 @@ def main_search():
                                        'predictions')
         else:
             predictions = None
-        logger.info("Config loaded: %r, predictions: %r", config, predictions)
+        timeout = os.environ.get('D3MTIMEOUT')
+        if timeout is None:
+            timeout = config.get('timeout')
+        if timeout is not None:
+            timeout = int(timeout) * 60  # Minutes
+        logger.info("Config loaded: %r, predictions: %r, timeout: %r s",
+                    config, predictions, timeout)
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
             predictions_root=predictions,
@@ -48,7 +54,8 @@ def main_search():
             executables_root=config['executables_root'])
         ta2.run_search(
             dataset=config['dataset_schema'],
-            problem_path=config['problem_root'])
+            problem_path=config['problem_root'],
+            timeout=timeout)
 
 
 def main_serve():
