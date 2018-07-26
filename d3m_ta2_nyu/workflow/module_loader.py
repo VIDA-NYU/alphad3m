@@ -35,6 +35,8 @@ def _dataset(*, global_inputs, module_inputs, **kwargs):
     if attributes is not None:
         not_found.update(attributes)
     for resID, res in dataset.items():
+        if not hasattr(res, 'columns'):
+            continue
         for col_index, col_name in enumerate(res.columns):
             types = set(
                 dataset.metadata.query([resID,
