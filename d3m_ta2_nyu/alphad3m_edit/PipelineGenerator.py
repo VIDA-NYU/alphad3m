@@ -61,7 +61,8 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
                                                                             dataset,
                                                                             targets, features, DBSession=DBSession)
         # Evaluate the pipeline
-        return ta2.run_pipeline(session_id, pipeline_id)
+        msg_queue.send(('eval', pipeline_id))
+        return msg_queue.recv()
 
     def eval_graphMatch_pipeline(origin):
         # Create the pipeline in the database
@@ -76,6 +77,16 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
     def eval_communityDetection_pipeline(origin):
         # Create the pipeline in the database
         pipeline_id = GenerateD3MPipelines.make_communityDetection_pipeline_from_strings(origin,
+                                                                                         dataset,
+                                                                                         targets, features,
+                                                                                         DBSession=DBSession)
+        # Evaluate the pipeline
+        msg_queue.send(('eval', pipeline_id))
+        return msg_queue.recv()
+
+    def eval_image_regression_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = GenerateD3MPipelines.make_image_regression_pipeline_from_strings(origin,
                                                                                          dataset,
                                                                                          targets, features,
                                                                                          DBSession=DBSession)
@@ -105,6 +116,11 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         return
     if "graph" in data_types and "communityDetection" in args['problem']['about']['taskType']:
         eval_communityDetection_pipeline("ALPHAD3M")
+        return
+
+    logger.info('DATA TYPE %s', data_types)
+    if "image" in data_types and "regression" in args['problem']['about']['taskType']:
+        eval_image_regression_pipeline("ALPHAD3M")
         return
 
     game = PipelineGame(args, None, eval_pipeline, compute_metafeatures)
