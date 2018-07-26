@@ -65,12 +65,13 @@ class HyperparameterTuning(object):
                 self.runcount *= (param.upper - param.lower)
         self.runcount = min(self.runcount,100)
 
-    def tune(self, runner):
+    def tune(self, runner, wallclock=1800):
         # Scenario object
         if 'TA2_DEBUG_BE_FAST' in os.environ:
             self.runcount = 10
         scenario = Scenario({"run_obj": "quality",  # we optimize quality (alternatively runtime)
                              "runcount-limit": self.runcount,  # maximum function evaluations
+                             "wallclock-limit": wallclock,
                              "cs": self.cs,  # configuration space
                              "deterministic": "true",
                              "output_dir": "/tmp/"
