@@ -40,6 +40,7 @@ def main_search():
                                        'predictions')
         else:
             predictions = None
+        logger.info("Config loaded: %r, predictions: %r", config, predictions)
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
             predictions_root=predictions,
@@ -88,6 +89,7 @@ def main_serve():
         else:
             predictions = None
 
+        logger.info("Config loaded: %r, predictions: %r", config, predictions)
         port = None
         if len(sys.argv) == 2:
             port = int(sys.argv[1])
@@ -107,6 +109,7 @@ def main_test():
     else:
         with open(sys.argv[2]) as config_file:
             config = json.load(config_file)
+        logger.info("Config loaded: %r", config)
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'])
         ta2.run_test(
