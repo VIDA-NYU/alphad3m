@@ -27,7 +27,11 @@ def _add_step(steps, modules, params, module_to_step, mod):
     for conn in sorted(mod.connections_to, key=lambda c: c.to_input_name):
         step = _add_step(steps, modules, params, module_to_step,
                          modules[conn.from_module_id])
-        inputs[conn.to_input_name] = '%s.%s' % (step, conn.from_output_name)
+        if step.startswith('inputs.'):
+            inputs[conn.to_input_name] = step
+        else:
+            inputs[conn.to_input_name] = '%s.%s' % (step,
+                                                    conn.from_output_name)
 
     klass = get_class(mod.name)
     primitive_desc = {
