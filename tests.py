@@ -238,6 +238,10 @@ class TestPipelineConversion(unittest.TestCase):
         cls._tmp = tempfile.mkdtemp(prefix='d3m_unittest_')
         cls._ta2 = D3mTa2(storage_root=cls._tmp, logs_root=cls._tmp)
 
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls._tmp)
+
     def test_convert_classification_template(self):
         def seq_uuid():
             seq_uuid.count += 1
