@@ -55,6 +55,10 @@ def _add_step(steps, modules, params, module_to_step, mod):
     # If hyperparameters are set, export them
     if mod.id in params and 'hyperparams' in params[mod.id]:
         hyperparams = pickle.loads(params[mod.id]['hyperparams'])
+        hyperparams = {
+            k: {'type': 'VALUE', 'data': v}
+            for k, v in hyperparams.items()
+        }
         step['hyperparams'] = hyperparams
 
     step_nb = 'steps.%d' % len(steps)

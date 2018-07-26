@@ -308,10 +308,13 @@ class TestPipelineConversion(unittest.TestCase):
                             },
                         },
                         'hyperparams': {
-                            'semantic_types': [
-                                'https://metadata.datadrivendiscovery.org/'
-                                'types/Attribute',
-                            ],
+                            'semantic_types': {
+                                'type': 'VALUE',
+                                'data': [
+                                    'https://metadata.datadrivendiscovery.org/'
+                                    'types/Attribute',
+                                ],
+                            },
                         },
                         'outputs': [{'id': 'produce'}],
                     },
@@ -360,10 +363,13 @@ class TestPipelineConversion(unittest.TestCase):
                             },
                         },
                         'hyperparams': {
-                            'semantic_types': [
-                                'https://metadata.datadrivendiscovery.org/'
-                                'types/Target',
-                            ],
+                            'semantic_types': {
+                                'type': 'VALUE',
+                                'data': [
+                                    'https://metadata.datadrivendiscovery.org/'
+                                    'types/Target',
+                                ],
+                            },
                         },
                         'outputs': [{'id': 'produce'}],
                     },
