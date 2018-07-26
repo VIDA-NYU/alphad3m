@@ -35,21 +35,14 @@ def main_search():
     else:
         with open(sys.argv[1]) as config_file:
             config = json.load(config_file)
-        if 'D3MOUTPUTDIR' in os.environ:
-            predictions = os.path.join(os.environ['D3MOUTPUTDIR'],
-                                       'predictions')
-        else:
-            predictions = None
         timeout = os.environ.get('D3MTIMEOUT')
         if timeout is None:
             timeout = config.get('timeout')
         if timeout is not None:
             timeout = int(timeout) * 60  # Minutes
-        logger.info("Config loaded: %r, predictions: %r, timeout: %r s",
-                    config, predictions, timeout)
+        logger.info("Config loaded: %r, timeout: %r s", config, timeout)
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
-            predictions_root=predictions,
             logs_root=config['pipeline_logs_root'],
             executables_root=config['executables_root'])
         ta2.run_search(
@@ -90,19 +83,13 @@ def main_serve():
                             "set!")
             sys.exit(2)
 
-        if 'D3MOUTPUTDIR' in os.environ:
-            predictions = os.path.join(os.environ['D3MOUTPUTDIR'],
-                                       'predictions')
-        else:
-            predictions = None
-
-        logger.info("Config loaded: %r, predictions: %r", config, predictions)
+        logger.info("Config loaded: %r", config)
         port = None
         if len(sys.argv) == 2:
             port = int(sys.argv[1])
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
-            predictions_root=predictions,
+            shared_root=config.get('shared_storage_root'),
             logs_root=config['pipeline_logs_root'],
             executables_root=config['executables_root'])
         ta2.run_server(port)

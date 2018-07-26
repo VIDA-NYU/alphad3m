@@ -480,7 +480,7 @@ class TuneHyperparamsJob(Job):
 
 
 class D3mTa2(Observable):
-    def __init__(self, storage_root, predictions_root=None,
+    def __init__(self, storage_root, shared_root=None,
                  logs_root=None, executables_root=None):
         Observable.__init__(self)
         if 'TA2_DEBUG_BE_FAST' in os.environ:
@@ -505,8 +505,9 @@ class D3mTa2(Observable):
         if not os.path.exists(self.storage):
             os.makedirs(self.storage)
 
-        self.predictions_root = predictions_root
-        if self.predictions_root is not None:
+        if shared_root is not None:
+            self.predictions_root = os.path.join(shared_root,
+                                                 'tmp_predictions')
             os.makedirs(self.predictions_root)
 
         if logs_root is not None:
