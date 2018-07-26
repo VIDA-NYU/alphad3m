@@ -21,9 +21,9 @@ def primitive_config(cs, primitive_name):
                 upper = config[p].upper
                 default = config[p].get_default()
                 if type(default) == int:
-                    cs_param = IntegerHyperparameter(parameter_name, lower, upper, default_value=default)
+                    cs_param = UniformIntegerHyperparameter(parameter_name, lower, upper, default_value=default)
                 else:
-                    cs_param = FloatHyperparameter(parameter_name, lower, upper, default_value=default)
+                    cs_param = UniformFloatHyperparameter(parameter_name, lower, upper, default_value=default)
                 parameter_list.append(cs_param)
             elif isinstance(config[p], Uniform):
                 lower = config[p].lower
