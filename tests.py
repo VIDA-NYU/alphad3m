@@ -78,9 +78,9 @@ class TestSession(unittest.TestCase):
                                                to_module=mod2,
                                                from_output_name='output',
                                                to_input_name='input'))
-            cls._pipelines.append(pipeline)
+            cls._pipelines.append(pipeline.id)
         db.add(database.CrossValidation(
-            pipeline_id=cls._pipelines[4].id,
+            pipeline_id=cls._pipelines[4],
             scores=[
                 database.CrossValidationScore(metric='F1_MACRO',
                                               value=55.0),
@@ -89,6 +89,7 @@ class TestSession(unittest.TestCase):
             ],
         ))
         db.commit()
+        db.close()
 
     @classmethod
     def tearDownClass(cls):
@@ -109,25 +110,33 @@ class TestSession(unittest.TestCase):
             self._ta2.DBSession)
         self._ta2.sessions[session.id] = session
 
+        def compare_scores(ret, expected):
+            self.assertEqual([
+                    (pipeline.id, score)
+                    for (pipeline, score) in ret
+                ],
+                expected,
+            )
+
         # No pipelines as yet
         self.assertEqual(session.get_top_pipelines(db, 'F1_MACRO'), [])
 
         # Add scoring pipelines
-        session.add_scoring_pipeline(self._pipelines[0].id)
-        session.add_scoring_pipeline(self._pipelines[1].id)
-        session.add_scoring_pipeline(self._pipelines[2].id)
+        session.add_scoring_pipeline(self._pipelines[0])
+        session.add_scoring_pipeline(self._pipelines[1])
+        session.add_scoring_pipeline(self._pipelines[2])
         session.check_status()
         ta2._run_queue.put.assert_not_called()
 
         # No pipeline is scored
-        self.assertEqual(session.get_top_pipelines(db, 'F1_MACRO'), [])
-        self.assertEqual(session.get_top_pipelines(db, 'F1_MACRO',
-                                                   only_trained=False),
-                         [])
+        compare_scores(session.get_top_pipelines(db, 'F1_MACRO'), [])
+        compare_scores(session.get_top_pipelines(db, 'F1_MACRO',
+                                                 only_trained=False),
+                       [])
 
         # Pipelines finished scoring
         db.add(database.CrossValidation(
-            pipeline_id=self._pipelines[0].id,
+            pipeline_id=self._pipelines[0],
             scores=[
                 database.CrossValidationScore(metric='F1_MACRO',
                                               value=42.0),
@@ -136,7 +145,7 @@ class TestSession(unittest.TestCase):
             ],
         ))
         db.add(database.CrossValidation(
-            pipeline_id=self._pipelines[1].id,
+            pipeline_id=self._pipelines[1],
             scores=[
                 database.CrossValidationScore(metric='F1_MACRO',
                                               value=17.0),
@@ -147,46 +156,46 @@ class TestSession(unittest.TestCase):
         db.commit()
 
         # Check scores
-        self.assertEqual(session.get_top_pipelines(db, 'F1_MACRO',
-                                                   only_trained=False),
-                         [(self._pipelines[0], 42.0),
-                          (self._pipelines[1], 17.0)])
-        self.assertEqual(session.get_top_pipelines(db, 'EXECUTION_TIME',
-                                                   only_trained=False),
-                         [(self._pipelines[1], 0.7),
-                          (self._pipelines[0], 1.4)])
-        self.assertEqual(session.get_top_pipelines(db, 'ACCURACY',
-                                                   only_trained=False),
-                         [])
+        compare_scores(session.get_top_pipelines(db, 'F1_MACRO',
+                                                 only_trained=False),
+                       [(self._pipelines[0], 42.0),
+                        (self._pipelines[1], 17.0)])
+        compare_scores(session.get_top_pipelines(db, 'EXECUTION_TIME',
+                                                 only_trained=False),
+                       [(self._pipelines[1], 0.7),
+                        (self._pipelines[0], 1.4)])
+        compare_scores(session.get_top_pipelines(db, 'ACCURACY',
+                                                 only_trained=False),
+                       [])
 
         # Finish scoring
         ta2._run_queue.put.assert_not_called()
-        session.pipeline_scoring_done(self._pipelines[0].id)
+        session.pipeline_scoring_done(self._pipelines[0])
         ta2._run_queue.put.assert_not_called()
         session.tune_when_ready()
         ta2._run_queue.put.assert_not_called()
-        session.pipeline_scoring_done(self._pipelines[1].id)
+        session.pipeline_scoring_done(self._pipelines[1])
         ta2._run_queue.put.assert_not_called()
-        session.pipeline_scoring_done(self._pipelines[2].id)
-        ta2._run_queue.put.assert_called()
+        session.pipeline_scoring_done(self._pipelines[2])
 
         # Check tuning jobs were submitted
+        ta2._run_queue.put.assert_called()
         self.assertTrue(all(type(get_job(c)) is TuneHyperparamsJob
                             for c in ta2._run_queue.put.mock_calls))
         self.assertEqual(
-            [get_job(c).pipeline_id for c in ta2._run_queue.put.mock_calls],
-            [self._pipelines[0].id, self._pipelines[1].id]
+            [get_job(c).pipeline_id
+             for c in ta2._run_queue.put.mock_calls],
+            [self._pipelines[0], self._pipelines[1]]
         )
-        ta2._run_queue.put.reset_mock()
 
         # Signal tuning is done
-        session.pipeline_tuning_done(self._pipelines[0].id)
-        ta2._run_queue.put.assert_not_called()
-        session.pipeline_tuning_done(self._pipelines[1].id)
+        ta2._run_queue.put.reset_mock()
+        session.pipeline_tuning_done(self._pipelines[0])
+        session.pipeline_tuning_done(self._pipelines[1])
         ta2._run_queue.put.assert_not_called()
 
         # Finish training
-        run1 = database.Run(pipeline_id=self._pipelines[1].id,
+        run1 = database.Run(pipeline_id=self._pipelines[1],
                             reason='Unittest training',
                             special=False,
                             type=database.RunType.TRAIN)
@@ -195,8 +204,8 @@ class TestSession(unittest.TestCase):
         ta2._run_queue.put.assert_not_called()
 
         # Get top pipelines
-        self.assertEqual(session.get_top_pipelines(db, 'F1_MACRO'),
-                         [(self._pipelines[1], 17.0)])
+        compare_scores(session.get_top_pipelines(db, 'F1_MACRO'),
+                       [(self._pipelines[1], 17.0)])
 
 
 class TestPipelineConversion(unittest.TestCase):
