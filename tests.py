@@ -257,7 +257,7 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'arguments': {
                             'inputs': {
-                                'data': 'inputs.0.dataset',
+                                'data': 'inputs.0',
                                 'type': 'CONTAINER',
                             },
                         },
