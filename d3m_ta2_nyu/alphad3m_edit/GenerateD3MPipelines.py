@@ -264,7 +264,7 @@ class GenerateD3MPipelines():
             connect(input_data, step0, from_output='dataset')
             db.add(pipeline)
             db.commit()
-            logger.info(origin + ' PIPELINE ID: %s', pipeline.id)
+            logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
         finally:
             db.close()
@@ -319,7 +319,7 @@ class GenerateD3MPipelines():
 
             db.add(pipeline)
             db.commit()
-            logger.info(origin + ' PIPELINE ID: %s', pipeline.id)
+            logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
         finally:
             db.close()
