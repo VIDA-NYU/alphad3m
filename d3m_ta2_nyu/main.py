@@ -35,9 +35,14 @@ def main_search():
     else:
         with open(sys.argv[1]) as config_file:
             config = json.load(config_file)
+        if 'D3MOUTPUTDIR' in os.environ:
+            predictions = os.path.join(os.environ['D3MOUTPUTDIR'],
+                                       'predictions')
+        else:
+            predictions = None
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
-            shared_root=config.get('shared_storage_root'),
+            predictions_root=predictions,
             logs_root=config['pipeline_logs_root'],
             executables_root=config['executables_root'])
         ta2.run_search(
@@ -77,12 +82,18 @@ def main_serve():
                             "set!")
             sys.exit(2)
 
+        if 'D3MOUTPUTDIR' in os.environ:
+            predictions = os.path.join(os.environ['D3MOUTPUTDIR'],
+                                       'predictions')
+        else:
+            predictions = None
+
         port = None
         if len(sys.argv) == 2:
             port = int(sys.argv[1])
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
-            shared_root=config.get('shared_storage_root'),
+            predictions_root=predictions,
             logs_root=config['pipeline_logs_root'],
             executables_root=config['executables_root'])
         ta2.run_server(port)
