@@ -217,3 +217,109 @@ class GenerateD3MPipelines():
             return pipeline.id
         finally:
             db.close()
+
+    @staticmethod
+    def make_graphMatching_pipeline_from_strings(origin, dataset, targets=None, features=None, DBSession=None):
+        db = DBSession()
+
+        pipeline = database.Pipeline(
+            origin=origin,
+            dataset=dataset)
+
+        def make_module(package, version, name):
+            pipeline_module = database.PipelineModule(
+                pipeline=pipeline,
+                package=package, version=version, name=name)
+            db.add(pipeline_module)
+            return pipeline_module
+
+        def make_data_module(name):
+            return make_module('data', '0.0', name)
+
+        def make_primitive_module(name):
+            if name[0] == '.':
+                name = 'd3m.primitives' + name
+            return make_module('d3m', '2018.6.5', name)
+
+        def connect(from_module, to_module,
+                    from_output='produce', to_input='inputs'):
+            db.add(database.PipelineConnection(pipeline=pipeline,
+                                               from_module=from_module,
+                                               to_module=to_module,
+                                               from_output_name=from_output,
+                                               to_input_name=to_input))
+
+        try:
+
+            input_data = make_data_module('dataset')
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=input_data,
+                name='targets', value=pickle.dumps(targets),
+            ))
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=input_data,
+                name='features', value=pickle.dumps(features),
+            ))
+            step0 = make_primitive_module("d3m.primitives.jhu_primitives.SeededGraphMatching")
+            connect(input_data, step0, from_output='dataset')
+            db.add(pipeline)
+            db.commit()
+            logger.info(origin + ' PIPELINE ID: %s', pipeline.id)
+            return pipeline.id
+        finally:
+            db.close()
+
+    @staticmethod
+    def make_communityDetection_pipeline_from_strings(origin, dataset, targets=None, features=None,
+                                                      DBSession=None):
+        db = DBSession()
+
+        pipeline = database.Pipeline(
+            origin=origin,
+            dataset=dataset)
+
+        def make_module(package, version, name):
+            pipeline_module = database.PipelineModule(
+                pipeline=pipeline,
+                package=package, version=version, name=name)
+            db.add(pipeline_module)
+            return pipeline_module
+
+        def make_data_module(name):
+            return make_module('data', '0.0', name)
+
+        def make_primitive_module(name):
+            if name[0] == '.':
+                name = 'd3m.primitives' + name
+            return make_module('d3m', '2018.6.5', name)
+
+        def connect(from_module, to_module,
+                    from_output='produce', to_input='inputs'):
+            db.add(database.PipelineConnection(pipeline=pipeline,
+                                               from_module=from_module,
+                                               to_module=to_module,
+                                               from_output_name=from_output,
+                                               to_input_name=to_input))
+
+        try:
+
+            input_data = make_data_module('dataset')
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=input_data,
+                name='targets', value=pickle.dumps(targets),
+            ))
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=input_data,
+                name='features', value=pickle.dumps(features),
+            ))
+            step0 = make_primitive_module("d3m.primitives.sri.graph.CommunityDetectionParser")
+            connect(input_data, step0, from_output='dataset')
+            step1 = make_primitive_module('d3m.primitives.sri.psl.CommunityDetection')
+            connect(step0, step1)
+
+            db.add(pipeline)
+            db.commit()
+            logger.info(origin + ' PIPELINE ID: %s', pipeline.id)
+            return pipeline.id
+        finally:
+            db.close()
