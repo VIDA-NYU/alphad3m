@@ -586,7 +586,7 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
-    def run_pipeline(self, session_id, pipeline_id, store_results=False):
+    def run_pipeline(self, session_id, pipeline_id, store_results=True):
         """Score a single pipeline.
 
         This is used by the pipeline synthesis code.
