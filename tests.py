@@ -39,11 +39,10 @@ FakePrimitive = FakePrimitiveBuilder('FakePrimitive')
 
 
 class TestSession(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls._tmp = tempfile.mkdtemp(prefix='d3m_unittest_')
-        cls._ta2 = D3mTa2(storage_root=cls._tmp, logs_root=cls._tmp)
-        cls._problem = {
+    def setUp(self):
+        self._tmp = tempfile.mkdtemp(prefix='d3m_unittest_')
+        self._ta2 = D3mTa2(storage_root=self._tmp, logs_root=self._tmp)
+        self._problem = {
             'about': {'problemID': 'unittest_problem'},
             'inputs': {
                 # 'inputs': {
@@ -59,8 +58,8 @@ class TestSession(unittest.TestCase):
             }
         }
 
-        db = cls._ta2.DBSession()
-        cls._pipelines = []
+        db = self._ta2.DBSession()
+        self._pipelines = []
         for i in range(5):
             pipeline = database.Pipeline(origin="unittest %d" % i,
                                          dataset='file:///data/test.csv')
@@ -78,9 +77,9 @@ class TestSession(unittest.TestCase):
                                                to_module=mod2,
                                                from_output_name='output',
                                                to_input_name='input'))
-            cls._pipelines.append(pipeline.id)
+            self._pipelines.append(pipeline.id)
         db.add(database.CrossValidation(
-            pipeline_id=cls._pipelines[4],
+            pipeline_id=self._pipelines[4],
             scores=[
                 database.CrossValidationScore(metric='F1_MACRO',
                                               value=55.0),
@@ -91,9 +90,8 @@ class TestSession(unittest.TestCase):
         db.commit()
         db.close()
 
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree(cls._tmp)
+    def tearDown(self):
+        shutil.rmtree(self._tmp)
 
     def test_session(self):
         db = self._ta2.DBSession()
