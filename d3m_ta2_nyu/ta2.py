@@ -63,7 +63,7 @@ class Session(Observable):
         self.start = datetime.datetime.utcnow()
 
         # Should tuning be triggered when we are done with current pipelines?
-        self._tune_when_ready = False
+        self._tune_when_ready = None
 
         # All the pipelines that belong to this session
         self.pipelines = set()
@@ -132,8 +132,11 @@ class Session(Observable):
         else:
             raise TypeError("features should be a set or None")
 
-    def tune_when_ready(self):
-        self._tune_when_ready = True
+    def tune_when_ready(self, tune=None):
+        if tune is None:
+            tune = TUNE_PIPELINES_COUNT
+        self._tune_when_ready = tune
+        self.working = True
         self.check_status()
 
     def add_scoring_pipeline(self, pipeline_id):
@@ -199,7 +202,7 @@ class Session(Observable):
     def check_status(self):
         with self.lock:
             # Session is not to be finished automatically
-            if not self._tune_when_ready:
+            if self._tune_when_ready is None:
                 return
             # We are already done
             if not self.working:
@@ -215,26 +218,27 @@ class Session(Observable):
             logger.info("Session %s: scoring done", self.id)
 
             tune = []
-            tune_nb = TUNE_PIPELINES_COUNT
-            if tune_nb:
+            if self._tune_when_ready:
                 top_pipelines = self.get_top_pipelines(
                     db, self.metrics[0],
-                    tune_nb, only_trained=False)
+                    self._tune_when_ready, only_trained=False)
                 for pipeline, _ in top_pipelines:
                     if pipeline.id not in self.tuned_pipelines:
                         tune.append(pipeline.id)
 
-            if tune:
-                # Found some pipelines to tune, do that
-                logger.warning("Found %d pipelines to tune", len(tune))
-                for pipeline_id in tune:
-                    logger.info("    %s", pipeline_id)
-                    self._ta2._run_queue.put(
-                        TuneHyperparamsJob(self, pipeline_id)
-                    )
-                    self.pipelines_tuning.add(pipeline_id)
-                return
-            logger.info("Found no pipeline to tune")
+                if tune:
+                    # Found some pipelines to tune, do that
+                    logger.warning("Found %d pipelines to tune", len(tune))
+                    for pipeline_id in tune:
+                        logger.info("    %s", pipeline_id)
+                        self._ta2._run_queue.put(
+                            TuneHyperparamsJob(self, pipeline_id)
+                        )
+                        self.pipelines_tuning.add(pipeline_id)
+                    return
+                logger.info("Found no pipeline to tune")
+            else:
+                logger.info("No tuning requested")
 
             # Session is done (but new pipelines might be added later)
             self.working = False
@@ -549,27 +553,49 @@ class D3mTa2(Observable):
             sys.exit(1)
         task = TASKS_FROM_SCHEMA[task]
 
-        # Create pipelines
+        # Create session
         session = Session(self, self.logs_root, problem, self.DBSession)
         logger.info("Dataset: %s, task: %s, metrics: %s",
                     dataset, task, ", ".join(session.metrics))
         self.sessions[session.id] = session
+
+        # Create pipeline, NO TUNING
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
             self.build_pipelines(session.id, task, dataset, session.metrics,
-                                 timeout=timeout)
+                                 tune=0, timeout=timeout)
             while queue.get(True)[0] != 'done_searching':
                 pass
+
+        # Train pipelines
+        self.train_top_pipelines(session)
+
+        logger.info("Tuning pipelines...")
+
+        # Now do tuning, when we already have written out some executables
+        queue = Queue()
+        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+            session.tune_when_ready()
+            while queue.get(True)[0] != 'done_searching':
+                pass
+
+        # Train new pipelines if any
+        self.train_top_pipelines(session)
+
+    def train_top_pipelines(self, session, limit=20):
 
         db = self.DBSession()
         try:
             pipelines = session.get_top_pipelines(db, session.metrics[0],
+                                                  limit=limit,
                                                   only_trained=False)
 
             queue = Queue()
             with self.with_observer(lambda e, **kw: queue.put((e, kw))):
                 training = {}
-                for pipeline, score in itertools.islice(pipelines, 20):
+                for pipeline, score in itertools.islice(pipelines, limit):
+                    if pipeline.trained:
+                        continue
                     self._run_queue.put(
                         TrainJob(self, pipeline.id)
                     )
@@ -742,21 +768,22 @@ class D3mTa2(Observable):
             db.close()
 
     def build_pipelines(self, session_id, task, dataset, metrics,
-                        targets=None, features=None, timeout=None):
+                        targets=None, features=None, tune=None, timeout=None):
         if not metrics:
             raise ValueError("no metrics")
         if 'TA2_USE_TEMPLATES' in os.environ:
             self.executor.submit(self._build_pipelines_from_templates,
                                  session_id, task, dataset, metrics,
-                                 targets, features)
+                                 targets, features, tune=tune)
         else:
             self.executor.submit(self._build_pipelines_with_generator,
                                  session_id, task, dataset, metrics,
-                                 targets, features, timeout)
+                                 targets, features, timeout=timeout, tune=tune)
 
     # Runs in a worker thread from executor
     def _build_pipelines_with_generator(self, session_id, task, dataset,
-                                        metrics, targets, features, timeout):
+                                        metrics, targets, features, tune=None,
+                                        timeout=None):
         """Generates pipelines for the session, using the generator process.
         """
         # Start AlphaD3M process
@@ -821,11 +848,11 @@ class D3mTa2(Observable):
                                    "process: %r" % msg)
 
         logger.warning("Generator process exited with %r", proc.returncode)
-        session.tune_when_ready()
+        session.tune_when_ready(tune)
 
     # Runs in a worker thread from executor
     def _build_pipelines_from_templates(self, session_id, task, dataset,
-                                        metrics, targets, features):
+                                        metrics, targets, features, tune=None):
         """Generates pipelines for the session, using templates.
         """
         session = self.sessions[session_id]
@@ -861,7 +888,7 @@ class D3mTa2(Observable):
                 except Exception:
                     logger.exception("Error building pipeline from %r",
                                      template)
-            session.tune_when_ready()
+            session.tune_when_ready(tune)
             logger.warning("Pipeline creation completed")
             session.check_status()
 

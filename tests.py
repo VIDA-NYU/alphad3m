@@ -94,6 +94,12 @@ class TestSession(unittest.TestCase):
         shutil.rmtree(self._tmp)
 
     def test_session(self):
+        self._session_test(True)
+
+    def test_session_notuning(self):
+        self._session_test(False)
+
+    def _session_test(self, do_tuning):
         db = self._ta2.DBSession()
 
         def get_job(call):
@@ -170,27 +176,30 @@ class TestSession(unittest.TestCase):
         ta2._run_queue.put.assert_not_called()
         session.pipeline_scoring_done(self._pipelines[0])
         ta2._run_queue.put.assert_not_called()
-        session.tune_when_ready()
+        session.tune_when_ready(3 if do_tuning else 0)
         ta2._run_queue.put.assert_not_called()
         session.pipeline_scoring_done(self._pipelines[1])
         ta2._run_queue.put.assert_not_called()
         session.pipeline_scoring_done(self._pipelines[2])
 
         # Check tuning jobs were submitted
-        ta2._run_queue.put.assert_called()
-        self.assertTrue(all(type(get_job(c)) is TuneHyperparamsJob
-                            for c in ta2._run_queue.put.mock_calls))
-        self.assertEqual(
-            [get_job(c).pipeline_id
-             for c in ta2._run_queue.put.mock_calls],
-            [self._pipelines[0], self._pipelines[1]]
-        )
+        if do_tuning:
+            ta2._run_queue.put.assert_called()
+            self.assertTrue(all(type(get_job(c)) is TuneHyperparamsJob
+                                for c in ta2._run_queue.put.mock_calls))
+            self.assertEqual(
+                [get_job(c).pipeline_id
+                 for c in ta2._run_queue.put.mock_calls],
+                [self._pipelines[0], self._pipelines[1]]
+            )
 
-        # Signal tuning is done
-        ta2._run_queue.put.reset_mock()
-        session.pipeline_tuning_done(self._pipelines[0])
-        session.pipeline_tuning_done(self._pipelines[1])
-        ta2._run_queue.put.assert_not_called()
+            # Signal tuning is done
+            ta2._run_queue.put.reset_mock()
+            session.pipeline_tuning_done(self._pipelines[0])
+            session.pipeline_tuning_done(self._pipelines[1])
+            ta2._run_queue.put.assert_not_called()
+        else:
+            ta2._run_queue.put.assert_not_called()
 
         # Finish training
         run1 = database.Run(pipeline_id=self._pipelines[1],
@@ -200,6 +209,21 @@ class TestSession(unittest.TestCase):
         db.add(run1)
         db.commit()
         ta2._run_queue.put.assert_not_called()
+
+        session.tune_when_ready(3)
+
+        if do_tuning:
+            ta2._run_queue.put.assert_not_called()
+        else:
+            # Check tuning jobs were submitted
+            ta2._run_queue.put.assert_called()
+            self.assertTrue(all(type(get_job(c)) is TuneHyperparamsJob
+                                for c in ta2._run_queue.put.mock_calls))
+            self.assertEqual(
+                [get_job(c).pipeline_id
+                 for c in ta2._run_queue.put.mock_calls],
+                [self._pipelines[0], self._pipelines[1]]
+            )
 
         # Get top pipelines
         compare_scores(session.get_top_pipelines(db, 'F1_MACRO'),
