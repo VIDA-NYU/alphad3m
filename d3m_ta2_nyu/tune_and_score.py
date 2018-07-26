@@ -26,7 +26,8 @@ MAX_SAMPLE = 1000
 
 
 @database.with_db
-def tune(pipeline_id, metrics, targets, results_path, msg_queue, db):
+def tune(pipeline_id, metrics, targets, results_path, msg_queue, db,
+         timeout=600):
     # Load pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -89,7 +90,7 @@ def tune(pipeline_id, metrics, targets, results_path, msg_queue, db):
         return scores[metrics[0]] * SCORES_RANKING_ORDER[metrics[0]]
 
     # Run tuning, gets best configuration
-    best_configuration = tuning.tune(evaluate)
+    best_configuration = tuning.tune(evaluate, wallclock=timeout)
 
     # Duplicate pipeline in database
     new_pipeline = database.duplicate_pipeline(
