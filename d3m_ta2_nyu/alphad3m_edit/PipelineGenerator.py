@@ -55,6 +55,34 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
+    def eval_audio_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = GenerateD3MPipelines.make_audio_pipeline_from_strings(origin,
+                                                                      os.path.join(dataset, 'datasetDoc.json'),
+                                                                      targets, features, DBSession=DBSession)
+        # Evaluate the pipeline
+        return ta2.run_pipeline(session_id, pipeline_id)
+
+    def eval_graphMatch_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = GenerateD3MPipelines.make_graphMatching_pipeline_from_strings(origin,
+                                                                                    os.path.join(dataset,
+                                                                                                 'datasetDoc.json'),
+                                                                                    targets, features,
+                                                                                    DBSession=DBSession)
+        # Evaluate the pipeline
+        return ta2.run_pipeline(session_id, pipeline_id)
+
+    def eval_communityDetection_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = GenerateD3MPipelines.make_communityDetection_pipeline_from_strings(origin,
+                                                                                         os.path.join(dataset,
+                                                                                                      'datasetDoc.json'),
+                                                                                         targets, features,
+                                                                                         DBSession=DBSession)
+        # Evaluate the pipeline
+        return ta2.run_pipeline(session_id, pipeline_id)
+
     args = dict(ARGS)
     args['dataset'] = dataset.split('/')[-1].replace('_dataset','')
     assert dataset.startswith('file://')
@@ -98,13 +126,20 @@ def main(dataset_uri, problem_path, output_path):
                 fields = pipeline.split(' ')
                 pipelines[fields[0]] = fields[1].split(',')
     args = dict(ARGS)
+    args['dataset'] = dataset_uri.split('/')[-1].replace('_dataset', '')
+    assert dataset_uri.startswith('file://')
+    args['dataset_path'] = dataset_uri[7:]
+    logger.info("dataset URI: %s", dataset_uri)
+    logger.info("dataset path: %s", args['dataset_path'])
+    with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
+        args['problem'] = json.load(fp)
 
     storage = tempfile.mkdtemp(prefix='d3m_pipeline_eval_')
     ta2 = D3mTa2(storage_root=storage,
              logs_root=os.path.join(storage, 'logs'),
              executables_root=os.path.join(storage, 'executables'))
 
-    session_id = ta2.new_session(problem_path)
+    session_id = ta2.new_session(args['problem'])
     session = ta2.sessions[session_id]
     compute_metafeatures = ComputeMetafeatures(os.path.join(dataset_uri, 'datasetDoc.json'), session.targets, session.features, ta2.DBSession)
 
@@ -123,17 +158,32 @@ def main(dataset_uri, problem_path, output_path):
         # Evaluate the pipeline
         return ta2.run_pipeline(session_id, pipeline_id)
 
+    def eval_graphMatch_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = GenerateD3MPipelines.make_graphMatching_pipeline_from_strings(origin,
+                                                                                    os.path.join(dataset_uri,
+                                                                                                 'datasetDoc.json'),
+                                                                                    session.targets, session.features,
+                                                                                    ta2.DBSession)
+        # Evaluate the pipeline
+        return ta2.run_pipeline(session_id, pipeline_id)
+
+    def eval_communityDetection_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = GenerateD3MPipelines.make_communityDetection_pipeline_from_strings(origin,
+                                                                                         os.path.join(dataset_uri,
+                                                                                                      'datasetDoc.json'),
+                                                                                         session.targets,
+                                                                                         session.features,
+                                                                                         ta2.DBSession)
+        # Evaluate the pipeline
+        return ta2.run_pipeline(session_id, pipeline_id)
+
     pipeline = None
     if pipelines:
         pipeline = [p_enum[primitive] for primitive in pipelines[dataset]]
     logger.info("pipeline: %s", pipeline)
-    args['dataset'] = dataset_uri.split('/')[-1].replace('_dataset', '')
-    assert dataset_uri.startswith('file://')
-    args['dataset_path'] = dataset_uri[7:]
-    logger.info("dataset URI: %s", dataset_uri)
-    logger.info("dataset path: %s", args['dataset_path'])
-    with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
-        args['problem'] = json.load(fp)
+
 
     f = open(os.path.join(args['dataset_path'], 'datasetDoc.json'))
     datasetDoc = json.load(f)
@@ -144,6 +194,13 @@ def main(dataset_uri, problem_path, output_path):
 
     if "audio" in data_types:
         eval_audio_pipeline("ALPHAD3M")
+        return
+
+    if "graph" in data_types and "graphMatching" in args['problem']['about']['taskType']:
+        eval_graphMatch_pipeline("ALPHAD3M")
+        return
+    if "graph" in data_types and "communityDetection" in args['problem']['about']['taskType']:
+        eval_communityDetection_pipeline("ALPHAD3M")
         return
 
     game = PipelineGame(args, pipeline, eval_pipeline, compute_metafeatures)

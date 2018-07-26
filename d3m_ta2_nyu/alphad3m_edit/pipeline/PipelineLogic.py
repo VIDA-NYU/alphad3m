@@ -16,7 +16,7 @@ class Board():
     PRIMITIVES = {
         'PREPROCESSING':{
             'd3m.primitives.dsbox.Encoder': 1,
-            'd3m.primitives.dsbox.KnnImputation': 2
+            'd3m.primitives.dsbox.MeanImputation': 2
         },
         'CLASSIFICATION': {
             'd3m.primitives.sklearn_wrap.SKRandomForestClassifier':3,
