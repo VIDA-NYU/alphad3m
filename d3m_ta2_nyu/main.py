@@ -110,4 +110,4 @@ def main_test():
             dataset='file://%s' % config['dataset_schema'],
             problem_path=config['problem_root'],
             pipeline_id=uuid.UUID(hex=sys.argv[1]),
-            results_root=config['results_root'])
+            results_root=os.path.join(config['results_root'], sys.argv[1]))
