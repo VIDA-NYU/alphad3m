@@ -563,6 +563,10 @@ class D3mTa2(Observable):
                     dataset, task, ", ".join(session.metrics))
         self.sessions[session.id] = session
 
+        if timeout:
+            # Save 5 minutes to finish scoring & training
+            timeout = timeout - 5 * 60
+
         # Create pipeline, NO TUNING
         queue = Queue()
         with session.with_observer(lambda e, **kw: queue.put((e, kw))):
