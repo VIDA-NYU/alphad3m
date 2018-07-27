@@ -44,15 +44,22 @@ def tune(pipeline_id, metrics, targets, results_path, msg_queue, db,
     dataset = Dataset.load(dataset)
     logger.info("Loaded dataset")
 
-    if len(dataset['0']) > MAX_SAMPLE:
+    for res_id in dataset:
+        if ('https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
+                in dataset.metadata.query([res_id])['semantic_types']):
+            break
+    else:
+        res_id = next(iter(dataset))
+    if (hasattr(dataset[res_id], 'columns') and
+            len(dataset[res_id]) > MAX_SAMPLE):
         # Sample the dataset to stay reasonably fast
         logger.info("Sampling down data from %d to %d",
-                    len(dataset['0']), MAX_SAMPLE)
+                    len(dataset[res_id]), MAX_SAMPLE)
         sample = numpy.concatenate(
             [numpy.repeat(True, MAX_SAMPLE),
-             numpy.repeat(False, len(dataset['0']) - MAX_SAMPLE)])
+             numpy.repeat(False, len(dataset[res_id]) - MAX_SAMPLE)])
         numpy.random.RandomState(seed=RANDOM).shuffle(sample)
-        dataset['0'] = dataset['0'][sample]
+        dataset[res_id] = dataset[res_id][sample]
 
     # TODO: tune all modules, not only the estimator
     estimator_module = None
