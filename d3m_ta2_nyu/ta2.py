@@ -76,6 +76,8 @@ class Session(Observable):
         # Flag indicating we started scoring & tuning, and a
         # 'done_searching' signal should be sent once no pipeline is pending
         self.working = False
+        # Flag allowing TA3 to stop the search early
+        self.stop_requested = False
 
         # Read metrics from problem
         for metric in self.problem['inputs']['performanceMetrics']:
@@ -219,7 +221,9 @@ class Session(Observable):
             logger.info("Session %s: scoring done", self.id)
 
             tune = []
-            if self._tune_when_ready:
+            if self._tune_when_ready and self.stop_requested:
+                logger.info("Session stop requested, skipping tuning")
+            elif self._tune_when_ready:
                 top_pipelines = self.get_top_pipelines(
                     db, self.metrics[0],
                     self._tune_when_ready, only_trained=False)
@@ -620,7 +624,6 @@ class D3mTa2(Observable):
         self.train_top_pipelines(session)
 
     def train_top_pipelines(self, session, limit=20):
-
         db = self.DBSession()
         try:
             pipelines = session.get_top_pipelines(db, session.metrics[0],
@@ -764,12 +767,12 @@ class D3mTa2(Observable):
 
     def finish_session(self, session_id):
         session = self.sessions.pop(session_id)
-        # TODO: stop alphad3m
+        session.stop_requested = True
         session.notify('finish_session')
 
     def stop_session(self, session_id):
         session = self.sessions[session_id]
-        # TODO: stop alphad3m, set working=False
+        session.stop_requested = True
 
     def get_workflow(self, session_id, pipeline_id):
         if pipeline_id not in self.sessions[session_id].pipelines:
@@ -862,15 +865,23 @@ class D3mTa2(Observable):
             )
 
         start = time.time()
+        stopped = False
 
         # Now we wait for pipelines to be sent over the pipe
         while proc.poll() is None:
-            if timeout is not None and time.time() > start + timeout:
-                logger.error("Reached search timeout (%d > %d seconds), "
-                             "sending SIGTERM to generator process",
-                             time.time() - start, timeout)
-                proc.terminate()
-                timeout = None
+            if not stopped:
+                if session.stop_requested:
+                    logger.error("Session stop requested, sending SIGTERM to "
+                                 "generator process")
+                    proc.terminate()
+                    stopped = True
+
+                if timeout is not None and time.time() > start + timeout:
+                    logger.error("Reached search timeout (%d > %d seconds), "
+                                 "sending SIGTERM to generator process",
+                                 time.time() - start, timeout)
+                    proc.terminate()
+                    stopped = True
 
             try:
                 msg, *args = msg_queue.recv(3)
