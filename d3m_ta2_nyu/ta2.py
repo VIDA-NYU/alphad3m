@@ -158,6 +158,7 @@ class Session(Observable):
             if new_pipeline_id is not None:
                 self.pipelines.add(new_pipeline_id)
                 self.tuned_pipelines.add(new_pipeline_id)
+                self.write_log(new_pipeline_id)
             self.check_status()
 
     @property
