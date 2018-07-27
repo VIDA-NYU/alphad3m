@@ -509,23 +509,24 @@ class D3mTa2(Observable):
         if shared_root is not None:
             self.predictions_root = os.path.join(shared_root,
                                                  'tmp_predictions')
-            os.makedirs(self.predictions_root)
+            if not os.path.exists(self.predictions_root):
+                os.makedirs(self.predictions_root)
         else:
             self.predictions_root = None
 
         if logs_root is not None:
             self.logs_root = os.path.abspath(logs_root)
+            if not os.path.exists(self.logs_root):
+                os.makedirs(self.logs_root)
         else:
             self.logs_root = None
-        if self.logs_root and not os.path.exists(self.logs_root):
-            os.makedirs(self.logs_root)
 
         if executables_root:
             self.executables_root = os.path.abspath(executables_root)
+            if not os.path.exists(self.executables_root):
+                os.makedirs(self.executables_root)
         else:
             self.executables_root = None
-        if self.executables_root and not os.path.exists(self.executables_root):
-            os.makedirs(self.executables_root)
 
         self.db_filename = os.path.join(self.storage, 'db.sqlite3')
         self.dbengine, self.DBSession = database.connect(self.db_filename)
