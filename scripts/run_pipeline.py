@@ -17,7 +17,7 @@ if __name__ == '__main__':
     storage = config['temp_storage_root']
 
     ta2 = D3mTa2(storage_root=storage,
-                 logs_root=os.path.join(storage, 'logs'),
+                 pipelines_considered=os.path.join(storage, 'pipelines_considered'),
                  executables_root=os.path.join(storage, 'executables'))
 
     result = ta2.run_pipeline(uuid.UUID(hex=sys.argv[2]),

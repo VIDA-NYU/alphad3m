@@ -51,11 +51,11 @@ class Session(Observable):
 
     This corresponds to a search in which pipelines are created.
     """
-    def __init__(self, ta2, logs_dir, problem, DBSession):
+    def __init__(self, ta2, considered_pipelines_dir, problem, DBSession):
         Observable.__init__(self)
         self.id = uuid.uuid4()
         self._ta2 = ta2
-        self._logs_dir = logs_dir
+        self._considered_pipelines_dir = considered_pipelines_dir
         self.DBSession = DBSession
         self.problem = problem
         self.metrics = []
@@ -144,11 +144,11 @@ class Session(Observable):
             self.working = True
             self.pipelines.add(pipeline_id)
             self.pipelines_scoring.add(pipeline_id)
+            self.write_considered_pipeline(pipeline_id)
 
     def pipeline_scoring_done(self, pipeline_id):
         with self.lock:
             self.pipelines_scoring.discard(pipeline_id)
-            self.write_log(pipeline_id)
             self.check_status()
 
     def pipeline_tuning_done(self, old_pipeline_id, new_pipeline_id=None):
@@ -158,7 +158,7 @@ class Session(Observable):
             if new_pipeline_id is not None:
                 self.pipelines.add(new_pipeline_id)
                 self.tuned_pipelines.add(new_pipeline_id)
-                self.write_log(new_pipeline_id)
+                self.write_considered_pipeline(new_pipeline_id)
             self.check_status()
 
     @property
@@ -258,11 +258,28 @@ class Session(Observable):
 
             db.close()
 
-    def write_log(self, pipeline_id):
-        if self._logs_dir is None:
+    def write_considered_pipeline(self, pipeline_id):
+        if not self._considered_pipelines_dir:
             logger.info("Not writing log file")
             return
 
+        db = self.DBSession()
+        try:
+            # Get pipeline
+            pipeline = db.query(database.Pipeline).get(pipeline_id)
+
+            logger.warning("Writing log for pipeline %s origin=%s",
+                           pipeline_id, pipeline.origin)
+
+            filename = os.path.join(self._considered_pipelines_dir,
+                                    '%s.json' % pipeline_id)
+            obj = to_d3m_json(pipeline)
+            with open(filename, 'w') as fp:
+                json.dump(obj, fp)
+        finally:
+            db.close()
+
+    def write_exported_pipeline(self, pipeline_id, directory):
         metric = self.metrics[0]
 
         db = self.DBSession()
@@ -292,7 +309,7 @@ class Session(Observable):
             logger.warning("Writing log for pipeline %s %s=%s origin=%s",
                            pipeline_id, metric, score, pipeline.origin)
 
-            filename = os.path.join(self._logs_dir, '%s.json' % pipeline_id)
+            filename = os.path.join(directory, '%s.json' % pipeline_id)
             obj = to_d3m_json(pipeline)
             obj['pipeline_rank'] = normalize_score(metric, score, 'desc')
             with open(filename, 'w') as fp:
@@ -482,7 +499,8 @@ class TuneHyperparamsJob(Job):
 
 class D3mTa2(Observable):
     def __init__(self, storage_root, shared_root=None,
-                 logs_root=None, executables_root=None):
+                 pipelines_exported_root=None, pipeline_considered_root=None,
+                 executables_root=None):
         Observable.__init__(self)
         if 'TA2_DEBUG_BE_FAST' in os.environ:
             logger.warning("**************************************************"
@@ -514,12 +532,21 @@ class D3mTa2(Observable):
         else:
             self.predictions_root = None
 
-        if logs_root is not None:
-            self.logs_root = os.path.abspath(logs_root)
-            if not os.path.exists(self.logs_root):
-                os.makedirs(self.logs_root)
+        if pipelines_exported_root is not None:
+            self.pipelines_exported_root = \
+                os.path.abspath(pipelines_exported_root)
+            if not os.path.exists(self.pipelines_exported_root):
+                os.makedirs(self.pipelines_exported_root)
         else:
-            self.logs_root = None
+            self.pipelines_exported_root = None
+
+        if pipeline_considered_root is not None:
+            self.pipeline_considered_root = \
+                os.path.abspath(pipeline_considered_root)
+            if not os.path.exists(self.pipeline_considered_root):
+                os.makedirs(self.pipeline_considered_root)
+        else:
+            self.pipeline_considered_root = None
 
         if executables_root:
             self.executables_root = os.path.abspath(executables_root)
@@ -559,7 +586,8 @@ class D3mTa2(Observable):
         task = TASKS_FROM_SCHEMA[task]
 
         # Create session
-        session = Session(self, self.logs_root, problem, self.DBSession)
+        session = Session(self, self.pipeline_considered_root, problem,
+                          self.DBSession)
         logger.info("Dataset: %s, task: %s, metrics: %s",
                     dataset, task, ", ".join(session.metrics))
         self.sessions[session.id] = session
@@ -615,6 +643,10 @@ class D3mTa2(Observable):
                     if event == 'training_success':
                         pipeline_id = kwargs['pipeline_id']
                         self.write_executable(training.pop(pipeline_id))
+                        session.write_exported_pipeline(
+                            pipeline_id,
+                            self.pipelines_exported_root
+                        )
                     elif event == 'training_error':
                         pipeline_id = kwargs['pipeline_id']
                         del training[pipeline_id]
@@ -725,8 +757,8 @@ class D3mTa2(Observable):
             time.sleep(60)
 
     def new_session(self, problem):
-        session = Session(self, self.logs_root, problem,
-                          self.DBSession)
+        session = Session(self, self.pipeline_considered_root,
+                          problem, self.DBSession)
         self.sessions[session.id] = session
         return session.id
 
