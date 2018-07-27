@@ -821,14 +821,14 @@ class D3mTa2(Observable):
                 db_filename=self.db_filename,
             )
 
-        if timeout is not None:
-            timeout = time.time() + timeout
+        start = time.time()
 
         # Now we wait for pipelines to be sent over the pipe
         while proc.poll() is None:
-            if timeout is not None and time.time() > timeout:
-                logger.error("Reached search timeout (%d seconds), sending "
-                             "SIGTERM to generator process")
+            if timeout is not None and time.time() > start + timeout:
+                logger.error("Reached search timeout (%d > %d seconds), "
+                             "sending SIGTERM to generator process",
+                             time.time() - start, timeout)
                 proc.terminate()
                 timeout = None
 
