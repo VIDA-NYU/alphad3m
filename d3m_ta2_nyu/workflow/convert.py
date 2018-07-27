@@ -85,6 +85,8 @@ def to_d3m_json(pipeline):
 
     return {
         'id': str(pipeline.id),
+        'name': str(pipeline.id),
+        'description': pipeline.origin or '',
         'schema': 'https://metadata.datadrivendiscovery.org/schemas/'
                   'v0/pipeline.json',
         'created': pipeline.created_date.isoformat() + 'Z',
