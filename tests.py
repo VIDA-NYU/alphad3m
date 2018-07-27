@@ -276,6 +276,12 @@ class TestPipelineConversion(unittest.TestCase):
                 'context': 'TESTING',
                 'created': created,
                 'id': '00000000-0000-0000-0000-000000000001',
+                'name': '00000000-0000-0000-0000-000000000001',
+                'description': (
+                    'classification_template('
+                    'imputer=d3m.primitives.sklearn_wrap.SKImputer, '
+                    'classifier=d3m.primitives.sklearn_wrap.SKLinearSVC)'
+                ),
                 'inputs': [{'name': 'input dataset'}],
                 'outputs': [
                     {'data': 'steps.9.produce', 'name': 'predictions'},
