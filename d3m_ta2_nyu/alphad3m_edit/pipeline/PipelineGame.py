@@ -148,11 +148,11 @@ class PipelineGame(Game):
         b.pieces_p = b.get_pipeline(board)
         b.previous_moves = b.get_previous_moves(board)
         eval_val = self.getEvaluation(board)
-        if b.findWin(player, eval_val):
+        if b.findWin(player, self.metric, eval_val):
             logger.info("EVALUATIONS %s", self.evaluations)
             logger.info('findwin %s',player)
             return 1
-        if b.findWin(-player, eval_val):
+        if b.findWin(-player, self.metric, eval_val):
             logger.info("EVALUATIONS %s", self.evaluations)
             logger.info('findwin %s', player)
             return -1

@@ -10,6 +10,7 @@ x is the column, y is the row.
 
 import numpy as np
 from itertools import combinations
+from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER
 
 class Board():
     PRIMITIVES_DECODE = ['None', 'E', 'I', 'S', 'K', 'D','NB', 'T', 'LO', 'LI', 'BR', 'L', 'R', 'LA']
@@ -21,12 +22,11 @@ class Board():
         'CLASSIFICATION': {
             'd3m.primitives.sklearn_wrap.SKRandomForestClassifier':3,
             'd3m.primitives.sklearn_wrap.SKDecisionTreeClassifier':4,
-            'd3m.primitives.sklearn_wrap.SKPerceptron':5,
             'd3m.primitives.sklearn_wrap.SKGradientBoostingClassifier':6,
             'd3m.primitives.sklearn_wrap.SKMultinomialNB':7,
             'd3m.primitives.bbn.sklearn_wrap.BBNMLPClassifier':8,
             'd3m.primitives.common_primitives.BayesianLogisticRegression': 9,
-            'd3m.primitives.common_primitives.RandomForestClassifier': 10,
+            'd3m.primitives.classifier.RandomForestClassifier': 10,
             'd3m.primitives.dsbox.CorexSupervised': 11,
             'd3m.primitives.jhu_primitives.GaussianClassification': 12,
             'd3m.primitives.lupi_svm': 13,
@@ -116,7 +116,7 @@ class Board():
     def get_operation(self, board):
         return board[self.m+self.p:self.m+self.p+self.o]
 
-    def findWin(self, player, eval_val=None):
+    def findWin(self, player, metric, eval_val=None):
         """Find win of the given color in row, column, or diagonal
         (1 for x, -1 for o)"""
         #print(self[0:])
@@ -125,7 +125,10 @@ class Board():
         if eval_val == float('inf'):
             return False
 
-        return eval_val >= self.win_threshold
+        if SCORES_RANKING_ORDER[SCORES_FROM_SCHEMA[metric]] < 0:
+            return eval_val >= self.win_threshold
+        else:
+            return eval_val <= self.win_threshold
 
     def get_legal_moves(self, problem='CLASSIFICATION'):
         """Returns all the legal moves.
