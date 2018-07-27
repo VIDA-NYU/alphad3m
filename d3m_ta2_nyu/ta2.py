@@ -275,7 +275,7 @@ class Session(Observable):
                                     '%s.json' % pipeline_id)
             obj = to_d3m_json(pipeline)
             with open(filename, 'w') as fp:
-                json.dump(obj, fp)
+                json.dump(obj, fp, indent=2)
         finally:
             db.close()
 
@@ -313,7 +313,7 @@ class Session(Observable):
             obj = to_d3m_json(pipeline)
             obj['pipeline_rank'] = normalize_score(metric, score, 'desc')
             with open(filename, 'w') as fp:
-                json.dump(obj, fp)
+                json.dump(obj, fp, indent=2)
         finally:
             db.close()
 
