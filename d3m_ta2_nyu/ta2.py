@@ -510,6 +510,8 @@ class D3mTa2(Observable):
             self.predictions_root = os.path.join(shared_root,
                                                  'tmp_predictions')
             os.makedirs(self.predictions_root)
+        else:
+            self.predictions_root = None
 
         if logs_root is not None:
             self.logs_root = os.path.abspath(logs_root)
