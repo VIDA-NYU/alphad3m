@@ -10,7 +10,6 @@ from d3m.container import Dataset
 from d3m_ta2_nyu.common import SCORES_RANKING_ORDER
 from d3m_ta2_nyu.crossval import cross_validation
 from d3m_ta2_nyu.workflow import database
-from d3m_ta2_nyu.workflow.execute import execute_train
 from d3m_ta2_nyu.parameter_tuning.estimator_config import is_estimator
 from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, \
     hyperparams_from_cfg

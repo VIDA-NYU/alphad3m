@@ -1,5 +1,4 @@
 import logging
-import pandas
 import sys
 
 from d3m.container import Dataset

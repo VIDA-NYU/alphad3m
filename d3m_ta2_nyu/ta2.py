@@ -170,7 +170,7 @@ class Session(Observable):
             total=(
                 len(self.pipelines)
                 + TUNE_PIPELINES_COUNT
-                - len(self.tuned_pipelines)/2
+                - len(self.tuned_pipelines) / 2
             ),
         )
 
@@ -957,10 +957,11 @@ class D3mTa2(Observable):
         self._run_queue.put(ScoreJob(session, pipeline_id))
         session.notify('new_pipeline', pipeline_id=pipeline_id)
 
-    def fit_solution(self,session_id, pipeline_id):
+    def fit_solution(self, session_id, pipeline_id):
         # Add it to the session
         session = self.sessions[session_id]
-        #session.add_training_pipeline(pipeline_id)
+        # TODO: train
+        # session.add_training_pipeline(pipeline_id)
         self._run_queue.put(TrainJob(session, pipeline_id))
 
     # Runs in a background thread
@@ -1032,7 +1033,7 @@ class D3mTa2(Observable):
 
         pipeline = database.Pipeline(
             origin="classification_template(imputer=%s, classifier=%s)" % (
-                       imputer, classifier),
+                imputer, classifier),
             dataset=dataset)
 
         def make_module(package, version, name):

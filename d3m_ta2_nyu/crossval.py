@@ -80,8 +80,8 @@ def cross_validation(pipeline, metrics, dataset, targets,
 
         # Get expected targets
         for res_id in dataset:
-            if (
-                    'https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
+            if ('https://metadata.datadrivendiscovery.org/'
+                    'types/DatasetEntryPoint'
                     in dataset.metadata.query([res_id])['semantic_types']):
                 break
         else:

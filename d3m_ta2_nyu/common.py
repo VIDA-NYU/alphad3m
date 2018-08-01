@@ -58,7 +58,7 @@ SCORES_FROM_SCHEMA = {
     'rSquared': 'R_SQUARED',
     'normalizedMutualInformation': 'NORMALIZED_MUTUAL_INFORMATION',
     'jaccardSimilarityScore': 'JACCARD_SIMILARITY_SCORE',
-    #'precisionAtTopK': None,
+    # 'precisionAtTopK': None,
 }
 
 SCORES_TO_SCHEMA = {v: k for k, v in SCORES_FROM_SCHEMA.items()}
@@ -120,6 +120,6 @@ def normalize_score(metric, score, order):
     order_mult = dict(asc=1.0, desc=-1.0)[order]
     order_mult *= SCORES_RANKING_ORDER[metric]
     try:
-        return 1.0/(1.0 + math.exp(order_mult * score))
+        return 1.0 / (1.0 + math.exp(order_mult * score))
     except ArithmeticError:  # OverflowError can happen with weird scores
         return dict(asc=0.0, desc=1.0)[order]

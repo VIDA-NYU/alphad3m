@@ -12,7 +12,6 @@ import functools
 from google.protobuf.timestamp_pb2 import Timestamp
 import grpc
 import logging
-import math
 from queue import Queue
 import string
 from uuid import UUID
@@ -129,7 +128,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
                         "Dataset is not in D3M format: %s", dataset)
         if not dataset.startswith('file://'):
-            dataset = 'file://'+dataset
+            dataset = 'file://' + dataset
 
         problem = self._convert_problem(context, request.problem)
 
@@ -649,7 +648,6 @@ class CoreService(pb_core_grpc.CoreServicer):
                     self.grpc2tasksubtype.get(problem.problem.task_type),
                     ''),
                 "problemSchemaVersion": "3.0",
-                "problemVersion": "1.0",
                 "problemName": problem.problem.name,
             },
             'inputs': {
