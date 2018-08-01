@@ -148,6 +148,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             self._app.build_pipelines(search_id,
                                       task,
                                       dataset, session.metrics,
+                                      tune=0,  # FIXME: no tuning in TA3 mode
                                       timeout=timeout)
 
         return pb_core.SearchSolutionsResponse(
