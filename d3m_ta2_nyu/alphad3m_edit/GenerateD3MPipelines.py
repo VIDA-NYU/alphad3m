@@ -205,6 +205,16 @@ class GenerateD3MPipelines():
             connect(step, step2)
             connect(step0, step2, to_input='outputs')
 
+            step3 = make_primitive_module("d3m.primitives.dsbox.Denormalize")
+            connect(input_data, step3, from_output='dataset')
+
+            step4 = make_primitive_module("d3m.primitives.datasets.DatasetToDataFrame")
+            connect(step3, step4)
+
+            step5 = make_primitive_module('.data.ConstructPredictions')
+            connect(step2, step5)
+            connect(step4, step5, to_input='reference')
+
             db.add(pipeline)
             db.commit()
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
@@ -319,7 +329,7 @@ class GenerateD3MPipelines():
             db.close()
 
     @staticmethod
-    def make_image_regression_pipeline_from_strings(origin, dataset, targets=None, features=None,
+    def make_image_pipeline_from_strings(estimator, origin, dataset, targets=None, features=None,
                                                     DBSession=None):
         logger.info('MAKING IMAGE REGRESSION PIPELINE')
         db = DBSession()
@@ -373,9 +383,6 @@ class GenerateD3MPipelines():
             step1 = make_primitive_module("d3m.primitives.datasets.DatasetToDataFrame")
             connect(step0, step1)
 
-            #step9 = make_primitive_module("d3m.primitives.datasets.DatasetToDataFrame")
-            #connect(input_data, step9, from_output='dataset')
-
             step2 =  make_primitive_module("d3m.primitives.data.ExtractColumnsBySemanticTypes")
             set_hyperparams(
                 step2,
@@ -389,17 +396,13 @@ class GenerateD3MPipelines():
             step3 =  make_primitive_module("d3m.primitives.dsbox.DataFrameToTensor")
             connect(step1, step3)
 
-            #step8 = make_primitive_module('.data.ColumnParser')
-            #connect(step9, step8)
-            
             step4 =  make_primitive_module("d3m.primitives.dsbox.Vgg16ImageFeature")
             connect(step3, step4)
 
             step5 =  make_primitive_module("d3m.primitives.sklearn_wrap.SKPCA")
             connect(step4, step5)
             
-            #step6 =  make_primitive_module("d3m.primitives.sklearn_wrap.SKRandomForestRegressor")
-            step6 =  make_primitive_module("d3m.primitives.sklearn_wrap.SKLasso")
+            step6 =  make_primitive_module(estimator)
             connect(step5, step6)
             connect(step2, step6, to_input='outputs')
 
