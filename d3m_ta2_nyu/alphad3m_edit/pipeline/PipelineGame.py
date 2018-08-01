@@ -44,7 +44,7 @@ class PipelineGame(Game):
         if self.dataset_metafeatures is None:
             try:
                 self.dataset_metafeatures = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
-            except:
+            except Exception:
                 # FIXME: This is a default to address metafeatures not generating features for datasets with numeric targets
                 self.dataset_metafeatures = [1] * 178
         self.dataset_metafeatures = list(np.nan_to_num(np.asarray(self.dataset_metafeatures)))
@@ -116,13 +116,9 @@ class PipelineGame(Game):
         eval_val = self.evaluations.get(",".join(pipeline))
         if eval_val is None:
             self.steps = self.steps + 1
-            try:
-                logger.info("%s", pipeline)
-                eval_val = self.eval_pipeline(pipeline, 'AlphaD3M_Edit_eval')
-                logger.info("Evaluation = %s", eval_val)
-            except:
-                logger.info("ERROR IN PIPELINE EXECUTION %s", eval_val)
-                traceback.print_exc()
+            logger.info("%s", pipeline)
+            eval_val = self.eval_pipeline(pipeline, 'AlphaD3M_Edit_eval')
+            logger.info("Evaluation = %s", eval_val)
             if eval_val is None:
                 eval_val = float('inf')
             self.evaluations[",".join(pipeline)] = eval_val
