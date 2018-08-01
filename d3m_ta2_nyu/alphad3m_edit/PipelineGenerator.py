@@ -84,12 +84,13 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    def eval_image_regression_pipeline(origin):
+    def eval_image_pipeline(estimator, origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_image_regression_pipeline_from_strings(origin,
-                                                                                         dataset,
-                                                                                         targets, features,
-                                                                                         DBSession=DBSession)
+        pipeline_id = GenerateD3MPipelines.make_image_pipeline_from_strings(estimator,
+                                                                            origin,
+                                                                            dataset,
+                                                                            targets, features,
+                                                                            DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
@@ -130,8 +131,11 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         return
 
     logger.info('DATA TYPE %s', data_types)
-    if "image" in data_types and "regression" in args['problem']['about']['taskType']:
-        eval_image_regression_pipeline("ALPHAD3M")
+    estimator = 'd3m.primitives.sklearn_wrap.SKGradientBoostingClassifier'
+    if "image" in data_types:
+        if "regression" in args['problem']['about']['taskType']:
+             estimator = 'd3m.primitives.sklearn_wrap.SKLasso'
+        eval_image_pipeline(estimator, "ALPHAD3M")
         return
 
     game = PipelineGame(args, None, eval_pipeline, compute_metafeatures)
