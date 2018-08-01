@@ -55,9 +55,9 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    def eval_audio_pipeline(origin):
+    def eval_audio_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_audio_pipeline_from_strings(origin,
+        pipeline_id = GenerateD3MPipelines.make_audio_pipeline_from_strings(strings, origin,
                                                                             dataset,
                                                                             targets, features, DBSession=DBSession)
         # Evaluate the pipeline
@@ -108,7 +108,18 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         data_types.append(data_res["resType"])
 
     if "audio" in data_types:
-        eval_audio_pipeline("ALPHAD3M")
+        primitives = ["d3m.primitives.bbn.time_series.ChannelAverager",
+                          "d3m.primitives.bbn.time_series.SignalDither", "d3m.primitives.bbn.time_series.SignalFramer",  "d3m.primitives.bbn.time_series.SignalMFCC",
+                          "d3m.primitives.bbn.time_series.UniformSegmentation", "d3m.primitives.bbn.time_series.SegmentCurveFitter", "d3m.primitives.bbn.time_series.ClusterCurveFittingKMeans",
+                          "d3m.primitives.bbn.time_series.SignalFramer", "d3m.primitives.bbn.time_series.SequenceToBagOfTokens", "d3m.primitives.bbn.time_series.BBNTfidfTransformer",
+                          "d3m.primitives.bbn.sklearn_wrap.BBNMLPClassifier"]
+        eval_audio_pipeline(primitives, "ALPHAD3M")
+
+        primitives = ["d3m.primitives.bbn.time_series.ChannelAverager",
+                          "d3m.primitives.bbn.time_series.SignalDither", "d3m.primitives.bbn.time_series.SignalFramer",  "d3m.primitives.bbn.time_series.SignalMFCC",
+                          "d3m.primitives.bbn.time_series.IVectorExtractor", 
+                          "d3m.primitives.bbn.sklearn_wrap.BBNMLPClassifier"]
+        eval_audio_pipeline(primitives, "ALPHAD3M")
         return
 
     if "graph" in data_types and "graphMatching" in args['problem']['about']['taskType']:

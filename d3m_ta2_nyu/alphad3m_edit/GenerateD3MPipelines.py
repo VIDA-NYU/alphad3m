@@ -139,7 +139,7 @@ class GenerateD3MPipelines():
             db.close()
 
     @staticmethod
-    def make_audio_pipeline_from_strings(origin, dataset, targets=None, features=None, DBSession=None):
+    def make_audio_pipeline_from_strings(primitives, origin, dataset, targets=None, features=None, DBSession=None):
         db = DBSession()
 
         pipeline = database.Pipeline(
@@ -180,15 +180,18 @@ class GenerateD3MPipelines():
                 pipeline=pipeline, module=input_data,
                 name='features', value=pickle.dumps(features),
             ))
-            primitives = ["d3m.primitives.bbn.time_series.AudioReader", "d3m.primitives.bbn.time_series.ChannelAverager",
-                          "d3m.primitives.bbn.time_series.SignalDither", "d3m.primitives.bbn.time_series.SignalFramer",  "d3m.primitives.bbn.time_series.SignalMFCC",
-                          "d3m.primitives.bbn.time_series.UniformSegmentation", "d3m.primitives.bbn.time_series.SegmentCurveFitter", "d3m.primitives.bbn.time_series.ClusterCurveFittingKMeans",
-                          "d3m.primitives.bbn.time_series.SignalFramer", "d3m.primitives.bbn.time_series.SequenceToBagOfTokens", "d3m.primitives.bbn.time_series.BBNTfidfTransformer",
-                          "d3m.primitives.bbn.sklearn_wrap.BBNMLPClassifier"]
+            #primitives = ["d3m.primitives.bbn.time_series.ChannelAverager",
+            #              "d3m.primitives.bbn.time_series.SignalDither", "d3m.primitives.bbn.time_series.SignalFramer",  "d3m.primitives.bbn.time_series.SignalMFCC",
+            #              "d3m.primitives.bbn.time_series.UniformSegmentation", "d3m.primitives.bbn.time_series.SegmentCurveFitter", "d3m.primitives.bbn.time_series.ClusterCurveFittingKMeans",
+            #              "d3m.primitives.bbn.time_series.SignalFramer", "d3m.primitives.bbn.time_series.SequenceToBagOfTokens", "d3m.primitives.bbn.time_series.BBNTfidfTransformer",
+            #              "d3m.primitives.bbn.sklearn_wrap.BBNMLPClassifier"]
             step0 = make_primitive_module("d3m.primitives.bbn.time_series.TargetsReader")
             connect(input_data, step0, from_output='dataset')
 
-            step = prev_step = step0
+            step1 = make_primitive_module("d3m.primitives.bbn.time_series.AudioReader")
+            connect(input_data, step1, from_output='dataset')
+            
+            step = prev_step = step1
             preprocessors = []
             if len(primitives) > 1:
                 preprocessors = primitives[0:len(primitives) - 1]
@@ -198,18 +201,9 @@ class GenerateD3MPipelines():
                 connect(prev_step, step)
                 prev_step = step
 
-            # step1 = make_primitive_module('.datasets.DatasetToDataFrame')
-            # connect(input_data, step1, from_output='dataset')
-            #
-            # step2 = make_primitive_module('.data.ExtractTargets')
-            # connect(step1, step2)
-            #
-            # step3 = make_primitive_module('.data.CastToType')
-            # connect(step2, step3)
-
-            step4 = make_primitive_module(classifier)
-            connect(step, step4)
-            #connect(step3, step4, to_input='outputs')
+            step2 = make_primitive_module(classifier)
+            connect(step, step2)
+            connect(step0, step2, to_input='outputs')
 
             db.add(pipeline)
             db.commit()
@@ -356,6 +350,11 @@ class GenerateD3MPipelines():
                                                to_module=to_module,
                                                from_output_name=from_output,
                                                to_input_name=to_input))
+        def set_hyperparams(module, **hyperparams):
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=module,
+                name='hyperparams', value=pickle.dumps(hyperparams),
+            ))
 
         try:
 
@@ -368,34 +367,45 @@ class GenerateD3MPipelines():
                 pipeline=pipeline, module=input_data,
                 name='features', value=pickle.dumps(features),
             ))
-            primitives = ["d3m.primitives.datasets.DatasetToDataFrame", "d3m.primitives.data.ExtractColumnsBySemanticTypes",
-                          "d3m.primitives.dsbox.DataFrameToTensor", "d3m.primitives.dsbox.Vgg16ImageFeature",
-                          "d3m.primitives.sklearn_wrap.SKPCA", "d3m.primitives.sklearn_wrap.SKRandomForestRegressor"]
             step0 = make_primitive_module("d3m.primitives.dsbox.Denormalize")
             connect(input_data, step0, from_output='dataset')
 
-            step = prev_step = step0
-            preprocessors = []
-            if len(primitives) > 1:
-                preprocessors = primitives[0:len(primitives) - 1]
-            classifier = primitives[len(primitives) - 1]
-            for preprocessor in preprocessors:
-                step = make_primitive_module(preprocessor)
-                connect(prev_step, step)
-                prev_step = step
+            step1 = make_primitive_module("d3m.primitives.datasets.DatasetToDataFrame")
+            connect(step0, step1)
 
-            # step1 = make_primitive_module('.datasets.DatasetToDataFrame')
-            # connect(input_data, step1, from_output='dataset')
-            #
-            # step2 = make_primitive_module('.data.ExtractTargets')
-            # connect(step1, step2)
-            #
-            # step3 = make_primitive_module('.data.CastToType')
-            # connect(step2, step3)
+            #step9 = make_primitive_module("d3m.primitives.datasets.DatasetToDataFrame")
+            #connect(input_data, step9, from_output='dataset')
 
-            step4 = make_primitive_module(classifier)
-            connect(step, step4)
-            # connect(step3, step4, to_input='outputs')
+            step2 =  make_primitive_module("d3m.primitives.data.ExtractColumnsBySemanticTypes")
+            set_hyperparams(
+                step2,
+                semantic_types=[
+                     "https://metadata.datadrivendiscovery.org/types/Target",
+                     "https://metadata.datadrivendiscovery.org/types/SuggestedTarget"
+                ],
+            )
+            connect(step1, step2)
+
+            step3 =  make_primitive_module("d3m.primitives.dsbox.DataFrameToTensor")
+            connect(step1, step3)
+
+            #step8 = make_primitive_module('.data.ColumnParser')
+            #connect(step9, step8)
+            
+            step4 =  make_primitive_module("d3m.primitives.dsbox.Vgg16ImageFeature")
+            connect(step3, step4)
+
+            step5 =  make_primitive_module("d3m.primitives.sklearn_wrap.SKPCA")
+            connect(step4, step5)
+            
+            #step6 =  make_primitive_module("d3m.primitives.sklearn_wrap.SKRandomForestRegressor")
+            step6 =  make_primitive_module("d3m.primitives.sklearn_wrap.SKLasso")
+            connect(step5, step6)
+            connect(step2, step6, to_input='outputs')
+
+            step7 = make_primitive_module('.data.ConstructPredictions')
+            connect(step6, step7)
+            connect(step1, step7, to_input='reference')
 
             db.add(pipeline)
             db.commit()
