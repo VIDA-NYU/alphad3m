@@ -1,10 +1,9 @@
-import collections
 from google.protobuf.timestamp_pb2 import Timestamp
 import grpc
 import json
+import logging
 import os
 import sys
-import time
 
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
@@ -13,48 +12,19 @@ import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
 import d3m_ta2_nyu.proto.pipeline_pb2 as pb_pipeline
 
 from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA
+from d3m_ta2_nyu.grpc_logger import LoggingStub
 
 
-class LoggingStub(object):
-    def __init__(self, stub):
-        self._stub = stub
-
-    def __getattr__(self, item):
-        return self._wrap(getattr(self._stub, item), item)
-
-    def _wrap(self, method, name):
-        def wrapper(out_msg):
-            print("< %s" % name)
-            for line in str(out_msg).splitlines():
-                print("< | %s" % line)
-            print("  --------------------")
-
-            start = time.time()
-            in_msg = method(out_msg)
-
-            if isinstance(in_msg, collections.Iterable):
-                return self._stream(in_msg, start, name)
-            else:
-                self._print(in_msg, start, name)
-                return in_msg
-
-        return wrapper
-
-    def _stream(self, msg, start, name):
-        for msg in msg:
-            self._print(msg, start, name)
-            yield msg
-
-    def _print(self, msg, start, name):
-        print("> %s (%f s)" % (name, time.time() - start))
-        for line in str(msg).splitlines():
-            print("> | %s" % line)
-        print("  --------------------")
+logger = logging.getLogger(__name__)
 
 
 def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(message)s")
+
     channel = grpc.insecure_channel('localhost:45042')
-    core = LoggingStub(pb_core_grpc.CoreStub(channel))
+    core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
 
     version = pb_core.DESCRIPTOR.GetOptions().Extensions[
         pb_core.protocol_version]
