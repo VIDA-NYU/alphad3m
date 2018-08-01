@@ -528,7 +528,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         "Unknown solution ID %r", request.fitted_solution_id)
         session = self._app.sessions[session_id]
         with session.lock:
-            pipeline = self._app.get_workflow(session_id, pipeline_id)
+            pipeline = self._app.get_workflow(pipeline_id, session_id)
             if not pipeline.trained:
                 raise error(context, grpc.StatusCode.NOT_FOUND,
                             "Solution not fitted: %r",

@@ -770,9 +770,10 @@ class D3mTa2(Observable):
         session = self.sessions[session_id]
         session.stop_requested = True
 
-    def get_workflow(self, session_id, pipeline_id):
-        if pipeline_id not in self.sessions[session_id].pipelines:
-            raise KeyError("No such pipeline ID for session")
+    def get_workflow(self, pipeline_id, session_id=None):
+        if session_id is not None:
+            if pipeline_id not in self.sessions[session_id].pipelines:
+                raise KeyError("No such pipeline ID for session")
 
         db = self.DBSession()
         try:
