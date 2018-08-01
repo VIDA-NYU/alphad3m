@@ -17,30 +17,15 @@ from d3m_ta2_nyu.grpc_logger import LoggingStub
 
 logger = logging.getLogger(__name__)
 
+TASK_TYPES = {n: v for n, v in pb_problem.TaskType.items()}
+TASK_SUBTYPES = {n: v for n, v in pb_problem.TaskSubtype.items()}
+METRICS = {n: v for n, v in pb_problem.PerformanceMetric.items()}
 
-def main():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(message)s")
 
-    channel = grpc.insecure_channel('localhost:45042')
-    core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
-
+def do_search(core, config, problem):
     version = pb_core.DESCRIPTOR.GetOptions().Extensions[
         pb_core.protocol_version]
 
-    core.Hello(pb_core.HelloRequest())
-
-    with open(sys.argv[1]) as config:
-        config = json.load(config)
-    with open(sys.argv[2]) as problem:
-        problem = json.load(problem)
-
-    TASK_TYPES = {n: v for n, v in pb_problem.TaskType.items()}
-    TASK_SUBTYPES = {n: v for n, v in pb_problem.TaskSubtype.items()}
-    METRICS = {n: v for n, v in pb_problem.PerformanceMetric.items()}
-
-    # Do a search
     search = core.SearchSolutions(pb_core.SearchSolutionsRequest(
         user_agent='ta3_stub',
         version=version,
@@ -125,39 +110,66 @@ def main():
                 result.internal_score,
                 result.scores,
             )
+    return solutions
+
+
+def do_score(core, config, problem, solutions):
+    for solution in solutions:
+        try:
+            response = core.ScoreSolution(pb_core.ScoreSolutionRequest(
+                solution_id=solution,
+                inputs=[pb_value.Value(
+                    dataset_uri='file://%s' % config['dataset_schema'],
+                )],
+                performance_metrics=[
+                    pb_problem.ProblemPerformanceMetric(
+                        metric=METRICS[SCORES_FROM_SCHEMA[e['metric']]],
+                    )
+                    for e in problem['inputs']['performanceMetrics']
+                ],
+                users=[pb_core.SolutionRunUser(
+                    id='stub',
+                    choosen=False,
+                    reason="test run",
+                )],
+                configuration=pb_core.ScoringConfiguration(
+                    method=pb_core.K_FOLD,
+                    folds=4,
+                    train_test_ratio=0.75,
+                    shuffle=True,
+                ),
+            ))
+            results = core.GetScoreSolutionResults(
+                pb_core.GetScoreSolutionResultsRequest(
+                    request_id=response.request_id,
+                )
+            )
+            for _ in results:
+                pass
+        except Exception:
+            logger.exception("Exception during scoring %r", solution)
+
+
+def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(message)s")
+
+    channel = grpc.insecure_channel('localhost:45042')
+    core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
+
+    core.Hello(pb_core.HelloRequest())
+
+    with open(sys.argv[1]) as config:
+        config = json.load(config)
+    with open(sys.argv[2]) as problem:
+        problem = json.load(problem)
+
+    # Do a search
+    solutions = do_search(core, config, problem)
 
     # Score all found solutions
-    for solution in solutions:
-        response = core.ScoreSolution(pb_core.ScoreSolutionRequest(
-            solution_id=solution,
-            inputs=[pb_value.Value(
-                dataset_uri='file://%s' % config['dataset_schema'],
-            )],
-            performance_metrics=[
-                pb_problem.ProblemPerformanceMetric(
-                    metric=METRICS[SCORES_FROM_SCHEMA[e['metric']].upper()],
-                )
-                for e in problem['inputs']['performanceMetrics']
-            ],
-            users=[pb_core.SolutionRunUser(
-                id='stub',
-                choosen=False,
-                reason="test run",
-            )],
-            configuration=pb_core.ScoringConfiguration(
-                method=pb_core.K_FOLD,
-                folds=4,
-                train_test_ratio=0.75,
-                shuffle=True,
-            ),
-        ))
-        results = core.GetScoreSolutionResults(
-            pb_core.GetScoreSolutionResultsRequest(
-                request_id=response.request_id,
-            )
-        )
-        for _ in results:
-            pass
+    do_score(core, config, problem, solutions)
 
 
 if __name__ == '__main__':
