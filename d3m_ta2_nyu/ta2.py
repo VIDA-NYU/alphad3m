@@ -601,8 +601,7 @@ class D3mTa2(Observable):
             timeout = timeout - 5 * 60
 
         # Create pipeline, NO TUNING
-        queue = Queue()
-        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+        with session.with_observer_queue() as queue:
             self.build_pipelines(session.id, task, dataset, session.metrics,
                                  tune=0, timeout=timeout)
             while queue.get(True)[0] != 'done_searching':
@@ -614,8 +613,7 @@ class D3mTa2(Observable):
         logger.info("Tuning pipelines...")
 
         # Now do tuning, when we already have written out some executables
-        queue = Queue()
-        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+        with session.with_observer_queue() as queue:
             session.tune_when_ready()
             while queue.get(True)[0] != 'done_searching':
                 pass
@@ -630,8 +628,7 @@ class D3mTa2(Observable):
                                                   limit=limit,
                                                   only_trained=False)
 
-            queue = Queue()
-            with self.with_observer(lambda e, **kw: queue.put((e, kw))):
+            with session.with_observer_queue() as queue:
                 training = {}
                 for pipeline, score in itertools.islice(pipelines, limit):
                     if pipeline.trained:
@@ -668,8 +665,7 @@ class D3mTa2(Observable):
         logger.info("Running single pipeline, metric: %s", metric)
 
         # Add the pipeline to the session, score it
-        queue = Queue()
-        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+        with session.with_observer_queue() as queue:
             session.add_scoring_pipeline(pipeline_id)
             self._run_queue.put(ScoreJob(session, pipeline_id,
                                          store_results=store_results))

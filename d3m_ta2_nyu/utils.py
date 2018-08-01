@@ -4,6 +4,7 @@
 import contextlib
 import functools
 import logging
+from queue import Queue
 import threading
 
 
@@ -41,6 +42,12 @@ class Observable(object):
             yield
         finally:
             self.remove_observer(key)
+
+    @contextlib.contextmanager
+    def with_observer_queue(self):
+        queue = Queue()
+        with self.with_observer(lambda e, **kw: queue.put((e, kw))):
+            yield queue
 
     def notify(self, event, **kwargs):
         with self.lock:

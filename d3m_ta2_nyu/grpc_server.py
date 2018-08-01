@@ -12,7 +12,6 @@ import functools
 from google.protobuf.timestamp_pb2 import Timestamp
 import grpc
 import logging
-from queue import Queue
 import string
 from uuid import UUID
 
@@ -140,10 +139,9 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         search_id = self._app.new_session(problem)
 
-        queue = Queue()
         session = self._app.sessions[search_id]
         task = TASKS_FROM_SCHEMA[session.problem['about']['taskType']]
-        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+        with session.with_observer_queue() as queue:
             self._app.build_pipelines(search_id,
                                       task,
                                       dataset, session.metrics,
@@ -218,8 +216,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     scores=scores,
                 )
 
-        queue = Queue()
-        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+        with session.with_observer_queue() as queue:
             # Send the solutions that already exist
             for pipeline_id in session.pipelines:
                 yield solution(pipeline_id)
@@ -303,9 +300,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         logger.info("Got ExecutePipeline request, session=%s, dataset=%s",
                     session_id, dataset)
 
-        queue = Queue()
         session = self._app.sessions[session_id]
-        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+        with session.with_observer_queue() as queue:
             # TODO: This is not TEST, this is SCORE
             # TODO: We can actually check if a score already exists
             self._app.test_pipeline(session_id, pipeline_id, dataset)
@@ -329,9 +325,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             raise error(context, grpc.StatusCode.NOT_FOUND,
                         "Unknown ID %r", request.request_id)
 
-        queue = Queue()
         session = self._app.sessions[session_id]
-        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+        with session.with_observer_queue() as queue:
             # TODO: Find existing result, and possibly return
 
             while True:
@@ -407,9 +402,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
 
-        queue = Queue()
         session = self._app.sessions[session_id]
-        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+        with session.with_observer_queue() as queue:
             self._app.fit_solution(session_id, pipeline_id)
 
         return pb_core.FitSolutionResponse(
@@ -431,9 +425,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             raise error(context, grpc.StatusCode.NOT_FOUND,
                         "Unknown ID %r", request.request_id)
 
-        queue = Queue()
         session = self._app.sessions[session_id]
-        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+        with session.with_observer_queue() as queue:
             # TODO: Find existing result, and possibly return
 
             while True:
@@ -499,9 +492,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
 
-        queue = Queue()
         session = self._app.sessions[session_id]
-        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+        with session.with_observer_queue() as queue:
             self._app.test_pipeline(session_id, pipeline_id, dataset)
 
         return pb_core.ProduceSolutionResponse(
@@ -523,9 +515,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             raise error(context, grpc.StatusCode.NOT_FOUND,
                         "Unknown ID %r", request.request_id)
 
-        queue = Queue()
         session = self._app.sessions[session_id]
-        with session.with_observer(lambda e, **kw: queue.put((e, kw))):
+        with session.with_observer_queue() as queue:
             # TODO: Find existing result, and possibly return
 
             while True:
