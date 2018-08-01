@@ -69,9 +69,11 @@ class HyperparameterTuning(object):
         # Scenario object
         if 'TA2_DEBUG_BE_FAST' in os.environ:
             self.runcount = 10
+        cutoff = wallclock / (self.runcount / 2) # Allow long pipelines to try to execute half of the iterations limit
         scenario = Scenario({"run_obj": "quality",  # we optimize quality (alternatively runtime)
                              "runcount-limit": self.runcount,  # maximum function evaluations
                              "wallclock-limit": wallclock,
+                             "cutoff_time": cutoff,
                              "cs": self.cs,  # configuration space
                              "deterministic": "true",
                              "output_dir": "/tmp/"
