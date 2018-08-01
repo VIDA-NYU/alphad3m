@@ -2,7 +2,7 @@
 
 # Example train: ./docker.sh tpl fast search seed_datasets_current/uu4_SPECT/TRAIN ta2-test:latest
 # Example test: ./docker.sh test seed_datasets_current/uu4_SPECT/TEST 0123-4567-89abcdef ta2-test:latest
-# Example ta2-ta3: ./docker.sh ta3
+# Example ta2-ta3: ./docker.sh ta3 seed_datasets_current/uu4_SPECT/TRAIN ta2-test:latest
 
 # Change this if you're not Remi
 LOCAL_DATA_ROOT="/home/remram/Documents/programming/d3m/data"
@@ -36,9 +36,9 @@ case "$1" in
         shift 3
     ;;
     *)
-        echo "Usage:\n  $(basename $0) ta3 seed_datasets_current/uu4_SPECT/TRAIN" >&2
-        echo "  $(basename $0) search seed_datasets_current/uu4_SPECT/TRAIN" >&2
-        echo "  $(basename $0) test seed_datasets_current/uu4_SPECT/TEST 0123-4567-89abcdef" >&2
+        echo "Usage:\n  $(basename $0) ta3 seed_datasets_current/uu4_SPECT/TRAIN <image>" >&2
+        echo "  $(basename $0) search seed_datasets_current/uu4_SPECT/TRAIN <image>" >&2
+        echo "  $(basename $0) test seed_datasets_current/uu4_SPECT/TEST 0123-4567-89abcdef <image>" >&2
         exit 2
     ;;
 esac
