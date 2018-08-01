@@ -1005,8 +1005,10 @@ class D3mTa2(Observable):
                              dataset)
 
     def _test_pipeline(self, session, pipeline_id, dataset):
-        results = os.path.join(self.predictions_root,
-                               'execute-%s' % uuid.uuid4(), 'predictions.csv')
+        subdir = os.path.join(self.predictions_root,
+                              'execute-%s' % uuid.uuid4())
+        os.mkdir(subdir)
+        results = os.path.join(subdir, 'predictions.csv')
         msg_queue = Receiver()
         proc = run_process('d3m_ta2_nyu.test.test', 'test', msg_queue,
                            pipeline_id=pipeline_id,
