@@ -79,7 +79,14 @@ def cross_validation(pipeline, metrics, dataset, targets,
         predictions = predictions.set_index('d3mIndex')
 
         # Get expected targets
-        test_targets = [test_split['0']['d3mIndex']]
+        for res_id in dataset:
+            if (
+                    'https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
+                    in dataset.metadata.query([res_id])['semantic_types']):
+                break
+        else:
+            res_id = next(iter(dataset))
+        test_targets = [test_split[res_id]['d3mIndex']]
         for resID, col_name in targets:
             test_targets.append(test_split[resID].loc[:, col_name])
         test_targets = pandas.concat(test_targets, axis=1) \
