@@ -409,7 +409,9 @@ class ScoreJob(Job):
                                 results_path=self.results,
                                 db_filename=db_filename)
         self.started = time.time()
-        self.ta2.notify('scoring_start', pipeline_id=self.pipeline_id)
+        self.ta2.notify('scoring_start',
+                        pipeline_id=self.pipeline_id,
+                        job_id=id(self))
 
     def poll(self):
         if self.proc.poll() is None:
@@ -429,10 +431,12 @@ class ScoreJob(Job):
         if self.proc.returncode == 0:
             self.ta2.notify('scoring_success',
                             pipeline_id=self.pipeline_id,
-                            predict_result=self.results)
+                            predict_result=self.results,
+                            job_id=id(self))
         else:
             self.ta2.notify('scoring_error',
-                            pipeline_id=self.pipeline_id)
+                            pipeline_id=self.pipeline_id,
+                            job_id=id(self))
         return True
 
     def message(self, msg, arg):
@@ -457,7 +461,9 @@ class TrainJob(Job):
         self.proc = run_process('d3m_ta2_nyu.train.train', 'train', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 db_filename=db_filename)
-        self.ta2.notify('training_start', pipeline_id=self.pipeline_id)
+        self.ta2.notify('training_start',
+                        pipeline_id=self.pipeline_id,
+                        job_id=id(self))
 
     def poll(self):
         if self.proc.poll() is None:
@@ -467,10 +473,12 @@ class TrainJob(Job):
             self.proc.returncode, self.pipeline_id)
         if self.proc.returncode == 0:
             self.ta2.notify('training_success',
-                            pipeline_id=self.pipeline_id)
+                            pipeline_id=self.pipeline_id,
+                            job_id=id(self))
         else:
             self.ta2.notify('training_error',
-                            pipeline_id=self.pipeline_id)
+                            pipeline_id=self.pipeline_id,
+                            job_id=id(self))
         return True
 
     def message(self, msg, arg):
@@ -510,7 +518,9 @@ class TuneHyperparamsJob(Job):
                                 targets=self.session.targets,
                                 results_path=self.results,
                                 db_filename=db_filename)
-        self.session.notify('tuning_start', pipeline_id=self.pipeline_id)
+        self.session.notify('tuning_start',
+                            pipeline_id=self.pipeline_id,
+                            job_id=id(self))
 
     def poll(self):
         if self.proc.poll() is None:
@@ -522,15 +532,18 @@ class TuneHyperparamsJob(Job):
             logger.info("New pipeline: %s)", self.tuned_pipeline_id)
             self.session.notify('tuning_success',
                                 old_pipeline_id=self.pipeline_id,
-                                new_pipeline_id=self.tuned_pipeline_id)
+                                new_pipeline_id=self.tuned_pipeline_id,
+                                job_id=id(self))
             self.session.notify('scoring_success',
                                 pipeline_id=self.tuned_pipeline_id,
-                                predict_result=self.results)
+                                predict_result=self.results,
+                                job_id=id(self))
             self.session.pipeline_tuning_done(self.pipeline_id,
                                               self.tuned_pipeline_id)
         else:
             self.session.notify('tuning_error',
-                                pipeline_id=self.pipeline_id)
+                                pipeline_id=self.pipeline_id,
+                                job_id=id(self))
             self.session.pipeline_tuning_done(self.pipeline_id)
         return True
 
@@ -1006,7 +1019,9 @@ class D3mTa2(Observable):
         session.notify('new_pipeline', pipeline_id=pipeline_id)
 
     def train_pipeline(self, pipeline_id):
-        self._run_queue.put(TrainJob(self, pipeline_id))
+        job = TrainJob(self, pipeline_id)
+        self._run_queue.put(job)
+        return id(job)
 
     # Runs in a background thread
     def _pipeline_running_thread(self):
