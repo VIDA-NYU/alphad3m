@@ -83,10 +83,11 @@ class CoreService(pb_core_grpc.CoreServicer):
         problem = self._convert_problem(context, request.problem)
 
         timeout = request.time_bound
-        if timeout > 0.5:
-            timeout = timeout * 60.0  # Minutes
+        if timeout < 0.000001:
+            timeout = None  # No limit
         else:
-            timeout = None
+            timeout = max(timeout, 1.0)  # At least one minute
+            timeout = timeout * 60.0  # Minutes to seconds
 
         search_id = self._app.new_session(problem)
 

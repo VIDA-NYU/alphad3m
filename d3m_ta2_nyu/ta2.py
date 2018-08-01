@@ -844,7 +844,7 @@ class D3mTa2(Observable):
             # gets created
             session.working = True
 
-            logger.info("Starting AlphaD3M process...")
+            logger.info("Starting AlphaD3M process, timeout is %s", timeout)
             msg_queue = Receiver()
             proc = run_process(
                 'd3m_ta2_nyu.alphad3m_edit'
