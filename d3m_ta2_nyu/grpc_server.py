@@ -383,15 +383,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         This will make it available for testing and exporting.
         """
         pipeline_id = UUID(hex=request.solution_id)
-        session_id = None
-        for session_key in self._app.sessions:
-            session = self._app.sessions[session_key]
-            if pipeline_id in session.pipelines:
-                session_id = session.id
-                break
-        if session_id is None:
-            raise error(context, grpc.StatusCode.NOT_FOUND,
-                        "Unknown solution ID %s", request.solution_id)
 
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
@@ -402,32 +393,34 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
 
-        session = self._app.sessions[session_id]
-        with session.with_observer_queue() as queue:
-            self._app.fit_solution(session_id, pipeline_id)
+        pipeline = self._app.get_workflow(pipeline_id)
+        if pipeline.dataset != dataset:
+            # FIXME: Currently training run not associated with dataset in DB
+            raise error(context, grpc.StatusCode.UNIMPLEMENTED,
+                        "Currently, you can only train on the search dataset")
+        if not pipeline.trained:
+            self._app.fit_solution(pipeline_id)
 
         return pb_core.FitSolutionResponse(
-            # TODO: Figure out an ID for this
-            request_id=request.solution_id
+            request_id=pipeline_id,
         )
 
     def GetFitSolutionResults(self, request, context):
         """Wait for training to be done.
         """
         req_pipeline_id = UUID(hex=request.request_id)
-        session_id = None
-        for session_key in self._app.sessions:
-            session = self._app.sessions[session_key]
-            if req_pipeline_id in session.pipelines:
-                session_id = session.id
-                break
-        if session_id is None:
-            raise error(context, grpc.StatusCode.NOT_FOUND,
-                        "Unknown ID %r", request.request_id)
 
-        session = self._app.sessions[session_id]
-        with session.with_observer_queue() as queue:
-            # TODO: Find existing result, and possibly return
+        with self._app.with_observer_queue() as queue:
+            # If this is already done, return immediately
+            pipeline = self._app.get_workflow(req_pipeline_id)
+            if pipeline.trained:
+                yield pb_core.GetFitSolutionResultsResponse(
+                    progress=pb_core.Progress(
+                        state=pb_core.COMPLETED
+                    ),
+                    fitted_solution_id=str(pipeline.id),
+                )
+                return
 
             while True:
                 if not context.is_active():
