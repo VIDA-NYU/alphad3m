@@ -249,18 +249,17 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
 
-        logger.info("Got ExecutePipeline request, session=%s, dataset=%s",
+        logger.info("Got ScoreSolution request, session=%s, dataset=%s",
                     session_id, dataset)
 
-        session = self._app.sessions[session_id]
-        with session.with_observer_queue() as queue:
-            # TODO: This is not TEST, this is SCORE
-            # TODO: We can actually check if a score already exists
-            self._app.test_pipeline(session_id, pipeline_id, dataset)
+        pipeline = self._app.get_workflow(pipeline_id)
+        if pipeline.dataset != dataset:
+            # FIXME: Currently scoring only works with dataset in DB
+            raise error(context, grpc.StatusCode.UNIMPLEMENTED,
+                        "Currently, you can only score on the search dataset")
 
         return pb_core.ScoreSolutionResponse(
-            # TODO: Figure out an ID for this
-            request_id=request.solution_id
+            request_id=str(pipeline_id),
         )
 
     def GetScoreSolutionResults(self, request, context):
@@ -277,9 +276,35 @@ class CoreService(pb_core_grpc.CoreServicer):
             raise error(context, grpc.StatusCode.NOT_FOUND,
                         "Unknown ID %r", request.request_id)
 
+        def pipeline_scores(scores):
+            scores = [
+                pb_core.Score(
+                    metric=pb_problem.ProblemPerformanceMetric(
+                        metric=self.metric2grpc[m],
+                        k=0,
+                        pos_label=''),
+                    value=pb_value.Value(
+                        raw=pb_value.ValueRaw(double=s)
+                    ),
+                )
+                for m, s in scores.items()
+                if m in self.metric2grpc
+            ]
+            return pb_core.GetScoreSolutionResultsResponse(
+                progress=pb_core.Progress(
+                    state=pb_core.COMPLETED,
+                ),
+                scores=scores,
+            )
+
         session = self._app.sessions[session_id]
         with session.with_observer_queue() as queue:
-            # TODO: Find existing result, and possibly return
+            # If this is already done, return immediately
+            # TODO: Figure out if this is done but failed
+            scores = self._app.get_pipeline_scores(session_id, req_pipeline_id)
+            if scores:
+                yield pipeline_scores(scores)
+                return
 
             while True:
                 if not context.is_active():
@@ -290,43 +315,27 @@ class CoreService(pb_core_grpc.CoreServicer):
                     yield pb_core.GetScoreSolutionResultsResponse(
                         progress=pb_core.Progress(
                             state=pb_core.COMPLETED,
+                            status="End of search",
                         )
                     )
                     break
-                elif event == 'test_done':
+                elif event == 'scoring_success':
                     pipeline_id = kwargs['pipeline_id']
                     if pipeline_id != req_pipeline_id:
                         continue
-                    if kwargs['success']:
-                        scores = self._app.get_pipeline_scores(session.id,
-                                                               pipeline_id)
-
-                        scores = [
-                            pb_core.Score(
-                                metric=pb_problem.ProblemPerformanceMetric(
-                                    metric=self.metric2grpc[m],
-                                    k=0,
-                                    pos_label=''
-                                ),
-                                value=pb_value.Value(
-                                    raw=pb_value.ValueRaw(double=s)
-                                ),
-                            )
-                            for m, s in scores.items()
-                            if m in self.metric2grpc
-                        ]
-                        yield pb_core.GetScoreSolutionResultsResponse(
-                            progress=pb_core.Progress(
-                                state=pb_core.COMPLETED,
-                            ),
-                            scores=scores
-                        )
-                    else:
-                        yield pb_core.GetScoreSolutionResultsResponse(
-                            progress=pb_core.Progress(
-                                state=pb_core.ERRORED,
-                            ),
-                        )
+                    scores = self._app.get_pipeline_scores(session_id,
+                                                           req_pipeline_id)
+                    yield pipeline_scores(scores)
+                    break
+                elif event == 'scoring_error':
+                    pipeline_id = kwargs['pipeline_id']
+                    if pipeline_id != req_pipeline_id:
+                        continue
+                    yield pb_core.GetScoreSolutionResultsResponse(
+                        progress=pb_core.Progress(
+                            state=pb_core.ERRORED,
+                        ),
+                    )
                     break
 
     def FitSolution(self, request, context):
@@ -347,14 +356,14 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         pipeline = self._app.get_workflow(pipeline_id)
         if pipeline.dataset != dataset:
-            # FIXME: Currently training run not associated with dataset in DB
+            # FIXME: Currently training only works with dataset in DB
             raise error(context, grpc.StatusCode.UNIMPLEMENTED,
                         "Currently, you can only train on the search dataset")
         if not pipeline.trained:
             self._app.fit_solution(pipeline_id)
 
         return pb_core.FitSolutionResponse(
-            request_id=pipeline_id,
+            request_id=str(pipeline_id),
         )
 
     def GetFitSolutionResults(self, request, context):
@@ -364,6 +373,7 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         with self._app.with_observer_queue() as queue:
             # If this is already done, return immediately
+            # TODO: Figure out if this is done but failed
             pipeline = self._app.get_workflow(req_pipeline_id)
             if pipeline.trained:
                 yield pb_core.GetFitSolutionResultsResponse(
