@@ -60,6 +60,8 @@ class Session(Observable):
         self.problem = problem
         self.metrics = []
 
+        self._observer = self._ta2.add_observer(self._ta2_event)
+
         self.start = datetime.datetime.utcnow()
 
         # Should tuning be triggered when we are done with current pipelines?
@@ -133,6 +135,19 @@ class Session(Observable):
             self._features = set(value)
         else:
             raise TypeError("features should be a set or None")
+
+    def _ta2_event(self, event, **kwargs):
+        if event == 'scoring_start':
+            if kwargs['pipeline_id'] in self.pipelines_scoring:
+                logger.info("Scoring pipeline for %s (session %s has %d "
+                            "pipelines left to score)",
+                            kwargs['pipeline_id'], self.id,
+                            len(self.pipelines_scoring))
+                self.notify(event, **kwargs)
+        elif event == 'scoring_success' or event == 'scoring_error':
+            if kwargs['pipeline_id'] in self.pipelines_scoring:
+                self.notify(event, **kwargs)
+                self.pipeline_scoring_done(kwargs['pipeline_id'])
 
     def tune_when_ready(self, tune=None):
         if tune is None:
@@ -336,6 +351,12 @@ class Session(Observable):
         finally:
             db.close()
 
+    def close(self):
+        self._ta2.remove_observer(self._observer)
+        self._observer = None
+        self.stop_requested = True
+        self.notify('finish_session')
+
 
 class Job(object):
     def __init__(self):
@@ -364,19 +385,17 @@ class Job(object):
 class ScoreJob(Job):
     timeout = 8 * 60
 
-    def __init__(self, session, pipeline_id, store_results=True):
+    def __init__(self, ta2, pipeline_id, metrics, targets, store_results=True):
         Job.__init__(self)
-        self.session = session
+        self.ta2 = ta2
         self.pipeline_id = pipeline_id
+        self.metrics = metrics
+        self.targets = targets
         self.store_results = store_results
         self.results = None
 
     def start(self, db_filename, predictions_root, **kwargs):
         self.predictions_root = predictions_root
-        logger.info("Scoring pipeline for %s "
-                    "(session %s has %d pipelines left to score)",
-                    self.pipeline_id, self.session.id,
-                    len(self.session.pipelines_scoring))
         if self.store_results and self.predictions_root is not None:
             subdir = os.path.join(self.predictions_root, str(self.pipeline_id))
             if not os.path.exists(subdir):
@@ -385,12 +404,12 @@ class ScoreJob(Job):
         self.msg = Receiver()
         self.proc = run_process('d3m_ta2_nyu.score.score', 'score', self.msg,
                                 pipeline_id=self.pipeline_id,
-                                metrics=self.session.metrics,
-                                targets=self.session.targets,
+                                metrics=self.metrics,
+                                targets=self.targets,
                                 results_path=self.results,
                                 db_filename=db_filename)
         self.started = time.time()
-        self.session.notify('scoring_start', pipeline_id=self.pipeline_id)
+        self.ta2.notify('scoring_start', pipeline_id=self.pipeline_id)
 
     def poll(self):
         if self.proc.poll() is None:
@@ -408,13 +427,12 @@ class ScoreJob(Job):
         log("Pipeline scoring process done, returned %d (pipeline: %s)",
             self.proc.returncode, self.pipeline_id)
         if self.proc.returncode == 0:
-            self.session.notify('scoring_success',
-                                pipeline_id=self.pipeline_id,
-                                predict_result=self.results)
+            self.ta2.notify('scoring_success',
+                            pipeline_id=self.pipeline_id,
+                            predict_result=self.results)
         else:
-            self.session.notify('scoring_error',
-                                pipeline_id=self.pipeline_id)
-        self.session.pipeline_scoring_done(self.pipeline_id)
+            self.ta2.notify('scoring_error',
+                            pipeline_id=self.pipeline_id)
         return True
 
     def message(self, msg, arg):
@@ -706,7 +724,8 @@ class D3mTa2(Observable):
         # Add the pipeline to the session, score it
         with session.with_observer_queue() as queue:
             session.add_scoring_pipeline(pipeline_id)
-            self._run_queue.put(ScoreJob(session, pipeline_id,
+            self._run_queue.put(ScoreJob(self, pipeline_id,
+                                         session.metrics, session.targets,
                                          store_results=store_results))
             session.notify('new_pipeline', pipeline_id=pipeline_id)
             while True:
@@ -802,8 +821,7 @@ class D3mTa2(Observable):
 
     def finish_session(self, session_id):
         session = self.sessions.pop(session_id)
-        session.stop_requested = True
-        session.notify('finish_session')
+        session.close()
 
     def stop_session(self, session_id):
         session = self.sessions[session_id]
@@ -990,7 +1008,8 @@ class D3mTa2(Observable):
         session.add_scoring_pipeline(pipeline_id)
 
         logger.info("Created pipeline %s", pipeline_id)
-        self._run_queue.put(ScoreJob(session, pipeline_id))
+        self._run_queue.put(ScoreJob(self, pipeline_id,
+                                     session.metrics, session.targets))
         session.notify('new_pipeline', pipeline_id=pipeline_id)
 
     def train_pipeline(self, pipeline_id):
