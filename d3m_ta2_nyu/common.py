@@ -97,7 +97,7 @@ TASKS_FROM_SCHEMA = {
 
 TASKS_TO_SCHEMA = {v: k for k, v in TASKS_FROM_SCHEMA.items()}
 
-TASKS_SUBTYPE_FROM_SCHEMA = {
+SUBTASKS_FROM_SCHEMA = {
     'none': 'NONE',
     'binary': 'BINARY',
     'multiClass': 'MULTICLASS',
@@ -108,7 +108,7 @@ TASKS_SUBTYPE_FROM_SCHEMA = {
     'nonoverlaping': 'NONOVERLAPPING',
 }
 
-TASKS_SUBTYPE_TO_SCHEMA = {v: k for k, v in TASKS_SUBTYPE_FROM_SCHEMA.items()}
+SUBTASKS_TO_SCHEMA = {v: k for k, v in SUBTASKS_FROM_SCHEMA.items()}
 
 
 def normalize_score(metric, score, order):

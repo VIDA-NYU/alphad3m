@@ -15,7 +15,7 @@ from uuid import UUID
 from . import __version__
 
 from d3m_ta2_nyu.common import TASKS_FROM_SCHEMA, \
-    SCORES_TO_SCHEMA, TASKS_TO_SCHEMA, TASKS_SUBTYPE_TO_SCHEMA, normalize_score
+    SCORES_TO_SCHEMA, TASKS_TO_SCHEMA, SUBTASKS_TO_SCHEMA, normalize_score
 from d3m_ta2_nyu.grpc_logger import log_service
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
@@ -595,7 +595,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 'problemVersion': problem.problem.version,
                 'problemDescription': problem.problem.description,
                 "taskType": TASKS_TO_SCHEMA.get(task, ''),
-                "taskSubType": TASKS_SUBTYPE_TO_SCHEMA.get(
+                "taskSubType": SUBTASKS_TO_SCHEMA.get(
                     self.grpc2tasksubtype.get(problem.problem.task_type),
                     ''),
                 "problemSchemaVersion": "3.0",
