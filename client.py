@@ -113,6 +113,16 @@ def do_search(core, config, problem):
     return solutions
 
 
+def do_describe(core, solutions):
+    for solution in solutions:
+        try:
+            core.DescribeSolution(pb_core.DescribeSolutionRequest(
+                solution_id=solution,
+            ))
+        except Exception:
+            logger.exception("Exception during describe %r", solution)
+
+
 def do_score(core, config, problem, solutions):
     for solution in solutions:
         try:
@@ -150,6 +160,73 @@ def do_score(core, config, problem, solutions):
             logger.exception("Exception during scoring %r", solution)
 
 
+def do_train(core, config, solutions):
+    fitted = {}
+    for solution in solutions:
+        try:
+            response = core.FitSolution(pb_core.FitSolutionRequest(
+                solution_id=solution,
+                inputs=[pb_value.Value(
+                    dataset_uri='file://%s' % config['dataset_schema'],
+                )],
+                expose_outputs=[],
+                expose_value_types=[pb_value.CSV_URI],
+                users=[pb_core.SolutionRunUser(
+                    id='stub',
+                    choosen=False,
+                    reason="train run",
+                )],
+            ))
+            results = core.GetFitSolutionResults(
+                pb_core.GetFitSolutionResultsRequest(
+                    request_id=response.request_id,
+                )
+            )
+            for result in results:
+                if result.progress.state == pb_core.COMPLETED:
+                    fitted[solution] = result.fitted_solution_id
+        except Exception:
+            logger.exception("Exception training %r", solution)
+    return fitted
+
+
+def do_test(core, config, fitted):
+    for fitted_solution in fitted.values():
+        try:
+            response = core.ProduceSolution(pb_core.ProduceSolutionRequest(
+                fitted_solution_id=fitted_solution,
+                inputs=[pb_value.Value(
+                    dataset_uri='file://%s' % config['dataset_schema'],
+                )],
+                expose_outputs=[],
+                expose_value_types=[pb_value.CSV_URI],
+                users=[pb_core.SolutionRunUser(
+                    id='stub',
+                    choosen=False,
+                    reason="test run",
+                )],
+            ))
+            results = core.GetProduceSolutionResults(
+                pb_core.GetProduceSolutionResultsRequest(
+                    request_id=response.request_id,
+                )
+            )
+            for _ in results:
+                pass
+        except Exception:
+            logger.exception("Exception testing %r", fitted_solution)
+
+
+def do_export(core, fitted):
+    for i, fitted_solution in enumerate(fitted.values()):
+        try:
+            core.SolutionExport(pb_core.SolutionExportRequest(
+                fitted_solution_id=fitted_solution,
+                rank=(i + 1.0) / (len(fitted) + 1.0),
+            ))
+        except Exception:
+            logger.exception("Exception exporting %r", fitted_solution)
+
 def main():
     logging.basicConfig(
         level=logging.INFO,
@@ -168,8 +245,20 @@ def main():
     # Do a search
     solutions = do_search(core, config, problem)
 
+    # Describe the pipelines
+    do_describe(core, solutions)
+
     # Score all found solutions
     do_score(core, config, problem, solutions)
+
+    # Train all found solutions
+    fitted = do_train(core, config, solutions)
+
+    # Test all fitted solutions
+    do_test(core, config, fitted)
+
+    # Export all fitted solutions
+    do_export(core, fitted)
 
 
 if __name__ == '__main__':
