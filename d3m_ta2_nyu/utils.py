@@ -2,20 +2,9 @@
 """
 
 import contextlib
-import functools
 import logging
 from queue import Queue
 import threading
-
-
-def synchronized(lock):
-    def inner(wrapped):
-        def wrapper(*args, **kwargs):
-            with lock:
-                return wrapped(*args, **kwargs)
-        functools.update_wrapper(wrapper, wrapped)
-        return wrapper
-    return inner
 
 
 class Observable(object):
