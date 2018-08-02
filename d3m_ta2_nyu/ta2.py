@@ -272,7 +272,8 @@ class Session(Observable):
             # Get pipeline
             pipeline = db.query(database.Pipeline).get(pipeline_id)
 
-            logger.warning("Writing log for pipeline %s origin=%s",
+            logger.warning("Writing considered_pipeline JSON for pipeline %s "
+                           "origin=%s",
                            pipeline_id, pipeline.origin)
 
             filename = os.path.join(self._considered_pipelines_dir,
@@ -291,32 +292,41 @@ class Session(Observable):
             # Get pipeline
             pipeline = db.query(database.Pipeline).get(pipeline_id)
 
-            # Find most recent cross-validation
-            crossval_id = (
-                select([database.CrossValidation.id])
-                .where(database.CrossValidation.pipeline_id == pipeline_id)
-                .order_by(database.CrossValidation.date.desc())
-            ).as_scalar()
-            # Get score from that cross-validation
-            score = (
-                db.query(database.CrossValidationScore)
-                .filter(database.CrossValidationScore.cross_validation_id ==
-                        crossval_id)
-                .filter(database.CrossValidationScore.metric == metric)
-            ).one_or_none()
-            if score is None:
-                logger.error("Can't write log for pipeline %s, not scored for "
-                             "%s", pipeline_id, metric)
-                return
-            score = score.value
-
-            logger.warning("Writing log for pipeline %s %s=%s origin=%s",
-                           pipeline_id, metric, score, pipeline.origin)
+            if rank is None:
+                # Find most recent cross-validation
+                crossval_id = (
+                    select([database.CrossValidation.id])
+                    .where(database.CrossValidation.pipeline_id == pipeline_id)
+                    .order_by(database.CrossValidation.date.desc())
+                ).as_scalar()
+                # Get score from that cross-validation
+                score = (
+                    db.query(database.CrossValidationScore)
+                    .filter(
+                        database.CrossValidationScore.cross_validation_id ==
+                        crossval_id
+                    )
+                    .filter(database.CrossValidationScore.metric == metric)
+                ).one_or_none()
+                if score is None:
+                    rank = 1000.0
+                    logger.error("Writing pipeline JSON for pipeline %s, but "
+                                 "it is not scored for %s. Rank set to %s. "
+                                 "origin=%s",
+                                 pipeline_id, metric, rank, pipeline.origin)
+                else:
+                    logger.warning("Writing pipeline JSON for pipeline %s "
+                                   "%s=%s origin=%s",
+                                   pipeline_id, metric, score.value,
+                                   pipeline.origin)
+                    rank = normalize_score(metric, score.value, 'desc')
+            else:
+                logger.warning("Writing pipeline JSON for pipeline %s with "
+                               "provided rank %s. origin=%s",
+                               pipeline_id, rank, pipeline.origin)
 
             filename = os.path.join(directory, '%s.json' % pipeline_id)
             obj = to_d3m_json(pipeline)
-            if rank is None:
-                rank = normalize_score(metric, score, 'desc')
             obj['pipeline_rank'] = rank
             with open(filename, 'w') as fp:
                 json.dump(obj, fp, indent=2)
