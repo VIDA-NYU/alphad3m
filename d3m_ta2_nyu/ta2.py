@@ -284,7 +284,7 @@ class Session(Observable):
         finally:
             db.close()
 
-    def write_exported_pipeline(self, pipeline_id, directory, rank):
+    def write_exported_pipeline(self, pipeline_id, directory, rank=None):
         metric = self.metrics[0]
 
         db = self.DBSession()
@@ -654,11 +654,11 @@ class D3mTa2(Observable):
                     event, kwargs = queue.get(True)
                     if event == 'training_success':
                         pipeline_id = kwargs['pipeline_id']
-                        self.write_executable(training.pop(pipeline_id))
                         session.write_exported_pipeline(
                             pipeline_id,
                             self.pipelines_exported_root
                         )
+                        self.write_executable(training.pop(pipeline_id))
                     elif event == 'training_error':
                         pipeline_id = kwargs['pipeline_id']
                         del training[pipeline_id]
