@@ -993,7 +993,7 @@ class D3mTa2(Observable):
         self._run_queue.put(ScoreJob(session, pipeline_id))
         session.notify('new_pipeline', pipeline_id=pipeline_id)
 
-    def fit_solution(self, pipeline_id):
+    def train_pipeline(self, pipeline_id):
         self._run_queue.put(TrainJob(self, pipeline_id))
 
     # Runs in a background thread

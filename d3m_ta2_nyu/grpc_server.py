@@ -360,7 +360,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             raise error(context, grpc.StatusCode.UNIMPLEMENTED,
                         "Currently, you can only train on the search dataset")
         if not pipeline.trained:
-            self._ta2.fit_solution(pipeline_id)
+            self._ta2.train_pipeline(pipeline_id)
 
         return pb_core.FitSolutionResponse(
             request_id=str(pipeline_id),
