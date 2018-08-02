@@ -59,8 +59,8 @@ class CoreService(pb_core_grpc.CoreServicer):
     grpc2tasksubtype = {k: v for v, k in pb_problem.TaskSubtype.items()
                         if k != pb_problem.TASK_TYPE_UNDEFINED}
 
-    def __init__(self, app):
-        self._app = app
+    def __init__(self, ta2):
+        self._ta2 = ta2
 
     def SearchSolutions(self, request, context):
         """Create a `Session` and start generating & scoring pipelines.
@@ -89,12 +89,12 @@ class CoreService(pb_core_grpc.CoreServicer):
             timeout = max(timeout, 1.0)  # At least one minute
             timeout = timeout * 60.0  # Minutes to seconds
 
-        search_id = self._app.new_session(problem)
+        search_id = self._ta2.new_session(problem)
 
-        session = self._app.sessions[search_id]
+        session = self._ta2.sessions[search_id]
         task = TASKS_FROM_SCHEMA[session.problem['about']['taskType']]
         with session.with_observer_queue() as queue:
-            self._app.build_pipelines(search_id,
+            self._ta2.build_pipelines(search_id,
                                       task,
                                       dataset, session.metrics,
                                       tune=0,  # FIXME: no tuning in TA3 mode
@@ -108,15 +108,15 @@ class CoreService(pb_core_grpc.CoreServicer):
         """Get the created pipelines and scores.
         """
         session_id = UUID(hex=request.search_id)
-        if session_id not in self._app.sessions:
+        if session_id not in self._ta2.sessions:
             raise error(context, grpc.StatusCode.NOT_FOUND,
                         "Unknown search ID %r", session_id)
 
-        session = self._app.sessions[session_id]
+        session = self._ta2.sessions[session_id]
 
         def solution(pipeline_id, get_scores=True, status=None):
             if get_scores:
-                scores = self._app.get_pipeline_scores(session.id, pipeline_id)
+                scores = self._ta2.get_pipeline_scores(session.id, pipeline_id)
             else:
                 scores = None
 
@@ -210,8 +210,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         """Stop the search and delete the `Session`.
         """
         session_id = UUID(hex=request.search_id)
-        if session_id in self._app.sessions:
-            self._app.finish_session(session_id)
+        if session_id in self._ta2.sessions:
+            self._ta2.finish_session(session_id)
             logger.info("Search terminated: %s", session_id)
         return pb_core.EndSearchSolutionsResponse()
 
@@ -219,8 +219,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         """Stop the search without deleting the `Session`.
         """
         session_id = UUID(hex=request.search_id)
-        if session_id in self._app.sessions:
-            self._app.stop_session(session_id)
+        if session_id in self._ta2.sessions:
+            self._ta2.stop_session(session_id)
             logger.info("Search stopped: %s", session_id)
         return pb_core.StopSearchSolutionsResponse()
 
@@ -231,8 +231,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         """
         pipeline_id = UUID(hex=request.solution_id)
         session_id = None
-        for session_key in self._app.sessions:
-            session = self._app.sessions[session_key]
+        for session_key in self._ta2.sessions:
+            session = self._ta2.sessions[session_key]
             if pipeline_id in session.pipelines:
                 session_id = session.id
                 break
@@ -252,7 +252,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         logger.info("Got ScoreSolution request, session=%s, dataset=%s",
                     session_id, dataset)
 
-        pipeline = self._app.get_workflow(pipeline_id)
+        pipeline = self._ta2.get_workflow(pipeline_id)
         if pipeline.dataset != dataset:
             # FIXME: Currently scoring only works with dataset in DB
             raise error(context, grpc.StatusCode.UNIMPLEMENTED,
@@ -267,8 +267,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         """
         req_pipeline_id = UUID(hex=request.request_id)
         session_id = None
-        for session_key in self._app.sessions:
-            session = self._app.sessions[session_key]
+        for session_key in self._ta2.sessions:
+            session = self._ta2.sessions[session_key]
             if req_pipeline_id in session.pipelines:
                 session_id = session.id
                 break
@@ -297,11 +297,11 @@ class CoreService(pb_core_grpc.CoreServicer):
                 scores=scores,
             )
 
-        session = self._app.sessions[session_id]
+        session = self._ta2.sessions[session_id]
         with session.with_observer_queue() as queue:
             # If this is already done, return immediately
             # TODO: Figure out if this is done but failed
-            scores = self._app.get_pipeline_scores(session_id, req_pipeline_id)
+            scores = self._ta2.get_pipeline_scores(session_id, req_pipeline_id)
             if scores:
                 yield pipeline_scores(scores)
                 return
@@ -323,7 +323,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     pipeline_id = kwargs['pipeline_id']
                     if pipeline_id != req_pipeline_id:
                         continue
-                    scores = self._app.get_pipeline_scores(session_id,
+                    scores = self._ta2.get_pipeline_scores(session_id,
                                                            req_pipeline_id)
                     yield pipeline_scores(scores)
                     break
@@ -354,13 +354,13 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
 
-        pipeline = self._app.get_workflow(pipeline_id)
+        pipeline = self._ta2.get_workflow(pipeline_id)
         if pipeline.dataset != dataset:
             # FIXME: Currently training only works with dataset in DB
             raise error(context, grpc.StatusCode.UNIMPLEMENTED,
                         "Currently, you can only train on the search dataset")
         if not pipeline.trained:
-            self._app.fit_solution(pipeline_id)
+            self._ta2.fit_solution(pipeline_id)
 
         return pb_core.FitSolutionResponse(
             request_id=str(pipeline_id),
@@ -371,10 +371,10 @@ class CoreService(pb_core_grpc.CoreServicer):
         """
         req_pipeline_id = UUID(hex=request.request_id)
 
-        with self._app.with_observer_queue() as queue:
+        with self._ta2.with_observer_queue() as queue:
             # If this is already done, return immediately
             # TODO: Figure out if this is done but failed
-            pipeline = self._app.get_workflow(req_pipeline_id)
+            pipeline = self._ta2.get_workflow(req_pipeline_id)
             if pipeline.trained:
                 yield pb_core.GetFitSolutionResultsResponse(
                     progress=pb_core.Progress(
@@ -429,8 +429,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         """
         pipeline_id = UUID(hex=request.fitted_solution_id)
         session_id = None
-        for session_key in self._app.sessions:
-            session = self._app.sessions[session_key]
+        for session_key in self._ta2.sessions:
+            session = self._ta2.sessions[session_key]
             if pipeline_id in session.pipelines:
                 session_id = session.id
                 break
@@ -447,9 +447,9 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
 
-        session = self._app.sessions[session_id]
+        session = self._ta2.sessions[session_id]
         with session.with_observer_queue() as queue:
-            self._app.test_pipeline(session_id, pipeline_id, dataset)
+            self._ta2.test_pipeline(session_id, pipeline_id, dataset)
 
         return pb_core.ProduceSolutionResponse(
             # TODO: Figure out an ID for this
@@ -461,8 +461,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         """
         req_pipeline_id = UUID(hex=request.request_id)
         session_id = None
-        for session_key in self._app.sessions:
-            session = self._app.sessions[session_key]
+        for session_key in self._ta2.sessions:
+            session = self._ta2.sessions[session_key]
             if req_pipeline_id in session.pipelines:
                 session_id = session.id
                 break
@@ -470,7 +470,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             raise error(context, grpc.StatusCode.NOT_FOUND,
                         "Unknown ID %r", request.request_id)
 
-        session = self._app.sessions[session_id]
+        session = self._ta2.sessions[session_id]
         with session.with_observer_queue() as queue:
             # TODO: Find existing result, and possibly return
 
@@ -492,7 +492,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     if pipeline_id != req_pipeline_id:
                         continue
                     if kwargs['success']:
-                        scores = self._app.get_pipeline_scores(session.id,
+                        scores = self._ta2.get_pipeline_scores(session.id,
                                                                pipeline_id)
                         scores = [
                             pb_core.Score(
@@ -527,8 +527,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         """
         pipeline_id = UUID(hex=request.fitted_solution_id)
         session_id = None
-        for session_key in self._app.sessions:
-            session = self._app.sessions[session_key]
+        for session_key in self._ta2.sessions:
+            session = self._ta2.sessions[session_key]
             with session.lock:
                 if pipeline_id in session.pipelines:
                     session_id = session.id
@@ -536,18 +536,18 @@ class CoreService(pb_core_grpc.CoreServicer):
         if session_id is None:
             raise error(context, grpc.StatusCode.NOT_FOUND,
                         "Unknown solution ID %r", request.fitted_solution_id)
-        session = self._app.sessions[session_id]
+        session = self._ta2.sessions[session_id]
         rank = request.rank
         if rank <= 0.0:
             rank = None
-        pipeline = self._app.get_workflow(pipeline_id, session_id)
+        pipeline = self._ta2.get_workflow(pipeline_id, session_id)
         if not pipeline.trained:
             raise error(context, grpc.StatusCode.NOT_FOUND,
                         "Solution not fitted: %r",
                         request.fitted_solution_id)
-        self._app.write_executable(pipeline)
+        self._ta2.write_executable(pipeline)
         session.write_exported_pipeline(pipeline_id,
-                                        self._app.pipelines_exported_root,
+                                        self._ta2.pipelines_exported_root,
                                         rank)
         return pb_core.SolutionExportResponse()
 
