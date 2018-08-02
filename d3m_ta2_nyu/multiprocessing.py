@@ -72,14 +72,17 @@ def run_process(target, tag, msg_queue, **kwargs):
     """
     assert isinstance(msg_queue, Receiver)
     data = msg_queue.address, kwargs
-    proc = subprocess.Popen([
-        sys.executable,
-        '-c',
-        'from d3m_ta2_nyu.multiprocessing import _invoke; _invoke(%r, %r)' % (
-            tag, target
-        ),
-        base64.b64encode(pickle.dumps(data))
-    ])
+    proc = subprocess.Popen(
+        [
+            sys.executable,
+            '-c',
+            'from d3m_ta2_nyu.multiprocessing import _invoke; _invoke(%r, %r)' % (
+                tag, target
+            ),
+            base64.b64encode(pickle.dumps(data)),
+        ],
+        stdin=subprocess.PIPE)
+    proc.stdin.close()
 
     return proc
 
