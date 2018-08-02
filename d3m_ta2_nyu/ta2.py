@@ -640,7 +640,7 @@ class D3mTa2(Observable):
                                                   limit=limit,
                                                   only_trained=False)
 
-            with session.with_observer_queue() as queue:
+            with self.with_observer_queue() as queue:
                 training = {}
                 for pipeline, score in itertools.islice(pipelines, limit):
                     if pipeline.trained:
