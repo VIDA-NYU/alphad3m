@@ -11,7 +11,8 @@ import d3m_ta2_nyu.proto.value_pb2 as pb_value
 import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
 import d3m_ta2_nyu.proto.pipeline_pb2 as pb_pipeline
 
-from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA
+from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, TASKS_FROM_SCHEMA, \
+    SUBTASKS_FROM_SCHEMA
 from d3m_ta2_nyu.grpc_logger import LoggingStub
 
 
@@ -37,12 +38,15 @@ def do_search(core, config, problem):
                 version=problem['about']['problemVersion'],
                 name=os.path.basename(config['problem_root']),
                 description="",
-                task_type=TASK_TYPES[problem['about']['taskType'].upper()],
-                task_subtype=TASK_SUBTYPES[problem['about']['taskSubType']
-                                           .upper()],
+                task_type=TASK_TYPES[TASKS_FROM_SCHEMA[
+                    problem['about']['taskType']
+                ]],
+                task_subtype=TASK_SUBTYPES[SUBTASKS_FROM_SCHEMA[
+                    problem['about']['taskSubType']
+                ]],
                 performance_metrics=[
                     pb_problem.ProblemPerformanceMetric(
-                        metric=METRICS[SCORES_FROM_SCHEMA[e['metric']].upper()],
+                        metric=METRICS[SCORES_FROM_SCHEMA[e['metric']]],
                     )
                     for e in problem['inputs']['performanceMetrics']
                 ],
@@ -100,9 +104,11 @@ def do_search(core, config, problem):
         )],
     ))
 
-    results = core.GetSearchSolutionsResults(pb_core.GetSearchSolutionsResultsRequest(
-        search_id=search.search_id
-    ))
+    results = core.GetSearchSolutionsResults(
+        pb_core.GetSearchSolutionsResultsRequest(
+            search_id=search.search_id,
+        )
+    )
     solutions = {}
     for result in results:
         if result.solution_id:
@@ -226,6 +232,7 @@ def do_export(core, fitted):
             ))
         except Exception:
             logger.exception("Exception exporting %r", fitted_solution)
+
 
 def main():
     logging.basicConfig(
