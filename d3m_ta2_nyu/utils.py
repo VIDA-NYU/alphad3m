@@ -3,11 +3,13 @@
 
 import contextlib
 import logging
-from queue import Queue
+from queue import Empty, Queue
 import threading
 
 
 class Observable(object):
+    """Allow adding callbacks on an object, to be called on notifications.
+    """
     def __init__(self):
         self.__observers = {}
         self.__next_key = 0
@@ -45,6 +47,70 @@ class Observable(object):
                     observer(event, **kwargs)
                 except Exception:
                     logging.exception("Error in observer")
+
+
+class _PQ_Reader(object):
+    def __init__(self, pq):
+        self._pq = pq
+        self._pos = 0
+        self.finished = False
+
+    def get(self, timeout=None):
+        if self.finished:
+            return None
+        with self._pq.lock:
+            # There are unread items
+            if (len(self._pq.list) > self._pos or
+                    # Or get woken up
+                    self._pq.change.wait(timeout)):
+                self._pos += 1
+                item = self._pq.list[self._pos - 1]
+                if item is None:
+                    self.finished = True
+                return item
+            # Timeout
+            else:
+                raise Empty
+
+
+class PersistentQueue(object):
+    """A Queue object that will always yield items inserted from the start.
+    """
+    def __init__(self):
+        self.list = []
+        self.lock = threading.RLock()
+        self.change = threading.Condition(self.lock)
+
+    def put(self, item):
+        """Put an item in the queue, waking up readers.
+        """
+        if item is None:
+            raise TypeError("Can't put None in PersistentQueue")
+        with self.lock:
+            self.list.append(item)
+            self.change.notify_all()
+
+    def close(self):
+        """End the queue, readers will terminate.
+        """
+        with self.lock:
+            self.list.append(None)
+            self.change.notify_all()
+
+    def read(self):
+        """Get an iterator on all items from the queue.
+        """
+        reader = self.reader()
+        while True:
+            item = reader.get()
+            if item is None:
+                return
+            yield item
+
+    def reader(self):
+        """Get a reader object you can use to read with a timeout.
+        """
+        return _PQ_Reader(self)
 
 
 class ProgressStatus(object):
