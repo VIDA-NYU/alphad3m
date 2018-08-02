@@ -116,7 +116,7 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         def solution(pipeline_id, get_scores=True, status=None):
             if get_scores:
-                scores = self._ta2.get_pipeline_scores(session.id, pipeline_id)
+                scores = self._ta2.get_pipeline_scores(pipeline_id)
             else:
                 scores = None
 
@@ -301,7 +301,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         with session.with_observer_queue() as queue:
             # If this is already done, return immediately
             # TODO: Figure out if this is done but failed
-            scores = self._ta2.get_pipeline_scores(session_id, req_pipeline_id)
+            scores = self._ta2.get_pipeline_scores(req_pipeline_id)
             if scores:
                 yield pipeline_scores(scores)
                 return
@@ -323,8 +323,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     pipeline_id = kwargs['pipeline_id']
                     if pipeline_id != req_pipeline_id:
                         continue
-                    scores = self._ta2.get_pipeline_scores(session_id,
-                                                           req_pipeline_id)
+                    scores = self._ta2.get_pipeline_scores(req_pipeline_id)
                     yield pipeline_scores(scores)
                     break
                 elif event == 'scoring_error':
@@ -492,8 +491,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     if pipeline_id != req_pipeline_id:
                         continue
                     if kwargs['success']:
-                        scores = self._ta2.get_pipeline_scores(session.id,
-                                                               pipeline_id)
+                        scores = self._ta2.get_pipeline_scores(pipeline_id)
                         scores = [
                             pb_core.Score(
                                 metric=pb_problem.ProblemPerformanceMetric(
@@ -540,7 +538,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         rank = request.rank
         if rank <= 0.0:
             rank = None
-        pipeline = self._ta2.get_workflow(pipeline_id, session_id)
+        pipeline = self._ta2.get_workflow(pipeline_id)
         if not pipeline.trained:
             raise error(context, grpc.StatusCode.NOT_FOUND,
                         "Solution not fitted: %r",
