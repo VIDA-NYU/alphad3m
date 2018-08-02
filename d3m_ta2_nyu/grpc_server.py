@@ -537,13 +537,18 @@ class CoreService(pb_core_grpc.CoreServicer):
             raise error(context, grpc.StatusCode.NOT_FOUND,
                         "Unknown solution ID %r", request.fitted_solution_id)
         session = self._app.sessions[session_id]
-        with session.lock:
-            pipeline = self._app.get_workflow(pipeline_id, session_id)
-            if not pipeline.trained:
-                raise error(context, grpc.StatusCode.NOT_FOUND,
-                            "Solution not fitted: %r",
-                            request.fitted_solution_id)
-            self._app.write_executable(pipeline)
+        rank = request.rank
+        if rank <= 0.0:
+            rank = None
+        pipeline = self._app.get_workflow(pipeline_id, session_id)
+        if not pipeline.trained:
+            raise error(context, grpc.StatusCode.NOT_FOUND,
+                        "Solution not fitted: %r",
+                        request.fitted_solution_id)
+        self._app.write_executable(pipeline)
+        session.write_exported_pipeline(pipeline_id,
+                                        self._app.pipelines_exported_root,
+                                        rank)
         return pb_core.SolutionExportResponse()
 
     def Hello(self, request, context):

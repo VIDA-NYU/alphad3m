@@ -283,7 +283,7 @@ class Session(Observable):
         finally:
             db.close()
 
-    def write_exported_pipeline(self, pipeline_id, directory):
+    def write_exported_pipeline(self, pipeline_id, directory, rank):
         metric = self.metrics[0]
 
         db = self.DBSession()
@@ -315,7 +315,9 @@ class Session(Observable):
 
             filename = os.path.join(directory, '%s.json' % pipeline_id)
             obj = to_d3m_json(pipeline)
-            obj['pipeline_rank'] = normalize_score(metric, score, 'desc')
+            if rank is None:
+                rank = normalize_score(metric, score, 'desc')
+            obj['pipeline_rank'] = rank
             with open(filename, 'w') as fp:
                 json.dump(obj, fp, indent=2)
         finally:
