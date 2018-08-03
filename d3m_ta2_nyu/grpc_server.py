@@ -10,7 +10,9 @@ import datetime
 from google.protobuf.timestamp_pb2 import Timestamp
 import grpc
 import logging
+from sqlalchemy.orm import joinedload
 from uuid import UUID, uuid4
+import pickle
 
 from . import __version__
 
@@ -21,8 +23,13 @@ import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
 import d3m_ta2_nyu.proto.value_pb2 as pb_value
+import d3m_ta2_nyu.proto.pipeline_pb2 as pb_pipeline
+import d3m_ta2_nyu.proto.primitive_pb2 as pb_primitive
+
 from d3m_ta2_nyu.utils import PersistentQueue
 
+from d3m_ta2_nyu.workflow import database
+from d3m_ta2_nyu.workflow.convert import  get_class
 
 logger = logging.getLogger(__name__)
 
@@ -499,7 +506,68 @@ class CoreService(pb_core_grpc.CoreServicer):
         raise NotImplementedError
 
     def DescribeSolution(self, request, context):
-        raise NotImplementedError
+        pipeline_id = UUID(hex=request.solution_id)
+
+        session_id = None
+        for session_key in self._app.sessions:
+            session = self._app.sessions[session_key]
+            if pipeline_id in session.pipelines:
+                session_id = session.id
+                break
+        if session_id is None:
+            raise error(context, grpc.StatusCode.NOT_FOUND,
+                        "Unknown solution ID %r", request.solution_id)
+
+        db = self._app.sessions[session_id].DBSession()
+        # Load the pipeline
+        pipeline = (
+            db.query(database.Pipeline)
+                .filter(database.Pipeline.id == pipeline_id)
+                .options(joinedload(database.Pipeline.modules),
+                         joinedload(database.Pipeline.connections))
+        ).one()
+
+        steps = []
+        modules = {mod.id: mod for mod in pipeline.modules}
+        params = {}
+        for param in pipeline.parameters:
+            params.setdefault(param.module_id, {})[param.name] = param.value
+        module_to_step = {}
+        for mod in modules.values():
+            self._add_step(steps, modules, params, module_to_step, mod)
+
+
+        '''
+        {
+            'id': str(pipeline.id),
+            'name': str(pipeline.id),
+            'description': pipeline.origin or '',
+            'schema': 'https://metadata.datadrivendiscovery.org/schemas/'
+                      'v0/pipeline.json',
+            'created': pipeline.created_date.isoformat() + 'Z',
+            'context': 'TESTING',
+            'inputs': [
+                {'name': "input dataset"},
+            ],
+            'outputs': [
+                {
+                    'data': 'steps.%d.produce' % (len(steps) - 1),
+                    'name': "predictions",
+                }
+            ],
+            'steps': steps,
+        }
+        '''
+
+        return pb_core.DescribeSolutionResponse(
+            pipeline=pb_pipeline.PipelineDescription(
+                id=str(pipeline.id),
+                name=str(pipeline.id),
+                description=pipeline.origin or '',
+                steps=steps
+            ),
+            steps=None
+        )
 
     def _convert_problem(self, context, problem):
         """Convert the problem from the gRPC message to the JSON schema.
@@ -555,3 +623,86 @@ class CoreService(pb_core_grpc.CoreServicer):
                 ],
             },
         }
+
+    def _add_step(self, steps, modules, params, module_to_step, mod):
+        if mod.id in module_to_step:
+            return module_to_step[mod.id]
+
+        # Special case: the "dataset" module
+        if mod.package == 'data' and mod.name == 'dataset':
+            module_to_step[mod.id] = 'inputs.0'
+            return 'inputs.0'
+        elif mod.package != 'd3m':
+            raise ValueError("Got unknown module '%s:%s'", mod.package, mod.name)
+
+        # Recursively walk upstream modules (to get `steps` in topological order)
+        # Add inputs to a dictionary, in deterministic order
+        inputs = {}
+        for conn in sorted(mod.connections_to, key=lambda c: c.to_input_name):
+            step = self._add_step(steps, modules, params, module_to_step,
+                             modules[conn.from_module_id])
+            if step.startswith('inputs.'):
+                inputs[conn.to_input_name] = step
+            else:
+                inputs[conn.to_input_name] = '%s.%s' % (step,
+                                                        conn.from_output_name)
+
+        klass = get_class(mod.name)
+        metadata_items = {'id':"", 'version':"", 'python_path':"", 'name':"", 'digest':""}
+
+        for key, value in klass.metadata.query().items():
+            if key in metadata_items:
+                metadata_items[key]= value
+
+        arguments = {
+            name:pb_pipeline.PrimitiveStepArgument(
+                container=pb_pipeline.ContainerArgument(
+                    data=data,
+                )
+            )
+        for name, data in inputs.items()
+        }
+
+
+        hyperparams = None
+        # If hyperparameters are set, export them
+        if mod.id in params and 'hyperparams' in params[mod.id]:
+            hyperparams = pickle.loads(params[mod.id]['hyperparams'])
+            hyperparams = {
+                k: pb_pipeline.PrimitiveStepHyperparameter(
+                    value=pb_pipeline.ValueArgument(
+                        data=pb_value.Value(
+                            raw=pb_value.ValueRaw(string=str(v))
+                        )
+                    )
+                )
+                for k, v in hyperparams.items()
+            }
+
+        # Create step description
+
+        step = pb_pipeline.PipelineDescriptionStep(
+            primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
+                primitive=pb_primitive.Primitive(
+                    id=metadata_items['id'],
+                    version=metadata_items['version'],
+                    python_path=metadata_items['python_path'],
+                    name=metadata_items['name'],
+                    digest=metadata_items['digest']
+                ),
+                arguments=arguments,
+                outputs=[
+                    pb_pipeline.StepOutput(
+                        id='produce'
+                    )
+                ],
+                hyperparams=hyperparams,
+
+            )
+        )
+
+        step_nb = 'steps.%d' % len(steps)
+        steps.append(step)
+        module_to_step[mod.id] = step_nb
+        return step_nb
+
