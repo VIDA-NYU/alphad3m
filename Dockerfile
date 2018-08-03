@@ -1,6 +1,6 @@
-FROM registry.datadrivendiscovery.org/jpl/docker_images/complete:ubuntu-artful-python36-v2018.7.10-20180727-042802@sha256:fac2cdaa89bb68dcdc8591567e02ac8225f997d647565937bb1136b525d5a351
+FROM registry.datadrivendiscovery.org/jpl/docker_images/complete:ubuntu-artful-python36-v2018.7.10-20180801-215033@sha256:b3b602448ff98325ea91f60382040d09d5d8666e92f78bbb0cb8869d29f684d7
 #     Dockerfile: https://gitlab.datadrivendiscovery.org/jpl/docker_images/blob/11b20506e68017249c287f878e92b695a37911ec/complete/ubuntu-artful-python36-v2018.7.10.dockerfile
-#     Using primitives https://gitlab.datadrivendiscovery.org/jpl/primitives_repo/tree/1845e7db75f021b41cb47f1797aee830a4b66788
+#     Using primitives https://gitlab.datadrivendiscovery.org/jpl/primitives_repo/tree/164549a9e57d7a7f490b30e9fb71051e5facd126
 # BUILT FROM registry.gitlab.com/datadrivendiscovery/images/core:ubuntu-artful-python36-v2018.7.10@sha256:e1ae7db8c1f9b91e57e367b4c029046b4fd391948cb102ec9e49ab7e73035a70
 #     Dockerfile: https://gitlab.com/datadrivendiscovery/images/blob/b891dc97b907fcc2c81e33ddc48ced34708b5524/core/ubuntu-artful-python36-v2018.7.10.dockerfile
 # BUILT FROM registry.gitlab.com/datadrivendiscovery/images/base@sha256:52753746a2e6c83e8ba7f5067e530529d3c08d39b038aedd39cea0f931e952d6
