@@ -38,6 +38,7 @@ SCORES_TO_SKLEARN = dict(
     ROOT_MEAN_SQUARED_ERROR_AVG=_root_mean_squared_error_avg,
     MEAN_ABSOLUTE_ERROR=sklearn.metrics.mean_absolute_error,
     R_SQUARED=sklearn.metrics.r2_score,
+    NORMALIZED_MUTUAL_INFORMATION=sklearn.metrics.normalized_mutual_info_score,
     # FIXME: NORMALIZED_MUTUAL_INFORMATION
     # FIXME: JACCARD_SIMILARITY_SCORE
     EXECUTION_TIME=None,
