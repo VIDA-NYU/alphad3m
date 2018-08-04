@@ -513,6 +513,18 @@ class TuneHyperparamsJob(Job):
                          msg)
 
 
+class ThreadPoolExecutor(futures.ThreadPoolExecutor):
+    def submit(self, fn, *args, **kwargs):
+        def wrapper(*args, **kwargs):
+            try:
+                return fn(*args, **kwargs)
+            except Exception:
+                logger.exception("Exception in worker thread")
+                raise
+        return futures.ThreadPoolExecutor.submit(self, wrapper,
+                                                 *args, **kwargs)
+
+
 class D3mTa2(Observable):
     def __init__(self, storage_root, shared_root=None,
                  pipelines_exported_root=None, pipeline_considered_root=None,
@@ -575,7 +587,7 @@ class D3mTa2(Observable):
         self.dbengine, self.DBSession = database.connect(self.db_filename)
 
         self.sessions = {}
-        self.executor = futures.ThreadPoolExecutor(max_workers=16)
+        self.executor = ThreadPoolExecutor(max_workers=16)
         self._run_queue = Queue()
         self._run_thread = threading.Thread(
             target=self._pipeline_running_thread)
