@@ -281,6 +281,9 @@ class Session(Observable):
             obj = to_d3m_json(pipeline)
             with open(filename, 'w') as fp:
                 json.dump(obj, fp, indent=2)
+        except Exception:
+            logger.exception("Error writing considered pipeline for %s",
+                             pipeline_id)
         finally:
             db.close()
 
