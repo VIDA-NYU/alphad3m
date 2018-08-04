@@ -97,8 +97,7 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
 
     def eval_timeseries_pipeline(estimator, origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_timeseries_pipeline_from_strings(estimator,
-                                                                            origin,
+        pipeline_id = GenerateD3MPipelines.make_timeseries_pipeline_from_strings(origin,
                                                                             dataset,
                                                                             targets, features,
                                                                             DBSession=DBSession)
@@ -149,11 +148,8 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         eval_image_pipeline(estimator, "ALPHAD3M")
         return
 
-    estimator = 'd3m.primitives.sklearn_wrap.SKGradientBoostingClassifier'
     if "timeseries" in data_types:
-        if "regression" in args['problem']['about']['taskType']:
-            estimator = 'd3m.primitives.sklearn_wrap.SKLasso'
-        eval_timeseries_pipeline(estimator, "ALPHAD3M")
+        eval_timeseries_pipeline("ALPHAD3M")
         return
 
     game = PipelineGame(args, None, eval_pipeline, compute_metafeatures)
