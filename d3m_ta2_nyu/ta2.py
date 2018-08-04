@@ -610,7 +610,7 @@ class D3mTa2(Observable):
 
         if timeout:
             # Save 5 minutes to finish scoring & training
-            timeout = timeout - 5 * 60
+            timeout = max(timeout - 5 * 60, 0.8 * timeout)
 
         # Create pipeline, NO TUNING
         with session.with_observer_queue() as queue:
