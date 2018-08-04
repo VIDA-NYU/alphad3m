@@ -419,7 +419,7 @@ class GenerateD3MPipelines():
             db.close()
 
     @staticmethod
-    def make_image_pipeline_from_strings(estimator, origin, dataset, targets=None, features=None,
+    def make_timeseries_pipeline_from_strings(estimator, origin, dataset, targets=None, features=None,
                                          DBSession=None):
         logger.info('MAKING IMAGE REGRESSION PIPELINE')
         db = DBSession()
