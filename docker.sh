@@ -9,12 +9,14 @@ LOCAL_DATA_ROOT="/home/remram/Documents/programming/d3m/data"
 LOCAL_OUTPUT_ROOT="/home/remram/Documents/programming/d3m/tmp"
 
 OPTS=""
+TIMEOUT=30
 if [ "$1" = "tpl" ]; then
     OPTS="$OPTS -e TA2_USE_TEMPLATES=1"
     shift
 fi
 if [ "$1" = "fast" ]; then
     OPTS="$OPTS -e TA2_DEBUG_BE_FAST=1"
+    TIMEOUT=5
     shift
 fi
 TESTOPT=""
@@ -51,7 +53,7 @@ docker run -ti --rm \
     -e D3MOUTPUTDIR=/output \
     -e D3MCPU=4 \
     -e D3MRAM=4 \
-    -e D3MTIMEOUT=30 \
+    -e D3MTIMEOUT=$TIMEOUT \
     $OPTS \
     -v "$PWD/d3m_ta2_nyu:/usr/src/app/d3m_ta2_nyu" \
     -v "$LOCAL_DATA_ROOT/${INPUT}:/input" \
