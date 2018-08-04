@@ -512,7 +512,7 @@ class GenerateD3MPipelines():
             connect(step5, step7, to_input="left")
             connect(step6, step7, to_input="right")
 
-            step8 = make_primitive_module("d3m.primitives.sklearn_wrap.SKGradientBoostingClassifier")
+            step8 = make_primitive_module("d3m.primitives.sklearn_wrap.SKRandomForestClassifier")
             connect(step7, step8)
             connect(step2, step8, to_input='outputs')
 
@@ -526,7 +526,7 @@ class GenerateD3MPipelines():
 
             step11 = make_primitive_module('.data.ConstructPredictions')
             connect(step10, step11)
-            connect(step1, step10, to_input='reference')
+            connect(step1, step11, to_input='reference')
 
             db.add(pipeline)
             db.commit()

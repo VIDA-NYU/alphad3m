@@ -142,7 +142,7 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         return
 
     logger.info('DATA TYPE %s', data_types)
-    estimator = 'd3m.primitives.sklearn_wrap.SKGradientBoostingClassifier'
+    estimator = 'd3m.primitives.sklearn_wrap.SKRandomForestClassifier'
     if "image" in data_types:
         if "regression" in args['problem']['about']['taskType']:
              estimator = 'd3m.primitives.sklearn_wrap.SKLasso'
