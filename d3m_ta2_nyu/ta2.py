@@ -362,6 +362,8 @@ class Job(object):
 
 
 class ScoreJob(Job):
+    timeout = 8 * 60
+
     def __init__(self, session, pipeline_id, store_results=True):
         Job.__init__(self)
         self.session = session
@@ -387,11 +389,21 @@ class ScoreJob(Job):
                                 targets=self.session.targets,
                                 results_path=self.results,
                                 db_filename=db_filename)
+        self.started = time.time()
         self.session.notify('scoring_start', pipeline_id=self.pipeline_id)
 
     def poll(self):
         if self.proc.poll() is None:
             return False
+        if self.started + self.timeout < time.time():
+            logger.error("Scoring process is stuck, terminating after %d "
+                         "seconds", time.time() - self.started)
+            self.proc.terminate()
+            try:
+                self.proc.wait(30)
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+                self.proc.wait()
         log = logger.info if self.proc.returncode == 0 else logger.error
         log("Pipeline scoring process done, returned %d (pipeline: %s)",
             self.proc.returncode, self.pipeline_id)
