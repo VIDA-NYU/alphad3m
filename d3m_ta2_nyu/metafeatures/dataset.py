@@ -127,7 +127,8 @@ class ComputeMetafeatures():
             return list(metafeatures_values.values())
         except Exception:
             logger.exception("Error running Metafeatures")
-            sys.exit(1)
+            # FIXME: This is a default to address metafeatures not generating features for datasets with numeric targets
+            return [1] * 178
         finally:
             db.rollback()
             db.close()

@@ -42,11 +42,7 @@ class PipelineGame(Game):
                 self.dataset_metafeatures = pickle.load(m_f)[args['dataset']]
 
         if self.dataset_metafeatures is None:
-            try:
-                self.dataset_metafeatures = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
-            except Exception:
-                # FIXME: This is a default to address metafeatures not generating features for datasets with numeric targets
-                self.dataset_metafeatures = [1] * 178
+            self.dataset_metafeatures = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
         self.dataset_metafeatures = list(np.nan_to_num(np.asarray(self.dataset_metafeatures)))
         self.p = Board.get_pipeline_size()
         self.m = len(self.dataset_metafeatures)+2
