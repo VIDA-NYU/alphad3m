@@ -95,7 +95,7 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    def eval_timeseries_pipeline(estimator, origin):
+    def eval_timeseries_pipeline(origin):
         # Create the pipeline in the database
         pipeline_id = GenerateD3MPipelines.make_timeseries_pipeline_from_strings(origin,
                                                                             dataset,
