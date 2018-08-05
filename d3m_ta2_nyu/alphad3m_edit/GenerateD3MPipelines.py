@@ -455,12 +455,6 @@ class GenerateD3MPipelines():
                 name='hyperparams', value=pickle.dumps(hyperparams),
             ))
 
-        def set_hyperparams(module, **hyperparams):
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=module,
-                name='hyperparams', value=pickle.dumps(hyperparams),
-            ))
-
         try:
             input_data = make_data_module('dataset')
             db.add(database.PipelineParameter(
