@@ -2,12 +2,13 @@ import logging
 import os
 import pickle
 from d3m_ta2_nyu.workflow import database
-from d3m.container import Dataset
+
 
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
 
 logger = logging.getLogger(__name__)
+
 
 class GenerateD3MPipelines():
     @staticmethod
@@ -190,7 +191,7 @@ class GenerateD3MPipelines():
 
             step1 = make_primitive_module("d3m.primitives.bbn.time_series.AudioReader")
             connect(input_data, step1, from_output='dataset')
-            
+
             step = prev_step = step1
             preprocessors = []
             if len(primitives) > 1:
@@ -330,7 +331,7 @@ class GenerateD3MPipelines():
 
     @staticmethod
     def make_image_pipeline_from_strings(estimator, origin, dataset, targets=None, features=None,
-                                                    DBSession=None):
+                                         DBSession=None):
         db = DBSession()
 
         pipeline = database.Pipeline(
@@ -359,6 +360,7 @@ class GenerateD3MPipelines():
                                                to_module=to_module,
                                                from_output_name=from_output,
                                                to_input_name=to_input))
+
         def set_hyperparams(module, **hyperparams):
             db.add(database.PipelineParameter(
                 pipeline=pipeline, module=module,
@@ -382,26 +384,26 @@ class GenerateD3MPipelines():
             step1 = make_primitive_module("d3m.primitives.datasets.DatasetToDataFrame")
             connect(step0, step1)
 
-            step2 =  make_primitive_module("d3m.primitives.data.ExtractColumnsBySemanticTypes")
+            step2 = make_primitive_module("d3m.primitives.data.ExtractColumnsBySemanticTypes")
             set_hyperparams(
                 step2,
                 semantic_types=[
-                     "https://metadata.datadrivendiscovery.org/types/Target",
-                     "https://metadata.datadrivendiscovery.org/types/SuggestedTarget"
+                    "https://metadata.datadrivendiscovery.org/types/Target",
+                    "https://metadata.datadrivendiscovery.org/types/SuggestedTarget"
                 ],
             )
             connect(step1, step2)
 
-            step3 =  make_primitive_module("d3m.primitives.dsbox.DataFrameToTensor")
+            step3 = make_primitive_module("d3m.primitives.dsbox.DataFrameToTensor")
             connect(step1, step3)
 
-            step4 =  make_primitive_module("d3m.primitives.dsbox.Vgg16ImageFeature")
+            step4 = make_primitive_module("d3m.primitives.dsbox.Vgg16ImageFeature")
             connect(step3, step4)
 
-            step5 =  make_primitive_module("d3m.primitives.sklearn_wrap.SKPCA")
+            step5 = make_primitive_module("d3m.primitives.sklearn_wrap.SKPCA")
             connect(step4, step5)
-            
-            step6 =  make_primitive_module(estimator)
+
+            step6 = make_primitive_module(estimator)
             connect(step5, step6)
             connect(step2, step6, to_input='outputs')
 
@@ -419,7 +421,7 @@ class GenerateD3MPipelines():
 
     @staticmethod
     def make_timeseries_pipeline_from_strings(origin, dataset, targets=None, features=None,
-                                         DBSession=None):
+                                              DBSession=None):
         db = DBSession()
 
         pipeline = database.Pipeline(
@@ -527,8 +529,3 @@ class GenerateD3MPipelines():
 
         finally:
             db.close()
-
-
-
-
-
