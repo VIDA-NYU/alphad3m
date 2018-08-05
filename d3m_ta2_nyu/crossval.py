@@ -107,7 +107,7 @@ def cross_validation(pipeline, metrics, dataset, targets,
             else:
                 score_func = SCORES_TO_SKLEARN[metric]
                 scores.setdefault(metric, []).append(
-                    score_func(test_targets, predictions))
+                    score_func(test_targets.values.flatten(), predictions.values.flatten()))
 
         # Store predictions
         all_predictions.append(predictions)
