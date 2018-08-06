@@ -173,28 +173,14 @@ class CoreService(pb_core_grpc.CoreServicer):
             for pipeline_id in session.pipelines:
                 yield solution(pipeline_id)
 
-            if not session.working:
-                return
-
             # Send updates by listening to notifications on session
-            while True:
+            while session.working or not queue.empty():
                 if not context.is_active():
                     logger.info(
                         "Client closed GetSearchSolutionsResults stream")
                     break
                 event, kwargs = queue.get()
                 if event == 'finish_session' or event == 'done_searching':
-                    yield pb_core.GetSearchSolutionsResultsResponse(
-                        done_ticks=len(session.pipelines),
-                        all_ticks=len(session.pipelines),
-                        progress=pb_core.Progress(
-                            state=pb_core.COMPLETED,
-                            status="End of search",
-                            start=to_timestamp(session.start),
-                            end=to_timestamp(None),
-                        ),
-                        internal_score=float('nan'),
-                    )
                     break
                 elif event == 'new_pipeline':
                     yield solution(kwargs['pipeline_id'], get_scores=False)
@@ -215,6 +201,18 @@ class CoreService(pb_core_grpc.CoreServicer):
                         solution_id=str(pipeline_id),
                         internal_score=0.0,
                     )
+
+            yield pb_core.GetSearchSolutionsResultsResponse(
+                done_ticks=len(session.pipelines),
+                all_ticks=len(session.pipelines),
+                progress=pb_core.Progress(
+                    state=pb_core.COMPLETED,
+                    status="End of search",
+                    start=to_timestamp(session.start),
+                    end=to_timestamp(None),
+                ),
+                internal_score=float('nan'),
+            )
 
     def EndSearchSolutions(self, request, context):
         """Stop the search and delete the `Session`.
