@@ -114,7 +114,7 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         session = self._ta2.sessions[session_id]
 
-        def solution(pipeline_id, get_scores=True, status=None):
+        def solution(pipeline_id, get_scores=True):
             if get_scores:
                 scores = self._ta2.get_pipeline_scores(pipeline_id)
             else:
@@ -128,7 +128,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     all_ticks=progress.total,
                     progress=pb_core.Progress(
                         state=pb_core.RUNNING,
-                        status=status or "New solution",
+                        status="New solution",
                         start=to_timestamp(session.start),
                     ),
                     solution_id=str(pipeline_id),
@@ -160,7 +160,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     all_ticks=progress.total,
                     progress=pb_core.Progress(
                         state=pb_core.RUNNING,
-                        status=status or "Solution scored",
+                        status="Solution scored",
                         start=to_timestamp(session.start),
                     ),
                     solution_id=str(pipeline_id),
@@ -203,8 +203,18 @@ class CoreService(pb_core_grpc.CoreServicer):
                     yield solution(pipeline_id)
                 elif event == 'scoring_error':
                     pipeline_id = kwargs['pipeline_id']
-                    yield solution(pipeline_id, get_scores=False,
-                                   status="Solution scoring failed")
+                    progress = session.progress
+                    yield pb_core.GetSearchSolutionsResultsResponse(
+                        done_ticks=progress.current,
+                        all_ticks=progress.total,
+                        progress=pb_core.Progress(
+                            state=pb_core.RUNNING,
+                            status="Solution scoring failed",
+                            start=to_timestamp(session.start),
+                        ),
+                        solution_id=str(pipeline_id),
+                        internal_score=0.0,
+                    )
 
     def EndSearchSolutions(self, request, context):
         """Stop the search and delete the `Session`.
