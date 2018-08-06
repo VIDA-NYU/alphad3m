@@ -1069,15 +1069,13 @@ class D3mTa2(Observable):
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
 
-    def test_pipeline(self, session_id, pipeline_id, dataset):
-        session = self.sessions[session_id]
-        if pipeline_id not in session.pipelines:
-            raise KeyError("No such pipeline ID for session")
+    def test_pipeline(self, pipeline_id, dataset):
+        # FIXME: Should be a Job
+        job_id = str(uuid.uuid4())
+        self.executor.submit(self._test_pipeline, pipeline_id, dataset, job_id)
+        return job_id
 
-        self.executor.submit(self._test_pipeline, session, pipeline_id,
-                             dataset)
-
-    def _test_pipeline(self, session, pipeline_id, dataset):
+    def _test_pipeline(self, pipeline_id, dataset, job_id):
         subdir = os.path.join(self.predictions_root,
                               'execute-%s' % uuid.uuid4())
         os.mkdir(subdir)
@@ -1086,13 +1084,18 @@ class D3mTa2(Observable):
         proc = run_process('d3m_ta2_nyu.test.test', 'test', msg_queue,
                            pipeline_id=pipeline_id,
                            dataset=dataset,
-                           targets=session.targets,
+                           targets=None,
                            results_path=results,
                            db_filename=self.db_filename)
         ret = proc.wait()
-        session.notify('test_done',
-                       pipeline_id=pipeline_id, results_path=results,
-                       success=(ret == 0))
+        if ret == 0:
+            self.notify('test_success',
+                        pipeline_id=pipeline_id, results_path=results,
+                        job_id=job_id)
+        else:
+            self.notify('test_error',
+                        pipeline_id=pipeline_id,
+                        job_id=job_id)
 
     def _classification_template(self, imputer, classifier, dataset,
                                  targets, features):
