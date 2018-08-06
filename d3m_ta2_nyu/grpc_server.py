@@ -528,45 +528,38 @@ class CoreService(pb_core_grpc.CoreServicer):
         ).one()
 
         steps = []
+        step_descriptions = []
         modules = {mod.id: mod for mod in pipeline.modules}
         params = {}
         for param in pipeline.parameters:
             params.setdefault(param.module_id, {})[param.name] = param.value
         module_to_step = {}
+        step_nb = ''
         for mod in modules.values():
-            self._add_step(steps, modules, params, module_to_step, mod)
+            self._add_step(steps, step_descriptions, modules, params, module_to_step, mod)
 
-
-        '''
-        {
-            'id': str(pipeline.id),
-            'name': str(pipeline.id),
-            'description': pipeline.origin or '',
-            'schema': 'https://metadata.datadrivendiscovery.org/schemas/'
-                      'v0/pipeline.json',
-            'created': pipeline.created_date.isoformat() + 'Z',
-            'context': 'TESTING',
-            'inputs': [
-                {'name': "input dataset"},
-            ],
-            'outputs': [
-                {
-                    'data': 'steps.%d.produce' % (len(steps) - 1),
-                    'name': "predictions",
-                }
-            ],
-            'steps': steps,
-        }
-        '''
 
         return pb_core.DescribeSolutionResponse(
             pipeline=pb_pipeline.PipelineDescription(
                 id=str(pipeline.id),
                 name=str(pipeline.id),
                 description=pipeline.origin or '',
-                steps=steps
+                created=to_timestamp(pipeline.created_date),
+                context=pb_pipeline.TESTING,
+                inputs=[
+                    pb_pipeline.PipelineDescriptionInput(
+                        name="input dataset"
+                    )
+                ],
+                outputs=[
+                    pb_pipeline.PipelineDescriptionOutput(
+                        name="predictions",
+                        data='steps.%d.produce' % (len(steps) - 1)
+                    )
+                ],
+                steps=steps,
             ),
-            steps=None
+            steps=step_descriptions
         )
 
     def _convert_problem(self, context, problem):
@@ -624,7 +617,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             },
         }
 
-    def _add_step(self, steps, modules, params, module_to_step, mod):
+    def _add_step(self, steps, step_descriptions, modules, params, module_to_step, mod):
         if mod.id in module_to_step:
             return module_to_step[mod.id]
 
@@ -639,7 +632,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         # Add inputs to a dictionary, in deterministic order
         inputs = {}
         for conn in sorted(mod.connections_to, key=lambda c: c.to_input_name):
-            step = self._add_step(steps, modules, params, module_to_step,
+            step = self._add_step(steps,step_descriptions, modules, params, module_to_step,
                              modules[conn.from_module_id])
             if step.startswith('inputs.'):
                 inputs[conn.to_input_name] = step
@@ -664,20 +657,26 @@ class CoreService(pb_core_grpc.CoreServicer):
         }
 
 
-        hyperparams = None
+        step_hyperparams = None
+        desc_hyperparams = None
         # If hyperparameters are set, export them
         if mod.id in params and 'hyperparams' in params[mod.id]:
             hyperparams = pickle.loads(params[mod.id]['hyperparams'])
-            hyperparams = {
-                k: pb_pipeline.PrimitiveStepHyperparameter(
-                    value=pb_pipeline.ValueArgument(
-                        data=pb_value.Value(
-                            raw=pb_value.ValueRaw(string=str(v))
+            for k, v in hyperparams.items():
+                step_hyperparams = {
+                    k: pb_pipeline.PrimitiveStepHyperparameter(
+                        value=pb_pipeline.ValueArgument(
+                            data=pb_value.Value(
+                                raw=pb_value.ValueRaw(string=str(v))
+                            )
                         )
                     )
-                )
-                for k, v in hyperparams.items()
-            }
+                }
+                desc_hyperparams = {
+                    k: pb_value.Value(
+                        raw=pb_value.ValueRaw(string=str(v))
+                    )
+                }
 
         # Create step description
 
@@ -696,10 +695,19 @@ class CoreService(pb_core_grpc.CoreServicer):
                         id='produce'
                     )
                 ],
-                hyperparams=hyperparams,
+                hyperparams=step_hyperparams,
 
             )
         )
+
+        if desc_hyperparams is not None:
+            step_descriptions.append(
+                pb_core.StepDescription(
+                    primitive=pb_core.PrimitiveStepDescription(
+                        hyperparams=desc_hyperparams
+                    )
+                )
+            )
 
         step_nb = 'steps.%d' % len(steps)
         steps.append(step)
