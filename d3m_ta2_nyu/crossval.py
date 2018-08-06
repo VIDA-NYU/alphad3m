@@ -1,12 +1,15 @@
 import logging
 import numpy
 import pandas
+import pickle
+from sqlalchemy import select
 import sys
 import time
 
 from d3m.primitives.evaluation import KFoldDatasetSplit
 
 from d3m_ta2_nyu.common import SCORES_TO_SKLEARN
+from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.execute import execute_train, execute_test
 from d3m_ta2_nyu.workflow.module_loader import load_dataset
 
@@ -21,6 +24,21 @@ def cross_validation(pipeline, metrics, dataset, targets,
                      progress, db,
                      folds, stratified=False, shuffle=True):
     scores = {}
+
+    if targets is None:
+        # Load targets from database
+        module = (
+            select([database.PipelineModule.id])
+            .where(database.PipelineModule.pipeline_id == pipeline)
+            .where(database.PipelineModule.package == 'data')
+            .where(database.PipelineModule.name == 'dataset')
+        ).as_scalar()
+        targets, = (
+            db.query(database.PipelineParameter.value)
+            .filter(database.PipelineParameter.module_id == module)
+            .filter(database.PipelineParameter.name == 'targets')
+        ).one()
+        targets = pickle.loads(targets)
 
     # Set correct targets
     dataset = load_dataset(dataset, targets, None)
