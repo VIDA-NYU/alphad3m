@@ -10,7 +10,7 @@ import datetime
 from google.protobuf.timestamp_pb2 import Timestamp
 import grpc
 import logging
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from . import __version__
 
@@ -21,6 +21,7 @@ import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
 import d3m_ta2_nyu.proto.value_pb2 as pb_value
+from d3m_ta2_nyu.utils import PersistentQueue
 
 
 logger = logging.getLogger(__name__)
@@ -61,6 +62,15 @@ class CoreService(pb_core_grpc.CoreServicer):
 
     def __init__(self, ta2):
         self._ta2 = ta2
+        self._ta2.add_observer(self._ta2_event)
+        self._requests = {}
+
+    def _ta2_event(self, event, **kwargs):
+        if 'job_id' in kwargs and kwargs['job_id'] in self._requests:
+            job_id = kwargs['job_id']
+            self._requests[job_id].put((event, kwargs))
+            if event in ('scoring_success', 'scoring_error'):
+                self._requests[job_id].close()
 
     def SearchSolutions(self, request, context):
         """Create a `Session` and start generating & scoring pipelines.
@@ -234,19 +244,8 @@ class CoreService(pb_core_grpc.CoreServicer):
 
     def ScoreSolution(self, request, context):
         """Request scores for a pipeline.
-
-        If the scores exist, return them immediately.
         """
         pipeline_id = UUID(hex=request.solution_id)
-        session_id = None
-        for session_key in self._ta2.sessions:
-            session = self._ta2.sessions[session_key]
-            if pipeline_id in session.pipelines:
-                session_id = session.id
-                break
-        if session_id is None:
-            raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
-                        "Unknown solution ID %s", request.solution_id)
 
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
@@ -257,93 +256,78 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
 
-        logger.info("Got ScoreSolution request, session=%s, dataset=%s",
-                    session_id, dataset)
+        metrics = [self.grpc2metric[m.metric]
+                   for m in request.performance_metrics
+                   if m.metric in self.grpc2metric]
+
+        logger.info("Got ScoreSolution request, dataset=%s, "
+                    "metrics=%s",
+                    dataset, metrics)
 
         pipeline = self._ta2.get_workflow(pipeline_id)
         if pipeline.dataset != dataset:
             # FIXME: Currently scoring only works with dataset in DB
             raise error(context, grpc.StatusCode.UNIMPLEMENTED,
                         "Currently, you can only score on the search dataset")
+        # TODO: Get already computed results
+        job_id = self._ta2.score_pipeline(pipeline_id, metrics, None)
+        self._requests[job_id] = PersistentQueue()
 
         return pb_core.ScoreSolutionResponse(
-            request_id=str(pipeline_id),
+            request_id='%x' % job_id,
         )
 
     def GetScoreSolutionResults(self, request, context):
-        """Wait for the requested scores to be available.
+        """Wait for a scoring job to be done.
         """
-        req_pipeline_id = UUID(hex=request.request_id)
-        session_id = None
-        for session_key in self._ta2.sessions:
-            session = self._ta2.sessions[session_key]
-            if req_pipeline_id in session.pipelines:
-                session_id = session.id
-                break
-        if session_id is None:
+        try:
+            job_id = int(request.request_id, 16)
+            queue = self._requests[job_id]
+        except (ValueError, KeyError):
             raise error(context, grpc.StatusCode.NOT_FOUND,
                         "Unknown ID %r", request.request_id)
 
-        def pipeline_scores(scores):
-            scores = [
-                pb_core.Score(
-                    metric=pb_problem.ProblemPerformanceMetric(
-                        metric=self.metric2grpc[m],
-                        k=0,
-                        pos_label=''),
-                    value=pb_value.Value(
-                        raw=pb_value.ValueRaw(double=s)
+        for event, kwargs in queue.read():
+            if not context.is_active():
+                logger.info("Client closed GetScoreSolutionResults stream")
+                break
+
+            if event == 'scoring_start':
+                yield pb_core.GetScoreSolutionResultsResponse(
+                    progress=pb_core.Progress(
+                        state=pb_core.RUNNING,
                     ),
                 )
-                for m, s in scores.items()
-                if m in self.metric2grpc
-            ]
-            return pb_core.GetScoreSolutionResultsResponse(
-                progress=pb_core.Progress(
-                    state=pb_core.COMPLETED,
-                ),
-                scores=scores,
-            )
-
-        session = self._ta2.sessions[session_id]
-        with session.with_observer_queue() as queue:
-            # If this is already done, return immediately
-            # TODO: Figure out if this is done but failed
-            scores = self._ta2.get_pipeline_scores(req_pipeline_id)
-            if scores:
-                yield pipeline_scores(scores)
-                return
-
-            while True:
-                if not context.is_active():
-                    logger.info("Client closed GetScoreSolutionResults stream")
-                    break
-                event, kwargs = queue.get()
-                if event == 'finish_session':
-                    yield pb_core.GetScoreSolutionResultsResponse(
-                        progress=pb_core.Progress(
-                            state=pb_core.COMPLETED,
-                            status="End of search",
-                        )
-                    )
-                    break
-                elif event == 'scoring_success':
-                    pipeline_id = kwargs['pipeline_id']
-                    if pipeline_id != req_pipeline_id:
-                        continue
-                    scores = self._ta2.get_pipeline_scores(req_pipeline_id)
-                    yield pipeline_scores(scores)
-                    break
-                elif event == 'scoring_error':
-                    pipeline_id = kwargs['pipeline_id']
-                    if pipeline_id != req_pipeline_id:
-                        continue
-                    yield pb_core.GetScoreSolutionResultsResponse(
-                        progress=pb_core.Progress(
-                            state=pb_core.ERRORED,
+            elif event == 'scoring_success':
+                pipeline_id = kwargs['pipeline_id']
+                scores = self._ta2.get_pipeline_scores(pipeline_id)
+                scores = [
+                    pb_core.Score(
+                        metric=pb_problem.ProblemPerformanceMetric(
+                            metric=self.metric2grpc[m],
+                            k=0,
+                            pos_label=''),
+                        value=pb_value.Value(
+                            raw=pb_value.ValueRaw(double=s)
                         ),
                     )
-                    break
+                    for m, s in scores.items()
+                    if m in self.metric2grpc
+                ]
+                yield pb_core.GetScoreSolutionResultsResponse(
+                    progress=pb_core.Progress(
+                        state=pb_core.COMPLETED,
+                    ),
+                    scores=scores,
+                )
+                break
+            elif event == 'scoring_error':
+                yield pb_core.GetScoreSolutionResultsResponse(
+                    progress=pb_core.Progress(
+                        state=pb_core.ERRORED,
+                    ),
+                )
+                break
 
     def FitSolution(self, request, context):
         """Train a pipeline on a dataset.

@@ -871,6 +871,17 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
+    def score_pipeline(self, pipeline_id, metrics, targets):
+        job = ScoreJob(self, pipeline_id, metrics, targets,
+                       store_results=False)
+        self._run_queue.put(job)
+        return id(job)
+
+    def train_pipeline(self, pipeline_id):
+        job = TrainJob(self, pipeline_id)
+        self._run_queue.put(job)
+        return id(job)
+
     def build_pipelines(self, session_id, task, dataset, metrics,
                         targets=None, features=None, tune=None, timeout=None):
         if not metrics:
@@ -1017,11 +1028,6 @@ class D3mTa2(Observable):
         self._run_queue.put(ScoreJob(self, pipeline_id,
                                      session.metrics, session.targets))
         session.notify('new_pipeline', pipeline_id=pipeline_id)
-
-    def train_pipeline(self, pipeline_id):
-        job = TrainJob(self, pipeline_id)
-        self._run_queue.put(job)
-        return id(job)
 
     # Runs in a background thread
     def _pipeline_running_thread(self):
