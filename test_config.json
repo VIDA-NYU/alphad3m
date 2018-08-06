@@ -6,7 +6,7 @@
     "problem_schema": "/input/problem_TEST/problemDoc.json",
     "test_data_root": "/input/dataset_TEST",
     "problem_root": "/input/problem_TEST",
-    "results_root": "/output/results",
+    "results_root": "/output/predictions",
     "timeout": "30",
     "cpus": "4",
     "ram": "4Gi"
