@@ -69,7 +69,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         if 'job_id' in kwargs and kwargs['job_id'] in self._requests:
             job_id = kwargs['job_id']
             self._requests[job_id].put((event, kwargs))
-            if event in ('scoring_success', 'scoring_error'):
+            if event in ('scoring_success', 'scoring_error',
+                         'training_success', 'training_error'):
                 self._requests[job_id].close()
 
     def SearchSolutions(self, request, context):
@@ -350,70 +351,52 @@ class CoreService(pb_core_grpc.CoreServicer):
             # FIXME: Currently training only works with dataset in DB
             raise error(context, grpc.StatusCode.UNIMPLEMENTED,
                         "Currently, you can only train on the search dataset")
-        if not pipeline.trained:
-            self._ta2.train_pipeline(pipeline_id)
+        job_id = self._ta2.train_pipeline(pipeline_id)
+        self._requests[job_id] = PersistentQueue()
 
         return pb_core.FitSolutionResponse(
-            request_id=str(pipeline_id),
+            request_id='%x' % job_id,
         )
 
     def GetFitSolutionResults(self, request, context):
-        """Wait for training to be done.
+        """Wait for a training job to be done.
         """
-        req_pipeline_id = UUID(hex=request.request_id)
+        try:
+            job_id = int(request.request_id, 16)
+            queue = self._requests[job_id]
+        except (ValueError, KeyError):
+            raise error(context, grpc.StatusCode.NOT_FOUND,
+                        "Unknown ID %r", request.request_id)
 
-        with self._ta2.with_observer_queue() as queue:
-            # If this is already done, return immediately
-            # TODO: Figure out if this is done but failed
-            pipeline = self._ta2.get_workflow(req_pipeline_id)
-            if pipeline.trained:
+        for event, kwargs in queue.read():
+            if not context.is_active():
+                logger.info("Client closed GetFitSolutionsResults stream")
+                break
+
+            if event == 'training_start':
+                yield pb_core.GetFitSolutionResultsResponse(
+                    progress=pb_core.Progress(
+                        state=pb_core.RUNNING
+                    ),
+                )
+            elif event == 'training_success':
+                pipeline_id = kwargs['pipeline_id']
                 yield pb_core.GetFitSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.COMPLETED
                     ),
-                    fitted_solution_id=str(pipeline.id),
+                    fitted_solution_id=str(pipeline_id),
                 )
-                return
-
-            while True:
-                if not context.is_active():
-                    logger.info("Client closed GetFitSolutionsResults stream")
-                    break
-                event, kwargs = queue.get()
-                if event == 'training_start':
-                    pipeline_id = kwargs['pipeline_id']
-                    if pipeline_id != req_pipeline_id:
-                        continue
-                    yield pb_core.GetFitSolutionResultsResponse(
-                        progress=pb_core.Progress(
-                            state=pb_core.RUNNING
-                        ),
-                        fitted_solution_id=str(pipeline_id),
-                    )
-                elif event == 'training_success':
-                    pipeline_id = kwargs['pipeline_id']
-                    if pipeline_id != req_pipeline_id:
-                        continue
-                    yield pb_core.GetFitSolutionResultsResponse(
-                        progress=pb_core.Progress(
-                            state=pb_core.COMPLETED
-                        ),
-                        fitted_solution_id=str(pipeline_id),
-                    )
-                    break
-                elif event == 'training_error':
-                    pipeline_id = kwargs['pipeline_id']
-                    if pipeline_id != req_pipeline_id:
-                        continue
-                    yield pb_core.GetFitSolutionResultsResponse(
-                        progress=pb_core.Progress(
-                            state=pb_core.ERRORED
-                        ),
-                        fitted_solution_id=str(pipeline_id),
-                    )
-                    break
-                elif event == 'done_searching':
-                    break
+                break
+            elif event == 'training_error':
+                yield pb_core.GetFitSolutionResultsResponse(
+                    progress=pb_core.Progress(
+                        state=pb_core.ERRORED
+                    ),
+                )
+                break
+            elif event == 'done_searching':
+                break
 
     def ProduceSolution(self, request, context):
         """Run testing from a trained pipeline.
