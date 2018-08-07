@@ -1,4 +1,6 @@
 import logging
+import pickle
+from sqlalchemy import select
 import sys
 
 from d3m.container import Dataset
@@ -15,6 +17,21 @@ def test(pipeline_id, dataset, targets, results_path, msg_queue, db):
     # Load data
     dataset = Dataset.load(dataset)
     logger.info("Loaded dataset")
+
+    if targets is None:
+        # Load targets from database
+        module = (
+            select([database.PipelineModule.id])
+            .where(database.PipelineModule.pipeline_id == pipeline_id)
+            .where(database.PipelineModule.package == 'data')
+            .where(database.PipelineModule.name == 'dataset')
+        ).as_scalar()
+        targets, = (
+            db.query(database.PipelineParameter.value)
+            .filter(database.PipelineParameter.module_id == module)
+            .filter(database.PipelineParameter.name == 'targets')
+        ).one()
+        targets = pickle.loads(targets)
 
     # Run prediction
     try:
