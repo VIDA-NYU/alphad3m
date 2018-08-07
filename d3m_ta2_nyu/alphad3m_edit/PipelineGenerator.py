@@ -199,7 +199,7 @@ def main(dataset_uri, problem_path, output_path):
 
     storage = tempfile.mkdtemp(prefix='d3m_pipeline_eval_')
     ta2 = D3mTa2(storage_root=storage,
-        pipeline_considered_root=os.path.join(storage, 'pipelines_considered'),
+        pipelines_considered_root=os.path.join(storage, 'pipelines_considered'),
         executables_root=os.path.join(storage, 'executables'))
 
     session_id = ta2.new_session(args['problem'])

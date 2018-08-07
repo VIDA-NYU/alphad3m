@@ -42,7 +42,7 @@ class TestSession(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.mkdtemp(prefix='d3m_unittest_')
         self._ta2 = D3mTa2(storage_root=self._tmp,
-                           pipeline_considered_root=self._tmp)
+                           pipelines_considered_root=self._tmp)
         self._problem = {
             'about': {'problemID': 'unittest_problem'},
             'inputs': {
@@ -110,7 +110,7 @@ class TestSession(unittest.TestCase):
 
         ta2 = mock.NonCallableMock()
         session = Session(
-            ta2, self._ta2.pipeline_considered_root,
+            ta2, self._ta2.pipelines_considered_root,
             self._problem,
             self._ta2.DBSession)
         self._ta2.sessions[session.id] = session
@@ -238,7 +238,7 @@ class TestPipelineConversion(unittest.TestCase):
     def setUpClass(cls):
         cls._tmp = tempfile.mkdtemp(prefix='d3m_unittest_')
         cls._ta2 = D3mTa2(storage_root=cls._tmp,
-                          pipeline_considered_root=cls._tmp)
+                          pipelines_considered_root=cls._tmp)
 
     @classmethod
     def tearDownClass(cls):

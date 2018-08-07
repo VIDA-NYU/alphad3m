@@ -573,7 +573,7 @@ class ThreadPoolExecutor(futures.ThreadPoolExecutor):
 
 class D3mTa2(Observable):
     def __init__(self, storage_root, shared_root=None,
-                 pipelines_exported_root=None, pipeline_considered_root=None,
+                 pipelines_exported_root=None, pipelines_considered_root=None,
                  executables_root=None):
         Observable.__init__(self)
         if 'TA2_DEBUG_BE_FAST' in os.environ:
@@ -614,13 +614,13 @@ class D3mTa2(Observable):
         else:
             self.pipelines_exported_root = None
 
-        if pipeline_considered_root is not None:
-            self.pipeline_considered_root = \
-                os.path.abspath(pipeline_considered_root)
-            if not os.path.exists(self.pipeline_considered_root):
-                os.makedirs(self.pipeline_considered_root)
+        if pipelines_considered_root is not None:
+            self.pipelines_considered_root = \
+                os.path.abspath(pipelines_considered_root)
+            if not os.path.exists(self.pipelines_considered_root):
+                os.makedirs(self.pipelines_considered_root)
         else:
-            self.pipeline_considered_root = None
+            self.pipelines_considered_root = None
 
         if executables_root:
             self.executables_root = os.path.abspath(executables_root)
@@ -660,7 +660,7 @@ class D3mTa2(Observable):
         task = TASKS_FROM_SCHEMA[task]
 
         # Create session
-        session = Session(self, self.pipeline_considered_root, problem,
+        session = Session(self, self.pipelines_considered_root, problem,
                           self.DBSession)
         logger.info("Dataset: %s, task: %s, metrics: %s",
                     dataset, task, ", ".join(session.metrics))
@@ -827,7 +827,7 @@ class D3mTa2(Observable):
             time.sleep(60)
 
     def new_session(self, problem):
-        session = Session(self, self.pipeline_considered_root,
+        session = Session(self, self.pipelines_considered_root,
                           problem, self.DBSession)
         self.sessions[session.id] = session
         return session.id

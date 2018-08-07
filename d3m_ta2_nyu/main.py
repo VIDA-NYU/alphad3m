@@ -49,7 +49,7 @@ def main_search():
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
             pipelines_exported_root=config['pipeline_logs_root'],
-            pipeline_considered_root=pipeline_considered,
+            pipelines_considered_root=pipeline_considered,
             executables_root=config['executables_root'])
         ta2.run_search(
             dataset=config['dataset_schema'],
@@ -102,7 +102,7 @@ def main_serve():
             storage_root=config['temp_storage_root'],
             shared_root=config.get('shared_storage_root'),
             pipelines_exported_root=config['pipeline_logs_root'],
-            pipeline_considered_root=pipeline_considered,
+            pipelines_considered_root=pipeline_considered,
             executables_root=config['executables_root'])
         ta2.run_server(port)
 
