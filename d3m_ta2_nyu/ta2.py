@@ -1085,6 +1085,13 @@ class D3mTa2(Observable):
         return job_id
 
     def _test_pipeline(self, pipeline_id, dataset, job_id):
+        if self.predictions_root is None:
+            logger.error("Can't test pipeline, no predictions_root is set")
+            self.notify('test_error',
+                        pipeline_id=pipeline_id,
+                        job_id=job_id)
+            return
+
         subdir = os.path.join(self.predictions_root,
                               'execute-%s' % uuid.uuid4())
         os.mkdir(subdir)

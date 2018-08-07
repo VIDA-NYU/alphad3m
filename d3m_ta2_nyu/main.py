@@ -94,13 +94,21 @@ def main_serve():
                                                'pipelines_considered')
         else:
             pipeline_considered = None
+
+        if 'shared_root' in config:
+            shared_root = config['shared_root']
+        elif 'D3MOUTPUTDIR' in os.environ:
+            shared_root = os.environ['D3MOUTPUTDIR']
+        else:
+            shared_root = None
+
         logger.info("Config loaded: %r", config)
         port = None
         if len(sys.argv) == 2:
             port = int(sys.argv[1])
         ta2 = D3mTa2(
             storage_root=config['temp_storage_root'],
-            shared_root=config.get('shared_storage_root'),
+            shared_root=shared_root,
             pipelines_exported_root=config['pipeline_logs_root'],
             pipelines_considered_root=pipeline_considered,
             executables_root=config['executables_root'])
