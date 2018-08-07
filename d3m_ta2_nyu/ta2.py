@@ -630,6 +630,15 @@ class D3mTa2(Observable):
             self.executables_root = None
 
         self.db_filename = os.path.join(self.storage, 'db.sqlite3')
+
+        logger.info("storage=%r, predictions_root=%r, "
+                    "pipelines_exported_root=%r, pipelines_considered_root=%r, "
+                    "executables_root=%r",
+                    self.storage, self.predictions_root,
+                    self.pipelines_exported_root,
+                    self.pipelines_considered_root,
+                    self.executables_root)
+
         self.dbengine, self.DBSession = database.connect(self.db_filename)
 
         self.sessions = {}
