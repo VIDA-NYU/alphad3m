@@ -10,6 +10,7 @@ import datetime
 from google.protobuf.timestamp_pb2 import Timestamp
 import grpc
 import logging
+import pickle
 from sqlalchemy.orm import joinedload
 from uuid import UUID, uuid4
 import pickle
@@ -29,7 +30,7 @@ import d3m_ta2_nyu.proto.primitive_pb2 as pb_primitive
 from d3m_ta2_nyu.utils import PersistentQueue
 
 from d3m_ta2_nyu.workflow import database
-from d3m_ta2_nyu.workflow.convert import  get_class
+import d3m_ta2_nyu.workflow.convert
 
 logger = logging.getLogger(__name__)
 
@@ -508,17 +509,7 @@ class CoreService(pb_core_grpc.CoreServicer):
     def DescribeSolution(self, request, context):
         pipeline_id = UUID(hex=request.solution_id)
 
-        session_id = None
-        for session_key in self._app.sessions:
-            session = self._app.sessions[session_key]
-            if pipeline_id in session.pipelines:
-                session_id = session.id
-                break
-        if session_id is None:
-            raise error(context, grpc.StatusCode.NOT_FOUND,
-                        "Unknown solution ID %r", request.solution_id)
-
-        db = self._app.sessions[session_id].DBSession()
+        db = self._ta2.DBSession()
         # Load the pipeline
         pipeline = (
             db.query(database.Pipeline)
@@ -526,6 +517,10 @@ class CoreService(pb_core_grpc.CoreServicer):
                 .options(joinedload(database.Pipeline.modules),
                          joinedload(database.Pipeline.connections))
         ).one()
+
+        if not pipeline:
+            raise error(context, grpc.StatusCode.NOT_FOUND,
+                        "Unknown solution ID %r", request.solution_id)
 
         steps = []
         step_descriptions = []
@@ -640,7 +635,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 inputs[conn.to_input_name] = '%s.%s' % (step,
                                                         conn.from_output_name)
 
-        klass = get_class(mod.name)
+        klass = d3m_ta2_nyu.workflow.convert.get_class(mod.name)
         metadata_items = {'id':"", 'version':"", 'python_path':"", 'name':"", 'digest':""}
 
         for key, value in klass.metadata.query().items():
@@ -657,26 +652,24 @@ class CoreService(pb_core_grpc.CoreServicer):
         }
 
 
-        step_hyperparams = None
-        desc_hyperparams = None
+        step_hyperparams = {}
+        desc_hyperparams = {}
         # If hyperparameters are set, export them
         if mod.id in params and 'hyperparams' in params[mod.id]:
             hyperparams = pickle.loads(params[mod.id]['hyperparams'])
             for k, v in hyperparams.items():
-                step_hyperparams = {
-                    k: pb_pipeline.PrimitiveStepHyperparameter(
-                        value=pb_pipeline.ValueArgument(
-                            data=pb_value.Value(
-                                raw=pb_value.ValueRaw(string=str(v))
-                            )
+                step_hyperparams[k] = pb_pipeline.PrimitiveStepHyperparameter(
+                    value=pb_pipeline.ValueArgument(
+                        data=pb_value.Value(
+                            raw=pb_value.ValueRaw(string=str(v))
                         )
                     )
-                }
-                desc_hyperparams = {
-                    k: pb_value.Value(
-                        raw=pb_value.ValueRaw(string=str(v))
-                    )
-                }
+                )
+
+                desc_hyperparams[k] = pb_value.Value(
+                    raw=pb_value.ValueRaw(string=str(v))
+                )
+
 
         # Create step description
 
@@ -700,8 +693,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             )
         )
 
-        if desc_hyperparams is not None:
-            step_descriptions.append(
+        step_descriptions.append(
                 pb_core.StepDescription(
                     primitive=pb_core.PrimitiveStepDescription(
                         hyperparams=desc_hyperparams

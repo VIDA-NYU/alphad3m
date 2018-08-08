@@ -12,6 +12,12 @@ import uuid
 from d3m_ta2_nyu.ta2 import D3mTa2, Session, TuneHyperparamsJob
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow import convert
+import d3m_ta2_nyu.proto.pipeline_pb2 as pb_pipeline
+import d3m_ta2_nyu.proto.core_pb2 as pb_core
+import d3m_ta2_nyu.proto.primitive_pb2 as pb_primitive
+import d3m_ta2_nyu.proto.value_pb2 as pb_value
+from d3m_ta2_nyu.grpc_server import to_timestamp, CoreService
+
 
 
 class FakePrimitiveBuilder(object):
@@ -32,6 +38,8 @@ class FakePrimitiveBuilder(object):
             'digest': '00000000',
             'installation': 'mock',
             'description': "This has been mocked out for unit-testing",
+            'version': '0.0',
+            'python_path': 'mock'
         }
 
 
@@ -297,6 +305,8 @@ class TestPipelineConversion(unittest.TestCase):
                             'id': 'd3m.primitives.datasets.Denormalize-mocked',
                             'name': 'Denormalize',
                             'digest': '00000000',
+                            'version': '0.0',
+                            'python_path': 'mock',
                         },
                         'arguments': {
                             'inputs': {
@@ -313,6 +323,8 @@ class TestPipelineConversion(unittest.TestCase):
                                   'DatasetToDataFrame-mocked',
                             'name': 'DatasetToDataFrame',
                             'digest': '00000000',
+                            'version': '0.0',
+                            'python_path': 'mock',
                         },
                         'arguments': {
                             'inputs': {
@@ -327,6 +339,8 @@ class TestPipelineConversion(unittest.TestCase):
                             'id': 'd3m.primitives.data.ColumnParser-mocked',
                             'name': 'ColumnParser',
                             'digest': '00000000',
+                            'version': '0.0',
+                            'python_path': 'mock',
                         },
                         'arguments': {
                             'inputs': {
@@ -343,6 +357,8 @@ class TestPipelineConversion(unittest.TestCase):
                                   'ExtractColumnsBySemanticTypes-mocked',
                             'name': 'ExtractColumnsBySemanticTypes',
                             'digest': '00000000',
+                            'version': '0.0',
+                            'python_path': 'mock',
                         },
                         'arguments': {
                             'inputs': {
@@ -367,6 +383,8 @@ class TestPipelineConversion(unittest.TestCase):
                             'id': 'd3m.primitives.data.CastToType-mocked',
                             'name': 'CastToType',
                             'digest': '00000000',
+                            'version': '0.0',
+                            'python_path': 'mock',
                         },
                         'arguments': {
                             'inputs': {
@@ -382,6 +400,8 @@ class TestPipelineConversion(unittest.TestCase):
                             'id': imputer + '-mocked',
                             'name': imputer.rsplit('.', 1)[-1],
                             'digest': '00000000',
+                            'version': '0.0',
+                            'python_path': 'mock',
                         },
                         'arguments': {
                             'inputs': {
@@ -398,6 +418,8 @@ class TestPipelineConversion(unittest.TestCase):
                                   'ExtractColumnsBySemanticTypes-mocked',
                             'name': 'ExtractColumnsBySemanticTypes',
                             'digest': '00000000',
+                            'version': '0.0',
+                            'python_path': 'mock',
                         },
                         'arguments': {
                             'inputs': {
@@ -422,6 +444,8 @@ class TestPipelineConversion(unittest.TestCase):
                             'id': 'd3m.primitives.data.CastToType-mocked',
                             'name': 'CastToType',
                             'digest': '00000000',
+                            'version': '0.0',
+                            'python_path': 'mock',
                         },
                         'arguments': {
                             'inputs': {
@@ -437,6 +461,8 @@ class TestPipelineConversion(unittest.TestCase):
                             'id': classifier + '-mocked',
                             'name': classifier.rsplit('.', 1)[-1],
                             'digest': '00000000',
+                            'version': '0.0',
+                            'python_path': 'mock',
                         },
                         'arguments': {
                             'inputs': {
@@ -457,6 +483,8 @@ class TestPipelineConversion(unittest.TestCase):
                                   'ConstructPredictions-mocked',
                             'name': 'ConstructPredictions',
                             'digest': '00000000',
+                            'version': '0.0',
+                            'python_path': 'mock',
                         },
                         'arguments': {
                             'inputs': {
@@ -473,6 +501,427 @@ class TestPipelineConversion(unittest.TestCase):
                 ],
             },
         )
+
+
+class TestDescribeSolution(unittest.TestCase):
+    maxDiff = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.mkdtemp(prefix='d3m_unittest_')
+        cls._ta2 = D3mTa2(storage_root=cls._tmp,
+                          pipelines_considered_root=cls._tmp)
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls._tmp)
+
+    def test_convert_classification_template(self):
+        def seq_uuid():
+            seq_uuid.count += 1
+            return uuid.UUID(int=seq_uuid.count)
+
+        seq_uuid.count = 0
+
+        # Build a pipeline using the first template
+        func, imputer, classifier = self._ta2.TEMPLATES['CLASSIFICATION'][0]
+        with mock.patch('uuid.uuid4', seq_uuid):
+            pipeline_id = func(
+                self._ta2, imputer, classifier,
+                'file:///nonexistent/datasetDoc.json',
+                {('0', 'target')}, {('0', 'attr1'), ('0', 'attr2')})
+
+        # Convert it
+        db = self._ta2.DBSession()
+        pipeline = db.query(database.Pipeline).get(pipeline_id)
+
+        with mock.patch('d3m_ta2_nyu.workflow.convert.get_class',
+                        FakePrimitiveBuilder):
+            solution = CoreService(self._ta2).DescribeSolution(pb_core.DescribeSolutionRequest(
+                solution_id=pipeline_id.hex
+            ),None)
+
+        solution_mock = pb_core.DescribeSolutionResponse(
+            pipeline=pb_pipeline.PipelineDescription(
+                id=str(pipeline.id),
+                name=str(pipeline.id),
+                description=pipeline.origin or '',
+                created=to_timestamp(pipeline.created_date),
+                context=pb_pipeline.TESTING,
+                inputs=[
+                    pb_pipeline.PipelineDescriptionInput(
+                        name="input dataset"
+                    )
+                ],
+                outputs=[
+                    pb_pipeline.PipelineDescriptionOutput(
+                        name="predictions",
+                        data='steps.9.produce'
+                    )
+                ],
+                steps=[
+                    pb_pipeline.PipelineDescriptionStep(
+                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
+                            primitive=pb_primitive.Primitive(
+                                id='d3m.primitives.datasets.Denormalize-mocked',
+                                version='0.0',
+                                python_path='mock',
+                                name='Denormalize',
+                                digest='00000000'
+                            ),
+                            arguments={
+                                'inputs':pb_pipeline.PrimitiveStepArgument(
+                                                container=pb_pipeline.ContainerArgument(
+                                                data='inputs.0',
+                                                )
+                                            )
+
+                                    },
+                            outputs=[
+                                pb_pipeline.StepOutput(
+                                    id='produce'
+                                )
+                            ],
+                            hyperparams={},
+
+                        )
+                    ),
+                    pb_pipeline.PipelineDescriptionStep(
+                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
+                            primitive=pb_primitive.Primitive(
+                                id='d3m.primitives.datasets.DatasetToDataFrame-mocked',
+                                version='0.0',
+                                python_path='mock',
+                                name='DatasetToDataFrame',
+                                digest='00000000'
+                            ),
+                            arguments={
+                                'inputs': pb_pipeline.PrimitiveStepArgument(
+                                    container=pb_pipeline.ContainerArgument(
+                                        data='steps.0.produce',
+                                    )
+                                )
+
+                            },
+                            outputs=[
+                                pb_pipeline.StepOutput(
+                                    id='produce'
+                                )
+                            ],
+                            hyperparams={},
+
+                        )
+                    ),
+                    pb_pipeline.PipelineDescriptionStep(
+                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
+                            primitive=pb_primitive.Primitive(
+                                id='d3m.primitives.data.ColumnParser-mocked',
+                                version='0.0',
+                                python_path='mock',
+                                name='ColumnParser',
+                                digest='00000000'
+                            ),
+                            arguments={
+                                'inputs': pb_pipeline.PrimitiveStepArgument(
+                                    container=pb_pipeline.ContainerArgument(
+                                        data='steps.1.produce',
+                                    )
+                                )
+
+                            },
+                            outputs=[
+                                pb_pipeline.StepOutput(
+                                    id='produce'
+                                )
+                            ],
+                            hyperparams={},
+
+                        )
+                    ),
+                    pb_pipeline.PipelineDescriptionStep(
+                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
+                            primitive=pb_primitive.Primitive(
+                                id='d3m.primitives.data.'
+                                  'ExtractColumnsBySemanticTypes-mocked',
+                                version='0.0',
+                                python_path='mock',
+                                name='ExtractColumnsBySemanticTypes',
+                                digest='00000000'
+                            ),
+                            arguments={
+                                'inputs': pb_pipeline.PrimitiveStepArgument(
+                                    container=pb_pipeline.ContainerArgument(
+                                        data='steps.2.produce',
+                                    )
+                                )
+
+                            },
+                            outputs=[
+                                pb_pipeline.StepOutput(
+                                    id='produce'
+                                )
+                            ],
+                            hyperparams={
+                                    'semantic_types': pb_pipeline.PrimitiveStepHyperparameter(
+                                        value=pb_pipeline.ValueArgument(
+                                            data=pb_value.Value(
+                                                raw=pb_value.ValueRaw(
+                                                    string=str(['https://metadata.datadrivendiscovery.org/'
+                                                                'types/Attribute'])
+                                                )
+                                            )
+                                        )
+                                    )
+                            }
+                         )
+                    ),
+                    pb_pipeline.PipelineDescriptionStep(
+                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
+                            primitive=pb_primitive.Primitive(
+                                id='d3m.primitives.data.CastToType-mocked',
+                                version='0.0',
+                                python_path='mock',
+                                name='CastToType',
+                                digest='00000000'
+                            ),
+                            arguments={
+                                'inputs': pb_pipeline.PrimitiveStepArgument(
+                                    container=pb_pipeline.ContainerArgument(
+                                        data='steps.3.produce',
+                                    )
+                                )
+
+                            },
+                            outputs=[
+                                pb_pipeline.StepOutput(
+                                    id='produce'
+                                )
+                            ],
+                            hyperparams={},
+
+                        )
+                    ),
+                    pb_pipeline.PipelineDescriptionStep(
+                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
+                            primitive=pb_primitive.Primitive(
+                                id= imputer + '-mocked',
+                                version='0.0',
+                                python_path='mock',
+                                name= imputer.rsplit('.', 1)[-1],
+                                digest='00000000'
+                            ),
+                            arguments={
+                                'inputs': pb_pipeline.PrimitiveStepArgument(
+                                    container=pb_pipeline.ContainerArgument(
+                                        data='steps.4.produce',
+                                    )
+                                )
+
+                            },
+                            outputs=[
+                                pb_pipeline.StepOutput(
+                                    id='produce'
+                                )
+                            ],
+                            hyperparams={},
+
+                        )
+                    ),
+                    pb_pipeline.PipelineDescriptionStep(
+                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
+                            primitive=pb_primitive.Primitive(
+                                id='d3m.primitives.data.'
+                                   'ExtractColumnsBySemanticTypes-mocked',
+                                version='0.0',
+                                python_path='mock',
+                                name='ExtractColumnsBySemanticTypes',
+                                digest='00000000'
+                            ),
+                            arguments={
+                                'inputs': pb_pipeline.PrimitiveStepArgument(
+                                    container=pb_pipeline.ContainerArgument(
+                                        data='steps.2.produce',
+                                    )
+                                )
+
+                            },
+                            outputs=[
+                                pb_pipeline.StepOutput(
+                                    id='produce'
+                                )
+                            ],
+                            hyperparams={
+                                'semantic_types': pb_pipeline.PrimitiveStepHyperparameter(
+                                    value=pb_pipeline.ValueArgument(
+                                        data=pb_value.Value(
+                                            raw=pb_value.ValueRaw(
+                                                string=str(['https://metadata.datadrivendiscovery.org/'
+                                                            'types/Target'])
+                                            )
+                                        )
+                                    )
+                                )
+                            }
+
+                        )
+                    ),
+                    pb_pipeline.PipelineDescriptionStep(
+                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
+                            primitive=pb_primitive.Primitive(
+                                id='d3m.primitives.data.CastToType-mocked',
+                                version='0.0',
+                                python_path='mock',
+                                name='CastToType',
+                                digest='00000000'
+                            ),
+                            arguments={
+                                'inputs': pb_pipeline.PrimitiveStepArgument(
+                                    container=pb_pipeline.ContainerArgument(
+                                        data='steps.6.produce',
+                                    )
+                                )
+
+                            },
+                            outputs=[
+                                pb_pipeline.StepOutput(
+                                    id='produce'
+                                )
+                            ],
+                            hyperparams={},
+
+                        )
+                    ),
+                    pb_pipeline.PipelineDescriptionStep(
+                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
+                            primitive=pb_primitive.Primitive(
+                                id= classifier + '-mocked',
+                                version='0.0',
+                                python_path= 'mock',
+                                name= classifier.rsplit('.', 1)[-1],
+                                digest='00000000'
+                            ),
+                            arguments={
+                                'inputs': pb_pipeline.PrimitiveStepArgument(
+                                    container=pb_pipeline.ContainerArgument(
+                                        data='steps.5.produce',
+                                    )
+                                ),
+                                'outputs': pb_pipeline.PrimitiveStepArgument(
+                                    container=pb_pipeline.ContainerArgument(
+                                        data='steps.7.produce',
+                                    )
+                                )
+
+                            },
+                            outputs=[
+                                pb_pipeline.StepOutput(
+                                    id='produce'
+                                )
+                            ],
+                            hyperparams={},
+
+                        )
+                    ),
+                    pb_pipeline.PipelineDescriptionStep(
+                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
+                            primitive=pb_primitive.Primitive(
+                                id='d3m.primitives.data.ConstructPredictions-mocked',
+                                version='0.0',
+                                python_path='mock',
+                                name='ConstructPredictions',
+                                digest='00000000'
+                            ),
+                            arguments={
+                                'inputs': pb_pipeline.PrimitiveStepArgument(
+                                    container=pb_pipeline.ContainerArgument(
+                                        data='steps.8.produce',
+                                    )
+                                ),
+                                'reference': pb_pipeline.PrimitiveStepArgument(
+                                    container=pb_pipeline.ContainerArgument(
+                                        data='steps.2.produce',
+                                    )
+                                )
+
+                            },
+                            outputs=[
+                                pb_pipeline.StepOutput(
+                                    id='produce'
+                                )
+                            ],
+                            hyperparams={},
+
+                        )
+                    )
+                ],
+            ),
+            steps=[
+                pb_core.StepDescription(
+                    primitive=pb_core.PrimitiveStepDescription(
+                        hyperparams={}
+                    )
+                ),
+                pb_core.StepDescription(
+                    primitive=pb_core.PrimitiveStepDescription(
+                        hyperparams={}
+                    )
+                ),
+                pb_core.StepDescription(
+                    primitive=pb_core.PrimitiveStepDescription(
+                        hyperparams={}
+                    )
+                ),
+                pb_core.StepDescription(
+                    primitive=pb_core.PrimitiveStepDescription(
+                        hyperparams={
+                            'semantic_types': pb_value.Value(
+                                raw=pb_value.ValueRaw(string=str(['https://metadata.datadrivendiscovery.org/'
+                                                            'types/Attribute']))
+                            )
+                        }
+                    )
+                ),
+                pb_core.StepDescription(
+                    primitive=pb_core.PrimitiveStepDescription(
+                        hyperparams={}
+                    )
+                ),
+                pb_core.StepDescription(
+                    primitive=pb_core.PrimitiveStepDescription(
+                        hyperparams={}
+                    )
+                ),
+                pb_core.StepDescription(
+                    primitive=pb_core.PrimitiveStepDescription(
+                        hyperparams={
+                            'semantic_types': pb_value.Value(
+                                raw=pb_value.ValueRaw(string=str(['https://metadata.datadrivendiscovery.org/'
+                                                                  'types/Target']))
+                            )
+                        }
+                    )
+                ),
+                pb_core.StepDescription(
+                    primitive=pb_core.PrimitiveStepDescription(
+                        hyperparams={}
+                    )
+                ),
+                pb_core.StepDescription(
+                    primitive=pb_core.PrimitiveStepDescription(
+                        hyperparams={}
+                    )
+                ),
+                pb_core.StepDescription(
+                    primitive=pb_core.PrimitiveStepDescription(
+                        hyperparams={}
+                    )
+                ),
+
+            ]
+        )
+
+        # Check output
+        self.assertEqual(solution,solution_mock)
 
 
 if __name__ == '__main__':
