@@ -80,7 +80,7 @@ def to_d3m_json(pipeline):
     for param in pipeline.parameters:
         params.setdefault(param.module_id, {})[param.name] = param.value
     module_to_step = {}
-    for mod in modules.values():
+    for _, mod in sorted(modules.items(), key=lambda x: x[0]):
         _add_step(steps, modules, params, module_to_step, mod)
 
     return {
