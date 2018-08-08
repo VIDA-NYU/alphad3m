@@ -94,6 +94,16 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
+    def eval_vertexnomination_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = GenerateD3MPipelines.make_vertexnomination_pipeline_from_strings(origin,
+                                                                                     dataset,
+                                                                                     targets, features,
+                                                                                     DBSession=DBSession)
+        # Evaluate the pipeline
+        msg_queue.send(('eval', pipeline_id))
+        return msg_queue.recv()
+
     def eval_image_pipeline(estimator, origin):
         # Create the pipeline in the database
         pipeline_id = GenerateD3MPipelines.make_image_pipeline_from_strings(estimator,
@@ -128,6 +138,12 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
     for data_res in data_resources:
         data_types.append(data_res["resType"])
 
+    unsupported_problems = ["timeSeriesForecasting", "collaborativeFiltering"]
+
+    if args['problem']['about']['taskType'] in unsupported_problems:
+        logger.error("%s Not Supported", args['problem']['about']['taskType'])
+        sys.exit(148)
+
     if "audio" in data_types:
         primitives = ["d3m.primitives.bbn.time_series.ChannelAverager",
                           "d3m.primitives.bbn.time_series.SignalDither", "d3m.primitives.bbn.time_series.SignalFramer",  "d3m.primitives.bbn.time_series.SignalMFCC",
@@ -152,6 +168,9 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
             return
         elif "linkPrediction" in args['problem']['about']['taskType']:
             eval_linkprediction_pipeline("ALPHAD3M")
+            return
+        elif "vertexNomination" in args['problem']['about']['taskType']:
+            eval_vertexnomination_pipeline("ALPHAD3M")
             return
         logger.error("%s Not Supported", args['problem']['about']['taskType'])
         sys.exit(148)
