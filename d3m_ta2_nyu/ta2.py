@@ -180,13 +180,13 @@ class Session(Observable):
 
     @property
     def progress(self):
+        if self._tune_when_ready is not None:
+            to_tune = self._tune_when_ready - len(self.tuned_pipelines) / 2
+        else:
+            to_tune = 0
         return ProgressStatus(
             current=len(self.pipelines) - len(self.pipelines_scoring),
-            total=(
-                len(self.pipelines)
-                + TUNE_PIPELINES_COUNT
-                - len(self.tuned_pipelines) / 2
-            ),
+            total=len(self.pipelines) + to_tune,
         )
 
     def get_top_pipelines(self, db, metric, limit=None, only_trained=True):

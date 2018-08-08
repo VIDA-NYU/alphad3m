@@ -129,27 +129,12 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         session = self._ta2.sessions[session_id]
 
-        def solution(pipeline_id, get_scores=True):
-            if get_scores:
-                scores = self._ta2.get_pipeline_scores(pipeline_id)
-            else:
-                scores = None
+        def msg_solution(pipeline_id):
+            scores = self._ta2.get_pipeline_scores(pipeline_id)
 
             progress = session.progress
 
-            if not scores:
-                return pb_core.GetSearchSolutionsResultsResponse(
-                    done_ticks=progress.current,
-                    all_ticks=progress.total,
-                    progress=pb_core.Progress(
-                        state=pb_core.RUNNING,
-                        status="New solution",
-                        start=to_timestamp(session.start),
-                    ),
-                    solution_id=str(pipeline_id),
-                    internal_score=float('nan'),
-                )
-            else:
+            if scores:
                 if session.metrics and session.metrics[0] in scores:
                     metric = session.metrics[0]
                     internal_score = normalize_score(metric, scores[metric],
@@ -183,10 +168,26 @@ class CoreService(pb_core_grpc.CoreServicer):
                     scores=scores,
                 )
 
+        def msg_progress(status, state=pb_core.RUNNING):
+            progress = session.progress
+
+            return pb_core.GetSearchSolutionsResultsResponse(
+                done_ticks=progress.current,
+                all_ticks=progress.total,
+                progress=pb_core.Progress(
+                    state=state,
+                    status=status,
+                    start=to_timestamp(session.start),
+                ),
+                internal_score=float('nan'),
+            )
+
         with session.with_observer_queue() as queue:
             # Send the solutions that already exist
             for pipeline_id in session.pipelines:
-                yield solution(pipeline_id)
+                msg = msg_solution(pipeline_id)
+                if msg is not None:
+                    yield msg
 
             # Send updates by listening to notifications on session
             while session.working or not queue.empty():
@@ -198,36 +199,18 @@ class CoreService(pb_core_grpc.CoreServicer):
                 if event == 'finish_session' or event == 'done_searching':
                     break
                 elif event == 'new_pipeline':
-                    yield solution(kwargs['pipeline_id'], get_scores=False)
+                    yield msg_progress("Trying new solution")
                 elif event == 'scoring_success':
                     pipeline_id = kwargs['pipeline_id']
-                    yield solution(pipeline_id)
+                    msg = msg_solution(pipeline_id)
+                    if msg is not None:
+                        yield msg
+                    else:
+                        yield msg_progress("No appropriate score")
                 elif event == 'scoring_error':
-                    pipeline_id = kwargs['pipeline_id']
-                    progress = session.progress
-                    yield pb_core.GetSearchSolutionsResultsResponse(
-                        done_ticks=progress.current,
-                        all_ticks=progress.total,
-                        progress=pb_core.Progress(
-                            state=pb_core.RUNNING,
-                            status="Solution scoring failed",
-                            start=to_timestamp(session.start),
-                        ),
-                        solution_id=str(pipeline_id),
-                        internal_score=0.0,
-                    )
+                    yield msg_progress("Solution doesn't work")
 
-            yield pb_core.GetSearchSolutionsResultsResponse(
-                done_ticks=len(session.pipelines),
-                all_ticks=len(session.pipelines),
-                progress=pb_core.Progress(
-                    state=pb_core.COMPLETED,
-                    status="End of search",
-                    start=to_timestamp(session.start),
-                    end=to_timestamp(None),
-                ),
-                internal_score=float('nan'),
-            )
+            yield msg_progress("End of search", pb_core.COMPLETED)
 
     def EndSearchSolutions(self, request, context):
         """Stop the search and delete the `Session`.
