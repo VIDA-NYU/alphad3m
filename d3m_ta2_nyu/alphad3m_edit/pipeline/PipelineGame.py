@@ -27,11 +27,19 @@ class PipelineGame(Game):
     def __init__(self, args, pipeline, eval_pipeline, compute_metafeatures):
         self.steps = 0
         self.eval_pipeline = eval_pipeline
-        self.pipeline = pipeline
         self.args = args
         self.evaluations = {}
         self.curr_evaluations = {}
         self.problem = self.args['problem']['about']['taskType'].upper()
+        if pipeline is None:
+            #Set default pipeline to imputer,encoder, estimator
+            self.pipeline = [2, 1]
+            if "CLASSIFICATION" in self.problem:
+                self.pipeline.append(18)
+            else:
+                self.pipeline.append(36)
+        else:
+            self.pipeline = pipeline
         self.metric = self.args['problem']['inputs']['performanceMetrics'][0]['metric']
         self.dataset_metafeatures = None
         metafeatures_path = args.get('metafeatures_path')

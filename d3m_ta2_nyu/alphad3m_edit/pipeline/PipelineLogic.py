@@ -22,7 +22,6 @@ class Board():
         'CLASSIFICATION': {
             'd3m.primitives.sklearn_wrap.SKRandomForestClassifier':3,
             'd3m.primitives.sklearn_wrap.SKDecisionTreeClassifier':4,
-            'd3m.primitives.sklearn_wrap.SKGradientBoostingClassifier':6,
             'd3m.primitives.sklearn_wrap.SKMultinomialNB':7,
             'd3m.primitives.common_primitives.BayesianLogisticRegression': 9,
             'd3m.primitives.dsbox.CorexSupervised': 11,
@@ -36,18 +35,17 @@ class Board():
     },
         'REGRESSION': {
             'd3m.primitives.cmu.autonlab.find_projections.SearchNumeric': 20,
-            'd3m.primitives.cmu.autonlab.find_projections_hybrid.SearchHybridNumeric': 21,
+            'd3m.primitives.cmu.autonlab.find_projections.SearchHybridNumeric': 21,
             'd3m.primitives.sklearn_wrap.SKARDRegression': 25,
             'd3m.primitives.sklearn_wrap.SKDecisionTreeRegressor': 26,
             'd3m.primitives.sklearn_wrap.SKExtraTreesRegressor': 27,
             'd3m.primitives.sklearn_wrap.SKGaussianProcessRegressor': 28,
-            'd3m.primitives.sklearn_wrap.SKGradientBoostingRegressor': 29,
-            'd3m.primitives.sklearn_wrap.SKKNeighborsRegressor': 30,
             'd3m.primitives.sklearn_wrap.SKLars': 31,
             'd3m.primitives.sklearn_wrap.SKLasso': 32,
             'd3m.primitives.sklearn_wrap.SKLassoCV': 33,
             'd3m.primitives.sklearn_wrap.SKLinearSVR': 34,
             'd3m.primitives.sklearn_wrap.SKPassiveAggressiveRegressor': 35,
+            'd3m.primitives.sklearn_wrap.SKSGDRegressor': 36,
             'd3m.primitives.sklearn_wrap.SKRidge':39
         },
     }
