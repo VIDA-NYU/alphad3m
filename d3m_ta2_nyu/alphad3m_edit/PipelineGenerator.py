@@ -143,6 +143,10 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
     if args['problem']['about']['taskType'] in unsupported_problems:
         logger.error("%s Not Supported", args['problem']['about']['taskType'])
         sys.exit(148)
+    
+    if "text" in data_types:
+        logger.error("Text Datatype Not Supported")
+        sys.exit(148)
 
     if "audio" in data_types:
         primitives = ["d3m.primitives.bbn.time_series.ChannelAverager",
