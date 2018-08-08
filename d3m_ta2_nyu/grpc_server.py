@@ -105,12 +105,11 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         session = self._ta2.sessions[search_id]
         task = TASKS_FROM_SCHEMA[session.problem['about']['taskType']]
-        with session.with_observer_queue() as queue:
-            self._ta2.build_pipelines(search_id,
-                                      task,
-                                      dataset, session.metrics,
-                                      tune=0,  # FIXME: no tuning in TA3 mode
-                                      timeout=timeout)
+        self._ta2.build_pipelines(search_id,
+                                  task,
+                                  dataset, session.metrics,
+                                  tune=0,  # FIXME: no tuning in TA3 mode
+                                  timeout=timeout)
 
         return pb_core.SearchSolutionsResponse(
             search_id=str(search_id),
