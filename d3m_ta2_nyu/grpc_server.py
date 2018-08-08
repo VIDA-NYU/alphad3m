@@ -12,8 +12,7 @@ import grpc
 import logging
 import pickle
 from sqlalchemy.orm import joinedload
-from uuid import UUID, uuid4
-import pickle
+from uuid import UUID
 
 from . import __version__
 
@@ -26,11 +25,10 @@ import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
 import d3m_ta2_nyu.proto.value_pb2 as pb_value
 import d3m_ta2_nyu.proto.pipeline_pb2 as pb_pipeline
 import d3m_ta2_nyu.proto.primitive_pb2 as pb_primitive
-
 from d3m_ta2_nyu.utils import PersistentQueue
-
-from d3m_ta2_nyu.workflow import database
 import d3m_ta2_nyu.workflow.convert
+from d3m_ta2_nyu.workflow import database
+
 
 logger = logging.getLogger(__name__)
 
@@ -529,10 +527,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         for param in pipeline.parameters:
             params.setdefault(param.module_id, {})[param.name] = param.value
         module_to_step = {}
-        step_nb = ''
         for mod in modules.values():
             self._add_step(steps, step_descriptions, modules, params, module_to_step, mod)
-
 
         return pb_core.DescribeSolutionResponse(
             pipeline=pb_pipeline.PipelineDescription(
@@ -623,12 +619,13 @@ class CoreService(pb_core_grpc.CoreServicer):
         elif mod.package != 'd3m':
             raise ValueError("Got unknown module '%s:%s'", mod.package, mod.name)
 
-        # Recursively walk upstream modules (to get `steps` in topological order)
+        # Recursively walk upstream modules (to get `steps` in topological
+        # order)
         # Add inputs to a dictionary, in deterministic order
         inputs = {}
         for conn in sorted(mod.connections_to, key=lambda c: c.to_input_name):
-            step = self._add_step(steps,step_descriptions, modules, params, module_to_step,
-                             modules[conn.from_module_id])
+            step = self._add_step(steps, step_descriptions, modules, params,
+                                  module_to_step, modules[conn.from_module_id])
             if step.startswith('inputs.'):
                 inputs[conn.to_input_name] = step
             else:
@@ -636,25 +633,25 @@ class CoreService(pb_core_grpc.CoreServicer):
                                                         conn.from_output_name)
 
         klass = d3m_ta2_nyu.workflow.convert.get_class(mod.name)
-        metadata_items = {'id':"", 'version':"", 'python_path':"", 'name':"", 'digest':""}
-
-        for key, value in klass.metadata.query().items():
-            if key in metadata_items:
-                metadata_items[key]= value
+        metadata = klass.metadata.query()
+        metadata_items = {
+            key: metadata[key]
+            for key in ('id', 'version', 'python_path', 'name', 'digest')
+            if key in metadata
+        }
 
         arguments = {
-            name:pb_pipeline.PrimitiveStepArgument(
+            name: pb_pipeline.PrimitiveStepArgument(
                 container=pb_pipeline.ContainerArgument(
                     data=data,
                 )
             )
-        for name, data in inputs.items()
+            for name, data in inputs.items()
         }
 
-
+        # If hyperparameters are set, export them
         step_hyperparams = {}
         desc_hyperparams = {}
-        # If hyperparameters are set, export them
         if mod.id in params and 'hyperparams' in params[mod.id]:
             hyperparams = pickle.loads(params[mod.id]['hyperparams'])
             for k, v in hyperparams.items():
@@ -670,9 +667,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     raw=pb_value.ValueRaw(string=str(v))
                 )
 
-
         # Create step description
-
         step = pb_pipeline.PipelineDescriptionStep(
             primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
                 primitive=pb_primitive.Primitive(
@@ -705,4 +700,3 @@ class CoreService(pb_core_grpc.CoreServicer):
         steps.append(step)
         module_to_step[mod.id] = step_nb
         return step_nb
-
