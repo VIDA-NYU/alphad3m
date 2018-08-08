@@ -22,6 +22,8 @@ class Board():
         'CLASSIFICATION': {
             'd3m.primitives.sklearn_wrap.SKRandomForestClassifier':3,
             'd3m.primitives.sklearn_wrap.SKDecisionTreeClassifier':4,
+            'd3m.primitives.featuretools_ta1.SKRFERandomForestClassifier':5,
+            'd3m.primitives.classifier.RandomForest':6,
             'd3m.primitives.sklearn_wrap.SKMultinomialNB':7,
             'd3m.primitives.common_primitives.BayesianLogisticRegression': 9,
             'd3m.primitives.dsbox.CorexSupervised': 11,
@@ -36,6 +38,7 @@ class Board():
         'REGRESSION': {
             'd3m.primitives.cmu.autonlab.find_projections.SearchNumeric': 20,
             'd3m.primitives.cmu.autonlab.find_projections.SearchHybridNumeric': 21,
+            'd3m.primitives.featuretools_ta1.SKRFERandomForestRegressor':22,
             'd3m.primitives.sklearn_wrap.SKARDRegression': 25,
             'd3m.primitives.sklearn_wrap.SKDecisionTreeRegressor': 26,
             'd3m.primitives.sklearn_wrap.SKExtraTreesRegressor': 27,
