@@ -11,7 +11,6 @@ from google.protobuf.timestamp_pb2 import Timestamp
 import grpc
 import logging
 import pickle
-from sqlalchemy.orm import joinedload
 from uuid import UUID
 
 from . import __version__
@@ -27,7 +26,6 @@ import d3m_ta2_nyu.proto.pipeline_pb2 as pb_pipeline
 import d3m_ta2_nyu.proto.primitive_pb2 as pb_primitive
 from d3m_ta2_nyu.utils import PersistentQueue
 import d3m_ta2_nyu.workflow.convert
-from d3m_ta2_nyu.workflow import database
 
 
 logger = logging.getLogger(__name__)
@@ -507,15 +505,7 @@ class CoreService(pb_core_grpc.CoreServicer):
     def DescribeSolution(self, request, context):
         pipeline_id = UUID(hex=request.solution_id)
 
-        db = self._ta2.DBSession()
-        # Load the pipeline
-        pipeline = (
-            db.query(database.Pipeline)
-                .filter(database.Pipeline.id == pipeline_id)
-                .options(joinedload(database.Pipeline.modules),
-                         joinedload(database.Pipeline.connections))
-        ).one()
-
+        pipeline = self._ta2.get_workflow(pipeline_id)
         if not pipeline:
             raise error(context, grpc.StatusCode.NOT_FOUND,
                         "Unknown solution ID %r", request.solution_id)
