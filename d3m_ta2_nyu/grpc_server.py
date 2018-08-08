@@ -301,6 +301,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 yield pb_core.GetScoreSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.RUNNING,
+                        status="Scoring in progress",
                     ),
                 )
             elif event == 'scoring_success':
@@ -322,6 +323,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 yield pb_core.GetScoreSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.COMPLETED,
+                        status="Scoring completed",
                     ),
                     scores=scores,
                 )
@@ -330,6 +332,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 yield pb_core.GetScoreSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.ERRORED,
+                        status="Scoring failed",
                     ),
                 )
                 break
@@ -380,14 +383,16 @@ class CoreService(pb_core_grpc.CoreServicer):
             if event == 'training_start':
                 yield pb_core.GetFitSolutionResultsResponse(
                     progress=pb_core.Progress(
-                        state=pb_core.RUNNING
+                        state=pb_core.RUNNING,
+                        status="Training in progress",
                     ),
                 )
             elif event == 'training_success':
                 pipeline_id = kwargs['pipeline_id']
                 yield pb_core.GetFitSolutionResultsResponse(
                     progress=pb_core.Progress(
-                        state=pb_core.COMPLETED
+                        state=pb_core.COMPLETED,
+                        status="Training completed",
                     ),
                     fitted_solution_id=str(pipeline_id),
                 )
@@ -395,7 +400,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             elif event == 'training_error':
                 yield pb_core.GetFitSolutionResultsResponse(
                     progress=pb_core.Progress(
-                        state=pb_core.ERRORED
+                        state=pb_core.ERRORED,
+                        status="Training failed",
                     ),
                 )
                 break
@@ -442,6 +448,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 yield pb_core.GetProduceSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.COMPLETED,
+                        status="Execution completed",
                     ),
                     exposed_outputs={
                         'outputs.0': pb_value.Value(
@@ -455,6 +462,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 yield pb_core.GetProduceSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.ERRORED,
+                        status="Execution failed",
                     ),
                 )
                 break
