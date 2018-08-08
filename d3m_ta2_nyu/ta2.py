@@ -855,8 +855,11 @@ class D3mTa2(Observable):
             return (
                 db.query(database.Pipeline)
                 .filter(database.Pipeline.id == pipeline_id)
-                .options(joinedload(database.Pipeline.modules),
-                         joinedload(database.Pipeline.connections))
+                .options(
+                    joinedload(database.Pipeline.modules)
+                        .joinedload(database.PipelineModule.connections_to),
+                    joinedload(database.Pipeline.connections)
+                )
             ).one_or_none()
         finally:
             db.close()
