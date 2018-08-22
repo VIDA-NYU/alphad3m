@@ -19,7 +19,6 @@ import d3m_ta2_nyu.proto.value_pb2 as pb_value
 from d3m_ta2_nyu.grpc_server import to_timestamp, CoreService
 
 
-
 class FakePrimitiveBuilder(object):
     def __init__(self, name):
         self._name = name
@@ -124,7 +123,8 @@ class TestSession(unittest.TestCase):
         self._ta2.sessions[session.id] = session
 
         def compare_scores(ret, expected):
-            self.assertEqual([
+            self.assertEqual(
+                [
                     (pipeline.id, score)
                     for (pipeline, score) in ret
                 ],
@@ -539,7 +539,7 @@ class TestDescribeSolution(unittest.TestCase):
                         FakePrimitiveBuilder):
             solution = CoreService(self._ta2).DescribeSolution(pb_core.DescribeSolutionRequest(
                 solution_id=pipeline_id.hex
-            ),None)
+            ), None)
 
         solution_mock = pb_core.DescribeSolutionResponse(
             pipeline=pb_pipeline.PipelineDescription(
@@ -570,20 +570,18 @@ class TestDescribeSolution(unittest.TestCase):
                                 digest='00000000'
                             ),
                             arguments={
-                                'inputs':pb_pipeline.PrimitiveStepArgument(
-                                                container=pb_pipeline.ContainerArgument(
-                                                data='inputs.0',
-                                                )
-                                            )
-
-                                    },
+                                'inputs': pb_pipeline.PrimitiveStepArgument(
+                                    container=pb_pipeline.ContainerArgument(
+                                        data='inputs.0',
+                                    )
+                                )
+                            },
                             outputs=[
                                 pb_pipeline.StepOutput(
                                     id='produce'
                                 )
                             ],
                             hyperparams={},
-
                         )
                     ),
                     pb_pipeline.PipelineDescriptionStep(
@@ -601,7 +599,6 @@ class TestDescribeSolution(unittest.TestCase):
                                         data='steps.0.produce',
                                     )
                                 )
-
                             },
                             outputs=[
                                 pb_pipeline.StepOutput(
@@ -609,7 +606,6 @@ class TestDescribeSolution(unittest.TestCase):
                                 )
                             ],
                             hyperparams={},
-
                         )
                     ),
                     pb_pipeline.PipelineDescriptionStep(
@@ -627,7 +623,6 @@ class TestDescribeSolution(unittest.TestCase):
                                         data='steps.1.produce',
                                     )
                                 )
-
                             },
                             outputs=[
                                 pb_pipeline.StepOutput(
@@ -635,96 +630,6 @@ class TestDescribeSolution(unittest.TestCase):
                                 )
                             ],
                             hyperparams={},
-
-                        )
-                    ),
-                    pb_pipeline.PipelineDescriptionStep(
-                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
-                            primitive=pb_primitive.Primitive(
-                                id='d3m.primitives.data.'
-                                  'ExtractColumnsBySemanticTypes-mocked',
-                                version='0.0',
-                                python_path='mock',
-                                name='ExtractColumnsBySemanticTypes',
-                                digest='00000000'
-                            ),
-                            arguments={
-                                'inputs': pb_pipeline.PrimitiveStepArgument(
-                                    container=pb_pipeline.ContainerArgument(
-                                        data='steps.2.produce',
-                                    )
-                                )
-
-                            },
-                            outputs=[
-                                pb_pipeline.StepOutput(
-                                    id='produce'
-                                )
-                            ],
-                            hyperparams={
-                                    'semantic_types': pb_pipeline.PrimitiveStepHyperparameter(
-                                        value=pb_pipeline.ValueArgument(
-                                            data=pb_value.Value(
-                                                raw=pb_value.ValueRaw(
-                                                    string=str(['https://metadata.datadrivendiscovery.org/'
-                                                                'types/Attribute'])
-                                                )
-                                            )
-                                        )
-                                    )
-                            }
-                         )
-                    ),
-                    pb_pipeline.PipelineDescriptionStep(
-                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
-                            primitive=pb_primitive.Primitive(
-                                id='d3m.primitives.data.CastToType-mocked',
-                                version='0.0',
-                                python_path='mock',
-                                name='CastToType',
-                                digest='00000000'
-                            ),
-                            arguments={
-                                'inputs': pb_pipeline.PrimitiveStepArgument(
-                                    container=pb_pipeline.ContainerArgument(
-                                        data='steps.3.produce',
-                                    )
-                                )
-
-                            },
-                            outputs=[
-                                pb_pipeline.StepOutput(
-                                    id='produce'
-                                )
-                            ],
-                            hyperparams={},
-
-                        )
-                    ),
-                    pb_pipeline.PipelineDescriptionStep(
-                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
-                            primitive=pb_primitive.Primitive(
-                                id= imputer + '-mocked',
-                                version='0.0',
-                                python_path='mock',
-                                name= imputer.rsplit('.', 1)[-1],
-                                digest='00000000'
-                            ),
-                            arguments={
-                                'inputs': pb_pipeline.PrimitiveStepArgument(
-                                    container=pb_pipeline.ContainerArgument(
-                                        data='steps.4.produce',
-                                    )
-                                )
-
-                            },
-                            outputs=[
-                                pb_pipeline.StepOutput(
-                                    id='produce'
-                                )
-                            ],
-                            hyperparams={},
-
                         )
                     ),
                     pb_pipeline.PipelineDescriptionStep(
@@ -743,7 +648,6 @@ class TestDescribeSolution(unittest.TestCase):
                                         data='steps.2.produce',
                                     )
                                 )
-
                             },
                             outputs=[
                                 pb_pipeline.StepOutput(
@@ -755,14 +659,99 @@ class TestDescribeSolution(unittest.TestCase):
                                     value=pb_pipeline.ValueArgument(
                                         data=pb_value.Value(
                                             raw=pb_value.ValueRaw(
-                                                string=str(['https://metadata.datadrivendiscovery.org/'
-                                                            'types/Target'])
+                                                string=repr(['https://metadata.datadrivendiscovery.org/'
+                                                             'types/Attribute'])
                                             )
                                         )
                                     )
                                 )
                             }
+                        )
+                    ),
+                    pb_pipeline.PipelineDescriptionStep(
+                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
+                            primitive=pb_primitive.Primitive(
+                                id='d3m.primitives.data.CastToType-mocked',
+                                version='0.0',
+                                python_path='mock',
+                                name='CastToType',
+                                digest='00000000'
+                            ),
+                            arguments={
+                                'inputs': pb_pipeline.PrimitiveStepArgument(
+                                    container=pb_pipeline.ContainerArgument(
+                                        data='steps.3.produce',
+                                    )
+                                )
+                            },
+                            outputs=[
+                                pb_pipeline.StepOutput(
+                                    id='produce'
+                                )
+                            ],
+                            hyperparams={},
 
+                        )
+                    ),
+                    pb_pipeline.PipelineDescriptionStep(
+                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
+                            primitive=pb_primitive.Primitive(
+                                id=imputer + '-mocked',
+                                version='0.0',
+                                python_path='mock',
+                                name=imputer.rsplit('.', 1)[-1],
+                                digest='00000000'
+                            ),
+                            arguments={
+                                'inputs': pb_pipeline.PrimitiveStepArgument(
+                                    container=pb_pipeline.ContainerArgument(
+                                        data='steps.4.produce',
+                                    )
+                                )
+
+                            },
+                            outputs=[
+                                pb_pipeline.StepOutput(
+                                    id='produce'
+                                )
+                            ],
+                            hyperparams={},
+                        )
+                    ),
+                    pb_pipeline.PipelineDescriptionStep(
+                        primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
+                            primitive=pb_primitive.Primitive(
+                                id='d3m.primitives.data.'
+                                   'ExtractColumnsBySemanticTypes-mocked',
+                                version='0.0',
+                                python_path='mock',
+                                name='ExtractColumnsBySemanticTypes',
+                                digest='00000000'
+                            ),
+                            arguments={
+                                'inputs': pb_pipeline.PrimitiveStepArgument(
+                                    container=pb_pipeline.ContainerArgument(
+                                        data='steps.2.produce',
+                                    )
+                                )
+                            },
+                            outputs=[
+                                pb_pipeline.StepOutput(
+                                    id='produce'
+                                )
+                            ],
+                            hyperparams={
+                                'semantic_types': pb_pipeline.PrimitiveStepHyperparameter(
+                                    value=pb_pipeline.ValueArgument(
+                                        data=pb_value.Value(
+                                            raw=pb_value.ValueRaw(
+                                                string=repr(['https://metadata.datadrivendiscovery.org/'
+                                                             'types/Target'])
+                                            )
+                                        )
+                                    )
+                                )
+                            }
                         )
                     ),
                     pb_pipeline.PipelineDescriptionStep(
@@ -780,7 +769,6 @@ class TestDescribeSolution(unittest.TestCase):
                                         data='steps.6.produce',
                                     )
                                 )
-
                             },
                             outputs=[
                                 pb_pipeline.StepOutput(
@@ -788,16 +776,15 @@ class TestDescribeSolution(unittest.TestCase):
                                 )
                             ],
                             hyperparams={},
-
                         )
                     ),
                     pb_pipeline.PipelineDescriptionStep(
                         primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
                             primitive=pb_primitive.Primitive(
-                                id= classifier + '-mocked',
+                                id=classifier + '-mocked',
                                 version='0.0',
-                                python_path= 'mock',
-                                name= classifier.rsplit('.', 1)[-1],
+                                python_path='mock',
+                                name=classifier.rsplit('.', 1)[-1],
                                 digest='00000000'
                             ),
                             arguments={
@@ -811,7 +798,6 @@ class TestDescribeSolution(unittest.TestCase):
                                         data='steps.7.produce',
                                     )
                                 )
-
                             },
                             outputs=[
                                 pb_pipeline.StepOutput(
@@ -819,7 +805,6 @@ class TestDescribeSolution(unittest.TestCase):
                                 )
                             ],
                             hyperparams={},
-
                         )
                     ),
                     pb_pipeline.PipelineDescriptionStep(
@@ -842,7 +827,6 @@ class TestDescribeSolution(unittest.TestCase):
                                         data='steps.2.produce',
                                     )
                                 )
-
                             },
                             outputs=[
                                 pb_pipeline.StepOutput(
@@ -850,7 +834,6 @@ class TestDescribeSolution(unittest.TestCase):
                                 )
                             ],
                             hyperparams={},
-
                         )
                     )
                 ],
@@ -875,8 +858,8 @@ class TestDescribeSolution(unittest.TestCase):
                     primitive=pb_core.PrimitiveStepDescription(
                         hyperparams={
                             'semantic_types': pb_value.Value(
-                                raw=pb_value.ValueRaw(string=str(['https://metadata.datadrivendiscovery.org/'
-                                                            'types/Attribute']))
+                                raw=pb_value.ValueRaw(string=repr(['https://metadata.datadrivendiscovery.org/'
+                                                                   'types/Attribute']))
                             )
                         }
                     )
@@ -895,8 +878,8 @@ class TestDescribeSolution(unittest.TestCase):
                     primitive=pb_core.PrimitiveStepDescription(
                         hyperparams={
                             'semantic_types': pb_value.Value(
-                                raw=pb_value.ValueRaw(string=str(['https://metadata.datadrivendiscovery.org/'
-                                                                  'types/Target']))
+                                raw=pb_value.ValueRaw(string=repr(['https://metadata.datadrivendiscovery.org/'
+                                                                   'types/Target']))
                             )
                         }
                     )
@@ -916,12 +899,11 @@ class TestDescribeSolution(unittest.TestCase):
                         hyperparams={}
                     )
                 ),
-
             ]
         )
 
         # Check output
-        self.assertEqual(solution,solution_mock)
+        self.assertEqual(solution, solution_mock)
 
 
 if __name__ == '__main__':
