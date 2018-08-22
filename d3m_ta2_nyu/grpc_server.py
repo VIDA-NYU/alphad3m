@@ -597,7 +597,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             module_to_step[mod.id] = 'inputs.0'
             return 'inputs.0'
         elif mod.package != 'd3m':
-            raise ValueError("Got unknown module '%s:%s'", mod.package, mod.name)
+            raise ValueError("Got unknown module '%s:%s'" % (mod.package,
+                                                             mod.name))
 
         # Recursively walk upstream modules (to get `steps` in topological
         # order)
@@ -659,15 +660,14 @@ class CoreService(pb_core_grpc.CoreServicer):
                     )
                 ],
                 hyperparams=step_hyperparams,
-
             )
         )
 
         step_descriptions.append(
-                pb_core.StepDescription(
-                    primitive=pb_core.PrimitiveStepDescription()
-                )
+            pb_core.StepDescription(
+                primitive=pb_core.PrimitiveStepDescription()
             )
+        )
 
         step_nb = 'steps.%d' % len(steps)
         steps.append(step)
