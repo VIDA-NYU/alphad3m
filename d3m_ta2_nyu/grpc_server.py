@@ -631,7 +631,6 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         # If hyperparameters are set, export them
         step_hyperparams = {}
-        desc_hyperparams = {}
         if mod.id in params and 'hyperparams' in params[mod.id]:
             hyperparams = pickle.loads(params[mod.id]['hyperparams'])
             for k, v in hyperparams.items():
@@ -641,10 +640,6 @@ class CoreService(pb_core_grpc.CoreServicer):
                             raw=pb_value.ValueRaw(string=str(v))
                         )
                     )
-                )
-
-                desc_hyperparams[k] = pb_value.Value(
-                    raw=pb_value.ValueRaw(string=str(v))
                 )
 
         # Create step description
@@ -670,9 +665,7 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         step_descriptions.append(
                 pb_core.StepDescription(
-                    primitive=pb_core.PrimitiveStepDescription(
-                        hyperparams=desc_hyperparams
-                    )
+                    primitive=pb_core.PrimitiveStepDescription()
                 )
             )
 

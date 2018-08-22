@@ -856,16 +856,6 @@ class TestDescribeSolution(unittest.TestCase):
                 ),
                 pb_core.StepDescription(
                     primitive=pb_core.PrimitiveStepDescription(
-                        hyperparams={
-                            'semantic_types': pb_value.Value(
-                                raw=pb_value.ValueRaw(string=repr(['https://metadata.datadrivendiscovery.org/'
-                                                                   'types/Attribute']))
-                            )
-                        }
-                    )
-                ),
-                pb_core.StepDescription(
-                    primitive=pb_core.PrimitiveStepDescription(
                         hyperparams={}
                     )
                 ),
@@ -876,12 +866,12 @@ class TestDescribeSolution(unittest.TestCase):
                 ),
                 pb_core.StepDescription(
                     primitive=pb_core.PrimitiveStepDescription(
-                        hyperparams={
-                            'semantic_types': pb_value.Value(
-                                raw=pb_value.ValueRaw(string=repr(['https://metadata.datadrivendiscovery.org/'
-                                                                   'types/Target']))
-                            )
-                        }
+                        hyperparams={}
+                    )
+                ),
+                pb_core.StepDescription(
+                    primitive=pb_core.PrimitiveStepDescription(
+                        hyperparams={}
                     )
                 ),
                 pb_core.StepDescription(
