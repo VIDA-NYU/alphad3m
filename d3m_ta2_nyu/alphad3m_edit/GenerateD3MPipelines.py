@@ -51,7 +51,7 @@ class GenerateD3MPipelines():
         try:
             #                          data
             #                            |
-            #                       -Denormalize-
+            #                        Denormalize
             #                            |
             #                     DatasetToDataframe
             #                            |
@@ -79,13 +79,11 @@ class GenerateD3MPipelines():
                 name='features', value=pickle.dumps(features),
             ))
 
-            # FIXME: Denormalize?
-            #step0 = make_primitive_module('.datasets.Denormalize')
-            #connect(input_data, step0, from_output='dataset')
+            step0 = make_primitive_module('.datasets.Denormalize')
+            connect(input_data, step0, from_output='dataset')
 
             step1 = make_primitive_module('.datasets.DatasetToDataFrame')
-            connect(input_data, step1, from_output='dataset')
-            #connect(step0, step1)
+            connect(step0, step1)
 
             step2 = make_primitive_module('.data.ColumnParser')
             connect(step1, step2)
