@@ -380,8 +380,8 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.data.CastToType-mocked',
-                            'name': 'CastToType',
+                            'id': imputer + '-mocked',
+                            'name': imputer.rsplit('.', 1)[-1],
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -397,8 +397,8 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': imputer + '-mocked',
-                            'name': imputer.rsplit('.', 1)[-1],
+                            'id': 'd3m.primitives.data.CastToType-mocked',
+                            'name': 'CastToType',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -407,6 +407,12 @@ class TestPipelineConversion(unittest.TestCase):
                             'inputs': {
                                 'data': 'steps.4.produce',
                                 'type': 'CONTAINER',
+                            },
+                        },
+                        'hyperparams': {
+                            'type_to_cast': {
+                                'type': 'VALUE',
+                                'data': 'float',
                             },
                         },
                         'outputs': [{'id': 'produce'}],
@@ -671,10 +677,10 @@ class TestDescribeSolution(unittest.TestCase):
                     pb_pipeline.PipelineDescriptionStep(
                         primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
                             primitive=pb_primitive.Primitive(
-                                id='d3m.primitives.data.CastToType-mocked',
+                                id=imputer + '-mocked',
                                 version='0.0',
                                 python_path='mock',
-                                name='CastToType',
+                                name=imputer.rsplit('.', 1)[-1],
                                 digest='00000000'
                             ),
                             arguments={
@@ -690,16 +696,15 @@ class TestDescribeSolution(unittest.TestCase):
                                 )
                             ],
                             hyperparams={},
-
                         )
                     ),
                     pb_pipeline.PipelineDescriptionStep(
                         primitive=pb_pipeline.PrimitivePipelineDescriptionStep(
                             primitive=pb_primitive.Primitive(
-                                id=imputer + '-mocked',
+                                id='d3m.primitives.data.CastToType-mocked',
                                 version='0.0',
                                 python_path='mock',
-                                name=imputer.rsplit('.', 1)[-1],
+                                name='CastToType',
                                 digest='00000000'
                             ),
                             arguments={
@@ -708,14 +713,23 @@ class TestDescribeSolution(unittest.TestCase):
                                         data='steps.4.produce',
                                     )
                                 )
-
                             },
                             outputs=[
                                 pb_pipeline.StepOutput(
                                     id='produce'
                                 )
                             ],
-                            hyperparams={},
+                            hyperparams={
+                                'type_to_cast': pb_pipeline.PrimitiveStepHyperparameter(
+                                    value=pb_pipeline.ValueArgument(
+                                        data=pb_value.Value(
+                                            raw=pb_value.ValueRaw(
+                                                string='float',
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            },
                         )
                     ),
                     pb_pipeline.PipelineDescriptionStep(
