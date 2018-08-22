@@ -1167,9 +1167,9 @@ class D3mTa2(Observable):
             #                   /         |         \
             # Extract (attribute)  Extract (target)  |
             #         |               |              |
-            #     CastToType      CastToType         |
+            #     [imputer]       CastToType         |
             #         |               |              |
-            #     [imputer]           |             /
+            #     CastToType          |             /
             #            \            /           /
             #             [classifier]          /
             #                       |         /
@@ -1204,11 +1204,15 @@ class D3mTa2(Observable):
             )
             connect(step2, step3)
 
-            step4 = make_primitive_module('.data.CastToType')
+            step4 = make_primitive_module(imputer)
             connect(step3, step4)
 
-            step5 = make_primitive_module(imputer)
+            step5 = make_primitive_module('.data.CastToType')
             connect(step4, step5)
+            set_hyperparams(
+                step5,
+                type_to_cast='float',
+            )
 
             step6 = make_primitive_module('.data.'
                                           'ExtractColumnsBySemanticTypes')

@@ -61,9 +61,9 @@ class GenerateD3MPipelines():
             #                   /         |         \
             # Extract (attribute)  Extract (target)  |
             #         |               |              |
-            #     CastToType      CastToType         |
+            #    <preprocess>     CastToType         |
             #         |               |              |
-            #     [imputer]           |             /
+            #     CastToType          |             /
             #            \            /           /
             #             [classifier]          /
             #                       |         /
@@ -98,16 +98,20 @@ class GenerateD3MPipelines():
             )
             connect(step2, step3)
 
-            step4 = make_primitive_module('.data.CastToType')
-            connect(step3, step4)
-
-            step = prev_step = step4
+            step = prev_step = step3
             preprocessors = primitives[:-1]
             classifier = primitives[-1]
             for preprocessor in preprocessors:
                 step = make_primitive_module(preprocessor)
                 connect(prev_step, step)
                 prev_step = step
+
+            step5 = make_primitive_module('.data.CastToType')
+            connect(step, step5)
+            set_hyperparams(
+                step5,
+                type_to_cast='float',
+            )
 
             step6 = make_primitive_module('.data.'
                                           'ExtractColumnsBySemanticTypes')
@@ -123,7 +127,7 @@ class GenerateD3MPipelines():
             connect(step6, step7)
 
             step8 = make_primitive_module(classifier)
-            connect(step, step8)
+            connect(step5, step8)
             connect(step7, step8, to_input='outputs')
 
             step9 = make_primitive_module('.data.ConstructPredictions')
