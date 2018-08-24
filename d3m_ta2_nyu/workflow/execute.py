@@ -196,8 +196,8 @@ def execute(db, pipeline, module_loader, reason,
                     cache=cache(db, run, module),
                 )
             except Exception:
-                logger.exception("Got exception running module %s",
-                                 mod_id)
+                logger.error("Got exception running module %s",
+                             mod_id)
                 raise
             executed.append(mod_id)
         if not executed:
