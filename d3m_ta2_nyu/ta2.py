@@ -271,9 +271,10 @@ class Session(Observable):
                                                        only_trained=False)
                 logger.warning("Found %d pipelines", len(top_pipelines))
                 for i, (pipeline, score) in enumerate(top_pipelines):
-                    logger.info("    %d) %s %s=%s origin=%s",
+                    created = pipeline.created_date - self.start
+                    logger.info("    %d) %s %s=%s origin=%s time=%.2fs",
                                 i + 1, pipeline.id, metric, score,
-                                pipeline.origin)
+                                pipeline.origin, created.total_seconds())
 
             db.close()
 
