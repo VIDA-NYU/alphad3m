@@ -9,7 +9,9 @@ PROBLEM="$1"
 TOKEN="$2"
 
 cd "$LOCAL_OUTPUT_ROOT"
-tar zcf "$PROBLEM.tgz" executables pipelines pipelines_considered predictions supporting_files
+BUILD_DIR="$(mktemp -t -d d3m_ta2_submission.XXXXXXXXXX)"
+BUILD_FILE="$BUILD_DIR/$PROBLEM.tgz"
+tar zcf "$BUILD_FILE" executables pipelines pipelines_considered predictions supporting_files
 curl -X POST \
     --header 'Content-Type: multipart/form-data' \
     --header 'Accept: application/json' \
@@ -19,5 +21,6 @@ curl -X POST \
     -F phase_name=Development \
     -F system_name=nyu-ta2 \
     -F problem_id="$PROBLEM" \
-    -F file=@"$PROBLEM.tgz" \
+    -F file=@"$BUILD_FILE" \
     https://d3m-dse.nist.gov/emp_api_v1/uploads -k
+rm -rf "$BUILD_DIR"
