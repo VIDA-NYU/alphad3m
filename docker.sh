@@ -1,12 +1,14 @@
 #!/bin/sh
 
 # Example train: ./docker.sh tpl fast search seed_datasets_current/uu4_SPECT/TRAIN ta2-test:latest
-# Example test: ./docker.sh test seed_datasets_current/uu4_SPECT/TEST 0123-4567-89abcdef ta2-test:latest
+# Example test: ./docker.sh test seed_datasets_current/uu4_SPECT/TEST ta2-test:latest
 # Example ta2-ta3: ./docker.sh ta3 seed_datasets_current/uu4_SPECT/TRAIN ta2-test:latest
 
 # Change this if you're not Remi
 LOCAL_DATA_ROOT="/home/remram/Documents/programming/d3m/data"
 LOCAL_OUTPUT_ROOT="/home/remram/Documents/programming/d3m/tmp"
+
+set -eu
 
 OPTS=""
 TIMEOUT=30
@@ -19,7 +21,6 @@ if [ "$1" = "fast" ]; then
     TIMEOUT=5
     shift
 fi
-TESTOPT=""
 case "$1" in
     ta3)
         MODE=ta2ta3
@@ -34,8 +35,7 @@ case "$1" in
     test)
         MODE=test
         INPUT="$2"
-        TESTOPT="/output/executables/$3"
-        shift 3
+        set -- "$3" bash -c "cd /output/executables; for i in *; do D3MTESTOPT=/output/executables/\$i eval.sh; done"
     ;;
     *)
         echo "Usage:\n  $(basename $0) ta3 seed_datasets_current/uu4_SPECT/TRAIN <image>" >&2
@@ -48,7 +48,6 @@ esac
 docker run -ti --rm \
     -p 45042:45042 \
     -e D3MRUN="$MODE" \
-    -e D3MTESTOPT="$TESTOPT" \
     -e D3MINPUTDIR=/input \
     -e D3MOUTPUTDIR=/output \
     -e D3MCPU=4 \
