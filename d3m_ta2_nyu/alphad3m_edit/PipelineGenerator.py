@@ -9,6 +9,7 @@ import logging
 os.environ['MPLBACKEND'] = 'Agg'
 
 from d3m_ta2_nyu.workflow import database
+from d3m_ta2_nyu.multiprocessing import Receiver
 from d3m.container import Dataset
 
 from alphaAutoMLEdit.Coach import Coach
@@ -103,7 +104,6 @@ input = {
 
 @database.with_sessionmaker
 def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSession):
-    logger.info('TASK %s', task)
     # FIXME: don't use 'problem' argument
     compute_metafeatures = ComputeMetafeatures(dataset, targets, features, DBSession)
     def eval_pipeline(strings, origin):
@@ -186,13 +186,10 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    input['ARGS']['dataset'] = dataset.split('/')[-1].replace('_dataset','')
-    assert dataset.startswith('file://')
-    input['ARGS']['dataset_path'] = os.path.dirname(dataset[7:])
-    input['PROBLEM'] = task
-    
 
-    f = open(os.path.join(input['ARGS']['dataset_path'], 'datasetDoc.json'))
+    
+    dataset_path = os.path.dirname(dataset[7:])
+    f = open(os.path.join(dataset_path, 'datasetDoc.json'))
     datasetDoc = json.load(f)
     data_resources = datasetDoc["dataResources"]
     data_types = []
@@ -241,7 +238,6 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         sys.exit(148)
 
 
-    logger.info('DATA TYPE %s', data_types)
     estimator = 'd3m.primitives.sklearn_wrap.SKRandomForestClassifier'
     if "image" in data_types:
         if "regression" in task:
@@ -258,11 +254,13 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
             return
         logger.error("%s Not Supported", task)
         sys.exit(148)
-    
+
+    input['PROBLEM'] = task
     input['DATA_TYPE'] = 'TABULAR'
     input['METRIC'] = metrics[0]
     input['DATASET_METAFEATURES'] = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
     input['PRIMITIVES']['ESTIMATORS'] = estimators[task]
+    
     game = PipelineGame(None, input, eval_pipeline)
     nnet = NNetWrapper(game)
 
@@ -277,7 +275,7 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
     c.learn()
 
 
-def main(dataset_uri, problem_path, output_path):
+def main(dataset, problem_path, output_path):
     setup_logging()
 
     import time
@@ -299,14 +297,15 @@ def main(dataset_uri, problem_path, output_path):
             for pipeline in pipelines_list:
                 fields = pipeline.split(' ')
                 pipelines[fields[0]] = fields[1].split(',')
-    args = dict(ARGS)
-    args['dataset'] = dataset_uri.split('/')[-1].replace('_dataset', '')
-    assert dataset_uri.startswith('file://')
-    args['dataset_path'] = dataset_uri[7:]
-    logger.info("dataset URI: %s", dataset_uri)
-    logger.info("dataset path: %s", args['dataset_path'])
+
+    problem = {}
     with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
-        args['problem'] = json.load(fp)
+        problem = json.load(fp)
+    task = problem['about']['taskType']
+    
+    metrics = []
+    for metric in problem['inputs']['performanceMetrics']:
+        metrics.append(metric['metric'])
 
     storage = tempfile.mkdtemp(prefix='d3m_pipeline_eval_')
     ta2 = D3mTa2(storage_root=storage,
@@ -315,93 +314,9 @@ def main(dataset_uri, problem_path, output_path):
 
     session_id = ta2.new_session(args['problem'])
     session = ta2.sessions[session_id]
+    msg_queue = Receiver()
 
-    def eval_pipeline(strings, origin):
-        # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_pipeline_from_strings(strings, origin, os.path.join(dataset_uri, 'datasetDoc.json'),
-                                                 session.targets, session.features, ta2.DBSession)
-        # Evaluate the pipeline
-        return ta2.run_pipeline(session_id, pipeline_id)
-
-    def eval_audio_pipeline(origin):
-        # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_audio_pipeline_from_strings(origin,
-                                                                      os.path.join(dataset_uri, 'datasetDoc.json'),
-                                                                      session.targets, session.features, ta2.DBSession)
-        # Evaluate the pipeline
-        return ta2.run_pipeline(session_id, pipeline_id)
-
-    def eval_graphMatch_pipeline(origin):
-        # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_graphMatching_pipeline_from_strings(origin,
-                                                                                    os.path.join(dataset_uri,
-                                                                                                 'datasetDoc.json'),
-                                                                                    session.targets, session.features,
-                                                                                    ta2.DBSession)
-        # Evaluate the pipeline
-        return ta2.run_pipeline(session_id, pipeline_id)
-
-    def eval_communityDetection_pipeline(origin):
-        # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_communityDetection_pipeline_from_strings(origin,
-                                                                                         os.path.join(dataset_uri,
-                                                                                                      'datasetDoc.json'),
-                                                                                         session.targets,
-                                                                                         session.features,
-                                                                                         ta2.DBSession)
-        # Evaluate the pipeline
-        return ta2.run_pipeline(session_id, pipeline_id)
-
-    pipeline = None
-    if pipelines:
-        pipeline = [p_enum[primitive] for primitive in pipelines[dataset]]
-    logger.info("pipeline: %s", pipeline)
-
-
-    f = open(os.path.join(args['dataset_path'], 'datasetDoc.json'))
-    datasetDoc = json.load(f)
-    data_resources = datasetDoc["dataResources"]
-    data_types = []
-    for data_res in data_resources:
-        data_types.append(data_res["resType"])
-
-    if "audio" in data_types:
-        eval_audio_pipeline("ALPHAD3M")
-        return
-
-    if "graph" in data_types and "graphMatching" in args['problem']['about']['taskType']:
-        eval_graphMatch_pipeline("ALPHAD3M")
-        return
-    if "graph" in data_types and "communityDetection" in args['problem']['about']['taskType']:
-        eval_communityDetection_pipeline("ALPHAD3M")
-        return
-
-    input['DATASET_METAFEATURES'] = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
-    
-    game = PipelineGame(args, pipeline, eval_pipeline, compute_metafeatures)
-    nnet = NNetWrapper(game)
-
-    if args.get('load_model'):
-       model_file = os.path.join(args.get('load_folder_file')[0],
-                              args.get('load_folder_file')[1])
-       if os.path.isfile(model_file):
-            nnet.load_checkpoint(args.get('load_folder_file')[0],
-                             args.get('load_folder_file')[1])
-
-    c = Coach(game, nnet, args)
-    c.learn()
-    eval_dict = game.evaluations
-    for key, value in eval_dict.items():
-        if value == float('inf') and not 'error' in game.metric.lower():
-           eval_dict[key] = 0
-    evaluations = sorted(eval_dict.items(), key=operator.itemgetter(1))
-    if not 'error' in game.metric.lower():
-        evaluations.reverse()
-    end = time.time()
-    out_p = open(os.path.join(output_path, args['dataset']+'_best_pipelines.txt'), 'w')
-    best_result = args['dataset']+' '+evaluations[0][0] + ' ' + str(evaluations[0][1])+ ' ' + str(game.steps) + ' ' + str((end-start)/60.0)
-    logger.info("best result: %s", best_result)
-    out_p.write(best_result )
+    generate(task, dataset, metrics, problem, session.targets, session.features, msg_queue, ta2.DBSession)
 
 if __name__ == '__main__':
     output_path = '.'
