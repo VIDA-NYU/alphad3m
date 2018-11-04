@@ -11,9 +11,9 @@ os.environ['MPLBACKEND'] = 'Agg'
 from d3m_ta2_nyu.workflow import database
 from d3m.container import Dataset
 
-from .Coach import Coach
-from .pipeline.PipelineGame import PipelineGame
-from .pipeline.pytorch.NNet import NNetWrapper
+from alphaAutoMLEdit.Coach import Coach
+from alphaAutoMLEdit.pipeline.PipelineGame import PipelineGame
+from alphaAutoMLEdit.pipeline.pytorch.NNet import NNetWrapper
 from .GenerateD3MPipelines import GenerateD3MPipelines
 
 from d3m_ta2_nyu.metafeatures.dataset import ComputeMetafeatures
@@ -25,31 +25,92 @@ def setup_logging():
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:TA2:%(name)s:%(message)s")
 
-ARGS = {
-    'numIters': 3,
-    'numEps': 100,
-    'tempThreshold': 15,
-    'updateThreshold': 0.6,
-    'maxlenOfQueue': 200000,
-    'numMCTSSims': 25,
-    'arenaCompare': 40,
-    'cpuct': 1,
+estimators = {
+    'CLASSIFICATION': {
+        'd3m.primitives.sklearn_wrap.SKRandomForestClassifier':3,
+        'd3m.primitives.sklearn_wrap.SKDecisionTreeClassifier':4,
+        'd3m.primitives.featuretools_ta1.SKRFERandomForestClassifier':5,
+        'd3m.primitives.classifier.RandomForest':6,
+        'd3m.primitives.sklearn_wrap.SKMultinomialNB':7,
+        'd3m.primitives.common_primitives.BayesianLogisticRegression': 9,
+        'd3m.primitives.dsbox.CorexSupervised': 11,
+        'd3m.primitives.lupi_svm': 13,
+        'd3m.primitives.realML.TensorMachinesBinaryClassification': 14,
+        'd3m.primitives.sklearn_wrap.SKPassiveAggressiveClassifier': 15,
+        'd3m.primitives.sklearn_wrap.SKQuadraticDiscriminantAnalysis': 16,
+        'd3m.primitives.sklearn_wrap.SKSGDClassifier': 18,
+        'd3m.primitives.sklearn_wrap.SKSVC': 19
+    },
+    'REGRESSION': {
+        'd3m.primitives.cmu.autonlab.find_projections.SearchNumeric': 20,
+        'd3m.primitives.cmu.autonlab.find_projections.SearchHybridNumeric': 21,
+        'd3m.primitives.featuretools_ta1.SKRFERandomForestRegressor':22,
+        'd3m.primitives.sklearn_wrap.SKARDRegression': 25,
+        'd3m.primitives.sklearn_wrap.SKDecisionTreeRegressor': 26,
+        'd3m.primitives.sklearn_wrap.SKExtraTreesRegressor': 27,
+        'd3m.primitives.sklearn_wrap.SKGaussianProcessRegressor': 28,
+        'd3m.primitives.sklearn_wrap.SKLars': 31,
+        'd3m.primitives.sklearn_wrap.SKLasso': 32,
+        'd3m.primitives.sklearn_wrap.SKLassoCV': 33,
+        'd3m.primitives.sklearn_wrap.SKLinearSVR': 34,
+        'd3m.primitives.sklearn_wrap.SKPassiveAggressiveRegressor': 35,
+        'd3m.primitives.sklearn_wrap.SKSGDRegressor': 36,
+        'd3m.primitives.sklearn_wrap.SKRidge':39
+    }
+}
 
-    'checkpoint': './temp/',
-    'load_model': False,
-    'load_folder_file': ('./temp/', 'best.pth.tar'),
-    'metafeatures_path': '/d3m/data/metafeatures'
+
+input = {
+
+    'PIPELINE_SIZES': {
+        'DATA_CLEANING': 1,
+        'DATA_PREPROCESSING': 1,
+        'ESTIMATORS': 1
+    },
+    
+    'PROBLEM_TYPES': {'CLASSIFICATION': 1,
+                     'REGRESSION': 2},
+    
+    'DATA_TYPES': {'TABULAR': 1,
+                  'GRAPH': 2,
+                  'IMAGE': 3},
+    
+    'PRIMITIVES': {
+        'DATA_CLEANING':{
+            'd3m.primitives.dsbox.MeanImputation': 2
+        },
+        'DATA_PREPROCESSING': {
+            'd3m.primitives.dsbox.Encoder': 1,
+        }
+    },
+
+    'ARGS': {
+        'numIters': 3,
+        'numEps': 100,
+        'tempThreshold': 15,
+        'updateThreshold': 0.6,
+        'maxlenOfQueue': 200000,
+        'numMCTSSims': 25,
+        'arenaCompare': 40,
+        'cpuct': 1,
+        
+        'checkpoint': './temp/',
+        'load_model': False,
+        'load_folder_file': ('./temp/', 'best.pth.tar'),
+        'metafeatures_path': '/d3m/data/metafeatures'
+    }
 }
 
 @database.with_sessionmaker
 def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSession):
+    logger.info('TASK %s', task)
     # FIXME: don't use 'problem' argument
     compute_metafeatures = ComputeMetafeatures(dataset, targets, features, DBSession)
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
         pipeline_id = GenerateD3MPipelines.make_pipeline_from_strings(strings, origin,
-                                                 dataset, targets, features,
-                                                 DBSession=DBSession)
+                                                                      dataset, targets, features,
+                                                                      DBSession=DBSession)
 
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
@@ -125,13 +186,13 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    args = dict(ARGS)
-    args['dataset'] = dataset.split('/')[-1].replace('_dataset','')
+    input['ARGS']['dataset'] = dataset.split('/')[-1].replace('_dataset','')
     assert dataset.startswith('file://')
-    args['dataset_path'] = os.path.dirname(dataset[7:])
-    args['problem'] = problem
+    input['ARGS']['dataset_path'] = os.path.dirname(dataset[7:])
+    input['PROBLEM'] = task
+    
 
-    f = open(os.path.join(args['dataset_path'], 'datasetDoc.json'))
+    f = open(os.path.join(input['ARGS']['dataset_path'], 'datasetDoc.json'))
     datasetDoc = json.load(f)
     data_resources = datasetDoc["dataResources"]
     data_types = []
@@ -140,8 +201,8 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
 
     unsupported_problems = ["timeSeriesForecasting", "collaborativeFiltering"]
 
-    if args['problem']['about']['taskType'] in unsupported_problems:
-        logger.error("%s Not Supported", args['problem']['about']['taskType'])
+    if task in unsupported_problems:
+        logger.error("%s Not Supported", task)
         sys.exit(148)
     
     if "text" in data_types:
@@ -164,51 +225,55 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         return
 
     if "graph" in data_types:
-        if "graphMatching" in args['problem']['about']['taskType']:
+        if "graphMatching" in task:
             eval_graphMatch_pipeline("ALPHAD3M")
             return
-        elif "communityDetection" in args['problem']['about']['taskType']:
+        elif "communityDetection" in task:
             eval_communityDetection_pipeline("ALPHAD3M")
             return
-        elif "linkPrediction" in args['problem']['about']['taskType']:
+        elif "linkPrediction" in task:
             eval_linkprediction_pipeline("ALPHAD3M")
             return
-        elif "vertexNomination" in args['problem']['about']['taskType']:
+        elif "vertexNomination" in task:
             eval_vertexnomination_pipeline("ALPHAD3M")
             return
-        logger.error("%s Not Supported", args['problem']['about']['taskType'])
+        logger.error("%s Not Supported", task)
         sys.exit(148)
 
 
     logger.info('DATA TYPE %s', data_types)
     estimator = 'd3m.primitives.sklearn_wrap.SKRandomForestClassifier'
     if "image" in data_types:
-        if "regression" in args['problem']['about']['taskType']:
+        if "regression" in task:
             estimator = 'd3m.primitives.sklearn_wrap.SKLasso'
             eval_image_pipeline(estimator, "ALPHAD3M")
             return
-        logger.error("%s Not Supported", args['problem']['about']['taskType'])
+        logger.error("%s Not Supported", task)
         sys.exit(148)
 
 
     if "timeseries" in data_types:
-        if "classification" in args['problem']['about']['taskType']:
+        if "classification" in task:
             eval_timeseries_pipeline("ALPHAD3M")
             return
-        logger.error("%s Not Supported", args['problem']['about']['taskType'])
+        logger.error("%s Not Supported", task)
         sys.exit(148)
-
-    game = PipelineGame(args, None, eval_pipeline, compute_metafeatures)
+    
+    input['DATA_TYPE'] = 'TABULAR'
+    input['METRIC'] = metrics[0]
+    input['DATASET_METAFEATURES'] = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
+    input['PRIMITIVES']['ESTIMATORS'] = estimators[task]
+    game = PipelineGame(None, input, eval_pipeline)
     nnet = NNetWrapper(game)
 
-    if args.get('load_model'):
-        model_file = os.path.join(args.get('load_folder_file')[0],
-                                  args.get('load_folder_file')[1])
+    if input['ARGS'].get('load_model'):
+        model_file = os.path.join(input['ARGS'].get('load_folder_file')[0],
+                                  input['ARGS'].get('load_folder_file')[1])
         if os.path.isfile(model_file):
-            nnet.load_checkpoint(args.get('load_folder_file')[0],
-                                 args.get('load_folder_file')[1])
+            nnet.load_checkpoint(input['ARGS'].get('load_folder_file')[0],
+                                 input['ARGS'].get('load_folder_file')[1])
 
-    c = Coach(game, nnet, args)
+    c = Coach(game, nnet, input['ARGS'])
     c.learn()
 
 
@@ -250,7 +315,6 @@ def main(dataset_uri, problem_path, output_path):
 
     session_id = ta2.new_session(args['problem'])
     session = ta2.sessions[session_id]
-    compute_metafeatures = ComputeMetafeatures(os.path.join(dataset_uri, 'datasetDoc.json'), session.targets, session.features, ta2.DBSession)
 
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
@@ -312,6 +376,8 @@ def main(dataset_uri, problem_path, output_path):
         eval_communityDetection_pipeline("ALPHAD3M")
         return
 
+    input['DATASET_METAFEATURES'] = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
+    
     game = PipelineGame(args, pipeline, eval_pipeline, compute_metafeatures)
     nnet = NNetWrapper(game)
 
