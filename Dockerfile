@@ -13,7 +13,8 @@ RUN apt-get update -yy && \
     apt-get clean
 
 WORKDIR /usr/src/app
-#RUN cd /usr/local/src && pip3 install -e git+https://gitlab.com/datadrivendiscovery/d3m.git@00000000#egg=d3m
+
+# Install requirements
 RUN pip3 install Cython==0.28.3
 COPY requirements.txt /usr/src/app/requirements.txt
 RUN pip3 freeze | sort >prev_reqs.txt && \
@@ -21,6 +22,16 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
     pip3 freeze | sort >new_reqs.txt && \
     comm -23 prev_reqs.txt new_reqs.txt | while read i; do echo "Removed package $i" >&2; exit 1; done && \
     rm prev_reqs.txt new_reqs.txt
+
+# Install alphaautoml
+COPY alphaautoml /usr/src/app/alphaautoml
+RUN pip3 freeze | sort >prev_reqs.txt && \
+    pip3 install -e /usr/src/app/alphaautoml && \
+    pip3 freeze | sort >new_reqs.txt && \
+    comm -23 prev_reqs.txt new_reqs.txt | while read i; do echo "Removed package $i" >&2; exit 1; done && \
+    rm prev_reqs.txt new_reqs.txt
+
+# Install TA2
 COPY d3m_ta2_nyu /usr/src/app/d3m_ta2_nyu
 COPY setup.py README.rst /usr/src/app/
 RUN pip3 freeze | sort >prev_reqs.txt && \
@@ -28,6 +39,7 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
     pip3 freeze | sort >new_reqs.txt && \
     comm -23 prev_reqs.txt new_reqs.txt | while read i; do echo "Removed package $i" >&2; exit 1; done && \
     rm prev_reqs.txt new_reqs.txt
+
 COPY eval.sh /usr/local/bin/eval.sh
 
 CMD "/usr/local/bin/eval.sh"
