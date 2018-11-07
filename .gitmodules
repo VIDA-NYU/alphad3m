@@ -1,0 +1,3 @@
+[submodule "alphaautoml"]
+	path = alphaautoml
+	url = ../../alphaautoml.git
