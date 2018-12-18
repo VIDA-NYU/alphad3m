@@ -51,7 +51,8 @@ def cross_validation(pipeline, metrics, dataset, targets,
                                    stratified=stratified,
                                    shuffle=shuffle,
                                    delete_recursive=True)
-    kfold = KFoldDatasetSplit(hyperparams=hyperparams)
+    kfold = KFoldDatasetSplit(hyperparams=hyperparams,
+                              random_seed=RANDOM)
     kfold.set_training_data(dataset=dataset)
     kfold.fit()
     train_splits = kfold.produce(inputs=list(range(folds)))
