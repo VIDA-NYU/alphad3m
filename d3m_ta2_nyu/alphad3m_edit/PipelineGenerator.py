@@ -134,7 +134,7 @@ input = {
         'cpuct': 1,
         
         'checkpoint': '/output/nn_models',
-        'load_model': True,
+        'load_model': False,
         'load_folder_file': ('/output/nn_models', 'best.pth.tar'),
         'metafeatures_path': '/d3m/data/metafeatures'
     }
