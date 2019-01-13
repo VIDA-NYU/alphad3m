@@ -49,19 +49,19 @@ PRIMITIVES = getPrimitives()
 
 GRAMMAR = {
     'NON_TERMINALS': {
-        'DATA_CLEANING':1,
-        'DATA_TRANSFORMATION':2,
-        'ESTIMATORS':3
-        #'T': 4
+        'S': 1,
+        'DATA_CLEANING':2,
+        'DATA_TRANSFORMATION':3,
+        'ESTIMATORS':4
     },
-    'START': 'S->DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS'
+    'START': 'S->S'
 }
 
 def getTerminals(non_terminals, primitives, task):
     terminals = {}
     count = len(GRAMMAR['NON_TERMINALS'])+1
     for non_terminal in non_terminals:
-        if non_terminal == 'T':
+        if non_terminal == 'S':
             continue
         if non_terminal == 'ESTIMATORS':
             non_terminal = task.upper()
@@ -74,15 +74,18 @@ def getTerminals(non_terminals, primitives, task):
 
 
 def getRules(non_terminals, primitives, task):
-    # rules = {'T->DATA_CLEANING T DATA_TRANSFORMATION':1,
-    #          'T->E':2
-    #          }
-    # rules_lookup = {'T': rules.keys()}
-
-    rules = {}
-    rules_lookup = {}
+    rules = { 'S->ESTIMATORS':1,
+              'S->DATA_CLEANING ESTIMATORS':2,
+              'S->DATA_TRANSFORMATION ESTIMATORS':3,
+              'S->DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 4
+    }
+    
+    rules_lookup = {'S': list(rules.keys())}
     count = len(rules)+1
     for non_terminal in non_terminals:
+        if non_terminal == 'S':
+            continue
+
         rules_lookup[non_terminal] = []
         if non_terminal == 'ESTIMATORS':
             terminals = primitives[task.upper()]
@@ -92,7 +95,7 @@ def getRules(non_terminals, primitives, task):
                 count += 1
                 rules_lookup[non_terminal].append(rule)
             continue
-        
+
         terminals = primitives[non_terminal]
         for terminal in terminals:
             rule = non_terminal+'->'+terminal+' ' +non_terminal 
@@ -134,13 +137,12 @@ input = {
         'cpuct': 1,
         
         'checkpoint': '/output/nn_models',
-        'load_model': False,
+        'load_model': True,
         'load_folder_file': ('/output/nn_models', 'best.pth.tar'),
-        'metafeatures_path': '/d3m/data/metafeatures'
+        'metafeatures_path': '/d3m/data/metafeatures',
+        'verbose': True
     }
 }
-
-
 
 @database.with_sessionmaker
 def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSession):
@@ -309,13 +311,16 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
     input['METRIC'] = metrics[0]
     input['DATASET_METAFEATURES'] = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
     input['DATASET'] = datasetDoc['about']['datasetName']
+    input['ARGS']['stepsfile'] = os.path.join('/output',input['DATASET']+'_pipeline_steps.txt')
+    
     game = PipelineGame(input, eval_pipeline)
     nnet = NNetWrapper(game)
 
-    def record_bestpipeline():
+    def record_bestpipeline(dataset):
         end = time.time()
         
         eval_dict = game.evaluations
+        eval_times = game.eval_times
         for key, value in eval_dict.items():
             if value == float('inf') and not 'error' in game.metric.lower():
                 eval_dict[key] = 0
@@ -323,11 +328,11 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         if not 'error' in game.metric.lower():
             evaluations.reverse()
 
-        out_p = open(os.path.join('/output', 'best_pipelines.txt'), 'a')
-        out_p.write(datasetDoc['about']['datasetName']+' '+evaluations[0][0] + ' ' + str(evaluations[0][1])+ ' ' + str(game.steps) + ' ' + str((end-start)/60.0) + '\n')
+        out_p = open(os.path.join('/output', input['DATASET']+'_best_pipelines.txt'), 'a')
+        out_p.write(datasetDoc['about']['datasetName']+' '+evaluations[0][0] + ' ' + str(evaluations[0][1])+ ' ' + str(game.steps) + ' ' + str((eval_times[evaluations[0][0]]-start)/60.0) + ' ' + str((end-start)/60.0) + '\n')
         
     def signal_handler(signal, frame):
-        record_bestpipeline()
+        record_bestpipeline(input['DATASET'])
         sys.exit(0)
 
     signal.signal(signal.SIGTERM, signal_handler)
@@ -342,7 +347,7 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
     c = Coach(game, nnet, input['ARGS'])
     c.learn()
     
-    record_bestpipeline()
+    record_bestpipeline(input['DATASET'])
 
     sys.exit(0)
 
