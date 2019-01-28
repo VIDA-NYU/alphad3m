@@ -20,6 +20,8 @@ def _root_mean_squared_error_avg(y_true, y_pred):
 
 SCORES_TO_SKLEARN = dict(
     ACCURACY=sklearn.metrics.accuracy_score,
+    PRECISION=sklearn.metrics.precision_score,
+    RECALL=sklearn.metrics.recall_score,
     F1=lambda y_true, y_pred:
         sklearn.metrics.f1_score(y_true, y_pred,
                                  average='binary', pos_label='1'),
@@ -45,6 +47,8 @@ SCORES_TO_SKLEARN = dict(
 
 SCORES_FROM_SCHEMA = {
     'accuracy': 'ACCURACY',
+    'precision': 'PRECISION',
+    'recall': 'RECALL',
     'f1': 'F1',
     'f1Micro': 'F1_MICRO',
     'f1Macro': 'F1_MACRO',
@@ -66,6 +70,8 @@ SCORES_TO_SCHEMA = {v: k for k, v in SCORES_FROM_SCHEMA.items()}
 # 1 if lower values of that metric indicate a better classifier, -1 otherwise
 SCORES_RANKING_ORDER = dict(
     ACCURACY=-1,
+    PRECISION=-1,
+    RECALL=-1,
     F1=-1,
     F1_MICRO=-1,
     F1_MACRO=-1,
