@@ -20,8 +20,10 @@ def _root_mean_squared_error_avg(y_true, y_pred):
 
 SCORES_TO_SKLEARN = dict(
     ACCURACY=sklearn.metrics.accuracy_score,
-    PRECISION=sklearn.metrics.precision_score,
-    RECALL=sklearn.metrics.recall_score,
+    PRECISION=lambda y_true, y_pred:
+        sklearn.metrics.precision_score(y_true, y_pred, average='micro'),
+    RECALL=lambda y_true, y_pred:
+        sklearn.metrics.recall_score(y_true, y_pred, average='micro'),
     F1=lambda y_true, y_pred:
         sklearn.metrics.f1_score(y_true, y_pred,
                                  average='binary', pos_label='1'),
