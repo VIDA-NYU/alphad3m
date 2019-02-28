@@ -6,53 +6,69 @@ from sqlalchemy import select
 import sys
 import time
 
-from d3m.primitives.evaluation import KFoldDatasetSplit
+from d3m.primitives.evaluation import TrainScoreDatasetSplit
 
 from d3m_ta2_nyu.common import SCORES_TO_SKLEARN
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.execute import execute_train, execute_test
 from d3m_ta2_nyu.workflow.module_loader import load_dataset
 
-
 logger = logging.getLogger(__name__)
 
-
 RANDOM = 65682867  # The most random of all numbers
-
+MAX_SAMPLE = 100
 
 def cross_validation(pipeline, metrics, dataset, targets,
                      progress, db,
                      folds, stratified=False, shuffle=True):
+    folds = 1
     scores = {}
 
     if targets is None:
         # Load targets from database
         module = (
             select([database.PipelineModule.id])
-            .where(database.PipelineModule.pipeline_id == pipeline)
-            .where(database.PipelineModule.package == 'data')
-            .where(database.PipelineModule.name == 'dataset')
+                .where(database.PipelineModule.pipeline_id == pipeline)
+                .where(database.PipelineModule.package == 'data')
+                .where(database.PipelineModule.name == 'dataset')
         ).as_scalar()
         targets, = (
             db.query(database.PipelineParameter.value)
-            .filter(database.PipelineParameter.module_id == module)
-            .filter(database.PipelineParameter.name == 'targets')
+                .filter(database.PipelineParameter.module_id == module)
+                .filter(database.PipelineParameter.name == 'targets')
         ).one()
         targets = pickle.loads(targets)
 
     # Set correct targets
-    dataset = load_dataset(dataset, targets, None)
+    dataset = load_dataset(dataset, targets, None) # FIXME is it loaded each time is called?
+
+    if MAX_SAMPLE:
+        for res_id in dataset:
+            if ('https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
+                    in dataset.metadata.query([res_id])['semantic_types']):
+                break
+            else:
+                res_id = next(iter(dataset))
+
+        if hasattr(dataset[res_id], 'columns') and len(dataset[res_id]) > MAX_SAMPLE:
+            logger.info("Sampling down data from %d to %d",
+                        len(dataset[res_id]), MAX_SAMPLE)
+            sample = numpy.concatenate(
+                [numpy.repeat(True, MAX_SAMPLE),
+                 numpy.repeat(False, len(dataset[res_id]) - MAX_SAMPLE)])
+            numpy.random.RandomState(seed=RANDOM).shuffle(sample)
+            dataset[res_id] = dataset[res_id][sample]
+
 
     # Do the split
-    m = KFoldDatasetSplit.metadata.query()['primitive_code']
-    KFoldHyperparams = m['class_type_arguments']['Hyperparams']
-    hyperparams = KFoldHyperparams(KFoldHyperparams.defaults(),
-                                   number_of_folds=folds,
+    m = TrainScoreDatasetSplit.metadata.query()['primitive_code']
+    SplitHyperparams = m['class_type_arguments']['Hyperparams']
+    hyperparams = SplitHyperparams(SplitHyperparams.defaults(),
                                    stratified=stratified,
                                    shuffle=shuffle,
                                    delete_recursive=True)
-    kfold = KFoldDatasetSplit(hyperparams=hyperparams,
-                              random_seed=RANDOM)
+    kfold = TrainScoreDatasetSplit(hyperparams=hyperparams,
+                                   random_seed=RANDOM)
     kfold.set_training_data(dataset=dataset)
     kfold.fit()
     train_splits = kfold.produce(inputs=list(range(folds)))
@@ -72,10 +88,12 @@ def cross_validation(pipeline, metrics, dataset, targets,
 
         # Run training
         logger.info("Training on fold")
+
         try:
             train_run, outputs = execute_train(
                 db, pipeline, train_split,
                 crossval=True)
+
         except Exception:
             logger.exception("Error running training on fold")
             sys.exit(1)
@@ -90,7 +108,6 @@ def cross_validation(pipeline, metrics, dataset, targets,
         except Exception:
             logger.exception("Error running testing on fold")
             sys.exit(1)
-
         run_time = time.time() - start_time
 
         # Get predicted targets
@@ -100,14 +117,16 @@ def cross_validation(pipeline, metrics, dataset, targets,
         # Get expected targets
         for res_id in dataset:
             if ('https://metadata.datadrivendiscovery.org/'
-                    'types/DatasetEntryPoint'
+                'types/DatasetEntryPoint'
                     in dataset.metadata.query([res_id])['semantic_types']):
                 break
-        else:
-            res_id = next(iter(dataset))
+            else:
+                res_id = next(iter(dataset))
         test_targets = [test_split[res_id]['d3mIndex']]
+
         for resID, col_name in targets:
             test_targets.append(test_split[resID].loc[:, col_name])
+
         test_targets = pandas.concat(test_targets, axis=1) \
             .set_index('d3mIndex')
 
@@ -116,6 +135,8 @@ def cross_validation(pipeline, metrics, dataset, targets,
         # FIXME: ConstructPredictions doesn't set the right column names
         # https://gitlab.com/datadrivendiscovery/common-primitives/issues/25
         predictions.columns = [col_name for resID, col_name in targets]
+
+        # print(predictions.columns)
 
         # Compute score
         # FIXME: Use a primitive for this
@@ -130,6 +151,7 @@ def cross_validation(pipeline, metrics, dataset, targets,
 
         # Store predictions
         all_predictions.append(predictions)
+        break
 
     progress(folds)
 

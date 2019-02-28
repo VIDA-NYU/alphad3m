@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 FOLDS = 4
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     FOLDS = 2
-RANDOM = 65682867  # The most random of all numbers
 
 
 @database.with_db
@@ -39,14 +38,14 @@ def score(pipeline_id, metrics, targets, results_path, msg_queue, db):
         pipeline_id, metrics, dataset, targets,
         lambda i: msg_queue.send(('progress', i / max_progress)),
         db, FOLDS)
-    logger.info("Scoring done: %s", ", ".join("%s=%s" % s
-                                              for s in scores.items()))
+    logger.info("Scoring done: %s", ", ".join("%s=%s" % s for s in scores.items()))
 
     # Store scores
     scores = [database.CrossValidationScore(metric=metric,
                                             value=numpy.mean(values))
               for metric, values in scores.items()]
     crossval = database.CrossValidation(pipeline_id=pipeline_id, scores=scores)
+
     db.add(crossval)
 
     # Store predictions

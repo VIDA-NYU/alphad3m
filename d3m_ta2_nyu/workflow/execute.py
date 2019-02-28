@@ -9,7 +9,6 @@ from uuid import UUID
 from . import database
 from . import module_loader
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -180,6 +179,7 @@ def execute(db, pipeline, module_loader, reason,
             # Pipeline parameters from database
             for k, v in parameters.items():
                 inputs.setdefault(k, []).append(v)
+
             # Output from connected upstream modules
             for conn in module.connections_to:
                 inputs.setdefault(conn.to_input_name, []).append(
@@ -190,6 +190,7 @@ def execute(db, pipeline, module_loader, reason,
                         mod_id, module.package, module.name,
                         ", ".join(inputs.keys()))
             try:
+
                 outputs[mod_id] = function(
                     module_inputs=inputs,
                     global_inputs=global_inputs,

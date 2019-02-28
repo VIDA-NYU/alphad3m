@@ -6,7 +6,6 @@ from d3m_ta2_nyu.workflow import database
 
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
-
 logger = logging.getLogger(__name__)
 
 
@@ -47,6 +46,13 @@ class GenerateD3MPipelines():
                 pipeline=pipeline, module=module,
                 name='hyperparams', value=pickle.dumps(hyperparams),
             ))
+
+        def change_default_hyperparams(primitive_name, primitive):
+            if primitive_name == 'd3m.primitives.sklearn_wrap.SKImputer': # d3m.primitives.data_cleaning.simple_imputer.SKlearn
+                set_hyperparams(primitive, strategy='most_frequent')
+            elif primitive_name == 'd3m.primitives.sklearn_wrap.SKOneHotEncoder':
+                set_hyperparams(primitive, handle_unknown='ignore')
+
 
         try:
             #                          data
@@ -101,8 +107,10 @@ class GenerateD3MPipelines():
             step = prev_step = step3
             preprocessors = primitives[:-1]
             classifier = primitives[-1]
+
             for preprocessor in preprocessors:
                 step = make_primitive_module(preprocessor)
+                change_default_hyperparams(preprocessor, step)
                 connect(prev_step, step)
                 prev_step = step
 
@@ -139,7 +147,8 @@ class GenerateD3MPipelines():
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
         finally:
-            db.close()
+                db.close()
+
 
     @staticmethod
     def make_audio_pipeline_from_strings(primitives, origin, dataset, targets=None, features=None, DBSession=None):
@@ -267,7 +276,7 @@ class GenerateD3MPipelines():
                 pipeline=pipeline, module=input_data,
                 name='features', value=pickle.dumps(features),
             ))
-            step0 = make_primitive_module("d3m.primitives.jhu_primitives.SeededGraphMatching")
+            step0 = make_primitive_module("d3m.primitives.sri.graph.GraphMatchingParser")
             connect(input_data, step0, from_output='dataset')
             db.add(pipeline)
             db.commit()
@@ -458,7 +467,7 @@ class GenerateD3MPipelines():
             db.close()
 
     @staticmethod
-    def make_image_pipeline_from_strings(estimator, origin, dataset, targets=None, features=None,
+    def make_image_pipeline_from_strings(origin, dataset, targets=None, features=None,
                                          DBSession=None):
         db = DBSession()
 
@@ -506,23 +515,70 @@ class GenerateD3MPipelines():
                 pipeline=pipeline, module=input_data,
                 name='features', value=pickle.dumps(features),
             ))
-            step0 = make_primitive_module("d3m.primitives.dsbox.Denormalize")
+
+            step0 = make_primitive_module('.datasets.Denormalize')
             connect(input_data, step0, from_output='dataset')
 
-            step1 = make_primitive_module("d3m.primitives.datasets.DatasetToDataFrame")
+            step1 = make_primitive_module('.datasets.DatasetToDataFrame')
             connect(step0, step1)
 
-            step2 = make_primitive_module("d3m.primitives.data.ExtractColumnsBySemanticTypes")
+            step2 = make_primitive_module('.data.ColumnParser')
+            connect(step1, step2)
+
+            step3 = make_primitive_module('.data.ExtractColumnsBySemanticTypes')
             set_hyperparams(
-                step2,
+                step3,
+                semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute']
+            )
+            connect(step2, step3)
+
+            step4 = make_primitive_module('d3m.primitives.data.ImageReader')
+            set_hyperparams(
+                step4,
+                return_result='new'
+            )
+            connect(step3, step4)
+
+            step5 = make_primitive_module('d3m.primitives.data.StackNDArrayColumn')
+
+            step6 = make_primitive_module('d3m.primitives.data.ExtractColumnsBySemanticTypes')
+            set_hyperparams(
+                step6,
                 semantic_types=[
                     "https://metadata.datadrivendiscovery.org/types/Target",
                     "https://metadata.datadrivendiscovery.org/types/SuggestedTarget"
-                ],
+                ]
             )
-            connect(step1, step2)
+            connect(step2, step6)
 
-            step3 = make_primitive_module("d3m.primitives.dsbox.DataFrameToTensor")
+            step7 = make_primitive_module('.data.CastToType')
+            connect(step6, step7)
+
+            step8 = make_primitive_module('d3m.primitives.sklearn_wrap.SKRandomForestRegressor')
+            connect(step5, step8)
+            connect(step7, step8, to_input='outputs')
+
+            step9 = make_primitive_module('.data.ConstructPredictions')
+            connect(step8, step9)
+            connect(step2, step9, to_input='reference')
+
+
+            #####
+
+            '''connect(step2, step6)
+
+            step7 = make_primitive_module('.data.CastToType')
+            connect(step6, step7)
+
+            step8 = make_primitive_module(classifier)
+            connect(step5, step8)
+            connect(step7, step8, to_input='outputs')
+
+            step9 = make_primitive_module('.data.ConstructPredictions')
+            connect(step8, step9)
+            connect(step2, step9, to_input='reference')'''
+
+            '''step3 = make_primitive_module("d3m.primitives.dsbox.DataFrameToTensor")
             connect(step1, step3)
 
             step4 = make_primitive_module("d3m.primitives.dsbox.Vgg16ImageFeature")
@@ -531,13 +587,13 @@ class GenerateD3MPipelines():
             step5 = make_primitive_module("d3m.primitives.sklearn_wrap.SKPCA")
             connect(step4, step5)
 
-            step6 = make_primitive_module(estimator)
-            connect(step5, step6)
+            step6 = make_primitive_module('d3m.primitives.sklearn_wrap.SKLasso')
+            #connect(step, step6)
             connect(step2, step6, to_input='outputs')
 
             step7 = make_primitive_module('.data.ConstructPredictions')
             connect(step6, step7)
-            connect(step1, step7, to_input='reference')
+            connect(step1, step7, to_input='reference')'''
 
             db.add(pipeline)
             db.commit()
