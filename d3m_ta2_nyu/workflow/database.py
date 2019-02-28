@@ -9,7 +9,8 @@ from sqlalchemy import Column, ForeignKey, create_engine, func, not_, select, \
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import column_property, relationship, sessionmaker
 from sqlalchemy.sql import functions
-from sqlalchemy.types import Binary, Boolean, DateTime, Enum, Float, String
+from sqlalchemy.types import Binary, Boolean, DateTime, Enum, Float, Integer, \
+    String
 
 from d3m_ta2_nyu.sql_uuid import UUID, UuidMixin
 
@@ -104,6 +105,7 @@ class CrossValidationScore(Base):
     cross_validation_id = Column(UUID, ForeignKey('cross_validations.id'),
                                  primary_key=True)
     cross_validation = relationship('CrossValidation')
+    fold = Column(Integer, primary_key=True, nullable=True)
     metric = Column(String, primary_key=True)
     value = Column(Float, nullable=False)
 

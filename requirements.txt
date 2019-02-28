@@ -4,3 +4,4 @@ smac==0.8.0
 scikit-image==0.14.2
 torch==1.0.0
 torchvision
+PyYAML==3.13

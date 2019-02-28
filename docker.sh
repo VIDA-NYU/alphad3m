@@ -13,10 +13,7 @@ set -eu
 OPTS=""
 TIMEOUT=30
 while true; do
-    if [ "$1" = "tpl" ]; then
-        OPTS="$OPTS -e TA2_USE_TEMPLATES=1"
-        shift
-    elif [ "$1" = "fast" ]; then
+    if [ "$1" = "fast" ]; then
         OPTS="$OPTS -e TA2_DEBUG_BE_FAST=1"
         TIMEOUT=5
         shift
