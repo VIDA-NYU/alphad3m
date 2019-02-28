@@ -650,7 +650,7 @@ class D3mTa2(Observable):
             # Save 2 minutes to finish scoring
             timeout = max(timeout - 2 * 60, 0.8 * timeout)
 
-        # Create pipeline, NO TUNING
+        # Create pipelines, NO TUNING
         with session.with_observer_queue() as queue:
             self.build_pipelines(session.id, task, dataset, session.metrics,
                                  tune=0, timeout=timeout)
@@ -659,7 +659,7 @@ class D3mTa2(Observable):
 
         logger.info("Tuning pipelines...")
 
-        # Now do tuning, when we already have written out some executables
+        # Now do tuning, when we already have written out some solutions
         with session.with_observer_queue() as queue:
             session.tune_when_ready()
             while queue.get(True)[0] != 'done_searching':
