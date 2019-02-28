@@ -306,12 +306,13 @@ class TestPipelineConversion(unittest.TestCase):
                 'name': '00000000-0000-0000-0000-000000000001',
                 'description': (
                     'classification_template('
-                    'imputer=d3m.primitives.sklearn_wrap.SKImputer, '
-                    'classifier=d3m.primitives.sklearn_wrap.SKLinearSVC)'
+                    'imputer=d3m.primitives.data_cleaning.imputer.SKlearn, '
+                    'classifier=d3m.primitives.classification.'
+                    'random_forest.SKlearn)'
                 ),
                 'inputs': [{'name': 'input dataset'}],
                 'outputs': [
-                    {'data': 'steps.9.produce', 'name': 'predictions'},
+                    {'data': 'steps.10.produce', 'name': 'predictions'},
                 ],
                 'schema': 'https://metadata.datadrivendiscovery.org/schemas/'
                           'v0/pipeline.json',
@@ -319,8 +320,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.datasets.Denormalize-mocked',
-                            'name': 'Denormalize',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'denormalize.Common-mocked',
+                            'name': 'Common',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -336,9 +338,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.datasets.'
-                                  'DatasetToDataFrame-mocked',
-                            'name': 'DatasetToDataFrame',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'dataset_to_dataframe.Common-mocked',
+                            'name': 'Common',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -346,15 +348,17 @@ class TestPipelineConversion(unittest.TestCase):
                         'arguments': {
                             'inputs': {
                                 'data': 'steps.0.produce',
-                                'type': 'CONTAINER'},
+                                'type': 'CONTAINER',
+                            },
                         },
-                        'outputs': [{'id': 'produce'}]
+                        'outputs': [{'id': 'produce'}],
                     },
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.data.ColumnParser-mocked',
-                            'name': 'ColumnParser',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'column_parser.DataFrameCommon-mocked',
+                            'name': 'DataFrameCommon',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -370,9 +374,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.data.'
-                                  'ExtractColumnsBySemanticTypes-mocked',
-                            'name': 'ExtractColumnsBySemanticTypes',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'extract_columns_by_semantic_types.DataFrameCommon-mocked',
+                            'name': 'DataFrameCommon',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -385,11 +389,9 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'hyperparams': {
                             'semantic_types': {
+                                'data': ['https://metadata.datadrivendiscovery'
+                                         '.org/types/Attribute'],
                                 'type': 'VALUE',
-                                'data': [
-                                    'https://metadata.datadrivendiscovery.org/'
-                                    'types/Attribute',
-                                ],
                             },
                         },
                         'outputs': [{'id': 'produce'}],
@@ -397,8 +399,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': imputer + '-mocked',
-                            'name': imputer.rsplit('.', 1)[-1],
+                            'id': 'd3m.primitives.data_cleaning.'
+                                  'imputer.SKlearn-mocked',
+                            'name': 'SKlearn',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -414,8 +417,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.data.CastToType-mocked',
-                            'name': 'CastToType',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'cast_to_type.Common-mocked',
+                            'name': 'Common',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -428,8 +432,8 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'hyperparams': {
                             'type_to_cast': {
-                                'type': 'VALUE',
                                 'data': 'float',
+                                'type': 'VALUE',
                             },
                         },
                         'outputs': [{'id': 'produce'}],
@@ -437,9 +441,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.data.'
-                                  'ExtractColumnsBySemanticTypes-mocked',
-                            'name': 'ExtractColumnsBySemanticTypes',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'extract_columns_by_semantic_types.DataFrameCommon-mocked',
+                            'name': 'DataFrameCommon',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -452,11 +456,9 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'hyperparams': {
                             'semantic_types': {
+                                'data': ['https://metadata.datadrivendiscovery'
+                                         '.org/types/Target'],
                                 'type': 'VALUE',
-                                'data': [
-                                    'https://metadata.datadrivendiscovery.org/'
-                                    'types/Target',
-                                ],
                             },
                         },
                         'outputs': [{'id': 'produce'}],
@@ -464,8 +466,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.data.CastToType-mocked',
-                            'name': 'CastToType',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'cast_to_type.Common-mocked',
+                            'name': 'Common',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -481,8 +484,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': classifier + '-mocked',
-                            'name': classifier.rsplit('.', 1)[-1],
+                            'id': 'd3m.primitives.classification.'
+                                  'random_forest.SKlearn-mocked',
+                            'name': 'SKlearn',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -495,16 +499,45 @@ class TestPipelineConversion(unittest.TestCase):
                             'outputs': {
                                 'data': 'steps.7.produce',
                                 'type': 'CONTAINER',
-                            }
+                            },
                         },
                         'outputs': [{'id': 'produce'}],
                     },
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.data.'
-                                  'ConstructPredictions-mocked',
-                            'name': 'ConstructPredictions',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'extract_columns_by_semantic_types.DataFrameCommon-mocked',
+                            'name': 'DataFrameCommon',
+                            'digest': '00000000',
+                            'version': '0.0',
+                            'python_path': 'mock',
+                        },
+                        'arguments': {
+                            'inputs': {
+                                'data': 'steps.2.produce',
+                                'type': 'CONTAINER',
+                            },
+                        },
+                        'hyperparams': {
+                            'semantic_types': {
+                                'data': [
+                                    'https://metadata.datadrivendiscovery.org/'
+                                    'types/Target',
+                                    'https://metadata.datadrivendiscovery.org/'
+                                    'types/PrimaryKey',
+                                ],
+                                'type': 'VALUE',
+                            },
+                        },
+                        'outputs': [{'id': 'produce'}],
+                    },
+                    {
+                        'type': 'PRIMITIVE',
+                        'primitive': {
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'construct_predictions.DataFrameCommon-mocked',
+                            'name': 'DataFrameCommon',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -515,7 +548,7 @@ class TestPipelineConversion(unittest.TestCase):
                                 'type': 'CONTAINER',
                             },
                             'reference': {
-                                'data': 'steps.2.produce',
+                                'data': 'steps.9.produce',
                                 'type': 'CONTAINER',
                             },
                         },
