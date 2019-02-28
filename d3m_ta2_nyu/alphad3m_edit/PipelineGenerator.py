@@ -176,7 +176,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     def eval_audio_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_audio_pipeline_from_strings(strings, origin,
+        pipeline_id = GenerateD3MPipelines.make_audio_pipeline_from_strings(origin,
                                                                             dataset,
                                                                             targets, features, DBSession=DBSession)
         # Evaluate the pipeline
@@ -252,7 +252,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
     for data_res in data_resources:
         data_types.append(data_res["resType"])
 
-    unsupported_problems = ["TIME_SERIES_FORECASTING", "COLLABORATIVE_FILTERING", 'OBJECT_DETECTION', 'VERTEX_NOMINATION'] # 02/13/19 Not primtives for VERTEX_NOMINATION task
+    unsupported_problems = ["TIME_SERIES_FORECASTING", "COLLABORATIVE_FILTERING", 'OBJECT_DETECTION']
     print('>>>>>>', task, data_types)
     if task in unsupported_problems:
         logger.error("%s Not Supported", task)
@@ -263,12 +263,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         sys.exit(148)
 
     if "audio" in data_types:
-        primitives = ["d3m.primitives.bbn.time_series.ChannelAverager",
-                          "d3m.primitives.bbn.time_series.SignalDither", "d3m.primitives.bbn.time_series.SignalFramer",  "d3m.primitives.bbn.time_series.SignalMFCC",
-                          "d3m.primitives.bbn.time_series.UniformSegmentation", "d3m.primitives.bbn.time_series.SegmentCurveFitter", "d3m.primitives.bbn.time_series.ClusterCurveFittingKMeans",
-                          "d3m.primitives.bbn.time_series.SignalFramer", "d3m.primitives.bbn.time_series.SequenceToBagOfTokens", "d3m.primitives.bbn.time_series.BBNTfidfTransformer",
-                          "d3m.primitives.bbn.sklearn_wrap.BBNMLPClassifier"]
-        eval_audio_pipeline(primitives, "ALPHAD3M")
+        eval_audio_pipeline("ALPHAD3M")
         return
 
     if "graph" in data_types:
@@ -287,7 +282,6 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         logger.error("%s Not Supported", task)
         sys.exit(148)
 
-
     if "image" in data_types:
         if "REGRESSION" in task:
             eval_image_pipeline("ALPHAD3M")
@@ -301,7 +295,6 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
             return
         logger.error("%s Not Supported", task)
         sys.exit(148)
-
 
     def create_input(selected_primitves):
         GRAMMAR['TERMINALS'] = getTerminals(GRAMMAR['NON_TERMINALS'], selected_primitves, task)
