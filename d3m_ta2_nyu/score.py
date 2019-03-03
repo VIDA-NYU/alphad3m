@@ -1,6 +1,6 @@
 import logging
-import numpy
 import os
+from sqlalchemy.orm import joinedload
 
 from d3m.container import Dataset
 
@@ -17,42 +17,37 @@ if 'TA2_DEBUG_BE_FAST' in os.environ:
 
 
 @database.with_db
-def score(pipeline_id, metrics, targets, results_path, msg_queue, db):
-    max_progress = FOLDS
+def score(pipeline_id, dataset, metrics, problem, msg_queue, db):
+    # Get pipeline from database
+    pipeline = (
+        db.query(database.Pipeline)
+            .filter(database.Pipeline.id == pipeline_id)
+            .options(joinedload(database.Pipeline.modules),
+                     joinedload(database.Pipeline.connections))
+    ).one()
 
-    # Get dataset from database
-    dataset, = (
-        db.query(database.Pipeline.dataset)
-        .filter(database.Pipeline.id == pipeline_id)
-        .one()
-    )
-
-    logger.info("About to score pipeline, id=%s, dataset=%r",
-                pipeline_id, dataset)
+    logger.info("About to score pipeline, id=%s, metrics=%s, dataset=%r",
+                pipeline_id, metrics, dataset)
 
     # Load data
     dataset = Dataset.load(dataset)
     logger.info("Loaded dataset")
 
-    scores, predictions = cross_validation(
-        pipeline_id, metrics, dataset, targets,
-        lambda i: msg_queue.send(('progress', i / max_progress)),
-        db, FOLDS)
-    logger.info("Scoring done: %s", ", ".join("%s=%s" % s for s in scores.items()))
+    scores = cross_validation(
+        pipeline, dataset, metrics, problem,
+        FOLDS)
 
     # Store scores
-    scores = [database.CrossValidationScore(metric=metric,
-                                            value=numpy.mean(values))
-              for metric, values in scores.items()]
-    crossval = database.CrossValidation(pipeline_id=pipeline_id, scores=scores)
-
+    cross_validation_scores = []
+    for fold, fold_scores in scores.items():
+        for metric, value in fold_scores.items():
+            cross_validation_scores.append(
+                database.CrossValidationScore(fold=fold,
+                                              metric=metric,
+                                              value=value)
+            )
+    crossval = database.CrossValidation(pipeline_id=pipeline_id,
+                                        scores=cross_validation_scores)
     db.add(crossval)
-
-    # Store predictions
-    if results_path is not None:
-        logger.info("Storing predictions at %s", results_path)
-        predictions.sort_index().to_csv(results_path)
-    else:
-        logger.info("NOT storing predictions")
 
     db.commit()

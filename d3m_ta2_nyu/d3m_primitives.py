@@ -38,7 +38,11 @@ class D3MPrimitives():
         count = 1
         primitives_dictionary = {}
         for name in D3MPrimitives.INSTALLED_PRIMITIVES:
-            family = D3MPrimitives.get_family(name)
+            try:
+                family = D3MPrimitives.get_family(name)
+            except Exception:
+                logger.error('No information about primitive %s', name)
+                family = None
             if family in primitives_dictionary:
                 primitives_dictionary[family][name] = count
             else:

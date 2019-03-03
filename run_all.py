@@ -7,14 +7,13 @@ from os.path import dirname, join
 
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
-PIPELINES_INFO_PATH = '/Users/rlopez/D3M/tmp/pipelines_considered/pipelines_info.txt'
-DATASETS_PATH = '/Users/rlopez/D3M/datasets/seed_datasets_current/'
+PIPELINES_INFO_PATH = ''
+DATASETS_PATH = ''
 
 def run_all_datasets():
     statistics_path = join(dirname(__file__), 'run_all_statistics.csv')
     processing_output_path = join(dirname(__file__), 'processing_output/')
     datasets = [x for x in sorted([x for x in os.listdir(DATASETS_PATH) if not x.startswith('.')]) if x not in {'uu5_heartstatlog', '56_sunspots_monthly'}]
-    datasets = ['22_handgeometry']
     size = len(datasets)
 
     for i, dataset in enumerate(datasets):

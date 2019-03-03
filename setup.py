@@ -11,6 +11,7 @@ with io.open('README.rst', encoding='utf-8') as fp:
     description = fp.read()
 req = [
     'grpcio',
+    'PyYAML',
     'SQLAlchemy',
     'scikit-learn',
     'scikit-image',
@@ -19,6 +20,7 @@ req = [
 setup(name='d3m_ta2_nyu',
       version='0.8.1',
       packages=['d3m_ta2_nyu'],
+      package_data={'d3m_ta2_nyu': 'pipelines/*.yaml'},
       entry_points={
           'console_scripts': [
               'ta2_search = d3m_ta2_nyu.main:main_search',

@@ -19,12 +19,6 @@ variables:
 services:
   - docker:dind
 
-test:
-  stage: test
-  image: $IMAGE
-  script:
-    - python3 tests.py
-
 build_image:
   stage: build
   image: python:3
@@ -52,6 +46,12 @@ build_image:
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
   tags:
     - docker
+
+test:
+  stage: test
+  image: $IMAGE
+  script:
+    - python3 tests.py
 
 eval_prepare_train:
   stage: eval_setup

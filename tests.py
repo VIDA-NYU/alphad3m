@@ -46,6 +46,8 @@ FakePrimitive = FakePrimitiveBuilder('FakePrimitive')
 
 
 class TestSession(unittest.TestCase):
+    maxDiff = None
+
     def setUp(self):
         self._tmp = tempfile.mkdtemp(prefix='d3m_unittest_')
         self._ta2 = D3mTa2(storage_root=self._tmp,
@@ -53,15 +55,14 @@ class TestSession(unittest.TestCase):
         self._problem = {
             'about': {'problemID': 'unittest_problem'},
             'inputs': {
-                # 'inputs': {
-                #     'data': [
-                #         {
-                #             'targets': [
-                #                 {'resID': '0', 'colName': 'targets'},
-                #             ],
-                #         },
-                #     ],
-                # },
+                'data': [
+                    {
+                        'datasetID': 'unittest_dataset',
+                        'targets': [
+                            {'resID': '0', 'colName': 'targets'},
+                        ],
+                    },
+                ],
                 'performanceMetrics': [{'metric': 'f1Macro'}],
             }
         }
@@ -117,7 +118,8 @@ class TestSession(unittest.TestCase):
 
         ta2 = mock.NonCallableMock()
         session = Session(
-            ta2, self._ta2.pipelines_considered_root,
+            ta2,
+            self._ta2.pipelines_considered_root,
             self._problem,
             self._ta2.DBSession)
         self._ta2.sessions[session.id] = session
@@ -143,43 +145,52 @@ class TestSession(unittest.TestCase):
 
         # No pipeline is scored
         compare_scores(session.get_top_pipelines(db, 'F1_MACRO'), [])
-        compare_scores(session.get_top_pipelines(db, 'F1_MACRO',
-                                                 only_trained=False),
-                       [])
 
         # Pipelines finished scoring
         db.add(database.CrossValidation(
             pipeline_id=self._pipelines[0],
             scores=[
-                database.CrossValidationScore(metric='F1_MACRO',
-                                              value=42.0),
-                database.CrossValidationScore(metric='EXECUTION_TIME',
-                                              value=1.4),
+                database.CrossValidationScore(fold=0,
+                                              metric='F1_MACRO',
+                                              value=41.5),
+                database.CrossValidationScore(fold=1,
+                                              metric='F1_MACRO',
+                                              value=42.5),
+                database.CrossValidationScore(fold=0,
+                                              metric='EXECUTION_TIME',
+                                              value=1.3),
+                database.CrossValidationScore(fold=1,
+                                              metric='EXECUTION_TIME',
+                                              value=1.5),
             ],
         ))
         db.add(database.CrossValidation(
             pipeline_id=self._pipelines[1],
             scores=[
-                database.CrossValidationScore(metric='F1_MACRO',
-                                              value=17.0),
-                database.CrossValidationScore(metric='EXECUTION_TIME',
-                                              value=0.7),
+                database.CrossValidationScore(fold=0,
+                                              metric='F1_MACRO',
+                                              value=16.5),
+                database.CrossValidationScore(fold=1,
+                                              metric='F1_MACRO',
+                                              value=17.5),
+                database.CrossValidationScore(fold=0,
+                                              metric='EXECUTION_TIME',
+                                              value=0.5),
+                database.CrossValidationScore(fold=1,
+                                              metric='EXECUTION_TIME',
+                                              value=0.9),
             ],
         ))
         db.commit()
 
         # Check scores
-        compare_scores(session.get_top_pipelines(db, 'F1_MACRO',
-                                                 only_trained=False),
+        compare_scores(session.get_top_pipelines(db, 'F1_MACRO'),
                        [(self._pipelines[0], 42.0),
                         (self._pipelines[1], 17.0)])
-        compare_scores(session.get_top_pipelines(db, 'EXECUTION_TIME',
-                                                 only_trained=False),
+        compare_scores(session.get_top_pipelines(db, 'EXECUTION_TIME'),
                        [(self._pipelines[1], 0.7),
                         (self._pipelines[0], 1.4)])
-        compare_scores(session.get_top_pipelines(db, 'ACCURACY',
-                                                 only_trained=False),
-                       [])
+        compare_scores(session.get_top_pipelines(db, 'ACCURACY'), [])
 
         # Finish scoring
         ta2._run_queue.put.assert_not_called()
@@ -202,41 +213,47 @@ class TestSession(unittest.TestCase):
                 [self._pipelines[0], self._pipelines[1]]
             )
 
+            # Add tuned pipeline scores
+            db.add(database.CrossValidation(
+                pipeline_id=self._pipelines[2],
+                scores=[
+                    database.CrossValidationScore(fold=0,
+                                                  metric='F1_MACRO',
+                                                  value=21.0),
+                    database.CrossValidationScore(fold=1,
+                                                  metric='F1_MACRO',
+                                                  value=22.0),
+                    database.CrossValidationScore(fold=0,
+                                                  metric='EXECUTION_TIME',
+                                                  value=0.9),
+                    database.CrossValidationScore(fold=1,
+                                                  metric='EXECUTION_TIME',
+                                                  value=1.1),
+                ],
+            ))
+            db.commit()
+
             # Signal tuning is done
             ta2._run_queue.put.reset_mock()
-            session.pipeline_tuning_done(self._pipelines[0])
+            session.pipeline_tuning_done(self._pipelines[0],
+                                         self._pipelines[2])
             session.pipeline_tuning_done(self._pipelines[1])
             ta2._run_queue.put.assert_not_called()
         else:
             ta2._run_queue.put.assert_not_called()
 
-        # Finish training
-        run1 = database.Run(pipeline_id=self._pipelines[1],
-                            reason='Unittest training',
-                            special=False,
-                            type=database.RunType.TRAIN)
-        db.add(run1)
-        db.commit()
         ta2._run_queue.put.assert_not_called()
 
-        session.tune_when_ready(3)
-
-        if do_tuning:
-            ta2._run_queue.put.assert_not_called()
-        else:
-            # Check tuning jobs were submitted
-            ta2._run_queue.put.assert_called()
-            self.assertTrue(all(type(get_job(c)) is TuneHyperparamsJob
-                                for c in ta2._run_queue.put.mock_calls))
-            self.assertEqual(
-                [get_job(c).pipeline_id
-                 for c in ta2._run_queue.put.mock_calls],
-                [self._pipelines[0], self._pipelines[1]]
-            )
-
         # Get top pipelines
-        compare_scores(session.get_top_pipelines(db, 'F1_MACRO'),
-                       [(self._pipelines[1], 17.0)])
+        if do_tuning:
+            compare_scores(session.get_top_pipelines(db, 'F1_MACRO'),
+                           [(self._pipelines[0], 42.0),
+                            (self._pipelines[2], 21.5),
+                            (self._pipelines[1], 17.0)])
+        else:
+            compare_scores(session.get_top_pipelines(db, 'F1_MACRO'),
+                           [(self._pipelines[0], 42.0),
+                            (self._pipelines[1], 17.0)])
 
 
 class TestPipelineConversion(unittest.TestCase):
@@ -289,12 +306,13 @@ class TestPipelineConversion(unittest.TestCase):
                 'name': '00000000-0000-0000-0000-000000000001',
                 'description': (
                     'classification_template('
-                    'imputer=d3m.primitives.sklearn_wrap.SKImputer, '
-                    'classifier=d3m.primitives.sklearn_wrap.SKLinearSVC)'
+                    'imputer=d3m.primitives.data_cleaning.imputer.SKlearn, '
+                    'classifier=d3m.primitives.classification.'
+                    'random_forest.SKlearn)'
                 ),
                 'inputs': [{'name': 'input dataset'}],
                 'outputs': [
-                    {'data': 'steps.9.produce', 'name': 'predictions'},
+                    {'data': 'steps.10.produce', 'name': 'predictions'},
                 ],
                 'schema': 'https://metadata.datadrivendiscovery.org/schemas/'
                           'v0/pipeline.json',
@@ -302,8 +320,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.datasets.Denormalize-mocked',
-                            'name': 'Denormalize',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'denormalize.Common-mocked',
+                            'name': 'Common',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -319,9 +338,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.datasets.'
-                                  'DatasetToDataFrame-mocked',
-                            'name': 'DatasetToDataFrame',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'dataset_to_dataframe.Common-mocked',
+                            'name': 'Common',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -329,15 +348,17 @@ class TestPipelineConversion(unittest.TestCase):
                         'arguments': {
                             'inputs': {
                                 'data': 'steps.0.produce',
-                                'type': 'CONTAINER'},
+                                'type': 'CONTAINER',
+                            },
                         },
-                        'outputs': [{'id': 'produce'}]
+                        'outputs': [{'id': 'produce'}],
                     },
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.data.ColumnParser-mocked',
-                            'name': 'ColumnParser',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'column_parser.DataFrameCommon-mocked',
+                            'name': 'DataFrameCommon',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -353,9 +374,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.data.'
-                                  'ExtractColumnsBySemanticTypes-mocked',
-                            'name': 'ExtractColumnsBySemanticTypes',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'extract_columns_by_semantic_types.DataFrameCommon-mocked',
+                            'name': 'DataFrameCommon',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -368,11 +389,9 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'hyperparams': {
                             'semantic_types': {
+                                'data': ['https://metadata.datadrivendiscovery'
+                                         '.org/types/Attribute'],
                                 'type': 'VALUE',
-                                'data': [
-                                    'https://metadata.datadrivendiscovery.org/'
-                                    'types/Attribute',
-                                ],
                             },
                         },
                         'outputs': [{'id': 'produce'}],
@@ -380,8 +399,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': imputer + '-mocked',
-                            'name': imputer.rsplit('.', 1)[-1],
+                            'id': 'd3m.primitives.data_cleaning.'
+                                  'imputer.SKlearn-mocked',
+                            'name': 'SKlearn',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -397,8 +417,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.data.CastToType-mocked',
-                            'name': 'CastToType',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'cast_to_type.Common-mocked',
+                            'name': 'Common',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -411,8 +432,8 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'hyperparams': {
                             'type_to_cast': {
-                                'type': 'VALUE',
                                 'data': 'float',
+                                'type': 'VALUE',
                             },
                         },
                         'outputs': [{'id': 'produce'}],
@@ -420,9 +441,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.data.'
-                                  'ExtractColumnsBySemanticTypes-mocked',
-                            'name': 'ExtractColumnsBySemanticTypes',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'extract_columns_by_semantic_types.DataFrameCommon-mocked',
+                            'name': 'DataFrameCommon',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -435,11 +456,9 @@ class TestPipelineConversion(unittest.TestCase):
                         },
                         'hyperparams': {
                             'semantic_types': {
+                                'data': ['https://metadata.datadrivendiscovery'
+                                         '.org/types/Target'],
                                 'type': 'VALUE',
-                                'data': [
-                                    'https://metadata.datadrivendiscovery.org/'
-                                    'types/Target',
-                                ],
                             },
                         },
                         'outputs': [{'id': 'produce'}],
@@ -447,8 +466,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.data.CastToType-mocked',
-                            'name': 'CastToType',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'cast_to_type.Common-mocked',
+                            'name': 'Common',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -464,8 +484,9 @@ class TestPipelineConversion(unittest.TestCase):
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': classifier + '-mocked',
-                            'name': classifier.rsplit('.', 1)[-1],
+                            'id': 'd3m.primitives.classification.'
+                                  'random_forest.SKlearn-mocked',
+                            'name': 'SKlearn',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -478,16 +499,45 @@ class TestPipelineConversion(unittest.TestCase):
                             'outputs': {
                                 'data': 'steps.7.produce',
                                 'type': 'CONTAINER',
-                            }
+                            },
                         },
                         'outputs': [{'id': 'produce'}],
                     },
                     {
                         'type': 'PRIMITIVE',
                         'primitive': {
-                            'id': 'd3m.primitives.data.'
-                                  'ConstructPredictions-mocked',
-                            'name': 'ConstructPredictions',
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'extract_columns_by_semantic_types.DataFrameCommon-mocked',
+                            'name': 'DataFrameCommon',
+                            'digest': '00000000',
+                            'version': '0.0',
+                            'python_path': 'mock',
+                        },
+                        'arguments': {
+                            'inputs': {
+                                'data': 'steps.2.produce',
+                                'type': 'CONTAINER',
+                            },
+                        },
+                        'hyperparams': {
+                            'semantic_types': {
+                                'data': [
+                                    'https://metadata.datadrivendiscovery.org/'
+                                    'types/Target',
+                                    'https://metadata.datadrivendiscovery.org/'
+                                    'types/PrimaryKey',
+                                ],
+                                'type': 'VALUE',
+                            },
+                        },
+                        'outputs': [{'id': 'produce'}],
+                    },
+                    {
+                        'type': 'PRIMITIVE',
+                        'primitive': {
+                            'id': 'd3m.primitives.data_transformation.'
+                                  'construct_predictions.DataFrameCommon-mocked',
+                            'name': 'DataFrameCommon',
                             'digest': '00000000',
                             'version': '0.0',
                             'python_path': 'mock',
@@ -498,7 +548,7 @@ class TestPipelineConversion(unittest.TestCase):
                                 'type': 'CONTAINER',
                             },
                             'reference': {
-                                'data': 'steps.2.produce',
+                                'data': 'steps.9.produce',
                                 'type': 'CONTAINER',
                             },
                         },

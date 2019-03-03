@@ -14,7 +14,8 @@ import os
 import pickle
 from queue import Empty, Queue
 from sqlalchemy import select
-from sqlalchemy.orm import aliased, joinedload
+from sqlalchemy.orm import aliased, joinedload, lazyload
+from sqlalchemy.sql import func
 import stat
 import subprocess
 import sys
@@ -189,15 +190,15 @@ class Session(Observable):
             total=len(self.pipelines) + to_tune,
         )
 
-    def get_top_pipelines(self, db, metric, limit=None, only_trained=True):
+    def get_top_pipelines(self, db, metric, limit=None):
         pipeline = aliased(database.Pipeline)
         crossval_score = (
-            select([database.CrossValidationScore.value])
-                .where(database.CrossValidationScore.cross_validation_id ==
-                       database.CrossValidation.id)
-                .where(database.CrossValidationScore.metric == metric)
-                .where(database.CrossValidation.pipeline_id == pipeline.id)
-                .as_scalar()
+            select([func.avg(database.CrossValidationScore.value)])
+            .where(database.CrossValidationScore.cross_validation_id ==
+                   database.CrossValidation.id)
+            .where(database.CrossValidationScore.metric == metric)
+            .where(database.CrossValidation.pipeline_id == pipeline.id)
+            .as_scalar()
         )
         if SCORES_RANKING_ORDER[metric] == -1:
             crossval_score_order = crossval_score.desc()
@@ -205,14 +206,12 @@ class Session(Observable):
             crossval_score_order = crossval_score.asc()
         q = (
             db.query(pipeline, crossval_score)
-                .filter(pipeline.id.in_(self.pipelines))
-                .filter(crossval_score != None)
-                .options(joinedload(pipeline.modules),
-                         joinedload(pipeline.connections))
-                .order_by(crossval_score_order)
+            .filter(pipeline.id.in_(self.pipelines))
+            .filter(crossval_score != None)
+            # FIXME: Using a joined load here results in duplicated results
+            .options(lazyload(pipeline.parameters))
+            .order_by(crossval_score_order)
         )
-        if only_trained:
-            q = q.filter(pipeline.trained)
         if limit is not None:
             q = q.limit(limit)
         return q.all()
@@ -241,7 +240,7 @@ class Session(Observable):
             elif self._tune_when_ready:
                 top_pipelines = self.get_top_pipelines(
                     db, self.metrics[0],
-                    self._tune_when_ready, only_trained=False)
+                    self._tune_when_ready)
                 for pipeline, _ in top_pipelines:
                     if pipeline.id not in self.tuned_pipelines:
                         tune.append(pipeline.id)
@@ -252,7 +251,7 @@ class Session(Observable):
                     for pipeline_id in tune:
                         logger.info("    %s", pipeline_id)
                         self._ta2._run_queue.put(
-                            TuneHyperparamsJob(self, pipeline_id)
+                            TuneHyperparamsJob(self, pipeline_id, self.problem)
                         )
                         self.pipelines_tuning.add(pipeline_id)
                     return
@@ -268,16 +267,8 @@ class Session(Observable):
 
             if self.metrics:
                 metric = self.metrics[0]
-                top_pipelines = self.get_top_pipelines(db, metric,
-                                                       only_trained=False)
+                top_pipelines = self.get_top_pipelines(db, metric)
                 logger.warning("Found %d pipelines", len(top_pipelines))
-
-                with open(os.path.join(self._considered_pipelines_dir, 'pipelines_info.txt'), 'a') as fout:
-                    fout.write('%d\n' % len(top_pipelines))
-                    fout.write('%s\n' % metric)
-                    if len(top_pipelines) > 0:
-                        fout.write('%s\n' % top_pipelines[0][1])
-
                 for i, (pipeline, score) in enumerate(top_pipelines):
                     created = pipeline.created_date - self.start
                     logger.info("    %d) %s %s=%s origin=%s time=%.2fs",
@@ -327,14 +318,15 @@ class Session(Observable):
                         .order_by(database.CrossValidation.date.desc())
                 ).as_scalar()
                 # Get score from that cross-validation
-                score = (
-                    db.query(database.CrossValidationScore)
-                        .filter(
+                score = db.query(
+                    select([func.avg(database.CrossValidationScore.value)])
+                    .where(
                         database.CrossValidationScore.cross_validation_id ==
                         crossval_id
                     )
-                        .filter(database.CrossValidationScore.metric == metric)
-                ).one_or_none()
+                    .where(database.CrossValidationScore.metric == metric)
+                    .as_scalar()
+                )
                 if score is None:
                     rank = 1000.0
                     logger.error("Writing pipeline JSON for pipeline %s, but "
@@ -394,28 +386,21 @@ class Job(object):
 class ScoreJob(Job):
     timeout = 8 * 60
 
-    def __init__(self, ta2, pipeline_id, metrics, targets, store_results=True):
+    def __init__(self, ta2, pipeline_id, dataset, metrics, problem):
         Job.__init__(self)
         self.ta2 = ta2
         self.pipeline_id = pipeline_id
+        self.dataset = dataset
         self.metrics = metrics
-        self.targets = targets
-        self.store_results = store_results
-        self.results = None
+        self.problem = problem
 
-    def start(self, db_filename, predictions_root, **kwargs):
-        self.predictions_root = predictions_root
-        if self.store_results and self.predictions_root is not None:
-            subdir = os.path.join(self.predictions_root, str(self.pipeline_id))
-            if not os.path.exists(subdir):
-                os.mkdir(subdir)
-            self.results = os.path.join(subdir, 'predictions.csv')
+    def start(self, db_filename, **kwargs):
         self.msg = Receiver()
         self.proc = run_process('d3m_ta2_nyu.score.score', 'score', self.msg,
                                 pipeline_id=self.pipeline_id,
+                                dataset=self.dataset,
                                 metrics=self.metrics,
-                                targets=self.targets,
-                                results_path=self.results,
+                                problem=self.problem,
                                 db_filename=db_filename)
         self.started = time.time()
         self.ta2.notify('scoring_start',
@@ -440,7 +425,6 @@ class ScoreJob(Job):
         if self.proc.returncode == 0:
             self.ta2.notify('scoring_success',
                             pipeline_id=self.pipeline_id,
-                            predict_result=self.results,
                             job_id=id(self))
         else:
             self.ta2.notify('scoring_error',
@@ -448,27 +432,22 @@ class ScoreJob(Job):
                             job_id=id(self))
         return True
 
-    def message(self, msg, arg):
-        if msg == 'progress':
-            # TODO: Report progress
-            logger.info("Scoring pipeline %s: %.0f%%",
-                        self.pipeline_id, arg * 100)
-        else:
-            logger.error("Unexpected message from scoring process %s",
-                         msg)
-
 
 class TrainJob(Job):
-    def __init__(self, ta2, pipeline_id):
+    def __init__(self, ta2, pipeline_id, dataset, targets):
         Job.__init__(self)
         self.ta2 = ta2
         self.pipeline_id = pipeline_id
+        self.dataset = dataset
+        self.targets = targets
 
     def start(self, db_filename, **kwargs):
         logger.info("Training pipeline for %s", self.pipeline_id)
         self.msg = Receiver()
         self.proc = run_process('d3m_ta2_nyu.train.train', 'train', self.msg,
                                 pipeline_id=self.pipeline_id,
+                                dataset=self.dataset,
+                                targets=self.targets,
                                 db_filename=db_filename)
         self.ta2.notify('training_start',
                         pipeline_id=self.pipeline_id,
@@ -490,21 +469,13 @@ class TrainJob(Job):
                             job_id=id(self))
         return True
 
-    def message(self, msg, arg):
-        if msg == 'progress':
-            # TODO: Report progress
-            logger.info("Training pipeline %s: %.0f%%",
-                        self.pipeline_id, arg * 100)
-        else:
-            logger.error("Unexpected message from training process %s",
-                         msg)
-
 
 class TuneHyperparamsJob(Job):
-    def __init__(self, session, pipeline_id, store_results=True):
+    def __init__(self, session, pipeline_id, problem, store_results=True):
         Job.__init__(self)
         self.session = session
         self.pipeline_id = pipeline_id
+        self.problem = problem
         self.store_results = store_results
         self.results = None
 
@@ -525,6 +496,7 @@ class TuneHyperparamsJob(Job):
                                 pipeline_id=self.pipeline_id,
                                 metrics=self.session.metrics,
                                 targets=self.session.targets,
+                                problem=self.problem,
                                 results_path=self.results,
                                 db_filename=db_filename)
         self.session.notify('tuning_start',
@@ -595,15 +567,6 @@ class D3mTa2(Observable):
                            "T ***")
             logger.warning("**************************************************"
                            "*****")
-        if 'TA2_USE_TEMPLATES' in os.environ:
-            logger.warning("**************************************************"
-                           "****")
-            logger.warning("***      Using templates instead of generator     "
-                           " ***")
-            logger.warning("*** If this is not wanted, unset TA2_USE_TEMPLATES"
-                           " ***")
-            logger.warning("**************************************************"
-                           "****")
         self.storage = os.path.abspath(storage_root)
         if not os.path.exists(self.storage):
             os.makedirs(self.storage)
@@ -662,7 +625,7 @@ class D3mTa2(Observable):
         logger.warning("TA2 started, version=%s", __version__)
 
     def run_search(self, dataset, problem_path, timeout=None):
-        """Run the search phase: create pipelines, score and train them.
+        """Run the search phase: create pipelines and score them.
 
         This is called by the ``ta2_search`` executable, it is part of the
         evaluation.
@@ -686,42 +649,36 @@ class D3mTa2(Observable):
         self.sessions[session.id] = session
 
         if timeout:
-            # Save 5 minutes to finish scoring & training
-            timeout = max(timeout - 5 * 60, 0.8 * timeout)
+            # Save 2 minutes to finish scoring
+            timeout = max(timeout - 2 * 60, 0.8 * timeout)
 
-        # Create pipeline, NO TUNING
+        # Create pipelines, NO TUNING
         with session.with_observer_queue() as queue:
             self.build_pipelines(session.id, task, dataset, session.metrics,
                                  tune=0, timeout=timeout)
             while queue.get(True)[0] != 'done_searching':
                 pass
 
-        # Train pipelines
-        # self.train_top_pipelines(session)
-
         logger.info("Tuning pipelines...")
 
-        # Now do tuning, when we already have written out some executables
-        '''with session.with_observer_queue() as queue:
+        # Now do tuning, when we already have written out some solutions
+        with session.with_observer_queue() as queue:
             session.tune_when_ready()
             while queue.get(True)[0] != 'done_searching':
-                pass'''
-
-        # Train new pipelines if any
-        #self.train_top_pipelines(session)
+                pass
 
     def train_top_pipelines(self, session, limit=20):
         db = self.DBSession()
         try:
             pipelines = session.get_top_pipelines(db, session.metrics[0],
-                                                  limit=limit,
-                                                  only_trained=False)
+                                                  limit=limit)
 
             with self.with_observer_queue() as queue:
                 training = {}
                 for pipeline, score in itertools.islice(pipelines, limit):
                     if pipeline.trained:
                         continue
+                    # TODO: pass problem/targets?
                     self._run_queue.put(
                         TrainJob(self, pipeline.id)
                     )
@@ -742,23 +699,23 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
-    def run_pipeline(self, session_id, pipeline_id, store_results=True):
+    def search_score_pipeline(self, session_id, pipeline_id, dataset):
         """Score a single pipeline.
 
-        This is used by the pipeline synthesis code.
+        This is used by the pipeline generator.
         """
 
         # Get the session
         session = self.sessions[session_id]
         metric = session.metrics[0]
-        logger.info("Running single pipeline, metric: %s", metric)
+        logger.info("Search process scoring single pipeline, metric: %s, "
+                    "dataset: %s", metric, dataset)
 
         # Add the pipeline to the session, score it
         with session.with_observer_queue() as queue:
             session.add_scoring_pipeline(pipeline_id)
-            self._run_queue.put(ScoreJob(self, pipeline_id,
-                                         session.metrics, session.targets,
-                                         store_results=store_results))
+            self._run_queue.put(ScoreJob(self, pipeline_id, dataset,
+                                         session.metrics, session.problem))
             session.notify('new_pipeline', pipeline_id=pipeline_id)
             while True:
                 event, kwargs = queue.get(True)
@@ -780,19 +737,25 @@ class D3mTa2(Observable):
                     .order_by(database.CrossValidation.date.desc())
             ).as_scalar()
             # Get scores from that cross-validation
-            scores = (
-                db.query(database.CrossValidationScore)
-                    .filter(database.CrossValidationScore.cross_validation_id ==
-                            crossval_id)
-            ).all()
-            for score in scores:
-                if score.metric == metric:
-                    logger.info("Evaluation result: %s -> %r",
-                                metric, score.value)
-                    return score.value
-            logger.info("Didn't get the requested metric from "
-                        "cross-validation")
-            return None
+
+            score = db.query(
+                select([func.avg(database.CrossValidationScore.value)])
+                .where(
+                    database.CrossValidationScore.cross_validation_id ==
+                    crossval_id
+                )
+                .where(database.CrossValidationScore.metric == metric)
+                .as_scalar()
+            )
+            if score is not None:
+                logger.info("Evaluation result: %s -> %r",
+                            metric, score.value)
+                return score
+            else:
+                logger.info("Didn't get the requested metric from "
+                            "cross-validation")
+                return None
+
         finally:
             db.close()
 
@@ -817,6 +780,7 @@ class D3mTa2(Observable):
             targets.add((target['resID'], target['colName']))
 
         mgs_queue = Receiver()
+        # TODO: pass problem/targets?
         proc = run_process('d3m_ta2_nyu.test.test', 'test', mgs_queue,
                            pipeline_id=pipeline_id,
                            dataset=dataset,
@@ -884,22 +848,27 @@ class D3mTa2(Observable):
                     .order_by(database.CrossValidation.date.desc())
             ).as_scalar()
             # Get scores from that cross-validation
-            scores = (
-                db.query(database.CrossValidationScore)
-                    .filter(database.CrossValidationScore.cross_validation_id ==
-                            crossval_id)
+            scores = db.query(
+                select([func.avg(database.CrossValidationScore.value),
+                        database.CrossValidationScore.metric])
+                .where(
+                    database.CrossValidationScore.cross_validation_id ==
+                    crossval_id
+                )
+                .group_by(database.CrossValidationScore.metric)
             ).all()
-            return {score.metric: score.value for score in scores}
+            return {metric: value for value, metric in scores}
         finally:
             db.close()
 
-    def score_pipeline(self, pipeline_id, metrics, targets):
-        job = ScoreJob(self, pipeline_id, metrics, targets,
-                       store_results=False)
+    def score_pipeline(self, pipeline_id, metrics):
+        # TODO: pass dataset/problem?
+        job = ScoreJob(self, pipeline_id, dataset, metrics, problem)
         self._run_queue.put(job)
         return id(job)
 
     def train_pipeline(self, pipeline_id):
+        # TODO: pass problem/targets?
         job = TrainJob(self, pipeline_id)
         self._run_queue.put(job)
         return id(job)
@@ -908,19 +877,14 @@ class D3mTa2(Observable):
                         targets=None, features=None, tune=None, timeout=None):
         if not metrics:
             raise ValueError("no metrics")
-        if 'TA2_USE_TEMPLATES' in os.environ:
-            self.executor.submit(self._build_pipelines_from_templates,
-                                 session_id, task, dataset, metrics,
-                                 targets, features, tune=tune)
-        else:
-            self.executor.submit(self._build_pipelines_with_generator,
-                                 session_id, task, dataset, metrics,
-                                 targets, features, timeout=timeout, tune=tune)
+        self.executor.submit(self._build_pipelines,
+                             session_id, task, dataset, metrics,
+                             targets, features, timeout=timeout, tune=tune)
 
     # Runs in a worker thread from executor
-    def _build_pipelines_with_generator(self, session_id, task, dataset,
-                                        metrics, targets, features, tune=None,
-                                        timeout=None):
+    def _build_pipelines(self, session_id, task, dataset,
+                         metrics, targets, features, tune=None,
+                         timeout=None):
         """Generates pipelines for the session, using the generator process.
         """
         # Start AlphaD3M process
@@ -941,22 +905,48 @@ class D3mTa2(Observable):
             # gets created
             session.working = True
 
-            logger.info("Starting AlphaD3M process, timeout is %s", timeout)
-            msg_queue = Receiver()
-            proc = run_process(
-                'd3m_ta2_nyu.alphad3m_edit'
-                '.PipelineGenerator.generate',
-                'alphad3m',
-                msg_queue,
-                task=task,
-                dataset=dataset,
-                metrics=metrics,
-                problem=session.problem,
-                targets=session.targets,
-                features=session.features,
-                timeout=timeout,
-                db_filename=self.db_filename,
-            )
+        logger.info("Creating pipelines from templates...")
+        template_name = task
+        if 'TA2_DEBUG_BE_FAST' in os.environ:
+            template_name = 'DEBUG_' + task
+        for template in self.TEMPLATES.get(template_name, []):
+            logger.info("Creating pipeline from %r", template)
+            if isinstance(template, (list, tuple)):
+                func, args = template[0], template[1:]
+                tpl_func = lambda s, **kw: func(s, *args, **kw)
+            else:
+                tpl_func = template
+            try:
+                self._build_pipeline_from_template(session, tpl_func,
+                                                   dataset)
+            except Exception:
+                logger.exception("Error building pipeline from %r",
+                                 template)
+
+        if 'TA2_DEBUG_BE_FAST' not in os.environ:
+            self._build_pipelines_from_generator(session, task, dataset,
+                                                 metrics, timeout)
+
+        session.tune_when_ready(tune)
+
+    def _build_pipelines_from_generator(self, session, task, dataset,
+                                        metrics, timeout=None):
+        logger.info("Starting AlphaD3M process, timeout is %s", timeout)
+        msg_queue = Receiver()
+        proc = run_process(
+            'd3m_ta2_nyu.alphad3m_edit'
+            '.PipelineGenerator.generate',
+            'alphad3m',
+            msg_queue,
+            task=task,
+            dataset=dataset,
+            metrics=metrics,
+            problem=session.problem,
+            targets=session.targets,
+            features=session.features,
+            timeout=timeout,
+            db_filename=self.db_filename,
+        )
 
         start = time.time()
         start_time = datetime.datetime.now()
@@ -988,12 +978,7 @@ class D3mTa2(Observable):
                 pipeline_id, = args
                 logger.info("Got pipeline %s from generator process",
                             pipeline_id)
-                score = self.run_pipeline(session_id, pipeline_id)
-                if score is not None:
-                    end_time = datetime.datetime.now()
-                    with open(os.path.join(self.pipelines_considered_root, 'pipelines_info.txt'), 'a') as fout:
-                        fout.write('%s\n' % str(end_time - start_time))
-
+                score = self.run_pipeline(session, dataset, pipeline_id)
                 logger.info("Sending score to generator process")
                 try:  # Fixme, just to avoid Broken pipe error
                     msg_queue.send(score)
@@ -1004,49 +989,59 @@ class D3mTa2(Observable):
                                    "process: %r" % msg)
 
         logger.warning("Generator process exited with %r", proc.returncode)
-        session.tune_when_ready(tune)
 
-    # Runs in a worker thread from executor
-    def _build_pipelines_from_templates(self, session_id, task, dataset,
-                                        metrics, targets, features, tune=None):
-        """Generates pipelines for the session, using templates.
+    def run_pipeline(self, session, dataset, pipeline_id):
+
+        """Score a single pipeline.
+
+        This is used by the pipeline synthesis code.
         """
-        session = self.sessions[session_id]
-        with session.lock:
-            session.targets = targets
-            session.features = features
-            if session.metrics != metrics:
-                if session.metrics:
-                    old = 'from %s ' % ', '.join(session.metrics)
-                else:
-                    old = ''
-                session.metrics = metrics
-                logger.info("Set metrics to %s %s(for session %s)",
-                            metrics, old, session_id)
 
-            logger.info("Creating pipelines from templates...")
-            # Force working=True so we get 'done_searching' even if no pipeline
-            # gets created
-            session.working = True
-            template_name = task
-            if 'TA2_DEBUG_BE_FAST' in os.environ:
-                template_name = 'DEBUG_' + task
-            for template in self.TEMPLATES.get(template_name, []):
-                logger.info("Creating pipeline from %r", template)
-                if isinstance(template, (list, tuple)):
-                    func, args = template[0], template[1:]
-                    tpl_func = lambda s, **kw: func(s, *args, **kw)
-                else:
-                    tpl_func = template
-                try:
-                    self._build_pipeline_from_template(session, tpl_func,
-                                                       dataset)
-                except Exception:
-                    logger.exception("Error building pipeline from %r",
-                                     template)
-            session.tune_when_ready(tune)
-            logger.warning("Pipeline creation completed")
-            session.check_status()
+        # Add the pipeline to the session, score it
+        with session.with_observer_queue() as queue:
+            session.add_scoring_pipeline(pipeline_id)
+            logger.info("Created pipeline %s", pipeline_id)
+            self._run_queue.put(ScoreJob(self, pipeline_id, dataset,
+                                         session.metrics, session.problem))
+            session.notify('new_pipeline', pipeline_id=pipeline_id)
+
+
+            while True:
+                event, kwargs = queue.get(True)
+                if event == 'done_searching':
+                    raise RuntimeError("Never got pipeline results")
+                elif (event == 'scoring_error' and
+                      kwargs['pipeline_id'] == pipeline_id):
+                    return None
+                elif (event == 'scoring_success' and
+                      kwargs['pipeline_id'] == pipeline_id):
+                    break
+
+        db = self.DBSession()
+        try:
+            # Find most recent cross-validation
+            crossval_id = (
+                select([database.CrossValidation.id])
+                    .where(database.CrossValidation.pipeline_id == pipeline_id)
+                    .order_by(database.CrossValidation.date.desc())
+            ).as_scalar()
+            # Get scores from that cross-validation
+            scores = (
+                db.query(database.CrossValidationScore)
+                    .filter(database.CrossValidationScore.cross_validation_id ==
+                            crossval_id)
+            ).all()
+            metric = session.metrics[0]
+            for score in scores:
+                if score.metric == metric:
+                    logger.info("Evaluation result: %s -> %r",
+                                metric, score.value)
+                    return score.value
+            logger.info("Didn't get the requested metric from "
+                        "cross-validation")
+            return None
+        finally:
+            db.close()
 
     def _build_pipeline_from_template(self, session, template, dataset):
         # Create workflow from a template
@@ -1058,8 +1053,8 @@ class D3mTa2(Observable):
         session.add_scoring_pipeline(pipeline_id)
 
         logger.info("Created pipeline %s", pipeline_id)
-        self._run_queue.put(ScoreJob(self, pipeline_id,
-                                     session.metrics, session.targets))
+        self._run_queue.put(ScoreJob(self, pipeline_id, dataset,
+                                     session.metrics, session.problem))
         session.notify('new_pipeline', pipeline_id=pipeline_id)
 
     # Runs in a background thread
@@ -1121,6 +1116,7 @@ class D3mTa2(Observable):
         os.mkdir(subdir)
         results = os.path.join(subdir, 'predictions.csv')
         msg_queue = Receiver()
+        # TODO: pass problem/targets?
         proc = run_process('d3m_ta2_nyu.test.test', 'test', msg_queue,
                            pipeline_id=pipeline_id,
                            dataset=dataset,
@@ -1187,10 +1183,10 @@ class D3mTa2(Observable):
             #                     /       |       \
             #                   /         |         \
             # Extract (attribute)  Extract (target)  |
-            #         |               |              |
-            #     [imputer]       CastToType         |
-            #         |               |              |
-            #     CastToType          |             /
+            #         |                  |        Extract (target, index)
+            #     [imputer]          CastToType      |
+            #         |                  |           |
+            #     CastToType            /           /
             #            \            /           /
             #             [classifier]          /
             #                       |         /
@@ -1206,17 +1202,23 @@ class D3mTa2(Observable):
                 name='features', value=pickle.dumps(features),
             ))
 
-            step0 = make_primitive_module('.datasets.Denormalize')
+            step0 = make_primitive_module(
+                'd3m.primitives.data_transformation.denormalize.Common')
             connect(input_data, step0, from_output='dataset')
 
-            step1 = make_primitive_module('.datasets.DatasetToDataFrame')
+            step1 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.dataset_to_dataframe.Common')
             connect(step0, step1)
 
-            step2 = make_primitive_module('.data.ColumnParser')
+            step2 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.column_parser.DataFrameCommon')
             connect(step1, step2)
 
-            step3 = make_primitive_module('.data.'
-                                          'ExtractColumnsBySemanticTypes')
+            step3 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.extract_columns_by_semantic_types.DataFrameCommon')
             set_hyperparams(
                 step3,
                 semantic_types=[
@@ -1228,15 +1230,18 @@ class D3mTa2(Observable):
             step4 = make_primitive_module(imputer)
             connect(step3, step4)
 
-            step5 = make_primitive_module('.data.CastToType')
+            step5 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.cast_to_type.Common')
             connect(step4, step5)
             set_hyperparams(
                 step5,
                 type_to_cast='float',
             )
 
-            step6 = make_primitive_module('.data.'
-                                          'ExtractColumnsBySemanticTypes')
+            step6 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.extract_columns_by_semantic_types.DataFrameCommon')
             set_hyperparams(
                 step6,
                 semantic_types=[
@@ -1245,128 +1250,33 @@ class D3mTa2(Observable):
             )
             connect(step2, step6)
 
-            step7 = make_primitive_module('.data.CastToType')
+            step7 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.cast_to_type.Common')
             connect(step6, step7)
 
-            # from here
-            # stepx = make_primitive_module('.spider.dimensionality_reduction.GO_DEC')
-            # connect(step5, stepx)
-            # to here
-
             step8 = make_primitive_module(classifier)
-            # connect(stepx, step8)
             connect(step5, step8)
             connect(step7, step8, to_input='outputs')
 
-            step9 = make_primitive_module('.data.ConstructPredictions')
-            connect(step8, step9)
-            connect(step2, step9, to_input='reference')
-
-            db.add(pipeline)
-            db.commit()
-            return pipeline.id
-        finally:
-            db.close()
-
-    def _clustering_template(self, imputer, preprocessing, classifier, dataset,
-                             targets, features):
-        db = self.DBSession()
-
-        pipeline = database.Pipeline(
-            origin="clustering_template(imputer=%s, classifier=%s)" % (
-                imputer, classifier),
-            dataset=dataset)
-
-        def make_module(package, version, name):
-            pipeline_module = database.PipelineModule(
-                pipeline=pipeline,
-                package=package, version=version, name=name)
-            db.add(pipeline_module)
-            return pipeline_module
-
-        def make_data_module(name):
-            return make_module('data', '0.0', name)
-
-        def make_primitive_module(name):
-            if name[0] == '.':
-                name = 'd3m.primitives' + name
-            return make_module('d3m', '2018.7.10', name)
-
-        def connect(from_module, to_module,
-                    from_output='produce', to_input='inputs'):
-            db.add(database.PipelineConnection(pipeline=pipeline,
-                                               from_module=from_module,
-                                               to_module=to_module,
-                                               from_output_name=from_output,
-                                               to_input_name=to_input))
-
-        def set_hyperparams(module, **hyperparams):
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=module,
-                name='hyperparams', value=pickle.dumps(hyperparams),
-            ))
-
-        try:
-            #                          data
-            #                            |
-            #                     DatasetToDataframe
-            #                            |
-            #                        ColumnParser
-            #                       /     |     \
-            #                     /       |       \
-            #                   /         |         \
-            # Extract (attribute)  Extract (target)  |
-            #         |               |              |
-            #     [imputer]       CastToType         |
-            #         |               |              |
-            #     CastToType          |             /
-            #            \            /           /
-            #             [classifier]          /
-            #                       |         /
-            #                   ConstructPredictions
-            # TODO: Use pipeline input for this
-            input_data = make_data_module('dataset')
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=input_data,
-                name='targets', value=pickle.dumps(targets),
-            ))
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=input_data,
-                name='features', value=pickle.dumps(features),
-            ))
-
-            step1 = make_primitive_module('.datasets.DatasetToDataFrame')
-            connect(input_data, step1, from_output='dataset')
-
-            step2 = make_primitive_module('.data.ColumnParser')
-            connect(step1, step2)
-
-            step3 = make_primitive_module('.data.'
-                                          'ExtractColumnsBySemanticTypes')
+            step9 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.extract_columns_by_semantic_types.DataFrameCommon')
             set_hyperparams(
-                step3,
+                step9,
                 semantic_types=[
-                    'https://metadata.datadrivendiscovery.org/types/Attribute',
+                    'https://metadata.datadrivendiscovery.org/types/Target',
+                    ('https://metadata.datadrivendiscovery.org/types' +
+                     '/PrimaryKey'),
                 ],
             )
-            connect(step2, step3)
+            connect(step2, step9)
 
-            step4 = make_primitive_module(classifier)
-
-            step5 = make_primitive_module('.data.ConstructPredictions')
-
-            if preprocessing != 'None':
-                step_convert_to = make_primitive_module('.data.DataFrameToNDArray')
-                step_convert_from = make_primitive_module('.data.NDArrayToDataFrame')
-                connect(step3, step_convert_to)
-                connect(step_convert_to, step4)
-                connect(step4, step_convert_from)
-                connect(step_convert_from, step5)
-            else:
-                connect(step3, step4)
-                connect(step4, step5)
-
-            connect(step2, step5, to_input='reference')
+            step10 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.construct_predictions.DataFrameCommon')
+            connect(step8, step10)
+            connect(step9, step10, to_input='reference')
 
             db.add(pipeline)
             db.commit()
@@ -1375,67 +1285,61 @@ class D3mTa2(Observable):
             db.close()
 
     TEMPLATES = {
-        'DEBUG_CLUSTERING': list(itertools.product(
-            [_clustering_template],
-            # Imputer
-            ['d3m.primitives.sklearn_wrap.SKImputer'],
-            # DATA PROCESSING
-            [  # 'None',
-                'DATAFRAME_TO_NUMPY'],
-            # Estimator
-            [
-                'd3m.primitives.cmu.fastlvm.KMeans',
-                'd3m.primitives.cmu.fastlvm.GMM',
-                'd3m.primitives.cmu.fastlvm.CoverTree'
-                'd3m.primitives.spider.cluster.EKSS'
-            ],
-        )),
         'CLASSIFICATION': list(itertools.product(
             [_classification_template],
             # Imputer
-            ['d3m.primitives.sklearn_wrap.SKImputer'],
+            ['d3m.primitives.data_cleaning.imputer.SKlearn'],
             # Classifier
             [
-
-                'd3m.primitives.sklearn_wrap.SKLinearSVC',
-                'd3m.primitives.sklearn_wrap.SKKNeighborsClassifier',
-                'd3m.primitives.sklearn_wrap.SKMultinomialNB',
-                'd3m.primitives.sklearn_wrap.SKRandomForestClassifier',
-                'd3m.primitives.sklearn_wrap.SKLogisticRegression',
+                'd3m.primitives.classification.random_forest.SKlearn',
+                'd3m.primitives.classification.k_neighbors.SKlearn',
+                'd3m.primitives.classification.bayesian_logistic_regression.Common',
+                'd3m.primitives.classification.bernoulli_naive_bayes.SKlearn',
+                'd3m.primitives.classification.decision_tree.SKlearn',
+                'd3m.primitives.classification.gaussian_naive_bayes.SKlearn',
+                'd3m.primitives.classification.gradient_boosting.SKlearn',
+                'd3m.primitives.classification.linear_svc.SKlearn',
+                'd3m.primitives.classification.logistic_regression.SKlearn',
+                'd3m.primitives.classification.multinomial_naive_bayes.SKlearn',
+                'd3m.primitives.classification.passive_aggressive.SKlearn',
+                'd3m.primitives.classification.random_forest.DataFrameCommon',
+                'd3m.primitives.classification.sgd.SKlearn',
             ],
         )),
         'DEBUG_CLASSIFICATION': list(itertools.product(
             [_classification_template],
             # Imputer
-            ['d3m.primitives.sklearn_wrap.SKImputer'],
+            ['d3m.primitives.data_cleaning.imputer.SKlearn'],
             # Classifier
             [
-                'd3m.primitives.sklearn_wrap.SKLinearSVC',
-                'd3m.primitives.sklearn_wrap.SKKNeighborsClassifier'
+                'd3m.primitives.classification.random_forest.SKlearn',
+                'd3m.primitives.classification.k_neighbors.SKlearn',
             ],
         )),
         'REGRESSION': list(itertools.product(
             [_classification_template],
             # Imputer
-            ['d3m.primitives.sklearn_wrap.SKImputer'],
+            ['d3m.primitives.data_cleaning.imputer.SKlearn'],
             # Classifier
             [
-                'd3m.primitives.common_primitives.LinearRegression',
-                'd3m.primitives.sklearn_wrap.SKDecisionTreeRegressor',
-                'd3m.primitives.sklearn_wrap.SKRandomForestRegressor',
-                'd3m.primitives.sklearn_wrap.SKRidge',
-                'd3m.primitives.sklearn_wrap.SKSGDRegressor',
+                'd3m.primitives.regression.random_forest.SKlearn',
+                'd3m.primitives.regression.sgd.SKlearn',
+                'd3m.primitives.regression.decision_tree.SKlearn',
+                'd3m.primitives.regression.gaussian_process.SKlearn',
+                'd3m.primitives.regression.gradient_boosting.SKlearn',
+                'd3m.primitives.regression.lasso.SKlearn',
+                'd3m.primitives.regression.linear_regression.Common',
+                'd3m.primitives.regression.passive_aggressive.SKlearn',
             ],
         )),
         'DEBUG_REGRESSION': list(itertools.product(
             [_classification_template],
             # Imputer
-            ['d3m.primitives.sklearn_wrap.SKImputer'],
+            ['d3m.primitives.data_cleaning.imputer.SKlearn'],
             # Classifier
             [
-                'd3m.primitives.sklearn_wrap.SKRandomForestRegressor',
-                'd3m.primitives.sklearn_wrap.SKSGDRegressor',
-                #'d3m.primitives.cmu.autonlab.find_projections.SearchNumeric'
+                'd3m.primitives.regression.random_forest.SKlearn',
+                'd3m.primitives.regression.sgd.SKlearn',
             ],
         )),
     }

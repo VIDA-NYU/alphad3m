@@ -1,8 +1,6 @@
 import logging
 import pickle
 import frozendict
-from d3m.container.pandas import DataFrame
-from d3m.primitives.byudml.metafeature_extraction import MetafeatureExtractor
 from d3m_ta2_nyu.workflow.execute import execute_train
 from d3m_ta2_nyu.workflow import database
 from d3m.container import Dataset
@@ -131,7 +129,7 @@ class ComputeMetafeatures():
         def make_primitive_module(name):
             if name[0] == '.':
                 name = 'd3m.primitives' + name
-            return make_module('d3m', '2018.7.10', name)
+            return make_module('d3m', '2019.2.12', name)
 
         def connect(from_module, to_module,
                     from_output='produce', to_input='inputs'):
@@ -152,17 +150,17 @@ class ComputeMetafeatures():
         ))
 
         # FIXME: Denormalize?
-        #step0 = make_primitive_module('.datasets.Denormalize')
+        #step0 = make_primitive_module('d3m.primitives.data_transformation.denormalize.Common')
         #connect(input_data, step0, from_output='dataset')
 
-        step1 = make_primitive_module('.datasets.DatasetToDataFrame')
+        step1 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
         connect(input_data, step1, from_output='dataset')
         #connect(step0, step1)
 
-        step2 = make_primitive_module('.data.ColumnParser')
+        step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.DataFrameCommon')
         connect(step1, step2)
 
-        step3 = make_primitive_module('d3m.primitives.byudml.metafeature_extraction.MetafeatureExtractor')
+        step3 = make_primitive_module('d3m.primitives.metafeature_extraction.metafeature_extractor.BYU')
         connect(step2, step3)
 
         db.add(pipeline)

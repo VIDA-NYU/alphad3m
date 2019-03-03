@@ -46,10 +46,8 @@ def getPrimitives():
     for group in list(all_primitives.keys()):
         sklearn_primitives[group] = {}
         for primitive in list(all_primitives[group].keys()):
-            if primitive.startswith('d3m.primitives.sklearn_wrap.'):
+            if primitive.endswith('.SKlearn'):
                 sklearn_primitives[group][primitive] = all_primitives[group][primitive]
-            if 'jhu_primitives' in primitive: # FIXME New version of jhu_primitives doesn't have the R's infinity loop error
-                del all_primitives[group][primitive]
 
     return all_primitives, sklearn_primitives
 
@@ -253,7 +251,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         data_types.append(data_res["resType"])
 
     unsupported_problems = ["TIME_SERIES_FORECASTING", "COLLABORATIVE_FILTERING", 'OBJECT_DETECTION']
-    print('>>>>>>', task, data_types)
+    #print('>>>>>>', task, data_types)
     if task in unsupported_problems:
         logger.error("%s Not Supported", task)
         sys.exit(148)
