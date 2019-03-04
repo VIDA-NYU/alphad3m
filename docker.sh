@@ -8,7 +8,6 @@
 LOCAL_DATA_ROOT="/home/remram/Documents/programming/d3m/data"
 LOCAL_OUTPUT_ROOT="/home/remram/Documents/programming/d3m/tmp"
 
-
 set -eu
 
 OPTS=""

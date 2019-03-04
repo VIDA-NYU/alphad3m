@@ -43,6 +43,7 @@ if 'TA2_DEBUG_BE_FAST' in os.environ:
 TRAIN_PIPELINES_COUNT = 0
 TRAIN_PIPELINES_COUNT_DEBUG = 5
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -51,7 +52,6 @@ class Session(Observable):
 
     This corresponds to a search in which pipelines are created.
     """
-
     def __init__(self, ta2, considered_pipelines_dir, problem, DBSession):
         Observable.__init__(self)
         self.id = uuid.uuid4()
@@ -264,7 +264,6 @@ class Session(Observable):
             self.notify('done_searching')
 
             logger.warning("Search done")
-
             if self.metrics:
                 metric = self.metrics[0]
                 top_pipelines = self.get_top_pipelines(db, metric)
@@ -314,8 +313,8 @@ class Session(Observable):
                 # Find most recent cross-validation
                 crossval_id = (
                     select([database.CrossValidation.id])
-                        .where(database.CrossValidation.pipeline_id == pipeline_id)
-                        .order_by(database.CrossValidation.date.desc())
+                    .where(database.CrossValidation.pipeline_id == pipeline_id)
+                    .order_by(database.CrossValidation.date.desc())
                 ).as_scalar()
                 # Get score from that cross-validation
                 score = db.query(
@@ -548,7 +547,6 @@ class ThreadPoolExecutor(futures.ThreadPoolExecutor):
             except Exception:
                 logger.exception("Exception in worker thread")
                 raise
-
         return futures.ThreadPoolExecutor.submit(self, wrapper,
                                                  *args, **kwargs)
 
@@ -722,10 +720,10 @@ class D3mTa2(Observable):
                 if event == 'done_searching':
                     raise RuntimeError("Never got pipeline results")
                 elif (event == 'scoring_error' and
-                      kwargs['pipeline_id'] == pipeline_id):
+                        kwargs['pipeline_id'] == pipeline_id):
                     return None
                 elif (event == 'scoring_success' and
-                      kwargs['pipeline_id'] == pipeline_id):
+                        kwargs['pipeline_id'] == pipeline_id):
                     break
 
         db = self.DBSession()
@@ -733,11 +731,10 @@ class D3mTa2(Observable):
             # Find most recent cross-validation
             crossval_id = (
                 select([database.CrossValidation.id])
-                    .where(database.CrossValidation.pipeline_id == pipeline_id)
-                    .order_by(database.CrossValidation.date.desc())
+                .where(database.CrossValidation.pipeline_id == pipeline_id)
+                .order_by(database.CrossValidation.date.desc())
             ).as_scalar()
             # Get scores from that cross-validation
-
             score = db.query(
                 select([func.avg(database.CrossValidationScore.value)])
                 .where(
@@ -755,7 +752,6 @@ class D3mTa2(Observable):
                 logger.info("Didn't get the requested metric from "
                             "cross-validation")
                 return None
-
         finally:
             db.close()
 
@@ -828,8 +824,8 @@ class D3mTa2(Observable):
         try:
             return (
                 db.query(database.Pipeline)
-                    .filter(database.Pipeline.id == pipeline_id)
-                    .options(
+                .filter(database.Pipeline.id == pipeline_id)
+                .options(
                     joinedload(database.Pipeline.modules)
                         .joinedload(database.PipelineModule.connections_to),
                     joinedload(database.Pipeline.connections)
@@ -844,8 +840,8 @@ class D3mTa2(Observable):
             # Find most recent cross-validation
             crossval_id = (
                 select([database.CrossValidation.id])
-                    .where(database.CrossValidation.pipeline_id == pipeline_id)
-                    .order_by(database.CrossValidation.date.desc())
+                .where(database.CrossValidation.pipeline_id == pipeline_id)
+                .order_by(database.CrossValidation.date.desc())
             ).as_scalar()
             # Get scores from that cross-validation
             scores = db.query(
@@ -949,11 +945,9 @@ class D3mTa2(Observable):
         )
 
         start = time.time()
-        start_time = datetime.datetime.now()
         stopped = False
 
         # Now we wait for pipelines to be sent over the pipe
-
         while proc.poll() is None:
             if not stopped:
                 if session.stop_requested:
@@ -983,7 +977,8 @@ class D3mTa2(Observable):
                 try:  # Fixme, just to avoid Broken pipe error
                     msg_queue.send(score)
                 except:
-                    logger.error('Broken pipe')
+                    logger.error("Broken pipe")
+                    return
             else:
                 raise RuntimeError("Got unknown message from generator "
                                    "process: %r" % msg)
@@ -1091,8 +1086,8 @@ class D3mTa2(Observable):
                      '{python} -c '
                      '"from d3m_ta2_nyu.main import main_test; '
                      'main_test()" {pipeline_id} "$@"\n'.format(
-                pipeline_id=str(pipeline.id),
-                python=sys.executable))
+                         pipeline_id=str(pipeline.id),
+                         python=sys.executable))
         st = os.stat(filename)
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
