@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 FOLDS = 4
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     FOLDS = 2
-RANDOM = 65682867  # The most random of all numbers
 
 
 @database.with_db

@@ -1,17 +1,82 @@
 import logging
-import pandas as pd
-import json
-import os
-import sys
 import pickle
 import frozendict
-from d3m.container.pandas import DataFrame
-from d3m.primitives.byudml.metafeature_extraction import MetafeatureExtractor
 from d3m_ta2_nyu.workflow.execute import execute_train
 from d3m_ta2_nyu.workflow import database
 from d3m.container import Dataset
 from d3m.metadata import base as metadata_base
+
 logger = logging.getLogger(__name__)
+
+METAFEATURES_DEFAULT = [
+                        'dimensionality',
+                        'number_distinct_values_of_categorical_attributes.max',
+                        'number_distinct_values_of_numeric_attributes.max',
+                        'entropy_of_categorical_attributes.max',
+                        'kurtosis_of_attributes.max',
+                        'mean_of_attributes.max',
+                        'entropy_of_numeric_attributes.max',
+                        'skew_of_attributes.max',
+                        'standard_deviation_of_attributes.max',
+                        'number_distinct_values_of_categorical_attributes.mean',
+                        'number_distinct_values_of_numeric_attributes.mean',
+                        'entropy_of_categorical_attributes.mean',
+                        'kurtosis_of_attributes.mean',
+                        'mean_of_attributes.mean',
+                        'entropy_of_numeric_attributes.mean',
+                        'skew_of_attributes.mean',
+                        'standard_deviation_of_attributes.mean',
+                        'number_distinct_values_of_categorical_attributes.min',
+                        'number_distinct_values_of_numeric_attributes.min',
+                        'entropy_of_categorical_attributes.min',
+                        'kurtosis_of_attributes.min',
+                        'mean_of_attributes.min',
+                        'entropy_of_numeric_attributes.min',
+                        'skew_of_attributes.min',
+                        'standard_deviation_of_attributes.min',
+                        'number_of_categorical_attributes',
+                        'number_of_attributes',
+                        'number_of_features_with_missing_values',
+                        'number_of_instances',
+                        'number_of_instances_with_missing_values',
+                        'number_of_missing_values',
+                        'number_of_numeric_attributes',
+                        'pca.eigenvalue_component_1',
+                        'pca.eigenvalue_component_2',
+                        'pca.eigenvalue_component_3',
+                        'pca.explained_variance_ratio_component_1',
+                        'pca.explained_variance_ratio_component_2',
+                        'pca.explained_variance_ratio_component_3',
+                        'entropy_of_categorical_attributes.quartile_1',
+                        'kurtosis_of_attributes.quartile_1',
+                        'mean_of_attributes.quartile_1',
+                        'entropy_of_numeric_attributes.quartile_1',
+                        'skew_of_attributes.quartile_1',
+                        'standard_deviation_of_attributes.quartile_1',
+                        'entropy_of_categorical_attributes.median',
+                        'kurtosis_of_attributes.median',
+                        'mean_of_attributes.median',
+                        'entropy_of_numeric_attributes.median',
+                        'skew_of_attributes.median',
+                        'standard_deviation_of_attributes.median',
+                        'entropy_of_categorical_attributes.quartile_3',
+                        'kurtosis_of_attributes.quartile_3',
+                        'mean_of_attributes.quartile_3',
+                        'entropy_of_numeric_attributes.quartile_3',
+                        'skew_of_attributes.quartile_3',
+                        'standard_deviation_of_attributes.quartile_3',
+                        'ratio_of_categorical_attributes',
+                        'ratio_of_features_with_missing_values',
+                        'ratio_of_instances_with_missing_values',
+                        'ratio_of_missing_values',
+                        'ratio_of_numeric_attributes',
+                        'number_distinct_values_of_categorical_attributes.std',
+                        'number_distinct_values_of_numeric_attributes.std',
+                        'kurtosis_of_attributes.std',
+                        'mean_of_attributes.std',
+                        'skew_of_attributes.std',
+                        'standard_deviation_of_attributes.std'
+                        ]
 
 
 class ComputeMetafeatures():
@@ -64,7 +129,7 @@ class ComputeMetafeatures():
         def make_primitive_module(name):
             if name[0] == '.':
                 name = 'd3m.primitives' + name
-            return make_module('d3m', '2018.7.10', name)
+            return make_module('d3m', '2019.2.12', name)
 
         def connect(from_module, to_module,
                     from_output='produce', to_input='inputs'):
@@ -85,17 +150,17 @@ class ComputeMetafeatures():
         ))
 
         # FIXME: Denormalize?
-        #step0 = make_primitive_module('.datasets.Denormalize')
+        #step0 = make_primitive_module('d3m.primitives.data_transformation.denormalize.Common')
         #connect(input_data, step0, from_output='dataset')
 
-        step1 = make_primitive_module('.datasets.DatasetToDataFrame')
+        step1 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
         connect(input_data, step1, from_output='dataset')
         #connect(step0, step1)
 
-        step2 = make_primitive_module('.data.ColumnParser')
+        step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.DataFrameCommon')
         connect(step1, step2)
 
-        step3 = make_primitive_module('d3m.primitives.byudml.metafeature_extraction.MetafeatureExtractor')
+        step3 = make_primitive_module('d3m.primitives.metafeature_extraction.metafeature_extractor.BYU')
         connect(step2, step3)
 
         db.add(pipeline)
@@ -111,25 +176,29 @@ class ComputeMetafeatures():
         pipeline_id = self._create_metafeatures_pipeline(db, origin)
         # Run training
         logger.info("Computing Metafeatures")
+        metafeature_vector = {x: 0 for x in METAFEATURES_DEFAULT}
         try:
 
             train_run, outputs = execute_train(db, pipeline_id, self.dataset)
-            metafeatures_values = {}
             for key, value in outputs.items():
-                metafeatures_results = value['produce'].metadata.query(())['data_metafeatures']
-                for metafeatures_key, metafeatures_value in metafeatures_results.items():
-                    if isinstance(metafeatures_value, frozendict.FrozenOrderedDict):
-                        for k, v in metafeatures_value.items():
+                metafeature_results = value['produce'].metadata.query(())['data_metafeatures']
+                for metafeature_key, metafeature_value in metafeature_results.items():
+                    if isinstance(metafeature_value, frozendict.FrozenOrderedDict):
+                        for k, v in metafeature_value.items():
                             if 'primitive' not in k:
-                                metafeatures_values[metafeatures_key+'_'+ k] = v
+                                metafeature_name = metafeature_key + '_' + k
+                                if metafeature_name in metafeature_vector:
+                                    metafeature_vector[metafeature_name] = v
                     else:
-                        metafeatures_values[metafeatures_key] = metafeatures_value
-            return list(metafeatures_values.values())
+                        if metafeature_key in metafeature_vector:
+                            metafeature_vector[metafeature_key] = metafeature_value
+
+            return list(metafeature_vector.values())
+
         except Exception:
             logger.exception("Error running Metafeatures")
             # FIXME: This is a default to address metafeatures not generating features for datasets with numeric targets
-            return [1] * 178
+            return list(metafeature_vector.values())
         finally:
             db.rollback()
             db.close()
-

@@ -36,11 +36,11 @@ from d3m_ta2_nyu.workflow.convert import to_d3m_json
 
 MAX_RUNNING_PROCESSES = 1
 
-TUNE_PIPELINES_COUNT = 3
+TUNE_PIPELINES_COUNT = 0
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0
 
-TRAIN_PIPELINES_COUNT = 10
+TRAIN_PIPELINES_COUNT = 0
 TRAIN_PIPELINES_COUNT_DEBUG = 5
 
 
@@ -940,6 +940,7 @@ class D3mTa2(Observable):
             problem=session.problem,
             targets=session.targets,
             features=session.features,
+            timeout=timeout,
             db_filename=self.db_filename,
         )
 
@@ -971,14 +972,71 @@ class D3mTa2(Observable):
                 pipeline_id, = args
                 logger.info("Got pipeline %s from generator process",
                             pipeline_id)
-                score = self.run_pipeline(session.id, pipeline_id)
+                score = self.run_pipeline(session, dataset, pipeline_id)
                 logger.info("Sending score to generator process")
-                msg_queue.send(score)
+                try:  # Fixme, just to avoid Broken pipe error
+                    msg_queue.send(score)
+                except:
+                    logger.error("Broken pipe")
+                    return
             else:
                 raise RuntimeError("Got unknown message from generator "
                                    "process: %r" % msg)
 
         logger.warning("Generator process exited with %r", proc.returncode)
+
+    def run_pipeline(self, session, dataset, pipeline_id):
+
+        """Score a single pipeline.
+
+        This is used by the pipeline synthesis code.
+        """
+
+        # Add the pipeline to the session, score it
+        with session.with_observer_queue() as queue:
+            session.add_scoring_pipeline(pipeline_id)
+            logger.info("Created pipeline %s", pipeline_id)
+            self._run_queue.put(ScoreJob(self, pipeline_id, dataset,
+                                         session.metrics, session.problem))
+            session.notify('new_pipeline', pipeline_id=pipeline_id)
+
+
+            while True:
+                event, kwargs = queue.get(True)
+                if event == 'done_searching':
+                    raise RuntimeError("Never got pipeline results")
+                elif (event == 'scoring_error' and
+                      kwargs['pipeline_id'] == pipeline_id):
+                    return None
+                elif (event == 'scoring_success' and
+                      kwargs['pipeline_id'] == pipeline_id):
+                    break
+
+        db = self.DBSession()
+        try:
+            # Find most recent cross-validation
+            crossval_id = (
+                select([database.CrossValidation.id])
+                    .where(database.CrossValidation.pipeline_id == pipeline_id)
+                    .order_by(database.CrossValidation.date.desc())
+            ).as_scalar()
+            # Get scores from that cross-validation
+            scores = (
+                db.query(database.CrossValidationScore)
+                    .filter(database.CrossValidationScore.cross_validation_id ==
+                            crossval_id)
+            ).all()
+            metric = session.metrics[0]
+            for score in scores:
+                if score.metric == metric:
+                    logger.info("Evaluation result: %s -> %r",
+                                metric, score.value)
+                    return score.value
+            logger.info("Didn't get the requested metric from "
+                        "cross-validation")
+            return None
+        finally:
+            db.close()
 
     def _build_pipeline_from_template(self, session, template, dataset):
         # Create workflow from a template
@@ -1256,7 +1314,7 @@ class D3mTa2(Observable):
         'REGRESSION': list(itertools.product(
             [_classification_template],
             # Imputer
-            ['d3m.primitives.sklearn_wrap.SKImputer'],
+            ['d3m.primitives.data_cleaning.imputer.SKlearn'],
             # Classifier
             [
                 'd3m.primitives.regression.random_forest.SKlearn',
@@ -1272,7 +1330,7 @@ class D3mTa2(Observable):
         'DEBUG_REGRESSION': list(itertools.product(
             [_classification_template],
             # Imputer
-            ['d3m.primitives.sklearn_wrap.SKImputer'],
+            ['d3m.primitives.data_cleaning.imputer.SKlearn'],
             # Classifier
             [
                 'd3m.primitives.regression.random_forest.SKlearn',

@@ -6,13 +6,13 @@ from d3m_ta2_nyu.workflow import database
 
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
-
 logger = logging.getLogger(__name__)
 
 
 class GenerateD3MPipelines():
     @staticmethod
     def make_pipeline_from_strings(primitives, origin, dataset, targets=None, features=None, DBSession=None):
+
         db = DBSession()
 
         pipeline = database.Pipeline(
@@ -48,6 +48,13 @@ class GenerateD3MPipelines():
                 name='hyperparams', value=pickle.dumps(hyperparams),
             ))
 
+        def change_default_hyperparams(primitive_name, primitive):
+            if primitive_name == 'd3m.primitives.data_cleaning.imputer.SKlearn':
+                set_hyperparams(primitive, strategy='most_frequent')
+            elif primitive_name == 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn':
+                set_hyperparams(primitive, handle_unknown='ignore')
+
+
         try:
             #                          data
             #                            |
@@ -79,17 +86,17 @@ class GenerateD3MPipelines():
                 name='features', value=pickle.dumps(features),
             ))
 
-            step0 = make_primitive_module('.datasets.Denormalize')
+            step0 = make_primitive_module('d3m.primitives.data_transformation.denormalize.Common')
             connect(input_data, step0, from_output='dataset')
 
-            step1 = make_primitive_module('.datasets.DatasetToDataFrame')
+            step1 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
             connect(step0, step1)
 
-            step2 = make_primitive_module('.data.ColumnParser')
+            step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.DataFrameCommon')
             connect(step1, step2)
 
-            step3 = make_primitive_module('.data.'
-                                          'ExtractColumnsBySemanticTypes')
+            step3 = make_primitive_module('d3m.primitives.data_transformation'
+                                          '.extract_columns_by_semantic_types.DataFrameCommon')
             set_hyperparams(
                 step3,
                 semantic_types=[
@@ -101,20 +108,22 @@ class GenerateD3MPipelines():
             step = prev_step = step3
             preprocessors = primitives[:-1]
             classifier = primitives[-1]
+
             for preprocessor in preprocessors:
                 step = make_primitive_module(preprocessor)
+                change_default_hyperparams(preprocessor, step)
                 connect(prev_step, step)
                 prev_step = step
 
-            step5 = make_primitive_module('.data.CastToType')
+            step5 = make_primitive_module('d3m.primitives.data_transformation.cast_to_type.Common')
             connect(step, step5)
             set_hyperparams(
                 step5,
                 type_to_cast='float',
             )
 
-            step6 = make_primitive_module('.data.'
-                                          'ExtractColumnsBySemanticTypes')
+            step6 = make_primitive_module('d3m.primitives.data_transformation'
+                                          '.extract_columns_by_semantic_types.DataFrameCommon')
             set_hyperparams(
                 step6,
                 semantic_types=[
@@ -123,14 +132,14 @@ class GenerateD3MPipelines():
             )
             connect(step2, step6)
 
-            step7 = make_primitive_module('.data.CastToType')
+            step7 = make_primitive_module('d3m.primitives.data_transformation.cast_to_type.Common')
             connect(step6, step7)
 
             step8 = make_primitive_module(classifier)
             connect(step5, step8)
             connect(step7, step8, to_input='outputs')
 
-            step9 = make_primitive_module('.data.ConstructPredictions')
+            step9 = make_primitive_module('d3m.primitives.data_transformation.construct_predictions.DataFrameCommon')
             connect(step8, step9)
             connect(step2, step9, to_input='reference')
 
@@ -139,10 +148,11 @@ class GenerateD3MPipelines():
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
         finally:
-            db.close()
+                db.close()
+
 
     @staticmethod
-    def make_audio_pipeline_from_strings(primitives, origin, dataset, targets=None, features=None, DBSession=None):
+    def make_audio_pipeline_from_strings(origin, dataset, targets=None, features=None, DBSession=None):
         db = DBSession()
 
         pipeline = database.Pipeline(
@@ -183,11 +193,16 @@ class GenerateD3MPipelines():
                 pipeline=pipeline, module=input_data,
                 name='features', value=pickle.dumps(features),
             ))
-            #primitives = ["d3m.primitives.bbn.time_series.ChannelAverager",
-            #              "d3m.primitives.bbn.time_series.SignalDither", "d3m.primitives.bbn.time_series.SignalFramer",  "d3m.primitives.bbn.time_series.SignalMFCC",
-            #              "d3m.primitives.bbn.time_series.UniformSegmentation", "d3m.primitives.bbn.time_series.SegmentCurveFitter", "d3m.primitives.bbn.time_series.ClusterCurveFittingKMeans",
-            #              "d3m.primitives.bbn.time_series.SignalFramer", "d3m.primitives.bbn.time_series.SequenceToBagOfTokens", "d3m.primitives.bbn.time_series.BBNTfidfTransformer",
-            #              "d3m.primitives.bbn.sklearn_wrap.BBNMLPClassifier"]
+            primitives = ["d3m.primitives.bbn.time_series.ChannelAverager",
+                          "d3m.primitives.bbn.time_series.SignalDither", "d3m.primitives.bbn.time_series.SignalFramer",
+                          "d3m.primitives.bbn.time_series.SignalMFCC",
+                          "d3m.primitives.bbn.time_series.UniformSegmentation",
+                          "d3m.primitives.bbn.time_series.SegmentCurveFitter",
+                          "d3m.primitives.bbn.time_series.ClusterCurveFittingKMeans",
+                          "d3m.primitives.bbn.time_series.SignalFramer",
+                          "d3m.primitives.bbn.time_series.SequenceToBagOfTokens",
+                          "d3m.primitives.bbn.time_series.BBNTfidfTransformer",
+                          "d3m.primitives.bbn.sklearn_wrap.BBNMLPClassifier"]
             step0 = make_primitive_module("d3m.primitives.bbn.time_series.TargetsReader")
             connect(input_data, step0, from_output='dataset')
 
@@ -267,7 +282,7 @@ class GenerateD3MPipelines():
                 pipeline=pipeline, module=input_data,
                 name='features', value=pickle.dumps(features),
             ))
-            step0 = make_primitive_module("d3m.primitives.jhu_primitives.SeededGraphMatching")
+            step0 = make_primitive_module("d3m.primitives.sri.graph.GraphMatchingParser")
             connect(input_data, step0, from_output='dataset')
             db.add(pipeline)
             db.commit()
@@ -308,6 +323,12 @@ class GenerateD3MPipelines():
                                                from_output_name=from_output,
                                                to_input_name=to_input))
 
+        def set_hyperparams(module, **hyperparams):
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=module,
+                name='hyperparams', value=pickle.dumps(hyperparams),
+            ))
+
         try:
 
             input_data = make_data_module('dataset')
@@ -319,9 +340,13 @@ class GenerateD3MPipelines():
                 pipeline=pipeline, module=input_data,
                 name='features', value=pickle.dumps(features),
             ))
-            step0 = make_primitive_module("d3m.primitives.sri.graph.CommunityDetectionParser")
+            step0 = make_primitive_module('d3m.primitives.sri.graph.CommunityDetectionParser')
             connect(input_data, step0, from_output='dataset')
             step1 = make_primitive_module('d3m.primitives.sri.psl.CommunityDetection')
+            set_hyperparams(
+                step1,
+                jvm_memory=1.0
+            )
             connect(step0, step1)
 
             db.add(pipeline)
@@ -434,21 +459,23 @@ class GenerateD3MPipelines():
                 name='features', value=pickle.dumps(features),
             ))
 
-            step2 = make_primitive_module('.datasets.DatasetToDataFrame')
+            '''step2 = make_primitive_module('.datasets.DatasetToDataFrame')
             connect(input_data, step2, from_output='dataset')
             #connect(step0, step1)
 
             step3 = make_primitive_module('.data.ColumnParser')
-            connect(step2, step3)
+            connect(step2, step3)'''
 
             step0 = make_primitive_module("d3m.primitives.sri.graph.VertexNominationParser")
             connect(input_data, step0, from_output='dataset')
+            step00 = make_primitive_module('.data.ColumnParser')
+            connect(step0, step00)
             #connect(step3, step0)
             step1 = make_primitive_module("d3m.primitives.sri.psl.VertexNomination")
-            connect(step0, step1)
-            step4 = make_primitive_module('.data.ConstructPredictions')
-            connect(step1, step4)
-            connect(step3, step4, to_input='reference')
+            connect(step00, step1)
+            #step4 = make_primitive_module('.data.ConstructPredictions')
+            #connect(step1, step4)
+            #connect(step3, step4, to_input='reference')
 
             db.add(pipeline)
             db.commit()
@@ -458,7 +485,7 @@ class GenerateD3MPipelines():
             db.close()
 
     @staticmethod
-    def make_image_pipeline_from_strings(estimator, origin, dataset, targets=None, features=None,
+    def make_image_pipeline_from_strings(origin, dataset, targets=None, features=None,
                                          DBSession=None):
         db = DBSession()
 
@@ -506,36 +533,36 @@ class GenerateD3MPipelines():
                 pipeline=pipeline, module=input_data,
                 name='features', value=pickle.dumps(features),
             ))
-            step0 = make_primitive_module("d3m.primitives.dsbox.Denormalize")
+            step0 = make_primitive_module('d3m.primitives.data_transformation.denormalize.Common')
             connect(input_data, step0, from_output='dataset')
 
-            step1 = make_primitive_module("d3m.primitives.datasets.DatasetToDataFrame")
+            step1 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
             connect(step0, step1)
 
-            step2 = make_primitive_module("d3m.primitives.data.ExtractColumnsBySemanticTypes")
+            step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.DataFrameCommon')
             set_hyperparams(
                 step2,
                 semantic_types=[
-                    "https://metadata.datadrivendiscovery.org/types/Target",
-                    "https://metadata.datadrivendiscovery.org/types/SuggestedTarget"
+                    'https://metadata.datadrivendiscovery.org/types/Target',
+                    'https://metadata.datadrivendiscovery.org/types/SuggestedTarget'
                 ],
             )
             connect(step1, step2)
 
-            step3 = make_primitive_module("d3m.primitives.dsbox.DataFrameToTensor")
+            step3 = make_primitive_module('d3m.primitives.data_preprocessing.DataFrameToTensor.DSBOX')
             connect(step1, step3)
 
-            step4 = make_primitive_module("d3m.primitives.dsbox.Vgg16ImageFeature")
+            step4 = make_primitive_module('d3m.primitives.feature_extraction.Vgg16ImageFeature.DSBOX')
             connect(step3, step4)
 
-            step5 = make_primitive_module("d3m.primitives.sklearn_wrap.SKPCA")
+            step5 = make_primitive_module('d3m.primitives.data_transformation.pca.SKlearn')
             connect(step4, step5)
 
-            step6 = make_primitive_module(estimator)
+            step6 = make_primitive_module('d3m.primitives.regression.lasso.SKlearn')
             connect(step5, step6)
             connect(step2, step6, to_input='outputs')
 
-            step7 = make_primitive_module('.data.ConstructPredictions')
+            step7 = make_primitive_module('d3m.primitives.data_transformation.construct_predictions.DataFrameCommon')
             connect(step6, step7)
             connect(step1, step7, to_input='reference')
 
@@ -543,6 +570,7 @@ class GenerateD3MPipelines():
             db.commit()
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
+
 
         finally:
             db.close()
@@ -596,57 +624,59 @@ class GenerateD3MPipelines():
                 name='features', value=pickle.dumps(features),
             ))
 
-            step0 = make_primitive_module("d3m.primitives.sri.autoflow.DatasetTextReader")
+            step0 = make_primitive_module('d3m.primitives.sri.autoflow.DatasetTextReader')
             connect(input_data, step0, from_output='dataset')
 
-            step1 = make_primitive_module("d3m.primitives.datasets.DatasetToDataFrame")
+            step1 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
             connect(step0, step1)
 
-            step2 = make_primitive_module("d3m.primitives.data.ExtractColumnsBySemanticTypes")
+            step2 = make_primitive_module('d3m.primitives.data_transformation'
+                                          '.extract_columns_by_semantic_types.DataFrameCommon')
             set_hyperparams(
                 step2,
                 semantic_types=[
-                    "https://metadata.datadrivendiscovery.org/types/SuggestedTarget"
+                    'https://metadata.datadrivendiscovery.org/types/SuggestedTarget'
                 ],
             )
             connect(step1, step2)
 
-            step3 = make_primitive_module("d3m.primitives.data.ColumnParser")
+            step3 = make_primitive_module('d3m.primitives.data_transformation.column_parser.DataFrameCommon')
             connect(step1, step3)
 
-            step4 = make_primitive_module("d3m.primitives.data.ExtractColumnsBySemanticTypes")
+            step4 = make_primitive_module('d3m.primitives.data_transformation'
+                                          '.extract_columns_by_semantic_types.DataFrameCommon')
             set_hyperparams(
                 step4,
                 semantic_types=[
-                    "https://metadata.datadrivendiscovery.org/types/Attribute"
+                    'https://metadata.datadrivendiscovery.org/types/Attribute'
                 ],
             )
             connect(step3, step4)
 
-            step5 = make_primitive_module("d3m.primitives.sri.autoflow.Conditioner")
+            step5 = make_primitive_module('d3m.primitives.sri.autoflow.Conditioner')
             connect(step4, step5)
 
-            step6 = make_primitive_module("d3m.primitives.sklearn_wrap.SKBernoulliNB")
+            step6 = make_primitive_module('d3m.primitives.classification.bernoulli_naive_bayes.SKlearn')
             connect(step5, step6)
             connect(step2, step6, to_input='outputs')
 
-            step7 = make_primitive_module("d3m.primitives.data.HorizontalConcat")
+            step7 = make_primitive_module('d3m.primitives.data_transformation.horizontal_concat.DataFrameConcat')
             connect(step5, step7, to_input="left")
             connect(step6, step7, to_input="right")
 
-            step8 = make_primitive_module("d3m.primitives.sklearn_wrap.SKRandomForestClassifier")
+            step8 = make_primitive_module('d3m.primitives.classification.random_forest.SKlearn')
             connect(step7, step8)
             connect(step2, step8, to_input='outputs')
 
-            step9 = make_primitive_module("d3m.primitives.data.HorizontalConcat")
+            step9 = make_primitive_module('d3m.primitives.data_transformation.horizontal_concat.DataFrameConcat')
             connect(step7, step9, to_input="left")
             connect(step8, step9, to_input="right")
 
-            step10 = make_primitive_module("d3m.primitives.sklearn_wrap.SKDecisionTreeClassifier")
+            step10 = make_primitive_module('d3m.primitives.classification.decision_tree.SKlearn')
             connect(step9, step10)
             connect(step2, step10, to_input='outputs')
 
-            step11 = make_primitive_module('.data.ConstructPredictions')
+            step11 = make_primitive_module('d3m.primitives.data_transformation.construct_predictions.DataFrameCommon')
             connect(step10, step11)
             connect(step1, step11, to_input='reference')
 

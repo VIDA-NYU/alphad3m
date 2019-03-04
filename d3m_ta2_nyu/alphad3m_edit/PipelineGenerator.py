@@ -1,111 +1,167 @@
+import signal
 import json
 import os
 import sys
 import operator
 import pickle
 import logging
+import multiprocessing
 
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
-
+from pathlib import Path
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.multiprocessing import Receiver
-from d3m.container import Dataset
-
+from d3m_ta2_nyu.d3m_primitives import D3MPrimitives
 from alphaAutoMLEdit.Coach import Coach
 from alphaAutoMLEdit.pipeline.PipelineGame import PipelineGame
 from alphaAutoMLEdit.pipeline.pytorch.NNet import NNetWrapper
 from .GenerateD3MPipelines import GenerateD3MPipelines
-
 from d3m_ta2_nyu.metafeatures.dataset import ComputeMetafeatures
 
 logger = logging.getLogger(__name__)
+
 
 def setup_logging():
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s:%(levelname)s:TA2:%(name)s:%(message)s")
 
-estimators = {
-    'CLASSIFICATION': {
-        'd3m.primitives.sklearn_wrap.SKRandomForestClassifier':3,
-        'd3m.primitives.sklearn_wrap.SKDecisionTreeClassifier':4,
-        'd3m.primitives.featuretools_ta1.SKRFERandomForestClassifier':5,
-        'd3m.primitives.classifier.RandomForest':6,
-        'd3m.primitives.sklearn_wrap.SKMultinomialNB':7,
-        'd3m.primitives.common_primitives.BayesianLogisticRegression': 9,
-        'd3m.primitives.dsbox.CorexSupervised': 11,
-        'd3m.primitives.lupi_svm': 13,
-        'd3m.primitives.realML.TensorMachinesBinaryClassification': 14,
-        'd3m.primitives.sklearn_wrap.SKPassiveAggressiveClassifier': 15,
-        'd3m.primitives.sklearn_wrap.SKQuadraticDiscriminantAnalysis': 16,
-        'd3m.primitives.sklearn_wrap.SKSGDClassifier': 18,
-        'd3m.primitives.sklearn_wrap.SKSVC': 19
+    
+def getPrimitives():
+    installed_primitives_file = '/output/installed_primitives.pkl'
+    installed_primitives_file_path = Path(installed_primitives_file)
+    sklearn_primitives = {}
+
+    if installed_primitives_file_path.is_file():
+        fp = open(installed_primitives_file, 'rb')
+        logger.info('Loading primitives from file')
+        all_primitives = pickle.load(fp)
+    else:
+        all_primitives = D3MPrimitives.get_primitives_dict()
+        fp = open(installed_primitives_file, 'wb')
+        pickle.dump(all_primitives, fp)
+        logger.info('Loading primitives from D3M index')
+
+    for group in list(all_primitives.keys()):
+        sklearn_primitives[group] = {}
+        for primitive in list(all_primitives[group].keys()):
+            if primitive.endswith('.SKlearn'):
+                sklearn_primitives[group][primitive] = all_primitives[group][primitive]
+
+    return all_primitives, sklearn_primitives
+
+
+ALL_PRIMITIVES, SKLEARN_PRIMITIVES = getPrimitives()
+
+GRAMMAR = {
+    'NON_TERMINALS': {
+        'S': 1,
+        'DATA_CLEANING':2,
+        'DATA_TRANSFORMATION':3,
+        'ESTIMATORS':4
     },
-    'REGRESSION': {
-        'd3m.primitives.cmu.autonlab.find_projections.SearchNumeric': 20,
-        'd3m.primitives.cmu.autonlab.find_projections.SearchHybridNumeric': 21,
-        'd3m.primitives.featuretools_ta1.SKRFERandomForestRegressor':22,
-        'd3m.primitives.sklearn_wrap.SKARDRegression': 25,
-        'd3m.primitives.sklearn_wrap.SKDecisionTreeRegressor': 26,
-        'd3m.primitives.sklearn_wrap.SKExtraTreesRegressor': 27,
-        'd3m.primitives.sklearn_wrap.SKGaussianProcessRegressor': 28,
-        'd3m.primitives.sklearn_wrap.SKLars': 31,
-        'd3m.primitives.sklearn_wrap.SKLasso': 32,
-        'd3m.primitives.sklearn_wrap.SKLassoCV': 33,
-        'd3m.primitives.sklearn_wrap.SKLinearSVR': 34,
-        'd3m.primitives.sklearn_wrap.SKPassiveAggressiveRegressor': 35,
-        'd3m.primitives.sklearn_wrap.SKSGDRegressor': 36,
-        'd3m.primitives.sklearn_wrap.SKRidge':39
-    }
+    'START': 'S->S'
 }
+
+
+def getTerminals(non_terminals, primitives, task):
+    terminals = {}
+    count = len(GRAMMAR['NON_TERMINALS'])+1
+    for non_terminal in non_terminals:
+        if non_terminal == 'S':
+            continue
+        if non_terminal == 'ESTIMATORS':
+            non_terminal = task.upper()
+        for terminal in primitives[non_terminal]:
+            terminals[terminal] = count
+            count += 1
+    terminals['E'] = 0
+
+    return terminals
+
+
+def getRules(non_terminals, primitives, task):
+    rules = { 'S->ESTIMATORS':1,
+              'S->DATA_CLEANING ESTIMATORS':2,
+              'S->DATA_TRANSFORMATION ESTIMATORS':3,
+              'S->DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 4
+    }
+    
+    rules_lookup = {'S': list(rules.keys())}
+    count = len(rules)+1
+    for non_terminal in non_terminals:
+        if non_terminal == 'S':
+            continue
+
+        rules_lookup[non_terminal] = []
+        if non_terminal == 'ESTIMATORS':
+            terminals = primitives[task.upper()]
+            for terminal in terminals:
+                rule = non_terminal+'->'+terminal
+                rules[rule] = count
+                count += 1
+                rules_lookup[non_terminal].append(rule)
+            continue
+
+        terminals = primitives[non_terminal]
+
+        for terminal in terminals:
+            rule = non_terminal+'->'+terminal+' ' +non_terminal 
+            rules[rule] = count
+            count += 1
+            rules_lookup[non_terminal].append(rule)
+            rule = non_terminal+'->'+terminal
+            rules[rule] = count
+            count += 1
+            rules_lookup[non_terminal].append(rule)
+
+        rule = non_terminal+'->E'
+        rules[rule] = count
+        count += 1
+        rules_lookup[non_terminal].append(rule)
+        
+    return rules, rules_lookup
 
 
 input = {
+        'PROBLEM_TYPES': {'CLASSIFICATION': 1,
+                          'REGRESSION': 2,
+                          'TIME_SERIES_FORECASTING': 3,
+                          'CLUSTERING': 4},
 
-    'PIPELINE_SIZES': {
-        'DATA_CLEANING': 1,
-        'DATA_PREPROCESSING': 1,
-        'ESTIMATORS': 1
-    },
-    
-    'PROBLEM_TYPES': {'CLASSIFICATION': 1,
-                     'REGRESSION': 2},
-    
-    'DATA_TYPES': {'TABULAR': 1,
-                  'GRAPH': 2,
-                  'IMAGE': 3},
-    
-    'PRIMITIVES': {
-        'DATA_CLEANING':{
-            'd3m.primitives.dsbox.MeanImputation': 2
-        },
-        'DATA_PREPROCESSING': {
-            'd3m.primitives.dsbox.Encoder': 1,
+        'DATA_TYPES': {'TABULAR': 1,
+                       'GRAPH': 2,
+                       'IMAGE': 3},
+
+        'PIPELINE_SIZE': 4,
+
+        'ARGS': {
+            'numIters': 25,
+            'numEps': 5,
+            'tempThreshold': 15,
+            'updateThreshold': 0.6,
+            'maxlenOfQueue': 200000,
+            'numMCTSSims': 5,
+            'arenaCompare': 40,
+            'cpuct': 1,
+
+            'checkpoint': '/output/nn_models',
+            'load_model': False,
+            'load_folder_file': ('/output/nn_models', 'best.pth.tar'),
+            'metafeatures_path': '/d3m/data/metafeatures',
+            'verbose': True
         }
-    },
-
-    'ARGS': {
-        'numIters': 3,
-        'numEps': 100,
-        'tempThreshold': 15,
-        'updateThreshold': 0.6,
-        'maxlenOfQueue': 200000,
-        'numMCTSSims': 25,
-        'arenaCompare': 40,
-        'cpuct': 1,
-        
-        'checkpoint': './temp/',
-        'load_model': False,
-        'load_folder_file': ('./temp/', 'best.pth.tar'),
-        'metafeatures_path': '/d3m/data/metafeatures'
     }
-}
+
 
 @database.with_sessionmaker
-def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSession):
+def generate(task, dataset, metrics, problem, targets, features, timeout, msg_queue, DBSession):
+    import time
+    start = time.time()
     # FIXME: don't use 'problem' argument
     compute_metafeatures = ComputeMetafeatures(dataset, targets, features, DBSession)
+
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
         pipeline_id = GenerateD3MPipelines.make_pipeline_from_strings(strings, origin,
@@ -118,7 +174,7 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
 
     def eval_audio_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_audio_pipeline_from_strings(strings, origin,
+        pipeline_id = GenerateD3MPipelines.make_audio_pipeline_from_strings(origin,
                                                                             dataset,
                                                                             targets, features, DBSession=DBSession)
         # Evaluate the pipeline
@@ -165,10 +221,9 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    def eval_image_pipeline(estimator, origin):
+    def eval_image_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_image_pipeline_from_strings(estimator,
-                                                                            origin,
+        pipeline_id = GenerateD3MPipelines.make_image_pipeline_from_strings(origin,
                                                                             dataset,
                                                                             targets, features,
                                                                             DBSession=DBSession)
@@ -186,7 +241,6 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-
     
     dataset_path = os.path.dirname(dataset[7:])
     f = open(os.path.join(dataset_path, 'datasetDoc.json'))
@@ -196,8 +250,8 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
     for data_res in data_resources:
         data_types.append(data_res["resType"])
 
-    unsupported_problems = ["timeSeriesForecasting", "collaborativeFiltering"]
-
+    unsupported_problems = ["TIME_SERIES_FORECASTING", "COLLABORATIVE_FILTERING", 'OBJECT_DETECTION']
+    #print('>>>>>>', task, data_types)
     if task in unsupported_problems:
         logger.error("%s Not Supported", task)
         sys.exit(148)
@@ -207,62 +261,103 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
         sys.exit(148)
 
     if "audio" in data_types:
-        primitives = ["d3m.primitives.bbn.time_series.ChannelAverager",
-                          "d3m.primitives.bbn.time_series.SignalDither", "d3m.primitives.bbn.time_series.SignalFramer",  "d3m.primitives.bbn.time_series.SignalMFCC",
-                          "d3m.primitives.bbn.time_series.UniformSegmentation", "d3m.primitives.bbn.time_series.SegmentCurveFitter", "d3m.primitives.bbn.time_series.ClusterCurveFittingKMeans",
-                          "d3m.primitives.bbn.time_series.SignalFramer", "d3m.primitives.bbn.time_series.SequenceToBagOfTokens", "d3m.primitives.bbn.time_series.BBNTfidfTransformer",
-                          "d3m.primitives.bbn.sklearn_wrap.BBNMLPClassifier"]
-        eval_audio_pipeline(primitives, "ALPHAD3M")
-
-        primitives = ["d3m.primitives.bbn.time_series.ChannelAverager",
-                          "d3m.primitives.bbn.time_series.SignalDither", "d3m.primitives.bbn.time_series.SignalFramer",  "d3m.primitives.bbn.time_series.SignalMFCC",
-                          "d3m.primitives.bbn.time_series.IVectorExtractor", 
-                          "d3m.primitives.bbn.sklearn_wrap.BBNMLPClassifier"]
-        eval_audio_pipeline(primitives, "ALPHAD3M")
+        eval_audio_pipeline("ALPHAD3M")
         return
 
     if "graph" in data_types:
-        if "graphMatching" in task:
+        if "GRAPH_MATCHING" in task:
             eval_graphMatch_pipeline("ALPHAD3M")
             return
-        elif "communityDetection" in task:
+        elif "COMMUNITY_DETECTION" in task:
             eval_communityDetection_pipeline("ALPHAD3M")
             return
-        elif "linkPrediction" in task:
+        elif "LINK_PREDICTION" in task:
             eval_linkprediction_pipeline("ALPHAD3M")
             return
-        elif "vertexNomination" in task:
+        elif "VERTEX_NOMINATION" in task:
             eval_vertexnomination_pipeline("ALPHAD3M")
             return
         logger.error("%s Not Supported", task)
         sys.exit(148)
 
-
-    estimator = 'd3m.primitives.sklearn_wrap.SKRandomForestClassifier'
     if "image" in data_types:
-        if "regression" in task:
-            estimator = 'd3m.primitives.sklearn_wrap.SKLasso'
-            eval_image_pipeline(estimator, "ALPHAD3M")
+        if "REGRESSION" in task:
+            eval_image_pipeline("ALPHAD3M")
             return
         logger.error("%s Not Supported", task)
         sys.exit(148)
 
-
     if "timeseries" in data_types:
-        if "classification" in task:
+        if "CLASSIFICATION" in task:
             eval_timeseries_pipeline("ALPHAD3M")
             return
         logger.error("%s Not Supported", task)
         sys.exit(148)
 
-    input['PROBLEM'] = task
-    input['DATA_TYPE'] = 'TABULAR'
-    input['METRIC'] = metrics[0]
-    input['DATASET_METAFEATURES'] = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
-    input['PRIMITIVES']['ESTIMATORS'] = estimators[task]
-    
-    game = PipelineGame(None, input, eval_pipeline)
+    def create_input(selected_primitves):
+        GRAMMAR['TERMINALS'] = getTerminals(GRAMMAR['NON_TERMINALS'], selected_primitves, task)
+        r, l = getRules(GRAMMAR['NON_TERMINALS'], selected_primitves, task)
+
+        GRAMMAR['RULES'] = r
+        GRAMMAR['RULES_LOOKUP'] = l
+
+        input['GRAMMAR'] = GRAMMAR
+        input['PROBLEM'] = task
+        input['DATA_TYPE'] = 'TABULAR'
+        input['METRIC'] = metrics[0]
+        input['DATASET_METAFEATURES'] = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
+        input['DATASET'] = datasetDoc['about']['datasetName']
+        input['ARGS']['stepsfile'] = os.path.join('/output', input['DATASET']+'_pipeline_steps.txt')
+
+        return input
+
+    input_sklearn = create_input(SKLEARN_PRIMITIVES)
+    timeout_sklearn = int(timeout * 0.4)
+
+    def run_sklearn_primitives():
+        logger.info('Starting evaluation Scikit-learn primitives, timeout is %s', timeout_sklearn)
+        game = PipelineGame(input_sklearn, eval_pipeline)
+        nnet = NNetWrapper(game)
+        c = Coach(game, nnet, input_sklearn['ARGS'])
+        c.learn()
+
+    process_sklearn = multiprocessing.Process(target=run_sklearn_primitives)
+    process_sklearn.daemon = True
+    process_sklearn.start()
+    process_sklearn.join(timeout_sklearn)
+
+    if process_sklearn.is_alive():
+        process_sklearn.terminate()
+        logger.info('Finished evaluation Scikit-learn primitives')
+
+    input_all = create_input(ALL_PRIMITIVES)
+
+    game = PipelineGame(input_all, eval_pipeline)
     nnet = NNetWrapper(game)
+
+    def signal_handler(signal, frame):
+        record_bestpipeline(input['DATASET'])
+        sys.exit(0)
+
+    def record_bestpipeline(dataset):
+        end = time.time()
+
+        eval_dict = game.evaluations
+        eval_times = game.eval_times
+        for key, value in eval_dict.items():
+            if value == float('inf') and not 'error' in game.metric.lower():
+                eval_dict[key] = 0
+        evaluations = sorted(eval_dict.items(), key=operator.itemgetter(1))
+        if not 'error' in game.metric.lower():
+            evaluations.reverse()
+
+        out_p = open(os.path.join('/output', input['DATASET'] + '_best_pipelines.txt'), 'a')
+        out_p.write(
+            datasetDoc['about']['datasetName'] + ' ' + evaluations[0][0] + ' ' + str(evaluations[0][1]) + ' ' + str(
+                game.steps) + ' ' + str((eval_times[evaluations[0][0]] - start) / 60.0) + ' ' + str(
+                (end - start) / 60.0) + '\n')
+
+    signal.signal(signal.SIGTERM, signal_handler)
 
     if input['ARGS'].get('load_model'):
         model_file = os.path.join(input['ARGS'].get('load_folder_file')[0],
@@ -274,6 +369,10 @@ def generate(task, dataset, metrics, problem, targets, features, msg_queue, DBSe
     c = Coach(game, nnet, input['ARGS'])
     c.learn()
 
+    record_bestpipeline(input['DATASET'])
+
+    sys.exit(0)
+
 
 def main(dataset, problem_path, output_path):
     setup_logging()
@@ -282,13 +381,6 @@ def main(dataset, problem_path, output_path):
     start = time.time()
     import tempfile
     from d3m_ta2_nyu.ta2 import D3mTa2
-
-    p_enum = {
-                 'dsbox.datapreprocessing.cleaner.Encoder': 1,
-                 'dsbox.datapreprocessing.cleaner.KNNImputation': 2,
-                 'sklearn.linear_model.SGDClassifier':17,
-            	 'sklearn.linear_model.SGDRegressor': 35     
-             }
 
     pipelines = {}
     if os.path.isfile('pipelines.txt'):
@@ -318,8 +410,8 @@ def main(dataset, problem_path, output_path):
 
     generate(task, dataset, metrics, problem, session.targets, session.features, msg_queue, ta2.DBSession)
 
+
 if __name__ == '__main__':
-    output_path = '.'
     if len(sys.argv) > 3:
-       output_path = sys.argv[3]
+        output_path = sys.argv[3]
     main(sys.argv[1], sys.argv[2], output_path)

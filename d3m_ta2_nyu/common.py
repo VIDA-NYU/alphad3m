@@ -20,6 +20,10 @@ def _root_mean_squared_error_avg(y_true, y_pred):
 
 SCORES_TO_SKLEARN = dict(
     ACCURACY=sklearn.metrics.accuracy_score,
+    PRECISION=lambda y_true, y_pred:
+              sklearn.metrics.precision_score(y_true, y_pred, average='micro'),
+    RECALL=lambda y_true, y_pred:
+              sklearn.metrics.recall_score(y_true, y_pred, average='micro'),
     F1=lambda y_true, y_pred:
         sklearn.metrics.f1_score(y_true, y_pred,
                                  average='binary', pos_label='1'),
@@ -46,6 +50,8 @@ SCORES_TO_SKLEARN = dict(
 SCORES_FROM_SCHEMA = {
     'accuracy': 'ACCURACY',
     'f1': 'F1',
+    'precision': 'PRECISION',
+    'recall': 'RECALL',
     'f1Micro': 'F1_MICRO',
     'f1Macro': 'F1_MACRO',
     'rocAuc': 'ROC_AUC',
@@ -58,6 +64,7 @@ SCORES_FROM_SCHEMA = {
     'rSquared': 'R_SQUARED',
     'normalizedMutualInformation': 'NORMALIZED_MUTUAL_INFORMATION',
     'jaccardSimilarityScore': 'JACCARD_SIMILARITY_SCORE',
+    'objectDetectionAP': 'OBJECT_DETECTION_AP'
     # 'precisionAtTopK': None,
 }
 
@@ -67,6 +74,8 @@ SCORES_TO_SCHEMA = {v: k for k, v in SCORES_FROM_SCHEMA.items()}
 SCORES_RANKING_ORDER = dict(
     ACCURACY=-1,
     F1=-1,
+    PRECISION=-1,
+    RECALL=-1,
     F1_MICRO=-1,
     F1_MACRO=-1,
     ROC_AUC=-1,
@@ -93,6 +102,7 @@ TASKS_FROM_SCHEMA = {
     'graphMatching': 'GRAPH_MATCHING',
     'timeSeriesForecasting': 'TIME_SERIES_FORECASTING',
     'collaborativeFiltering': 'COLLABORATIVE_FILTERING',
+    'objectDetection': 'OBJECT_DETECTION'
 }
 
 TASKS_TO_SCHEMA = {v: k for k, v in TASKS_FROM_SCHEMA.items()}
