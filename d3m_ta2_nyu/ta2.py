@@ -905,7 +905,7 @@ class D3mTa2(Observable):
         template_name = task
         if 'TA2_DEBUG_BE_FAST' in os.environ:
             template_name = 'DEBUG_' + task
-        for template in self.TEMPLATES.get(template_name, []):
+        for template in []:#self.TEMPLATES.get(template_name, []):
             logger.info("Creating pipeline from %r", template)
             if isinstance(template, (list, tuple)):
                 func, args = template[0], template[1:]
