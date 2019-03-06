@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 def setup_logging():
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s:%(levelname)s:TA2:%(name)s:%(message)s")
+        format='%(asctime)s:%(levelname)s:TA2:%(name)s:%(message)s')
 
     
 def getPrimitives():
@@ -245,53 +245,53 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
     dataset_path = os.path.dirname(dataset[7:])
     f = open(os.path.join(dataset_path, 'datasetDoc.json'))
     datasetDoc = json.load(f)
-    data_resources = datasetDoc["dataResources"]
+    data_resources = datasetDoc['dataResources']
     data_types = []
     for data_res in data_resources:
-        data_types.append(data_res["resType"])
+        data_types.append(data_res['resType'])
 
-    unsupported_problems = ["TIME_SERIES_FORECASTING", "COLLABORATIVE_FILTERING", 'OBJECT_DETECTION']
-    #print('>>>>>>', task, data_types)
+    unsupported_problems = ['TIME_SERIES_FORECASTING', 'COLLABORATIVE_FILTERING', 'OBJECT_DETECTION']
+    print('>>>>>>', task, data_types)
     if task in unsupported_problems:
-        logger.error("%s Not Supported", task)
+        logger.error('%s Not Supported', task)
         sys.exit(148)
     
-    if "text" in data_types:
-        logger.error("Text Datatype Not Supported")
+    if 'text' in data_types:
+        logger.error('Text Datatype Not Supported')
         sys.exit(148)
 
-    if "audio" in data_types:
-        eval_audio_pipeline("ALPHAD3M")
+    if 'audio' in data_types:
+        eval_audio_pipeline('ALPHAD3M')
         return
 
-    if "graph" in data_types:
-        if "GRAPH_MATCHING" in task:
-            eval_graphMatch_pipeline("ALPHAD3M")
+    if 'graph' in data_types or 'edgeList' in data_types:
+        if 'GRAPH_MATCHING' in task:
+            eval_graphMatch_pipeline('ALPHAD3M')
             return
-        elif "COMMUNITY_DETECTION" in task:
-            eval_communityDetection_pipeline("ALPHAD3M")
+        elif 'COMMUNITY_DETECTION' in task:
+            eval_communityDetection_pipeline('ALPHAD3M')
             return
-        elif "LINK_PREDICTION" in task:
-            eval_linkprediction_pipeline("ALPHAD3M")
+        elif 'LINK_PREDICTION' in task:
+            eval_linkprediction_pipeline('ALPHAD3M')
             return
-        elif "VERTEX_NOMINATION" in task:
-            eval_vertexnomination_pipeline("ALPHAD3M")
+        elif 'VERTEX_NOMINATION' in task:
+            eval_vertexnomination_pipeline('ALPHAD3M')
             return
-        logger.error("%s Not Supported", task)
+        logger.error('%s Not Supported', task)
         sys.exit(148)
 
-    if "image" in data_types:
-        if "REGRESSION" in task:
-            eval_image_pipeline("ALPHAD3M")
+    if 'image' in data_types:
+        if 'REGRESSION' in task:
+            eval_image_pipeline('ALPHAD3M')
             return
-        logger.error("%s Not Supported", task)
+        logger.error('%s Not Supported', task)
         sys.exit(148)
 
-    if "timeseries" in data_types:
-        if "CLASSIFICATION" in task:
-            eval_timeseries_pipeline("ALPHAD3M")
+    if 'timeseries' in data_types:
+        if 'CLASSIFICATION' in task:
+            eval_timeseries_pipeline('ALPHAD3M')
             return
-        logger.error("%s Not Supported", task)
+        logger.error('%s Not Supported', task)
         sys.exit(148)
 
     def create_input(selected_primitves):
