@@ -562,10 +562,11 @@ class CoreService(pb_core_grpc.CoreServicer):
                 'problemDescription': problem.problem.description,
                 "taskType": TASKS_TO_SCHEMA.get(task, ''),
                 "taskSubType": SUBTASKS_TO_SCHEMA.get(
-                    self.grpc2tasksubtype.get(problem.problem.task_type),
+                    self.grpc2tasksubtype.get(problem.problem.task_subtype),
                     ''),
                 "problemSchemaVersion": "3.0",
                 "problemName": problem.problem.name,
+
             },
             'inputs': {
                 'performanceMetrics': metrics,
@@ -586,6 +587,9 @@ class CoreService(pb_core_grpc.CoreServicer):
                     for i in problem.inputs
                 ],
             },
+            'expectedOutputs': {
+                'predictionsFile': 'predictions.csv'
+            }
         }
 
     def _add_step(self, steps, step_descriptions, modules, params, module_to_step, mod):

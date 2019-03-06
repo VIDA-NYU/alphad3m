@@ -5,8 +5,8 @@
 # Example ta2-ta3: ./docker.sh ta3 seed_datasets_current/uu4_SPECT/TRAIN ta2-test:latest
 
 # Change this if you're not Remi
-LOCAL_DATA_ROOT="/home/remram/Documents/programming/d3m/data"
-LOCAL_OUTPUT_ROOT="/home/remram/Documents/programming/d3m/tmp"
+LOCAL_DATA_ROOT="/Users/rlopez/D3M/datasets"
+LOCAL_OUTPUT_ROOT="/Users/rlopez/D3M/tmp"
 
 set -eu
 
@@ -55,6 +55,8 @@ docker run -ti --rm \
     -e D3MTIMEOUT=$TIMEOUT \
     $OPTS \
     -v "$PWD/d3m_ta2_nyu:/usr/src/app/d3m_ta2_nyu" \
+    -v "$PWD/client.py:/usr/src/app/client.py" \
+    -v "$PWD/search_config.json:/usr/src/app/search_config.json" \
     -v "$LOCAL_DATA_ROOT/${INPUT}:/input" \
     -v "$LOCAL_OUTPUT_ROOT:/output" \
     -v "$PWD/search_config.json:/input/search_config.json" \

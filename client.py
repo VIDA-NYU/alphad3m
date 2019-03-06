@@ -30,7 +30,7 @@ def do_search(core, config, problem):
     search = core.SearchSolutions(pb_core.SearchSolutionsRequest(
         user_agent='ta3_stub',
         version=version,
-        time_bound=5.0,
+        time_bound=15.0,
         allowed_value_types=[pb_value.CSV_URI],
         problem=pb_problem.ProblemDescription(
             problem=pb_problem.Problem(
