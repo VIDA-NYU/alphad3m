@@ -42,7 +42,7 @@ class D3MPrimitives():
                 family = D3MPrimitives.get_family(name)
             except Exception:
                 logger.error('No information about primitive %s', name)
-                family = None
+                family = 'None'
             if family in primitives_dictionary:
                 primitives_dictionary[family][name] = count
             else:

@@ -29,18 +29,19 @@ def setup_logging():
 
     
 def getPrimitives():
-    installed_primitives_file = '/output/installed_primitives.pkl'
+    installed_primitives_file = '/output/installed_primitives.json'
     installed_primitives_file_path = Path(installed_primitives_file)
     sklearn_primitives = {}
 
     if installed_primitives_file_path.is_file():
-        fp = open(installed_primitives_file, 'rb')
+        with open(installed_primitives_file) as fin:
+            all_primitives = json.load(fin)
         logger.info('Loading primitives from file')
-        all_primitives = pickle.load(fp)
+
     else:
         all_primitives = D3MPrimitives.get_primitives_dict()
-        fp = open(installed_primitives_file, 'wb')
-        pickle.dump(all_primitives, fp)
+        with open(installed_primitives_file, 'w') as fout:
+            json.dump(all_primitives, fout, indent=4)
         logger.info('Loading primitives from D3M index')
 
     for group in list(all_primitives.keys()):

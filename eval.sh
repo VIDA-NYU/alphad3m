@@ -21,13 +21,13 @@ in
     ta2ta3)
         unset CONFIG_JSON_PATH
         unset JSON_CONFIG
-        export CONFIG_JSON="{\"temp_storage_root\": \"$D3MOUTPUTDIR/supporting_files\", \"pipeline_logs_root\": \"$D3MOUTPUTDIR/pipelines\", \"executables_root\": \"$D3MOUTPUTDIR/executables\", \"timeout\": \"$D3MTIMEOUT\", \"cpus\": \"$D3MCPU\", \"ram\": \"$D3MRAM\", \"shared_storage_root\": \"$D3MOUTPUTDIR\"}"
+        export CONFIG_JSON="{\"temp_storage_root\": \"$D3MOUTPUTDIR/supporting_files\", \"pipeline_logs_root\": \"$D3MOUTPUTDIR/pipelines_ranked\", \"executables_root\": \"$D3MOUTPUTDIR/executables\", \"timeout\": \"$D3MTIMEOUT\", \"cpus\": \"$D3MCPU\", \"ram\": \"$D3MRAM\", \"shared_storage_root\": \"$D3MOUTPUTDIR\"}"
         exec ta2_serve 45042
     ;;
     ta2)
         unset CONFIG_JSON_PATH
         unset JSON_CONFIG
-        export CONFIG_JSON="{\"temp_storage_root\": \"$D3MOUTPUTDIR/supporting_files\", \"pipeline_logs_root\": \"$D3MOUTPUTDIR/pipelines\", \"executables_root\": \"$D3MOUTPUTDIR/executables\", \"timeout\": \"$D3MTIMEOUT\", \"cpus\": \"$D3MCPU\", \"ram\": \"$D3MRAM\", \"shared_storage_root\": \"$D3MOUTPUTDIR\"}"
+        export CONFIG_JSON="{\"temp_storage_root\": \"$D3MOUTPUTDIR/supporting_files\", \"pipeline_logs_root\": \"$D3MOUTPUTDIR/pipelines_ranked\", \"executables_root\": \"$D3MOUTPUTDIR/executables\", \"timeout\": \"$D3MTIMEOUT\", \"cpus\": \"$D3MCPU\", \"ram\": \"$D3MRAM\", \"shared_storage_root\": \"$D3MOUTPUTDIR\"}"
         exec ta2_serve 45042
     ;;
     *)

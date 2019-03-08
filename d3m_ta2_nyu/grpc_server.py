@@ -258,7 +258,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             raise error(context, grpc.StatusCode.UNIMPLEMENTED,
                         "Currently, you can only score on the search dataset")
         # TODO: Get already computed results
-        job_id = self._ta2.score_pipeline(pipeline_id, metrics, None)
+        #job_id = self._ta2.score_pipeline(pipeline_id, metrics, None)
+        job_id = self._ta2.score_pipeline(pipeline_id, metrics, dataset, None)
         self._requests[job_id] = PersistentQueue()
 
         return pb_core.ScoreSolutionResponse(
@@ -453,7 +454,7 @@ class CoreService(pb_core_grpc.CoreServicer):
     def SolutionExport(self, request, context):
         """Export a trained pipeline as an executable.
         """
-        pipeline_id = UUID(hex=request.fitted_solution_id)
+        pipeline_id = UUID(hex=request.solution_id)
         session_id = None
         for session_key in self._ta2.sessions:
             session = self._ta2.sessions[session_key]
@@ -463,16 +464,16 @@ class CoreService(pb_core_grpc.CoreServicer):
                     break
         if session_id is None:
             raise error(context, grpc.StatusCode.NOT_FOUND,
-                        "Unknown solution ID %r", request.fitted_solution_id)
+                        "Unknown solution ID %r", request.solution_id)
         session = self._ta2.sessions[session_id]
         rank = request.rank
-        if rank <= 0.0:
+        if rank < 0.0:
             rank = None
         pipeline = self._ta2.get_workflow(pipeline_id)
-        if not pipeline.trained:
+        '''if not pipeline.trained:
             raise error(context, grpc.StatusCode.NOT_FOUND,
                         "Solution not fitted: %r",
-                        request.fitted_solution_id)
+                        request.solution_id)'''
         self._ta2.write_executable(pipeline)
         session.write_exported_pipeline(pipeline_id,
                                         self._ta2.pipelines_exported_root,

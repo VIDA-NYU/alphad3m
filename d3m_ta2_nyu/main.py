@@ -42,7 +42,7 @@ def main_search():
             timeout = int(timeout) * 60  # Minutes
         if 'D3MOUTPUTDIR' in os.environ:
             pipeline_considered = os.path.join(os.environ['D3MOUTPUTDIR'],
-                                               'pipelines_considered')
+                                               'pipelines_searched')
         else:
             pipeline_considered = None
         logger.info("Config loaded: %r, timeout: %r s", config, timeout)
@@ -91,7 +91,7 @@ def main_serve():
 
         if 'D3MOUTPUTDIR' in os.environ:
             pipeline_considered = os.path.join(os.environ['D3MOUTPUTDIR'],
-                                               'pipelines_considered')
+                                               'pipelines_searched')
         else:
             pipeline_considered = None
 

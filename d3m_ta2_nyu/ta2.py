@@ -57,6 +57,7 @@ class Session(Observable):
         self.id = uuid.uuid4()
         self._ta2 = ta2
         self._considered_pipelines_dir = considered_pipelines_dir
+        self._scored_pipelines_dir = considered_pipelines_dir.replace('searched', 'scored')
         self.DBSession = DBSession
         self.problem = problem
         self.metrics = []
@@ -148,7 +149,7 @@ class Session(Observable):
         elif event == 'scoring_success' or event == 'scoring_error':
             if kwargs['pipeline_id'] in self.pipelines_scoring:
                 self.notify(event, **kwargs)
-                self.pipeline_scoring_done(kwargs['pipeline_id'])
+                self.pipeline_scoring_done(kwargs['pipeline_id'], event)
 
     def tune_when_ready(self, tune=None):
         if tune is None:
@@ -164,10 +165,12 @@ class Session(Observable):
             self.pipelines_scoring.add(pipeline_id)
             self.write_considered_pipeline(pipeline_id)
 
-    def pipeline_scoring_done(self, pipeline_id):
+    def pipeline_scoring_done(self, pipeline_id, event=None):
         with self.lock:
             self.pipelines_scoring.discard(pipeline_id)
             self.check_status()
+            if event == 'scoring_success':
+                self.write_scored_pipeline(pipeline_id)
 
     def pipeline_tuning_done(self, old_pipeline_id, new_pipeline_id=None):
         with self.lock:
@@ -291,6 +294,31 @@ class Session(Observable):
                            pipeline_id, pipeline.origin)
 
             filename = os.path.join(self._considered_pipelines_dir,
+                                    '%s.json' % pipeline_id)
+            obj = to_d3m_json(pipeline)
+            with open(filename, 'w') as fp:
+                json.dump(obj, fp, indent=2)
+        except Exception:
+            logger.exception("Error writing considered pipeline for %s",
+                             pipeline_id)
+        finally:
+            db.close()
+
+    def write_scored_pipeline(self, pipeline_id):
+        if not self._scored_pipelines_dir:
+            logger.info("Not writing log file")
+            return
+
+        db = self.DBSession()
+        try:
+            # Get pipeline
+            pipeline = db.query(database.Pipeline).get(pipeline_id)
+
+            logger.warning("Writing considered_pipeline JSON for pipeline %s "
+                           "origin=%s",
+                           pipeline_id, pipeline.origin)
+
+            filename = os.path.join(self._scored_pipelines_dir,
                                     '%s.json' % pipeline_id)
             obj = to_d3m_json(pipeline)
             with open(filename, 'w') as fp:
@@ -590,6 +618,8 @@ class D3mTa2(Observable):
                 os.path.abspath(pipelines_considered_root)
             if not os.path.exists(self.pipelines_considered_root):
                 os.makedirs(self.pipelines_considered_root)
+            if not os.path.exists(self.pipelines_considered_root.replace("searched","scored")):
+                os.makedirs(self.pipelines_considered_root.replace("searched","scored"))
         else:
             self.pipelines_considered_root = None
 
@@ -599,6 +629,7 @@ class D3mTa2(Observable):
                 os.makedirs(self.executables_root)
         else:
             self.executables_root = None
+
 
         self.db_filename = os.path.join(self.storage, 'db.sqlite3')
 
@@ -857,8 +888,13 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
-    def score_pipeline(self, pipeline_id, metrics):
+    def score_pipeline(self, pipeline_id, metrics, dataset, problem):
         # TODO: pass dataset/problem?
+        for session_id in self.sessions.keys():
+            if pipeline_id in self.sessions[session_id].pipelines:
+                problem = self.sessions[session_id].problem
+                break
+
         job = ScoreJob(self, pipeline_id, dataset, metrics, problem)
         self._run_queue.put(job)
         return id(job)
@@ -905,7 +941,7 @@ class D3mTa2(Observable):
         template_name = task
         if 'TA2_DEBUG_BE_FAST' in os.environ:
             template_name = 'DEBUG_' + task
-        for template in []:#self.TEMPLATES.get(template_name, []):
+        for template in self.TEMPLATES.get(template_name, []):
             logger.info("Creating pipeline from %r", template)
             if isinstance(template, (list, tuple)):
                 func, args = template[0], template[1:]
@@ -1048,6 +1084,7 @@ class D3mTa2(Observable):
         session.add_scoring_pipeline(pipeline_id)
 
         logger.info("Created pipeline %s", pipeline_id)
+
         self._run_queue.put(ScoreJob(self, pipeline_id, dataset,
                                      session.metrics, session.problem))
         session.notify('new_pipeline', pipeline_id=pipeline_id)
