@@ -20,9 +20,9 @@ With Docker, you can use the ``docker.sh`` script. Don't forget to update the pa
 ::
 
     # Train
-    ./docker.sh search seed_datasets_current/185_baseball/TRAIN ta2-test:latest
+    ./docker.sh search seed_datasets_current/185_baseball/TRAIN ta2:latest
     # Run all test executables
-    ./docker.sh test seed_datasets_current/185_baseball/TEST ta2-test:latest
+    ./docker.sh test seed_datasets_current/185_baseball/TEST ta2:latest
 
 Updating dependencies
 ---------------------

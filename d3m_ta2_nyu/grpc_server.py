@@ -470,14 +470,9 @@ class CoreService(pb_core_grpc.CoreServicer):
         if rank < 0.0:
             rank = None
         pipeline = self._ta2.get_workflow(pipeline_id)
-        '''if not pipeline.trained:
-            raise error(context, grpc.StatusCode.NOT_FOUND,
-                        "Solution not fitted: %r",
-                        request.solution_id)'''
+
         self._ta2.write_executable(pipeline)
-        session.write_exported_pipeline(pipeline_id,
-                                        self._ta2.pipelines_exported_root,
-                                        rank)
+        session.write_exported_pipeline(pipeline_id, rank)
         return pb_core.SolutionExportResponse()
 
     def Hello(self, request, context):

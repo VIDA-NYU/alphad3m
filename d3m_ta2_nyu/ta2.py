@@ -52,14 +52,15 @@ class Session(Observable):
 
     This corresponds to a search in which pipelines are created.
     """
-    def __init__(self, ta2, considered_pipelines_dir, problem, DBSession):
+    def __init__(self, ta2, problem, DBSession, searched_pipelines_dir, scored_pipelines_dir, ranked_pipelines_dir):
         Observable.__init__(self)
         self.id = uuid.uuid4()
         self._ta2 = ta2
-        self._considered_pipelines_dir = considered_pipelines_dir
-        self._scored_pipelines_dir = considered_pipelines_dir.replace('searched', 'scored')
-        self.DBSession = DBSession
         self.problem = problem
+        self.DBSession = DBSession
+        self._searched_pipelines_dir = searched_pipelines_dir
+        self._scored_pipelines_dir = scored_pipelines_dir
+        self._ranked_pipelines_dir = ranked_pipelines_dir
         self.metrics = []
 
         self._observer = self._ta2.add_observer(self._ta2_event)
@@ -163,7 +164,7 @@ class Session(Observable):
             self.working = True
             self.pipelines.add(pipeline_id)
             self.pipelines_scoring.add(pipeline_id)
-            self.write_considered_pipeline(pipeline_id)
+            self.write_searched_pipeline(pipeline_id)
 
     def pipeline_scoring_done(self, pipeline_id, event=None):
         with self.lock:
@@ -179,7 +180,7 @@ class Session(Observable):
             if new_pipeline_id is not None:
                 self.pipelines.add(new_pipeline_id)
                 self.tuned_pipelines.add(new_pipeline_id)
-                self.write_considered_pipeline(new_pipeline_id)
+                #self.write_searched_pipeline(new_pipeline_id)  # I'm not sure it should be here.
             self.check_status()
 
     @property
@@ -279,8 +280,8 @@ class Session(Observable):
 
             db.close()
 
-    def write_considered_pipeline(self, pipeline_id):
-        if not self._considered_pipelines_dir:
+    def write_searched_pipeline(self, pipeline_id):
+        if not self._searched_pipelines_dir:
             logger.info("Not writing log file")
             return
 
@@ -289,17 +290,17 @@ class Session(Observable):
             # Get pipeline
             pipeline = db.query(database.Pipeline).get(pipeline_id)
 
-            logger.warning("Writing considered_pipeline JSON for pipeline %s "
+            logger.warning("Writing searched_pipeline JSON for pipeline %s "
                            "origin=%s",
                            pipeline_id, pipeline.origin)
 
-            filename = os.path.join(self._considered_pipelines_dir,
+            filename = os.path.join(self._searched_pipelines_dir,
                                     '%s.json' % pipeline_id)
             obj = to_d3m_json(pipeline)
             with open(filename, 'w') as fp:
                 json.dump(obj, fp, indent=2)
         except Exception:
-            logger.exception("Error writing considered pipeline for %s",
+            logger.exception("Error writing searched_pipeline for %s",
                              pipeline_id)
         finally:
             db.close()
@@ -314,7 +315,7 @@ class Session(Observable):
             # Get pipeline
             pipeline = db.query(database.Pipeline).get(pipeline_id)
 
-            logger.warning("Writing considered_pipeline JSON for pipeline %s "
+            logger.warning("Writing scored_pipeline JSON for pipeline %s "
                            "origin=%s",
                            pipeline_id, pipeline.origin)
 
@@ -324,12 +325,12 @@ class Session(Observable):
             with open(filename, 'w') as fp:
                 json.dump(obj, fp, indent=2)
         except Exception:
-            logger.exception("Error writing considered pipeline for %s",
+            logger.exception("Error writing scored_pipeline for %s",
                              pipeline_id)
         finally:
             db.close()
 
-    def write_exported_pipeline(self, pipeline_id, directory, rank=None):
+    def write_exported_pipeline(self, pipeline_id, rank=None):
         metric = self.metrics[0]
 
         db = self.DBSession()
@@ -371,7 +372,7 @@ class Session(Observable):
                                "provided rank %s. origin=%s",
                                pipeline_id, rank, pipeline.origin)
 
-            filename = os.path.join(directory, '%s.json' % pipeline_id)
+            filename = os.path.join(self._ranked_pipelines_dir, '%s.json' % pipeline_id)
             obj = to_d3m_json(pipeline)
             obj['pipeline_rank'] = rank
             with open(filename, 'w') as fp:
@@ -580,8 +581,8 @@ class ThreadPoolExecutor(futures.ThreadPoolExecutor):
 
 
 class D3mTa2(Observable):
-    def __init__(self, storage_root, shared_root=None,
-                 pipelines_exported_root=None, pipelines_considered_root=None,
+    def __init__(self, storage_root, pipelines_root=None,
+                 predictions_root=None,
                  executables_root=None):
         Observable.__init__(self)
         if 'TA2_DEBUG_BE_FAST' in os.environ:
@@ -593,52 +594,38 @@ class D3mTa2(Observable):
                            "T ***")
             logger.warning("**************************************************"
                            "*****")
-        self.storage = os.path.abspath(storage_root)
-        if not os.path.exists(self.storage):
-            os.makedirs(self.storage)
+        self.storage_root = storage_root
+        self.pipelines_root = pipelines_root
+        self.predictions_root = predictions_root
+        self.executables_root = executables_root
+        self.searched_pipelines = None
+        self.scored_pipelines = None
+        self.ranked_pipelines = None
 
-        if shared_root is not None:
-            self.predictions_root = os.path.join(shared_root,
-                                                 'tmp_predictions')
-            if not os.path.exists(self.predictions_root):
-                os.makedirs(self.predictions_root)
-        else:
-            self.predictions_root = None
+        self.create_outputfolders(self.storage_root)
 
-        if pipelines_exported_root is not None:
-            self.pipelines_exported_root = \
-                os.path.abspath(pipelines_exported_root)
-            if not os.path.exists(self.pipelines_exported_root):
-                os.makedirs(self.pipelines_exported_root)
-        else:
-            self.pipelines_exported_root = None
+        if self.pipelines_root is not None:
+            self.create_outputfolders(self.pipelines_root)
+            self.searched_pipelines = os.path.join(self.pipelines_root, 'pipelines_searched')
+            self.scored_pipelines = os.path.join(self.pipelines_root, 'pipelines_scored')
+            self.ranked_pipelines = os.path.join(self.pipelines_root, 'pipelines_ranked')
+            self.create_outputfolders(self.searched_pipelines)
+            self.create_outputfolders(self.scored_pipelines)
+            self.create_outputfolders(self.ranked_pipelines)
 
-        if pipelines_considered_root is not None:
-            self.pipelines_considered_root = \
-                os.path.abspath(pipelines_considered_root)
-            if not os.path.exists(self.pipelines_considered_root):
-                os.makedirs(self.pipelines_considered_root)
-            if not os.path.exists(self.pipelines_considered_root.replace("searched","scored")):
-                os.makedirs(self.pipelines_considered_root.replace("searched","scored"))
-        else:
-            self.pipelines_considered_root = None
+        if self.predictions_root is not None:
+            self.create_outputfolders(self.predictions_root)
 
-        if executables_root:
-            self.executables_root = os.path.abspath(executables_root)
-            if not os.path.exists(self.executables_root):
-                os.makedirs(self.executables_root)
-        else:
-            self.executables_root = None
+        if self.executables_root is not None:
+            self.create_outputfolders(self.executables_root)
 
+        self.db_filename = os.path.join(self.storage_root, 'db.sqlite3')
 
-        self.db_filename = os.path.join(self.storage, 'db.sqlite3')
-
-        logger.info("storage=%r, predictions_root=%r, "
-                    "pipelines_exported_root=%r, pipelines_considered_root=%r, "
+        logger.info("storage_root=%r, pipelines_root=%r, predictions_root=%r, "
                     "executables_root=%r",
-                    self.storage, self.predictions_root,
-                    self.pipelines_exported_root,
-                    self.pipelines_considered_root,
+                    self.storage_root,
+                    self.pipelines_root,
+                    self.predictions_root,
                     self.executables_root)
 
         self.dbengine, self.DBSession = database.connect(self.db_filename)
@@ -646,12 +633,15 @@ class D3mTa2(Observable):
         self.sessions = {}
         self.executor = ThreadPoolExecutor(max_workers=16)
         self._run_queue = Queue()
-        self._run_thread = threading.Thread(
-            target=self._pipeline_running_thread)
+        self._run_thread = threading.Thread(target=self._pipeline_running_thread)
         self._run_thread.setDaemon(True)
         self._run_thread.start()
 
         logger.warning("TA2 started, version=%s", __version__)
+
+    def create_outputfolders(self, folder_path):
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
 
     def run_search(self, dataset, problem_path, timeout=None):
         """Run the search phase: create pipelines and score them.
@@ -671,8 +661,8 @@ class D3mTa2(Observable):
         task = TASKS_FROM_SCHEMA[task]
 
         # Create session
-        session = Session(self, self.pipelines_considered_root, problem,
-                          self.DBSession)
+        session = Session(self, problem, self.DBSession,
+                          self.searched_pipelines, self.scored_pipelines, self.ranked_pipelines)
         logger.info("Dataset: %s, task: %s, metrics: %s",
                     dataset, task, ", ".join(session.metrics))
         self.sessions[session.id] = session
@@ -681,7 +671,9 @@ class D3mTa2(Observable):
             # Save 2 minutes to finish scoring
             timeout = max(timeout - 2 * 60, 0.8 * timeout)
 
+        print('\n>>>>>', timeout)
         # Create pipelines, NO TUNING
+
         with session.with_observer_queue() as queue:
             self.build_pipelines(session.id, task, dataset, session.metrics,
                                  tune=0, timeout=timeout)
@@ -837,8 +829,8 @@ class D3mTa2(Observable):
             time.sleep(60)
 
     def new_session(self, problem):
-        session = Session(self, self.pipelines_considered_root,
-                          problem, self.DBSession)
+        session = Session(self, problem, self.DBSession,
+                          self.searched_pipelines, self.scored_pipelines, self.ranked_pipelines)
         self.sessions[session.id] = session
         return session.id
 
