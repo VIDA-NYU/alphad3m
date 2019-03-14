@@ -257,9 +257,15 @@ class CoreService(pb_core_grpc.CoreServicer):
             # FIXME: Currently scoring only works with dataset in DB
             raise error(context, grpc.StatusCode.UNIMPLEMENTED,
                         "Currently, you can only score on the search dataset")
-        # TODO: Get already computed results
-        #job_id = self._ta2.score_pipeline(pipeline_id, metrics, None)
-        job_id = self._ta2.score_pipeline(pipeline_id, metrics, dataset, None)
+        problem = None
+        for session_id in self._ta2.sessions.keys():
+            if pipeline_id in self._ta2.sessions[session_id].pipelines:
+                problem = self._ta2.sessions[session_id].problem
+                break
+
+        method_eval = 'K_FOLD'
+        #  TODO Send  and use all the parameters from TA3(e.g. evaluation method, training and testing splits, etc.)
+        job_id = self._ta2.score_pipeline(pipeline_id, metrics, dataset, problem, method_eval)
         self._requests[job_id] = PersistentQueue()
 
         return pb_core.ScoreSolutionResponse(

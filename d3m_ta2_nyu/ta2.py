@@ -414,13 +414,14 @@ class Job(object):
 class ScoreJob(Job):
     timeout = 8 * 60
 
-    def __init__(self, ta2, pipeline_id, dataset, metrics, problem):
+    def __init__(self, ta2, pipeline_id, dataset, metrics, problem, method_eval=None):
         Job.__init__(self)
         self.ta2 = ta2
         self.pipeline_id = pipeline_id
         self.dataset = dataset
         self.metrics = metrics
         self.problem = problem
+        self.method_eval = method_eval
 
     def start(self, db_filename, **kwargs):
         self.msg = Receiver()
@@ -429,6 +430,7 @@ class ScoreJob(Job):
                                 dataset=self.dataset,
                                 metrics=self.metrics,
                                 problem=self.problem,
+                                method_eval=self.method_eval,
                                 db_filename=db_filename)
         self.started = time.time()
         self.ta2.notify('scoring_start',
@@ -671,7 +673,6 @@ class D3mTa2(Observable):
             # Save 2 minutes to finish scoring
             timeout = max(timeout - 2 * 60, 0.8 * timeout)
 
-        print('\n>>>>>', timeout)
         # Create pipelines, NO TUNING
 
         with session.with_observer_queue() as queue:
@@ -880,14 +881,8 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
-    def score_pipeline(self, pipeline_id, metrics, dataset, problem):
-        # TODO: pass dataset/problem?
-        for session_id in self.sessions.keys():
-            if pipeline_id in self.sessions[session_id].pipelines:
-                problem = self.sessions[session_id].problem
-                break
-
-        job = ScoreJob(self, pipeline_id, dataset, metrics, problem)
+    def score_pipeline(self, pipeline_id, metrics, dataset, problem, method_eval):
+        job = ScoreJob(self, pipeline_id, dataset, metrics, problem, method_eval)
         self._run_queue.put(job)
         return id(job)
 
@@ -1027,7 +1022,6 @@ class D3mTa2(Observable):
             self._run_queue.put(ScoreJob(self, pipeline_id, dataset,
                                          session.metrics, session.problem))
             session.notify('new_pipeline', pipeline_id=pipeline_id)
-
 
             while True:
                 event, kwargs = queue.get(True)
