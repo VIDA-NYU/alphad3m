@@ -1,61 +1,25 @@
 import logging
+import os
 import pickle
-from sqlalchemy import select
-import sys
-
 from d3m.container import Dataset
-
 from d3m_ta2_nyu.workflow import database
-from d3m_ta2_nyu.workflow.execute import execute_test
-
 
 logger = logging.getLogger(__name__)
 
 
 @database.with_db
-def test(pipeline_id, dataset, targets, results_path, msg_queue, db):
+def test(pipeline_id, dataset, storage_dir, msg_queue, db):
     # Load data
     dataset = Dataset.load(dataset)
     logger.info("Loaded dataset")
 
-    if targets is None:
-        # Load targets from database
-        module = (
-            select([database.PipelineModule.id])
-            .where(database.PipelineModule.pipeline_id == pipeline_id)
-            .where(database.PipelineModule.package == 'data')
-            .where(database.PipelineModule.name == 'dataset')
-        ).as_scalar()
-        targets, = (
-            db.query(database.PipelineParameter.value)
-            .filter(database.PipelineParameter.module_id == module)
-            .filter(database.PipelineParameter.name == 'targets')
-        ).one()
-        targets = pickle.loads(targets)
+    runtime = None
+    with open(os.path.join(storage_dir, 'fitted_solution_%s.pkl' % pipeline_id), 'rb') as fin:
+        runtime = pickle.load(fin)
 
-    # Run prediction
-    try:
-        test_run, outputs = execute_test(
-            db, pipeline_id, dataset)
-    except Exception:
-        logger.exception("Error running testing")
-        sys.exit(1)
+    produce_results = runtime.produce(inputs=[dataset])
+    produce_results.check_success()
 
-    # Get predicted targets
-    predictions = next(iter(outputs.values()))['produce']
-    predictions = predictions.set_index('d3mIndex')
+    print(produce_results.values)
+    # Save 'predictions.csv'?
 
-    assert len(predictions.columns) == len(targets)
-
-    # FIXME: ConstructPredictions doesn't set the right column names
-    # https://gitlab.com/datadrivendiscovery/common-primitives/issues/25
-    predictions.columns = [col_name for resID, col_name in targets]
-
-    # Store predictions
-    if results_path is not None:
-        logger.info("Storing predictions at %s", results_path)
-        predictions.sort_index().to_csv(results_path)
-    else:
-        logger.info("NOT storing predictions")
-
-    db.commit()

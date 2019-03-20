@@ -1,11 +1,15 @@
 import logging
+import json
+import tempfile
 import os
+import pickle
 from sqlalchemy.orm import joinedload
 
 from d3m.container import Dataset
+from d3m.metadata import base as metadata_base
 import d3m.metadata.base
 import d3m.runtime
-
+from d3m.metadata.problem import parse_problem_description
 from d3m_ta2_nyu.workflow import database, convert
 
 
@@ -61,7 +65,7 @@ class CustomRuntime(d3m.runtime.Runtime):
 
 
 @database.with_db
-def train(pipeline_id, dataset, targets, msg_queue, db):
+def train(pipeline_id, dataset, problem, storage_dir, msg_queue, db):
     # Get pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -83,17 +87,27 @@ def train(pipeline_id, dataset, targets, msg_queue, db):
     d3m_pipeline = d3m.metadata.pipeline.Pipeline.from_json_structure(
         convert.to_d3m_json(pipeline),
     )
-    runtime = CustomRuntime(
-        targets=targets,
-        pipeline=d3m_pipeline,
-        is_standard_pipeline=True,
-        volumes_dir=os.environ.get('D3M_PRIMITIVE_STATIC', None),
-        context=d3m.metadata.base.Context.TESTING,
-    )
 
-    runtime.fit(
-        inputs=[dataset],
-        return_values=['outputs.0'],
-    )
+    # Convert problem description to core package format
+    # FIXME: There isn't a way to parse from JSON data, so write it to a file
+    # and read it back
+    tmp = tempfile.NamedTemporaryFile('w', encoding='utf-8',
+                                      suffix='.json', delete=False)
+    try:
+        try:
+            json.dump(problem, tmp)
+        finally:
+            tmp.close()
+        d3m_problem = parse_problem_description(tmp.name)
+    finally:
+        os.remove(tmp.name)
 
-    # TODO: Pickle runtime
+    runtime = d3m.runtime.Runtime(pipeline=d3m_pipeline, problem_description=d3m_problem,
+                                  context=metadata_base.Context.TESTING)
+
+    # Fitting pipeline on input dataset.
+    fit_results = runtime.fit(inputs=[dataset])
+    fit_results.check_success()
+
+    with open(os.path.join(storage_dir, 'fitted_solution_%s.pkl' % pipeline_id), 'wb') as fout:
+        pickle.dump(runtime, fout)

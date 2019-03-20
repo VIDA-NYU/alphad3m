@@ -27,6 +27,7 @@ import d3m_ta2_nyu.proto.primitive_pb2 as pb_primitive
 from d3m_ta2_nyu.utils import PersistentQueue
 import d3m_ta2_nyu.workflow.convert
 
+from ta3ta2_api import utils
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +98,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             dataset = 'file://' + dataset
 
         problem = self._convert_problem(context, request.problem)
+        #problem = utils.decode_problem_description(request.problem)
 
         timeout = request.time_bound
         if timeout < 0.000001:
@@ -106,6 +108,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             timeout = timeout * 60.0  # Minutes to seconds
 
         search_id = self._ta2.new_session(problem)
+
+
 
         session = self._ta2.sessions[search_id]
         task = TASKS_FROM_SCHEMA[session.problem['about']['taskType']]
@@ -348,7 +352,14 @@ class CoreService(pb_core_grpc.CoreServicer):
             # FIXME: Currently training only works with dataset in DB
             raise error(context, grpc.StatusCode.UNIMPLEMENTED,
                         "Currently, you can only train on the search dataset")
-        job_id = self._ta2.train_pipeline(pipeline_id)
+
+        problem = None
+        for session_id in self._ta2.sessions.keys():
+            if pipeline_id in self._ta2.sessions[session_id].pipelines:
+                problem = self._ta2.sessions[session_id].problem
+                break
+
+        job_id = self._ta2.train_pipeline(pipeline_id, dataset, problem)
         self._requests[job_id] = PersistentQueue()
 
         return pb_core.FitSolutionResponse(
@@ -402,7 +413,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         """Run testing from a trained pipeline.
         """
         pipeline_id = UUID(hex=request.fitted_solution_id)
-
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
             raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
@@ -412,18 +422,19 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
 
+
         job_id = self._ta2.test_pipeline(pipeline_id, dataset)
         self._requests[job_id] = PersistentQueue()
 
         return pb_core.ProduceSolutionResponse(
-            request_id=job_id,
+            request_id='%x' % job_id,
         )
 
     def GetProduceSolutionResults(self, request, context):
         """Wait for the requested test run to be done.
         """
         try:
-            job_id = request.request_id
+            job_id = int(request.request_id, 16)
             queue = self._requests[job_id]
         except (ValueError, KeyError):
             raise error(context, grpc.StatusCode.NOT_FOUND,
@@ -509,8 +520,10 @@ class CoreService(pb_core_grpc.CoreServicer):
         for param in pipeline.parameters:
             params.setdefault(param.module_id, {})[param.name] = param.value
         module_to_step = {}
+
         for mod in modules.values():
             self._add_step(steps, step_descriptions, modules, params, module_to_step, mod)
+
 
         return pb_core.DescribeSolutionResponse(
             pipeline=pb_pipeline.PipelineDescription(
@@ -669,12 +682,11 @@ class CoreService(pb_core_grpc.CoreServicer):
             )
         )
 
-        step_descriptions.append(
+        step_descriptions.append(  # FIXME it's empty
             pb_core.StepDescription(
                 primitive=pb_core.PrimitiveStepDescription()
             )
         )
-
         step_nb = 'steps.%d' % len(steps)
         steps.append(step)
         module_to_step[mod.id] = step_nb

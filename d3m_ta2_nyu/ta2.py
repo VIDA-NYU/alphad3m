@@ -464,12 +464,12 @@ class ScoreJob(Job):
 
 
 class TrainJob(Job):
-    def __init__(self, ta2, pipeline_id, dataset, targets):
+    def __init__(self, ta2, pipeline_id, dataset, problem):
         Job.__init__(self)
         self.ta2 = ta2
         self.pipeline_id = pipeline_id
         self.dataset = dataset
-        self.targets = targets
+        self.problem = problem
 
     def start(self, db_filename, **kwargs):
         logger.info("Training pipeline for %s", self.pipeline_id)
@@ -477,7 +477,8 @@ class TrainJob(Job):
         self.proc = run_process('d3m_ta2_nyu.train.train', 'train', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 dataset=self.dataset,
-                                targets=self.targets,
+                                problem=self.problem,
+                                storage_dir=self.ta2.storage_root,
                                 db_filename=db_filename)
         self.ta2.notify('training_start',
                         pipeline_id=self.pipeline_id,
@@ -495,6 +496,42 @@ class TrainJob(Job):
                             job_id=id(self))
         else:
             self.ta2.notify('training_error',
+                            pipeline_id=self.pipeline_id,
+                            job_id=id(self))
+        return True
+
+
+class TestJob(Job):
+    def __init__(self, ta2, pipeline_id, dataset):
+        Job.__init__(self)
+        self.ta2 = ta2
+        self.pipeline_id = pipeline_id
+        self.dataset = dataset
+
+    def start(self, db_filename, **kwargs):
+        logger.info("Testing pipeline for %s", self.pipeline_id)
+        self.msg = Receiver()
+        self.proc = run_process('d3m_ta2_nyu.test.test', 'test', self.msg,
+                                pipeline_id=self.pipeline_id,
+                                dataset=self.dataset,
+                                storage_dir=self.ta2.storage_root,
+                                db_filename=db_filename)
+        self.ta2.notify('testing_start',
+                        pipeline_id=self.pipeline_id,
+                        job_id=id(self))
+
+    def poll(self):
+        if self.proc.poll() is None:
+            return False
+        log = logger.info if self.proc.returncode == 0 else logger.error
+        log("Pipeline testing process done, returned %d (pipeline: %s)",
+            self.proc.returncode, self.pipeline_id)
+        if self.proc.returncode == 0:
+            self.ta2.notify('testing_success',
+                            pipeline_id=self.pipeline_id,
+                            job_id=id(self))
+        else:
+            self.ta2.notify('testing_error',
                             pipeline_id=self.pipeline_id,
                             job_id=id(self))
         return True
@@ -886,9 +923,13 @@ class D3mTa2(Observable):
         self._run_queue.put(job)
         return id(job)
 
-    def train_pipeline(self, pipeline_id):
-        # TODO: pass problem/targets?
-        job = TrainJob(self, pipeline_id)
+    def train_pipeline(self, pipeline_id, dataset, problem):
+        job = TrainJob(self, pipeline_id, dataset, problem)
+        self._run_queue.put(job)
+        return id(job)
+
+    def test_pipeline(self, pipeline_id, dataset):
+        job = TestJob(self, pipeline_id, dataset)
         self._run_queue.put(job)
         return id(job)
 
@@ -1114,42 +1155,6 @@ class D3mTa2(Observable):
         st = os.stat(filename)
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
-
-    def test_pipeline(self, pipeline_id, dataset):
-        # FIXME: Should be a Job
-        job_id = str(uuid.uuid4())
-        self.executor.submit(self._test_pipeline, pipeline_id, dataset, job_id)
-        return job_id
-
-    def _test_pipeline(self, pipeline_id, dataset, job_id):
-        if self.predictions_root is None:
-            logger.error("Can't test pipeline, no predictions_root is set")
-            self.notify('test_error',
-                        pipeline_id=pipeline_id,
-                        job_id=job_id)
-            return
-
-        subdir = os.path.join(self.predictions_root,
-                              'execute-%s' % uuid.uuid4())
-        os.mkdir(subdir)
-        results = os.path.join(subdir, 'predictions.csv')
-        msg_queue = Receiver()
-        # TODO: pass problem/targets?
-        proc = run_process('d3m_ta2_nyu.test.test', 'test', msg_queue,
-                           pipeline_id=pipeline_id,
-                           dataset=dataset,
-                           targets=None,
-                           results_path=results,
-                           db_filename=self.db_filename)
-        ret = proc.wait()
-        if ret == 0:
-            self.notify('test_success',
-                        pipeline_id=pipeline_id, results_path=results,
-                        job_id=job_id)
-        else:
-            self.notify('test_error',
-                        pipeline_id=pipeline_id,
-                        job_id=job_id)
 
     def _classification_template(self, imputer, classifier, dataset,
                                  targets, features):

@@ -23,20 +23,20 @@ TASK_SUBTYPES = {n: v for n, v in pb_problem.TaskSubtype.items()}
 METRICS = {n: v for n, v in pb_problem.PerformanceMetric.items()}
 
 
-def do_search(core, config, problem):
+def do_search(core, problem):
     version = pb_core.DESCRIPTOR.GetOptions().Extensions[
         pb_core.protocol_version]
 
     search = core.SearchSolutions(pb_core.SearchSolutionsRequest(
         user_agent='ta3_stub',
         version=version,
-        time_bound=15.0,
+        time_bound=1.0,
         allowed_value_types=[pb_value.CSV_URI],
         problem=pb_problem.ProblemDescription(
             problem=pb_problem.Problem(
                 id=problem['about']['problemID'],
                 version=problem['about']['problemVersion'],
-                name=os.path.basename(config['problem_root']),
+                name=os.path.basename('/input/problem_TRAIN'),
                 description="",
                 task_type=TASK_TYPES[TASKS_FROM_SCHEMA[
                     problem['about']['taskType']
@@ -100,7 +100,7 @@ def do_search(core, config, problem):
             ],
         ),
         inputs=[pb_value.Value(
-            dataset_uri='file://%s' % config['dataset_schema'],
+            dataset_uri='file://%s' % '/input/TRAIN/dataset_TRAIN/datasetDoc.json',
         )],
     ))
 
@@ -129,13 +129,13 @@ def do_describe(core, solutions):
             logger.exception("Exception during describe %r", solution)
 
 
-def do_score(core, config, problem, solutions):
+def do_score(core, problem, solutions):
     for solution in solutions:
         try:
             response = core.ScoreSolution(pb_core.ScoreSolutionRequest(
                 solution_id=solution,
                 inputs=[pb_value.Value(
-                    dataset_uri='file://%s' % config['dataset_schema'],
+                    dataset_uri='file://%s' % '/input/TRAIN/dataset_TRAIN/datasetDoc.json',
                 )],
                 performance_metrics=[
                     pb_problem.ProblemPerformanceMetric(
@@ -143,11 +143,7 @@ def do_score(core, config, problem, solutions):
                     )
                     for e in problem['inputs']['performanceMetrics']
                 ],
-                users=[pb_core.SolutionRunUser(
-                    id='stub',
-                    choosen=False,
-                    reason="test run",
-                )],
+                users=[],
                 configuration=pb_core.ScoringConfiguration(
                     method=pb_core.K_FOLD,
                     folds=4,
@@ -166,22 +162,18 @@ def do_score(core, config, problem, solutions):
             logger.exception("Exception during scoring %r", solution)
 
 
-def do_train(core, config, solutions):
+def do_train(core, solutions):
     fitted = {}
     for solution in solutions:
         try:
             response = core.FitSolution(pb_core.FitSolutionRequest(
                 solution_id=solution,
                 inputs=[pb_value.Value(
-                    dataset_uri='file://%s' % config['dataset_schema'],
+                    dataset_uri='file://%s' % '/input/TRAIN/dataset_TRAIN/datasetDoc.json',
                 )],
                 expose_outputs=[],
                 expose_value_types=[pb_value.CSV_URI],
-                users=[pb_core.SolutionRunUser(
-                    id='stub',
-                    choosen=False,
-                    reason="train run",
-                )],
+                users=[],
             ))
             results = core.GetFitSolutionResults(
                 pb_core.GetFitSolutionResultsRequest(
@@ -196,21 +188,17 @@ def do_train(core, config, solutions):
     return fitted
 
 
-def do_test(core, config, fitted):
+def do_test(core, fitted):
     for fitted_solution in fitted.values():
         try:
             response = core.ProduceSolution(pb_core.ProduceSolutionRequest(
                 fitted_solution_id=fitted_solution,
                 inputs=[pb_value.Value(
-                    dataset_uri='file://%s' % config['dataset_schema'],
+                    dataset_uri='file://%s' % '/input/TRAIN/dataset_TRAIN/datasetDoc.json',
                 )],
                 expose_outputs=[],
                 expose_value_types=[pb_value.CSV_URI],
-                users=[pb_core.SolutionRunUser(
-                    id='stub',
-                    choosen=False,
-                    reason="test run",
-                )],
+                users=[],
             ))
             results = core.GetProduceSolutionResults(
                 pb_core.GetProduceSolutionResultsRequest(
@@ -244,25 +232,23 @@ def main():
 
     core.Hello(pb_core.HelloRequest())
 
-    with open(sys.argv[1]) as config:
-        config = json.load(config)
-    with open(sys.argv[2]) as problem:
+    with open(sys.argv[1]) as problem:
         problem = json.load(problem)
 
     # Do a search
-    solutions = do_search(core, config, problem)
+    solutions = do_search(core, problem)
 
     # Describe the pipelines
     do_describe(core, solutions)
 
     # Score all found solutions
-    do_score(core, config, problem, solutions)
+    do_score(core, problem, solutions)
 
     # Train all found solutions
-    fitted = do_train(core, config, solutions)
+    fitted = do_train(core, solutions)
 
     # Test all fitted solutions
-    do_test(core, config, fitted)
+    do_test(core, fitted)
 
     # Export all fitted solutions
     do_export(core, fitted)
