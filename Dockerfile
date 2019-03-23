@@ -35,7 +35,7 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
     rm prev_reqs.txt new_reqs.txt
 
 # Install TA2-TA3 API
-RUN pip3 install https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/archive/dist-python/ta3ta2-api-dist-python.zip
+# RUN pip3 install https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/archive/dist-python/ta3ta2-api-dist-python.zip
 
 COPY eval.sh /usr/local/bin/eval.sh
 

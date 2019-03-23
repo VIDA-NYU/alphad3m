@@ -61,8 +61,8 @@ def main_serve():
     if 'D3MOUTPUTDIR' in os.environ:
         pipelines_root = os.environ['D3MOUTPUTDIR']
         storage_root = os.path.join(os.environ['D3MOUTPUTDIR'], 'supporting_files')
-        executables_root = os.path.join(os.environ['D3MOUTPUTDIR'], 'executables')
         predictions_root = os.path.join(os.environ['D3MOUTPUTDIR'], 'predictions')
+        executables_root = os.path.join(os.environ['D3MOUTPUTDIR'], 'executables')
 
     logger.info('Config loaded from environment variables D3MOUTPUTDIR=%r D3MTIMEOUT=%r',
                 os.environ['D3MOUTPUTDIR'], os.environ.get('D3MTIMEOUT'))

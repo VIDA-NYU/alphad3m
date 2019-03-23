@@ -21,8 +21,7 @@ import subprocess
 import sys
 import threading
 import time
-import uuid
-
+from uuid import uuid4, UUID
 from d3m_ta2_nyu import __version__
 from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
     TASKS_FROM_SCHEMA, normalize_score
@@ -54,7 +53,7 @@ class Session(Observable):
     """
     def __init__(self, ta2, problem, DBSession, searched_pipelines_dir, scored_pipelines_dir, ranked_pipelines_dir):
         Observable.__init__(self)
-        self.id = uuid.uuid4()
+        self.id = uuid4()
         self._ta2 = ta2
         self.problem = problem
         self.DBSession = DBSession
@@ -414,14 +413,14 @@ class Job(object):
 class ScoreJob(Job):
     timeout = 8 * 60
 
-    def __init__(self, ta2, pipeline_id, dataset, metrics, problem, method_eval=None):
+    def __init__(self, ta2, pipeline_id, dataset, metrics, problem, scoring_conf=None):
         Job.__init__(self)
         self.ta2 = ta2
         self.pipeline_id = pipeline_id
         self.dataset = dataset
         self.metrics = metrics
         self.problem = problem
-        self.method_eval = method_eval
+        self.scoring_conf = scoring_conf
 
     def start(self, db_filename, **kwargs):
         self.msg = Receiver()
@@ -430,7 +429,7 @@ class ScoreJob(Job):
                                 dataset=self.dataset,
                                 metrics=self.metrics,
                                 problem=self.problem,
-                                method_eval=self.method_eval,
+                                scoring_conf=self.scoring_conf,
                                 db_filename=db_filename)
         self.started = time.time()
         self.ta2.notify('scoring_start',
@@ -515,6 +514,8 @@ class TestJob(Job):
                                 pipeline_id=self.pipeline_id,
                                 dataset=self.dataset,
                                 storage_dir=self.ta2.storage_root,
+                                results_path=os.path.join(self.ta2.predictions_root,
+                                                          'predictions_%s.csv' % UUID(int=id(self))),
                                 db_filename=db_filename)
         self.ta2.notify('testing_start',
                         pipeline_id=self.pipeline_id,
@@ -529,6 +530,8 @@ class TestJob(Job):
         if self.proc.returncode == 0:
             self.ta2.notify('testing_success',
                             pipeline_id=self.pipeline_id,
+                            results_path=os.path.join(self.ta2.predictions_root,
+                                                      'predictions_%s.csv' % UUID(int=id(self))),
                             job_id=id(self))
         else:
             self.ta2.notify('testing_error',
@@ -918,8 +921,8 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
-    def score_pipeline(self, pipeline_id, metrics, dataset, problem, method_eval):
-        job = ScoreJob(self, pipeline_id, dataset, metrics, problem, method_eval)
+    def score_pipeline(self, pipeline_id, metrics, dataset, problem, scoring_conf):
+        job = ScoreJob(self, pipeline_id, dataset, metrics, problem, scoring_conf)
         self._run_queue.put(job)
         return id(job)
 
@@ -983,9 +986,9 @@ class D3mTa2(Observable):
                 logger.exception("Error building pipeline from %r",
                                  template)
 
-        if 'TA2_DEBUG_BE_FAST' not in os.environ:
-            self._build_pipelines_from_generator(session, task, dataset,
-                                                 metrics, timeout)
+        #if 'TA2_DEBUG_BE_FAST' not in os.environ:
+        #self._build_pipelines_from_generator(session, task, dataset,
+        #                                         metrics, timeout)
 
         session.tune_when_ready(tune)
 
@@ -1314,19 +1317,19 @@ class D3mTa2(Observable):
             ['d3m.primitives.data_cleaning.imputer.SKlearn'],
             # Classifier
             [
-                'd3m.primitives.classification.random_forest.SKlearn',
-                'd3m.primitives.classification.k_neighbors.SKlearn',
-                'd3m.primitives.classification.bayesian_logistic_regression.Common',
-                'd3m.primitives.classification.bernoulli_naive_bayes.SKlearn',
-                'd3m.primitives.classification.decision_tree.SKlearn',
-                'd3m.primitives.classification.gaussian_naive_bayes.SKlearn',
-                'd3m.primitives.classification.gradient_boosting.SKlearn',
+                #'d3m.primitives.classification.random_forest.SKlearn',
+                #'d3m.primitives.classification.k_neighbors.SKlearn',
+                #'d3m.primitives.classification.bayesian_logistic_regression.Common',
+                #'d3m.primitives.classification.bernoulli_naive_bayes.SKlearn',
+                #'d3m.primitives.classification.decision_tree.SKlearn',
+                #'d3m.primitives.classification.gaussian_naive_bayes.SKlearn',
+                #'d3m.primitives.classification.gradient_boosting.SKlearn',
                 'd3m.primitives.classification.linear_svc.SKlearn',
-                'd3m.primitives.classification.logistic_regression.SKlearn',
-                'd3m.primitives.classification.multinomial_naive_bayes.SKlearn',
-                'd3m.primitives.classification.passive_aggressive.SKlearn',
-                'd3m.primitives.classification.random_forest.DataFrameCommon',
-                'd3m.primitives.classification.sgd.SKlearn',
+                #'d3m.primitives.classification.logistic_regression.SKlearn',
+                #'d3m.primitives.classification.multinomial_naive_bayes.SKlearn',
+                #'d3m.primitives.classification.passive_aggressive.SKlearn',
+                #'d3m.primitives.classification.random_forest.DataFrameCommon',
+                #'d3m.primitives.classification.sgd.SKlearn',
             ],
         )),
         'DEBUG_CLASSIFICATION': list(itertools.product(

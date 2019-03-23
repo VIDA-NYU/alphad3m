@@ -31,15 +31,9 @@ with pkg_resources.resource_stream(
     scoring = Pipeline.from_yaml(fp)
 
 
-def cross_validation(pipeline, dataset, metrics, problem,
-                     folds, stratified=None, shuffle=None):
-    if stratified is not None or shuffle is not None:
-        # TODO: Data preparation arguments
-        raise NotImplementedError
+def cross_validation(pipeline, dataset, metrics, problem, scoring_conf):
 
-    d3m_pipeline = d3m.metadata.pipeline.Pipeline.from_json_structure(
-        convert.to_d3m_json(pipeline),
-    )
+    d3m_pipeline = d3m.metadata.pipeline.Pipeline.from_json_structure(convert.to_d3m_json(pipeline),)
 
     # Convert problem description to core package format
     # FIXME: There isn't a way to parse from JSON data, so write it to a file
@@ -55,13 +49,15 @@ def cross_validation(pipeline, dataset, metrics, problem,
     finally:
         os.remove(tmp.name)
 
+    scoring_conf['number_of_folds'] = scoring_conf.pop('folds')
+
     results = d3m.runtime.evaluate(
         pipeline=d3m_pipeline,
         data_pipeline=kfold_tabular_split,
         scoring_pipeline=scoring,
         problem_description=d3m_problem,
         inputs=[dataset],
-        data_params={'number_of_folds': str(folds)},
+        data_params=scoring_conf,
         metrics=[
             {'metric': d3m.metadata.problem.PerformanceMetric[metric]}
             for metric in metrics
@@ -77,15 +73,8 @@ def cross_validation(pipeline, dataset, metrics, problem,
             for _, s in scores.iterrows()}
 
 
-def holdout(pipeline, dataset, metrics, problem, stratified=None, shuffle=None):
-    if stratified is not None or shuffle is not None:
-        # TODO: Data preparation arguments
-        raise NotImplementedError
-
-    d3m_pipeline = d3m.metadata.pipeline.Pipeline.from_json_structure(
-        convert.to_d3m_json(pipeline),
-    )
-
+def holdout(pipeline, dataset, metrics, problem, scoring_conf):
+    d3m_pipeline = d3m.metadata.pipeline.Pipeline.from_json_structure(convert.to_d3m_json(pipeline),)
     # Convert problem description to core package format
     # FIXME: There isn't a way to parse from JSON data, so write it to a file
     # and read it back
@@ -106,7 +95,7 @@ def holdout(pipeline, dataset, metrics, problem, stratified=None, shuffle=None):
         scoring_pipeline=scoring,
         problem_description=d3m_problem,
         inputs=[dataset],
-        data_params={},
+        data_params=scoring_conf,
         metrics=[
             {'metric': d3m.metadata.problem.PerformanceMetric[metric]}
             for metric in metrics

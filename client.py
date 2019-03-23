@@ -145,10 +145,11 @@ def do_score(core, problem, solutions):
                 ],
                 users=[],
                 configuration=pb_core.ScoringConfiguration(
-                    method=pb_core.K_FOLD,
+                    method=pb_core.EvaluationMethod.Value('K_FOLD'),
                     folds=4,
                     train_test_ratio=0.75,
                     shuffle=True,
+                    random_seed=42
                 ),
             ))
             results = core.GetScoreSolutionResults(
@@ -215,7 +216,7 @@ def do_export(core, fitted):
     for i, fitted_solution in enumerate(fitted.values()):
         try:
             core.SolutionExport(pb_core.SolutionExportRequest(
-                fitted_solution_id=fitted_solution,
+                solution_id=fitted_solution,
                 rank=(i + 1.0) / (len(fitted) + 1.0),
             ))
         except Exception:

@@ -27,8 +27,6 @@ import d3m_ta2_nyu.proto.primitive_pb2 as pb_primitive
 from d3m_ta2_nyu.utils import PersistentQueue
 import d3m_ta2_nyu.workflow.convert
 
-from ta3ta2_api import utils
-
 logger = logging.getLogger(__name__)
 
 
@@ -267,9 +265,18 @@ class CoreService(pb_core_grpc.CoreServicer):
                 problem = self._ta2.sessions[session_id].problem
                 break
 
-        method_eval = 'K_FOLD'
-        #  TODO Send  and use all the parameters from TA3(e.g. evaluation method, training and testing splits, etc.)
-        job_id = self._ta2.score_pipeline(pipeline_id, metrics, dataset, problem, method_eval)
+        #  TODO Improve how to cast request.configuration to dict
+        scoring_conf = {
+                        'method': request.configuration.method,
+                        'train_test_ratio': request.configuration.train_test_ratio,
+                        'random_seed': request.configuration.random_seed,
+                        'shuffle': str(request.configuration.shuffle).lower(),
+                        'stratified': str(request.configuration.stratified).lower()
+                        }
+        if scoring_conf['method'] == pb_core.EvaluationMethod.Value('K_FOLD'):
+            scoring_conf['folds'] = str(request.configuration.folds)
+
+        job_id = self._ta2.score_pipeline(pipeline_id, metrics, dataset, problem, scoring_conf)
         self._requests[job_id] = PersistentQueue()
 
         return pb_core.ScoreSolutionResponse(
@@ -445,7 +452,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 logger.info("Client closed GetProduceSolutionResults "
                             "stream")
                 break
-            if event == 'test_success':
+            if event == 'testing_success':
                 yield pb_core.GetProduceSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.COMPLETED,
@@ -459,7 +466,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     },
                 )
                 break
-            elif event == 'test_error':
+            elif event == 'testing_error':
                 yield pb_core.GetProduceSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.ERRORED,

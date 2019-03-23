@@ -8,10 +8,10 @@ logger = logging.getLogger(__name__)
 
 
 @database.with_db
-def test(pipeline_id, dataset, storage_dir, msg_queue, db):
+def test(pipeline_id, dataset, storage_dir, results_path, msg_queue, db):
     # Load data
     dataset = Dataset.load(dataset)
-    logger.info("Loaded dataset")
+    logger.info('Loaded dataset')
 
     runtime = None
     with open(os.path.join(storage_dir, 'fitted_solution_%s.pkl' % pipeline_id), 'rb') as fin:
@@ -20,6 +20,8 @@ def test(pipeline_id, dataset, storage_dir, msg_queue, db):
     produce_results = runtime.produce(inputs=[dataset])
     produce_results.check_success()
 
-    print(produce_results.values)
-    # Save 'predictions.csv'?
-
+    if results_path is not None:
+        logger.info('Storing predictions at %s', results_path)
+        produce_results.values['outputs.0'].sort_values(by=['d3mIndex']).to_csv(results_path, index=False)
+    else:
+        logger.info('NOT storing predictions')
