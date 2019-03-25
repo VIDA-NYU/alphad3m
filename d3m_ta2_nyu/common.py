@@ -65,7 +65,7 @@ SCORES_FROM_SCHEMA = {
     'normalizedMutualInformation': 'NORMALIZED_MUTUAL_INFORMATION',
     'jaccardSimilarityScore': 'JACCARD_SIMILARITY_SCORE',
     'objectDetectionAP': 'OBJECT_DETECTION_AP'
-    # 'precisionAtTopK': None,
+    # 'precisionAtTopK': 'PRECISION_AT_TOP_K',
 }
 
 SCORES_TO_SCHEMA = {v: k for k, v in SCORES_FROM_SCHEMA.items()}

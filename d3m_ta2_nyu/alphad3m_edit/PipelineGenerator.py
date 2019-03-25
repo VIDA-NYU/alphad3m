@@ -252,7 +252,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         data_types.append(data_res['resType'])
 
     unsupported_problems = ['TIME_SERIES_FORECASTING', 'COLLABORATIVE_FILTERING', 'OBJECT_DETECTION']
-    print('>>>>>>', task, data_types)
+
     if task in unsupported_problems:
         logger.error('%s Not Supported', task)
         sys.exit(148)
@@ -305,7 +305,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         input['GRAMMAR'] = GRAMMAR
         input['PROBLEM'] = task
         input['DATA_TYPE'] = 'TABULAR'
-        input['METRIC'] = metrics[0]
+        input['METRIC'] = metrics[0]['metric']
         input['DATASET_METAFEATURES'] = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
         input['DATASET'] = datasetDoc['about']['datasetName']
         input['ARGS']['stepsfile'] = os.path.join('/output', input['DATASET']+'_pipeline_steps.txt')

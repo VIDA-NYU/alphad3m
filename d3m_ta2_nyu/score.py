@@ -20,6 +20,7 @@ def score(pipeline_id, dataset, metrics, problem, scoring_conf, msg_queue, db):
         evaluation_method = None
     else:
         evaluation_method = scoring_conf['method']
+
     # Get pipeline from database
     pipeline = (
         db.query(database.Pipeline)

@@ -11,7 +11,7 @@ LOCAL_OUTPUT_ROOT="/Users/rlopez/D3M/tmp"
 set -eu
 
 OPTS=""
-TIMEOUT=10
+TIMEOUT=5
 while true; do
     if [ "$1" = "fast" ]; then
         OPTS="$OPTS -e TA2_DEBUG_BE_FAST=1"
@@ -54,8 +54,6 @@ docker run -ti --rm \
     -e D3MRAM=4Gi \
     -e D3MTIMEOUT=$TIMEOUT \
     $OPTS \
-    -v "$PWD/d3m_ta2_nyu:/usr/src/app/d3m_ta2_nyu" \
-    -v "$PWD/client.py:/usr/src/app/client.py" \
     -v "$PWD/eval.sh:/usr/local/bin/eval.sh"\
     -v "$LOCAL_DATA_ROOT/${INPUT}:/input" \
     -v "$LOCAL_OUTPUT_ROOT:/output" \

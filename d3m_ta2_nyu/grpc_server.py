@@ -27,6 +27,7 @@ import d3m_ta2_nyu.proto.primitive_pb2 as pb_primitive
 from d3m_ta2_nyu.utils import PersistentQueue
 import d3m_ta2_nyu.workflow.convert
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -96,7 +97,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             dataset = 'file://' + dataset
 
         problem = self._convert_problem(context, request.problem)
-        #problem = utils.decode_problem_description(request.problem)
+        #problem = decode_problem_description(request.problem)
 
         timeout = request.time_bound
         if timeout < 0.000001:
@@ -137,8 +138,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             progress = session.progress
 
             if scores:
-                if session.metrics and session.metrics[0] in scores:
-                    metric = session.metrics[0]
+                if session.metrics and session.metrics[0]['metric'] in scores:
+                    metric = session.metrics[0]['metric']
                     internal_score = normalize_score(metric, scores[metric],
                                                      'asc')
                 else:
@@ -570,10 +571,18 @@ class CoreService(pb_core_grpc.CoreServicer):
                            ", ".join(m.metric for m in metrics
                                      if m.metric not in self.grpc2metric))
 
-        metrics = [{'metric': SCORES_TO_SCHEMA[self.grpc2metric[m.metric]]}
-                   for m in metrics
-                   if m.metric in self.grpc2metric]
-        if not metrics:
+        decoded_metrics = []
+        for m in metrics:
+            if m.metric in self.grpc2metric:
+                decoded_metric = {'metric': SCORES_TO_SCHEMA[self.grpc2metric[m.metric]]}
+                if m.pos_label:
+                    decoded_metric['posLabel'] = m.pos_label
+                if m.k:
+                    decoded_metric['K'] = m.k
+
+                decoded_metrics.append(decoded_metric)
+
+        if not decoded_metrics:
             raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
                         "Didn't get any metrics we know")
 
@@ -591,7 +600,7 @@ class CoreService(pb_core_grpc.CoreServicer):
 
             },
             'inputs': {
-                'performanceMetrics': metrics,
+                'performanceMetrics': decoded_metrics,
                 'data': [
                     {
                         'datasetID': i.dataset_id,
