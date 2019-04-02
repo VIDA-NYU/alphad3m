@@ -51,9 +51,29 @@ class D3MPrimitives():
             count += 1
         return primitives_dictionary
 
+    @staticmethod
+    def get_primitives_info():
+        primitives = []
 
+        for primitive_name in D3MPrimitives.INSTALLED_PRIMITIVES:
+            if 'cornell' in primitive_name or 'umich' in primitive_name:  # Primitives from cornell and umich are slow
+                continue
+            try:
+                primitive_obj = index.get_primitive(primitive_name)
+            except:
+                continue
 
+            if hasattr(primitive_obj, 'metadata'):
+                try:
+                    primitive = {
+                        'id': primitive_obj.metadata.query()['id'],
+                        'name': primitive_obj.metadata.query()['name'],
+                        'version': primitive_obj.metadata.query()['version'],
+                        'python_path': primitive_obj.metadata.query()['python_path'],
+                        'digest': primitive_obj.metadata.query()['digest']
+                    }
+                except:
+                    continue
+            primitives.append(primitive)
 
-
-
-
+        return primitives

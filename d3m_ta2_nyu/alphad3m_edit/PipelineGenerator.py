@@ -29,7 +29,7 @@ def setup_logging():
 
     
 def getPrimitives():
-    installed_primitives_file = os.path.join(os.path.dirname(__file__),'installed_primitives.json')
+    installed_primitives_file = os.path.join(os.path.dirname(__file__), 'installed_primitives.json')
     installed_primitives_file_path = Path(installed_primitives_file)
     sklearn_primitives = {}
 

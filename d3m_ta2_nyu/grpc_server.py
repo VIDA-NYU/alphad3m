@@ -16,7 +16,7 @@ from uuid import UUID
 from . import __version__
 
 from d3m_ta2_nyu.common import TASKS_FROM_SCHEMA, \
-    SCORES_TO_SCHEMA, TASKS_TO_SCHEMA, SUBTASKS_TO_SCHEMA, normalize_score
+    SCORES_TO_SCHEMA, SCORES_FROM_SCHEMA, TASKS_TO_SCHEMA, SUBTASKS_TO_SCHEMA, normalize_score
 from d3m_ta2_nyu.grpc_logger import log_service
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
@@ -24,6 +24,7 @@ import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
 import d3m_ta2_nyu.proto.value_pb2 as pb_value
 import d3m_ta2_nyu.proto.pipeline_pb2 as pb_pipeline
 import d3m_ta2_nyu.proto.primitive_pb2 as pb_primitive
+from d3m_ta2_nyu.d3m_primitives import D3MPrimitives
 from d3m_ta2_nyu.utils import PersistentQueue
 import d3m_ta2_nyu.workflow.convert
 
@@ -64,6 +65,8 @@ class CoreService(pb_core_grpc.CoreServicer):
     grpc2tasksubtype = {k: v for v, k in pb_problem.TaskSubtype.items()
                         if k != pb_problem.TASK_TYPE_UNDEFINED}
 
+    installed_primitives = D3MPrimitives.get_primitives_info()
+
     def __init__(self, ta2):
         self._ta2 = ta2
         self._ta2.add_observer(self._ta2_event)
@@ -97,7 +100,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             dataset = 'file://' + dataset
 
         problem = self._convert_problem(context, request.problem)
-        #problem = decode_problem_description(request.problem)
 
         timeout = request.time_bound
         if timeout < 0.000001:
@@ -107,8 +109,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             timeout = timeout * 60.0  # Minutes to seconds
 
         search_id = self._ta2.new_session(problem)
-
-
 
         session = self._ta2.sessions[search_id]
         task = TASKS_FROM_SCHEMA[session.problem['about']['taskType']]
@@ -247,9 +247,18 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
 
-        metrics = [self.grpc2metric[m.metric]
-                   for m in request.performance_metrics
-                   if m.metric in self.grpc2metric]
+        metrics = []
+        for m in request.performance_metrics:
+            if m.metric in self.grpc2metric:
+                decoded_metric = {'metric': self.grpc2metric[m.metric]}
+                if m.pos_label or m.k:
+                    decoded_metric['params'] = {}
+                    if m.pos_label:
+                        decoded_metric['params']['posLabel'] = m.pos_label
+                    if m.k:
+                        decoded_metric['params']['K'] = m.k
+
+                metrics.append(decoded_metric)
 
         logger.info("Got ScoreSolution request, dataset=%s, "
                     "metrics=%s",
@@ -403,6 +412,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         state=pb_core.COMPLETED,
                         status="Training completed",
                     ),
+                    exposed_outputs={'outputs.0': pb_value.Value(csv_uri='file://%s' % kwargs['results_path'])},
                     fitted_solution_id=str(pipeline_id),
                 )
                 break
@@ -429,7 +439,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         if dataset.startswith('/'):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
-
 
         job_id = self._ta2.test_pipeline(pipeline_id, dataset)
         self._requests[job_id] = PersistentQueue()
@@ -501,17 +510,25 @@ class CoreService(pb_core_grpc.CoreServicer):
         return pb_core.SolutionExportResponse()
 
     def Hello(self, request, context):
-        version = pb_core.DESCRIPTOR.GetOptions().Extensions[
-            pb_core.protocol_version]
+        version = pb_core.DESCRIPTOR.GetOptions().Extensions[pb_core.protocol_version]
         user_agent = "nyu_ta2 %s" % __version__
 
         return pb_core.HelloResponse(
             user_agent=user_agent,
-            version=version
+            version=version,
+            allowed_value_types=[pb_value.RAW, pb_value.DATASET_URI, pb_value.CSV_URI],
+            supported_extensions=[]
         )
 
     def ListPrimitives(self, request, context):
-        raise NotImplementedError
+        primitives = []
+
+        for primitive in self.installed_primitives:
+            primitives.append(pb_primitive.Primitive(id=primitive['id'], version=primitive['version'],
+                                                     python_path=primitive['python_path'], name=primitive['name'],
+                                                     digest=None))
+
+        return pb_core.ListPrimitivesResponse(primitives=primitives)
 
     def DescribeSolution(self, request, context):
         pipeline_id = UUID(hex=request.solution_id)
@@ -531,7 +548,6 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         for mod in modules.values():
             self._add_step(steps, step_descriptions, modules, params, module_to_step, mod)
-
 
         return pb_core.DescribeSolutionResponse(
             pipeline=pb_pipeline.PipelineDescription(

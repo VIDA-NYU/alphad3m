@@ -65,7 +65,7 @@ class CustomRuntime(d3m.runtime.Runtime):
 
 
 @database.with_db
-def train(pipeline_id, dataset, problem, storage_dir, msg_queue, db):
+def train(pipeline_id, dataset, problem, storage_dir, results_path, msg_queue, db):
     # Get pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -108,6 +108,12 @@ def train(pipeline_id, dataset, problem, storage_dir, msg_queue, db):
     # Fitting pipeline on input dataset.
     fit_results = runtime.fit(inputs=[dataset])
     fit_results.check_success()
+
+    if results_path is not None:
+        logger.info('Storing fit results at %s', results_path)
+        fit_results.values['outputs.0'].sort_values(by=['d3mIndex']).to_csv(results_path, index=False)
+    else:
+        logger.info('NOT storing fit results')
 
     with open(os.path.join(storage_dir, 'fitted_solution_%s.pkl' % pipeline_id), 'wb') as fout:
         pickle.dump(runtime, fout)

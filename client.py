@@ -23,6 +23,14 @@ TASK_SUBTYPES = {n: v for n, v in pb_problem.TaskSubtype.items()}
 METRICS = {n: v for n, v in pb_problem.PerformanceMetric.items()}
 
 
+def do_hello(core):
+    core.Hello(pb_core.HelloRequest())
+
+
+def do_listprimitives(core):
+    core.ListPrimitives(pb_core.ListPrimitivesRequest())
+
+
 def do_search(core, problem):
     version = pb_core.DESCRIPTOR.GetOptions().Extensions[
         pb_core.protocol_version]
@@ -30,7 +38,7 @@ def do_search(core, problem):
     search = core.SearchSolutions(pb_core.SearchSolutionsRequest(
         user_agent='ta3_stub',
         version=version,
-        time_bound=1.0,
+        time_bound=2.0,
         allowed_value_types=[pb_value.CSV_URI],
         problem=pb_problem.ProblemDescription(
             problem=pb_problem.Problem(
@@ -231,11 +239,14 @@ def main():
     channel = grpc.insecure_channel('localhost:45042')
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
 
-    core.Hello(pb_core.HelloRequest())
-
     with open(sys.argv[1]) as problem:
         problem = json.load(problem)
 
+    # Do a hello
+    do_hello(core)
+
+    # Do a list primitives
+    do_listprimitives(core)
     # Do a search
     solutions = do_search(core, problem)
 

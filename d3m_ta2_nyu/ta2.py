@@ -280,13 +280,23 @@ class Session(Observable):
                 metric = self.metrics[0]['metric']
                 top_pipelines = self.get_top_pipelines(db, metric)
                 logger.warning("Found %d pipelines", len(top_pipelines))
+
                 for i, (pipeline, score) in enumerate(top_pipelines):
                     created = pipeline.created_date - self.start
                     logger.info("    %d) %s %s=%s origin=%s time=%.2fs",
                                 i + 1, pipeline.id, metric, score,
                                 pipeline.origin, created.total_seconds())
 
+                #self.save_pipeline_info(metric, top_pipelines)
+
             db.close()
+
+    def save_pipeline_info(self, metric, top_pipelines):
+        with open('/output/pipeline_info.txt', 'a') as fout:
+            fout.write('%d\n' % len(top_pipelines))
+            fout.write('%s\n' % metric)
+            if len(top_pipelines) > 0:
+                fout.write('%s\n' % top_pipelines[0][1])
 
     def write_searched_pipeline(self, pipeline_id):
         if not self._searched_pipelines_dir:
@@ -487,6 +497,8 @@ class TrainJob(Job):
                                 dataset=self.dataset,
                                 problem=self.problem,
                                 storage_dir=self.ta2.storage_root,
+                                results_path=os.path.join(self.ta2.predictions_root,
+                                                          'fit_%s.csv' % UUID(int=id(self))),
                                 db_filename=db_filename)
         self.ta2.notify('training_start',
                         pipeline_id=self.pipeline_id,
@@ -501,6 +513,8 @@ class TrainJob(Job):
         if self.proc.returncode == 0:
             self.ta2.notify('training_success',
                             pipeline_id=self.pipeline_id,
+                            results_path=os.path.join(self.ta2.predictions_root,
+                                                      'fit_%s.csv' % UUID(int=id(self))),
                             job_id=id(self))
         else:
             self.ta2.notify('training_error',
@@ -1021,6 +1035,7 @@ class D3mTa2(Observable):
         )
 
         start = time.time()
+        start_time = datetime.datetime.now()
         stopped = False
 
         # Now we wait for pipelines to be sent over the pipe
@@ -1049,6 +1064,9 @@ class D3mTa2(Observable):
                 logger.info("Got pipeline %s from generator process",
                             pipeline_id)
                 score = self.run_pipeline(session, dataset, pipeline_id)
+                #if score is not None:
+                #    self.save_time_solution(start_time)
+
                 logger.info("Sending score to generator process")
                 try:  # Fixme, just to avoid Broken pipe error
                     msg_queue.send(score)
@@ -1378,3 +1396,8 @@ class D3mTa2(Observable):
             ],
         )),
     }
+
+    def save_time_solution(self, start_time):
+        end_time = datetime.datetime.now()
+        with open('/output/pipeline_info.txt', 'a') as fout:
+            fout.write('%s\n' % str(end_time - start_time))
