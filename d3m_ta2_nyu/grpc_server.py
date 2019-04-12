@@ -65,7 +65,7 @@ class CoreService(pb_core_grpc.CoreServicer):
     grpc2tasksubtype = {k: v for v, k in pb_problem.TaskSubtype.items()
                         if k != pb_problem.TASK_TYPE_UNDEFINED}
 
-    installed_primitives = D3MPrimitives.get_primitives_info()
+    installed_primitives = []#D3MPrimitives.get_primitives_info()
 
     def __init__(self, ta2):
         self._ta2 = ta2
@@ -89,9 +89,15 @@ class CoreService(pb_core_grpc.CoreServicer):
                         "Search with more than 1 input is not supported")
         expected_version = pb_core.DESCRIPTOR.GetOptions().Extensions[
             pb_core.protocol_version]
+
         if request.version != expected_version:
             logger.error("TA3 is using a different protocol version: %r "
                          "(us: %r)", request.version, expected_version)
+
+        #if request.template is not None and len(request.template.steps) > 0:
+        #    if basic_sol.contains_placeholder() == False:
+        #        pass
+
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
             raise error(context, grpc.StatusCode.INVALID_ARGUMENT,

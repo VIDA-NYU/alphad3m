@@ -30,7 +30,11 @@ with pkg_resources.resource_stream(
 
 
 def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
-    d3m_pipeline = d3m.metadata.pipeline.Pipeline.from_json_structure(convert.to_d3m_json(pipeline), )
+    json_pipeline = convert.to_d3m_json(pipeline)
+    logger.info("Pipeline to be scored:\n%s",
+                '\n'.join([x['primitive']['python_path'] for x in json_pipeline['steps']]))
+
+    d3m_pipeline = d3m.metadata.pipeline.Pipeline.from_json_structure(json_pipeline, )
 
     # Convert problem description to core package format
     # FIXME: There isn't a way to parse from JSON data, so write it to a file
@@ -93,6 +97,8 @@ def _format_metrics(metrics):
             formatted_metric['params'] = {}
             if 'posLabel' in metric['params']:
                 formatted_metric['params']['pos_label'] = metric['params']['posLabel']
+            if 'K' in metric['params']:
+                formatted_metric['params']['k'] = metric['params']['K']
 
         formatted_metrics.append(formatted_metric)
 

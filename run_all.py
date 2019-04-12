@@ -1,34 +1,78 @@
 import os
 import csv
+import json
+import grpc
 import logging
-import subprocess
+import pandas as pd
+import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 from datetime import datetime
 from os.path import dirname, join
+from d3m_ta2_nyu.grpc_logger import LoggingStub
+from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_TO_SKLEARN
+from client import do_search, do_train, do_test
 
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
-PIPELINES_INFO_PATH = '/Users/rlopez/D3M/tmp/pipeline_info.txt'
-DATASETS_PATH = '/Users/rlopez/D3M/datasets/'
+logger = logging.getLogger(__name__)
+
+DATASETS_PATH = '/Users/rlopez/D3M/datasets/seed_datasets_current/'
+D3MINPUTDIR = '/Users/rlopez/D3M/tmp/'
 
 
 def run_all_datasets():
-    statistics_path = join(dirname(__file__), 'run_all_statistics.csv')
-    datasets = [x for x in sorted([x for x in os.listdir(DATASETS_PATH) if not x.startswith('.')]) if x not in {'uu5_heartstatlog', '56_sunspots_monthly'}]
-    datasets = ['185_baseball']
+    channel = grpc.insecure_channel('localhost:45042')
+    core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
+    statistics_path = join(dirname(__file__), 'statistics_datasets.csv')
+    datasets = sorted([x for x in os.listdir(DATASETS_PATH) if os.path.isdir(join(DATASETS_PATH, x))])
     size = len(datasets)
 
     for i, dataset in enumerate(datasets):
-        if os.path.exists(PIPELINES_INFO_PATH):
-            os.remove(PIPELINES_INFO_PATH)
-
-        logging.info('Processing dataset "%s" (%d/%d)' % (dataset, i+1, size))
+        logger.info('Processing dataset "%s" (%d/%d)' % (dataset, i+1, size))
         start_time = datetime.now()
-        command = './docker.sh search seed_datasets_current/%s/TRAIN ta2:latest' % dataset
-        subprocess.run([command], shell=True)
-        end_time = datetime.now()
-        count, metric, value, first_time = get_pipelines_info()
-        row = [dataset, count, metric, value, first_time, str(end_time - start_time)]
+
+        with open(join(DATASETS_PATH, dataset, 'TRAIN/problem_TRAIN/problemDoc.json')) as fin:
+            problem = json.load(fin)
+
+        train_dataset_path = '/input/%s/TRAIN/dataset_TRAIN/datasetDoc.json' % dataset
+        test_dataset_path = '/input/%s/TEST/dataset_TEST/datasetDoc.json' % dataset
+        metric = SCORES_FROM_SCHEMA[problem['inputs']['performanceMetrics'][0]['metric']]
+        best_time, score = 'None', 'None'
+        solutions = do_search(core, problem, train_dataset_path)
+        search_time = str(datetime.now() - start_time)
+        number_solutions = len(solutions)
+
+        if number_solutions > 0:
+            best_time = sorted(solutions.values(), key=lambda x: x[2])[0][2]
+            best_solution = sorted(solutions.items(), key=lambda x: x[1][0])[-1][0]
+            logger.info('Best pipeline: solution_id=%s' % best_solution)
+
+            fitted_solution = do_train(core, [best_solution], train_dataset_path)
+            tested_solution = do_test(core, fitted_solution, test_dataset_path)
+
+            true_file_path = join(DATASETS_PATH, dataset, '%s_dataset/tables/learningData.csv' % dataset)
+            pred_file_path = join(D3MINPUTDIR, 'predictions', os.path.basename(list(tested_solution.values())[0]))
+            labels, predictions = get_ytrue_ypred(true_file_path, pred_file_path)
+            score = calculate_performance(metric, labels, predictions)
+            logger.info('Best pipeline scored: %s=%.2f' % (metric, score))
+
+        row = [dataset, number_solutions, best_time, search_time, score]
         save_row(statistics_path, row)
+
+
+def get_ytrue_ypred(true_file_path, pred_file_path):
+    labels = pd.read_csv(true_file_path)
+    predictions = pd.read_csv(pred_file_path)
+    col_index, col_label = list(predictions.columns)
+    labels = labels[[col_index, col_label]]
+    labels = pd.merge(labels, predictions[[col_index]], on=[col_index], how='inner')
+
+    return labels[col_label].values, predictions[col_label].values
+
+
+def calculate_performance(metric, labels, predictions):
+    score = SCORES_TO_SKLEARN[metric](labels, predictions)
+
+    return score
 
 
 def save_row(file_path, row):
@@ -37,25 +81,7 @@ def save_row(file_path, row):
         writer.writerow(row)
 
 
-def save_file(file_path, text):
-    with open(file_path, 'w') as fout:
-        fout.write(text)
+if __name__ == '__main__':
+    run_all_datasets()
 
 
-def get_pipelines_info():
-    info_list = []
-
-    if not os.path.exists(PIPELINES_INFO_PATH):
-        return ['None', 'None', 'None', 'None']
-
-    with open(PIPELINES_INFO_PATH, 'r') as fin:
-        for line in fin:
-            info_list.append(line.rstrip())
-
-    if len(info_list) >= 4:#found pipelines
-        return info_list[-3:] + [info_list[0]]
-    else:
-        return info_list[-2:] + ['None', 'None']
-
-
-run_all_datasets()

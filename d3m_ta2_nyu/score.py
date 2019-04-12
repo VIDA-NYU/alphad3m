@@ -6,6 +6,7 @@ from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from d3m_ta2_nyu.pipeline_evaluation import cross_validation, holdout
 from d3m_ta2_nyu.workflow import database
+from sklearn.model_selection import train_test_split
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,10 @@ RANDOM_SEED = 65682867
 @database.with_db
 def score(pipeline_id, dataset, metrics, problem, scoring_conf, msg_queue, db):
     if scoring_conf is None:
-        scoring_conf = {}
+        scoring_conf = {'train_test_ratio': '0.75',
+                        'shuffle': 'true',
+                        'stratified': 'true'
+        }
         evaluation_method = None
     else:
         evaluation_method = scoring_conf['method']
@@ -47,6 +51,7 @@ def score(pipeline_id, dataset, metrics, problem, scoring_conf, msg_queue, db):
             logger.info('Sampling down data from %d to %d', len(dataset[res_id]), SAMPLE_SIZE)
             sample = numpy.concatenate([numpy.repeat(True, SAMPLE_SIZE),
                                         numpy.repeat(False, len(dataset[res_id]) - SAMPLE_SIZE)])
+
             numpy.random.RandomState(seed=RANDOM_SEED).shuffle(sample)
             dataset[res_id] = dataset[res_id][sample]
 

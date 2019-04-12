@@ -287,16 +287,7 @@ class Session(Observable):
                                 i + 1, pipeline.id, metric, score,
                                 pipeline.origin, created.total_seconds())
 
-                #self.save_pipeline_info(metric, top_pipelines)
-
             db.close()
-
-    def save_pipeline_info(self, metric, top_pipelines):
-        with open('/output/pipeline_info.txt', 'a') as fout:
-            fout.write('%d\n' % len(top_pipelines))
-            fout.write('%s\n' % metric)
-            if len(top_pipelines) > 0:
-                fout.write('%s\n' % top_pipelines[0][1])
 
     def write_searched_pipeline(self, pipeline_id):
         if not self._searched_pipelines_dir:
@@ -1009,9 +1000,9 @@ class D3mTa2(Observable):
                 logger.exception("Error building pipeline from %r",
                                  template)
 
-        if 'TA2_DEBUG_BE_FAST' not in os.environ:
-            self._build_pipelines_from_generator(session, task, dataset,
-                                                 metrics, timeout)
+        #if 'TA2_DEBUG_BE_FAST' not in os.environ:
+        #    self._build_pipelines_from_generator(session, task, dataset,
+        #                                         metrics, timeout)
 
         session.tune_when_ready(tune)
 
@@ -1064,8 +1055,6 @@ class D3mTa2(Observable):
                 logger.info("Got pipeline %s from generator process",
                             pipeline_id)
                 score = self.run_pipeline(session, dataset, pipeline_id)
-                #if score is not None:
-                #    self.save_time_solution(start_time)
 
                 logger.info("Sending score to generator process")
                 try:  # Fixme, just to avoid Broken pipe error
@@ -1345,18 +1334,18 @@ class D3mTa2(Observable):
             # Classifier
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
-                'd3m.primitives.classification.k_neighbors.SKlearn',
-                'd3m.primitives.classification.bayesian_logistic_regression.Common',
-                'd3m.primitives.classification.bernoulli_naive_bayes.SKlearn',
-                'd3m.primitives.classification.decision_tree.SKlearn',
-                'd3m.primitives.classification.gaussian_naive_bayes.SKlearn',
-                'd3m.primitives.classification.gradient_boosting.SKlearn',
-                'd3m.primitives.classification.linear_svc.SKlearn',
-                'd3m.primitives.classification.logistic_regression.SKlearn',
-                'd3m.primitives.classification.multinomial_naive_bayes.SKlearn',
-                'd3m.primitives.classification.passive_aggressive.SKlearn',
-                'd3m.primitives.classification.random_forest.DataFrameCommon',
-                'd3m.primitives.classification.sgd.SKlearn',
+                #'d3m.primitives.classification.k_neighbors.SKlearn',
+                #'d3m.primitives.classification.bayesian_logistic_regression.Common',
+                #'d3m.primitives.classification.bernoulli_naive_bayes.SKlearn',
+                #'d3m.primitives.classification.decision_tree.SKlearn',
+                #'d3m.primitives.classification.gaussian_naive_bayes.SKlearn',
+                #'d3m.primitives.classification.gradient_boosting.SKlearn',
+                #'d3m.primitives.classification.linear_svc.SKlearn',
+                #'d3m.primitives.classification.logistic_regression.SKlearn',
+                #'d3m.primitives.classification.multinomial_naive_bayes.SKlearn',
+                #'d3m.primitives.classification.passive_aggressive.SKlearn',
+                #'d3m.primitives.classification.random_forest.DataFrameCommon',
+                #'d3m.primitives.classification.sgd.SKlearn',
             ],
         )),
         'DEBUG_CLASSIFICATION': list(itertools.product(
@@ -1396,8 +1385,3 @@ class D3mTa2(Observable):
             ],
         )),
     }
-
-    def save_time_solution(self, start_time):
-        end_time = datetime.datetime.now()
-        with open('/output/pipeline_info.txt', 'a') as fout:
-            fout.write('%s\n' % str(end_time - start_time))

@@ -108,7 +108,7 @@ def getRules(non_terminals, primitives, task):
         terminals = primitives[non_terminal]
 
         for terminal in terminals:
-            rule = non_terminal+'->'+terminal+' ' +non_terminal 
+            rule = non_terminal + '->' + terminal + ' ' + non_terminal
             rules[rule] = count
             count += 1
             rules_lookup[non_terminal].append(rule)
@@ -242,7 +242,6 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    
     dataset_path = os.path.dirname(dataset[7:])
     f = open(os.path.join(dataset_path, 'datasetDoc.json'))
     datasetDoc = json.load(f)
@@ -308,7 +307,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         input['METRIC'] = metrics[0]['metric']
         input['DATASET_METAFEATURES'] = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
         input['DATASET'] = datasetDoc['about']['datasetName']
-        input['ARGS']['stepsfile'] = os.path.join('/output', input['DATASET']+'_pipeline_steps.txt')
+        input['ARGS']['stepsfile'] = os.path.join('/output', input['DATASET'] + '_pipeline_steps.txt')
 
         return input
 

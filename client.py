@@ -1,18 +1,16 @@
-from google.protobuf.timestamp_pb2 import Timestamp
 import grpc
 import json
 import logging
 import os
 import sys
-
+import datetime
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.value_pb2 as pb_value
 import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
 import d3m_ta2_nyu.proto.pipeline_pb2 as pb_pipeline
-
-from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, TASKS_FROM_SCHEMA, \
-    SUBTASKS_FROM_SCHEMA
+from google.protobuf.timestamp_pb2 import Timestamp
+from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, TASKS_FROM_SCHEMA, SUBTASKS_FROM_SCHEMA
 from d3m_ta2_nyu.grpc_logger import LoggingStub
 
 
@@ -31,14 +29,14 @@ def do_listprimitives(core):
     core.ListPrimitives(pb_core.ListPrimitivesRequest())
 
 
-def do_search(core, problem):
+def do_search(core, problem, dataset_path):
     version = pb_core.DESCRIPTOR.GetOptions().Extensions[
         pb_core.protocol_version]
 
     search = core.SearchSolutions(pb_core.SearchSolutionsRequest(
         user_agent='ta3_stub',
         version=version,
-        time_bound=2.0,
+        time_bound=30.0,
         allowed_value_types=[pb_value.CSV_URI],
         problem=pb_problem.ProblemDescription(
             problem=pb_problem.Problem(
@@ -108,10 +106,11 @@ def do_search(core, problem):
             ],
         ),
         inputs=[pb_value.Value(
-            dataset_uri='file://%s' % '/input/TRAIN/dataset_TRAIN/datasetDoc.json',
+            dataset_uri='file://%s' % dataset_path,
         )],
     ))
 
+    start_time = datetime.datetime.now()
     results = core.GetSearchSolutionsResults(
         pb_core.GetSearchSolutionsResultsRequest(
             search_id=search.search_id,
@@ -120,10 +119,13 @@ def do_search(core, problem):
     solutions = {}
     for result in results:
         if result.solution_id:
+            end_time = datetime.datetime.now()
             solutions[result.solution_id] = (
                 result.internal_score,
                 result.scores,
+                str(end_time - start_time)
             )
+
     return solutions
 
 
@@ -137,13 +139,13 @@ def do_describe(core, solutions):
             logger.exception("Exception during describe %r", solution)
 
 
-def do_score(core, problem, solutions):
+def do_score(core, problem, solutions, dataset_path):
     for solution in solutions:
         try:
             response = core.ScoreSolution(pb_core.ScoreSolutionRequest(
                 solution_id=solution,
                 inputs=[pb_value.Value(
-                    dataset_uri='file://%s' % '/input/TRAIN/dataset_TRAIN/datasetDoc.json',
+                    dataset_uri='file://%s' % dataset_path,
                 )],
                 performance_metrics=[
                     pb_problem.ProblemPerformanceMetric(
@@ -171,14 +173,14 @@ def do_score(core, problem, solutions):
             logger.exception("Exception during scoring %r", solution)
 
 
-def do_train(core, solutions):
+def do_train(core, solutions, dataset_path):
     fitted = {}
     for solution in solutions:
         try:
             response = core.FitSolution(pb_core.FitSolutionRequest(
                 solution_id=solution,
                 inputs=[pb_value.Value(
-                    dataset_uri='file://%s' % '/input/TRAIN/dataset_TRAIN/datasetDoc.json',
+                    dataset_uri='file://%s' % dataset_path,
                 )],
                 expose_outputs=[],
                 expose_value_types=[pb_value.CSV_URI],
@@ -197,13 +199,14 @@ def do_train(core, solutions):
     return fitted
 
 
-def do_test(core, fitted):
+def do_test(core, fitted, dataset_path):
+    tested = {}
     for fitted_solution in fitted.values():
         try:
             response = core.ProduceSolution(pb_core.ProduceSolutionRequest(
                 fitted_solution_id=fitted_solution,
                 inputs=[pb_value.Value(
-                    dataset_uri='file://%s' % '/input/TRAIN/dataset_TRAIN/datasetDoc.json',
+                    dataset_uri='file://%s' % dataset_path,
                 )],
                 expose_outputs=[],
                 expose_value_types=[pb_value.CSV_URI],
@@ -214,10 +217,13 @@ def do_test(core, fitted):
                     request_id=response.request_id,
                 )
             )
-            for _ in results:
-                pass
+            for result in results:
+                if result.progress.state == pb_core.COMPLETED:
+                    tested[fitted_solution] = result.exposed_outputs['outputs.0'].csv_uri
         except Exception:
             logger.exception("Exception testing %r", fitted_solution)
+
+    return tested
 
 
 def do_export(core, fitted):
@@ -238,6 +244,8 @@ def main():
 
     channel = grpc.insecure_channel('localhost:45042')
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
+    train_dataset_path = '/input/TRAIN/dataset_TRAIN/datasetDoc.json'
+    test_dataset_path = '/input/TEST/dataset_TEST/datasetDoc.json'
 
     with open(sys.argv[1]) as problem:
         problem = json.load(problem)
@@ -248,19 +256,19 @@ def main():
     # Do a list primitives
     do_listprimitives(core)
     # Do a search
-    solutions = do_search(core, problem)
+    solutions = do_search(core, problem, train_dataset_path)
 
     # Describe the pipelines
     do_describe(core, solutions)
 
     # Score all found solutions
-    do_score(core, problem, solutions)
+    do_score(core, problem, solutions, train_dataset_path)
 
     # Train all found solutions
-    fitted = do_train(core, solutions)
+    fitted = do_train(core, solutions, train_dataset_path)
 
     # Test all fitted solutions
-    do_test(core, fitted)
+    do_test(core, fitted, test_dataset_path)
 
     # Export all fitted solutions
     do_export(core, fitted)
