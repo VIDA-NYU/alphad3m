@@ -84,23 +84,24 @@ class Session(Observable):
         self.stop_requested = False
 
         # Read metrics from problem
-        for metric in self.problem['inputs']['performanceMetrics']:
-            metric_name = metric['metric']
-            try:
-                metric_name = SCORES_FROM_SCHEMA[metric_name]
-            except KeyError:
-                logger.error("Unknown metric %r", metric_name)
-                raise ValueError("Unknown metric %r" % metric_name)
+        if self.problem is not None:
+            for metric in self.problem['inputs']['performanceMetrics']:
+                metric_name = metric['metric']
+                try:
+                    metric_name = SCORES_FROM_SCHEMA[metric_name]
+                except KeyError:
+                    logger.error("Unknown metric %r", metric_name)
+                    raise ValueError("Unknown metric %r" % metric_name)
 
-            formatted_metric = {'metric': metric_name}
+                formatted_metric = {'metric': metric_name}
 
-            if len(metric) > 1:  # Metric has parameters
-                formatted_metric['params'] = {}
-                for param in metric.keys():
-                    if param != 'metric':
-                        formatted_metric['params'][param] = metric[param]
+                if len(metric) > 1:  # Metric has parameters
+                    formatted_metric['params'] = {}
+                    for param in metric.keys():
+                        if param != 'metric':
+                            formatted_metric['params'][param] = metric[param]
 
-            self.metrics.append(formatted_metric)
+                self.metrics.append(formatted_metric)
 
         self._targets = None
         self._features = None
@@ -958,6 +959,23 @@ class D3mTa2(Observable):
                              session_id, task, dataset, metrics,
                              targets, features, timeout=timeout, tune=tune)
 
+    def build_fixed_pipeline(self, session_id, pipeline):
+        self.executor.submit(self._build_fixed_pipeline, session_id, pipeline)
+
+    # Runs in a worker thread from executor
+    def _build_fixed_pipeline(self, session_id, d3m_pipeline):
+        session = self.sessions[session_id]
+
+        db = self.DBSession()
+        pipeline_database = database.Pipeline(origin='Fixed pipeline template', dataset='NA')
+        # TODO Convert D3M pipeline to our database pipeline
+        db.add(pipeline_database)
+        db.commit()
+        pipeline_id = pipeline_database.id
+        db.close()
+
+        logger.info("Created fixed pipeline %s", pipeline_id)
+
     # Runs in a worker thread from executor
     def _build_pipelines(self, session_id, task, dataset,
                          metrics, targets, features, tune=None,
@@ -1000,9 +1018,9 @@ class D3mTa2(Observable):
                 logger.exception("Error building pipeline from %r",
                                  template)
 
-        #if 'TA2_DEBUG_BE_FAST' not in os.environ:
-        #    self._build_pipelines_from_generator(session, task, dataset,
-        #                                         metrics, timeout)
+        if 'TA2_DEBUG_BE_FAST' not in os.environ:
+            self._build_pipelines_from_generator(session, task, dataset,
+                                                 metrics, timeout)
 
         session.tune_when_ready(tune)
 
@@ -1026,7 +1044,6 @@ class D3mTa2(Observable):
         )
 
         start = time.time()
-        start_time = datetime.datetime.now()
         stopped = False
 
         # Now we wait for pipelines to be sent over the pipe
@@ -1334,18 +1351,18 @@ class D3mTa2(Observable):
             # Classifier
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
-                #'d3m.primitives.classification.k_neighbors.SKlearn',
-                #'d3m.primitives.classification.bayesian_logistic_regression.Common',
-                #'d3m.primitives.classification.bernoulli_naive_bayes.SKlearn',
-                #'d3m.primitives.classification.decision_tree.SKlearn',
-                #'d3m.primitives.classification.gaussian_naive_bayes.SKlearn',
-                #'d3m.primitives.classification.gradient_boosting.SKlearn',
-                #'d3m.primitives.classification.linear_svc.SKlearn',
-                #'d3m.primitives.classification.logistic_regression.SKlearn',
-                #'d3m.primitives.classification.multinomial_naive_bayes.SKlearn',
-                #'d3m.primitives.classification.passive_aggressive.SKlearn',
-                #'d3m.primitives.classification.random_forest.DataFrameCommon',
-                #'d3m.primitives.classification.sgd.SKlearn',
+                'd3m.primitives.classification.k_neighbors.SKlearn',
+                'd3m.primitives.classification.bayesian_logistic_regression.Common',
+                'd3m.primitives.classification.bernoulli_naive_bayes.SKlearn',
+                'd3m.primitives.classification.decision_tree.SKlearn',
+                'd3m.primitives.classification.gaussian_naive_bayes.SKlearn',
+                'd3m.primitives.classification.gradient_boosting.SKlearn',
+                'd3m.primitives.classification.linear_svc.SKlearn',
+                'd3m.primitives.classification.logistic_regression.SKlearn',
+                'd3m.primitives.classification.multinomial_naive_bayes.SKlearn',
+                'd3m.primitives.classification.passive_aggressive.SKlearn',
+                'd3m.primitives.classification.random_forest.DataFrameCommon',
+                'd3m.primitives.classification.sgd.SKlearn',
             ],
         )),
         'DEBUG_CLASSIFICATION': list(itertools.product(

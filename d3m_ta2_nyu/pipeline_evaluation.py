@@ -30,7 +30,7 @@ with pkg_resources.resource_stream(
 
 
 def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
-    json_pipeline = convert.to_d3m_json(pipeline)
+    json_pipeline = convert.to_d3m_ijson(pipeline)
     logger.info("Pipeline to be scored:\n%s",
                 '\n'.join([x['primitive']['python_path'] for x in json_pipeline['steps']]))
 

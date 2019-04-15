@@ -34,6 +34,9 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
     comm -23 prev_reqs.txt new_reqs.txt | while read i; do echo "Removed package $i" >&2; exit 1; done && \
     rm prev_reqs.txt new_reqs.txt
 
+# Install TA3-TA2 API
+RUN pip3 install https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/archive/6031376c80d07aa10a5a4ff59e8214dfec5252e7/ta3ta2-api-6031376c80d07aa10a5a4ff59e8214dfec5252e7.zip
+
 COPY eval.sh /usr/local/bin/eval.sh
 
 CMD "/usr/local/bin/eval.sh"

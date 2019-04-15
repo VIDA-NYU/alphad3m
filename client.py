@@ -36,7 +36,7 @@ def do_search(core, problem, dataset_path):
     search = core.SearchSolutions(pb_core.SearchSolutionsRequest(
         user_agent='ta3_stub',
         version=version,
-        time_bound=30.0,
+        time_bound=2.0,
         allowed_value_types=[pb_value.CSV_URI],
         problem=pb_problem.ProblemDescription(
             problem=pb_problem.Problem(
@@ -71,38 +71,6 @@ def do_search(core, problem, dataset_path):
                     ],
                 )
                 for i in problem['inputs']['data']
-            ],
-        ),
-        template=pb_pipeline.PipelineDescription(
-            id='stub-empty-1',
-            source=pb_pipeline.PipelineSource(
-                name="NYU stub",
-                contact='remi.rampin@nyu.edu',
-                pipelines=[],
-            ),
-            created=Timestamp(seconds=1530545014, nanos=979517000),
-            context=pb_pipeline.TESTING,
-            name="Stub TA3's empty template",
-            description="Empty template",
-            users=[pb_pipeline.PipelineDescriptionUser(
-                id='stub',
-                reason="test run",
-                rationale="",
-            )],
-            inputs=[pb_pipeline.PipelineDescriptionInput(
-                name='dataset',
-            )],
-            outputs=[pb_pipeline.PipelineDescriptionOutput(
-                name='dataset',
-                data='step.0.produce',
-            )],
-            steps=[
-                pb_pipeline.PipelineDescriptionStep(
-                    placeholder=pb_pipeline.PlaceholderPipelineDescriptionStep(
-                        inputs=[pb_pipeline.StepInput(data='inputs.0')],
-                        outputs=[pb_pipeline.StepOutput(id='produce')],
-                    ),
-                ),
             ],
         ),
         inputs=[pb_value.Value(

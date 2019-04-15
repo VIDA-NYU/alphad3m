@@ -7,27 +7,27 @@ leave this module.
 
 import calendar
 import datetime
-from google.protobuf.timestamp_pb2 import Timestamp
 import grpc
 import logging
 import pickle
-from uuid import UUID
-
-from . import __version__
-
-from d3m_ta2_nyu.common import TASKS_FROM_SCHEMA, \
-    SCORES_TO_SCHEMA, SCORES_FROM_SCHEMA, TASKS_TO_SCHEMA, SUBTASKS_TO_SCHEMA, normalize_score
-from d3m_ta2_nyu.grpc_logger import log_service
+import d3m_ta2_nyu.workflow.convert
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
 import d3m_ta2_nyu.proto.value_pb2 as pb_value
 import d3m_ta2_nyu.proto.pipeline_pb2 as pb_pipeline
 import d3m_ta2_nyu.proto.primitive_pb2 as pb_primitive
+
+from uuid import UUID
+from . import __version__
+
+from google.protobuf.timestamp_pb2 import Timestamp
+from d3m_ta2_nyu.grpc_logger import log_service
 from d3m_ta2_nyu.d3m_primitives import D3MPrimitives
 from d3m_ta2_nyu.utils import PersistentQueue
-import d3m_ta2_nyu.workflow.convert
-
+from d3m_ta2_nyu.common import TASKS_FROM_SCHEMA, SCORES_TO_SCHEMA, TASKS_TO_SCHEMA, SUBTASKS_TO_SCHEMA, normalize_score
+from ta3ta2_api.utils import decode_pipeline_description, encode_pipeline_description
+from d3m.metadata import pipeline as pipeline_module
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class CoreService(pb_core_grpc.CoreServicer):
     grpc2tasksubtype = {k: v for v, k in pb_problem.TaskSubtype.items()
                         if k != pb_problem.TASK_TYPE_UNDEFINED}
 
-    installed_primitives = []#D3MPrimitives.get_primitives_info()
+    installed_primitives = D3MPrimitives.get_primitives_info()
 
     def __init__(self, ta2):
         self._ta2 = ta2
@@ -94,9 +94,17 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.error("TA3 is using a different protocol version: %r "
                          "(us: %r)", request.version, expected_version)
 
-        #if request.template is not None and len(request.template.steps) > 0:
-        #    if basic_sol.contains_placeholder() == False:
-        #        pass
+        template = self._create_pipeline_template()#request.template
+        if template is not None and len(template.steps) > 0:  # isinstance(template, pb_pipeline.PipelineDescription)
+            pipeline = decode_pipeline_description(template, pipeline_module.Resolver())
+            if pipeline.has_placeholder():
+                # TODO Add support for pipeline templates with placeholder steps
+                logger.error('Pipeline templates with placeholder steps is not supported')
+            else:  # Pipeline template fully defined
+                search_id = self._ta2.new_session(None)
+                self._ta2.build_fixed_pipeline(search_id, pipeline)
+
+                return pb_core.SearchSolutionsResponse(search_id=str(search_id),)
 
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
@@ -729,3 +737,23 @@ class CoreService(pb_core_grpc.CoreServicer):
         steps.append(step)
         module_to_step[mod.id] = step_nb
         return step_nb
+
+    def _create_pipeline_template(self):
+        import tempfile
+        from os.path import dirname, join
+
+        with open(join(dirname(__file__), 'pipelines/random-sample.yml'), 'r') as pipeline_file:
+            pipeline = pipeline_module.Pipeline.from_yaml(
+                pipeline_file,
+                resolver=pipeline_module.Resolver(),
+                strict_digest=True,
+            )
+
+        with tempfile.TemporaryDirectory() as scratch_dir:
+            pipeline_message = encode_pipeline_description(
+                pipeline,
+                [pb_value.RAW, pb_value.CSV_URI],
+                scratch_dir
+            )
+
+        return pipeline_message
