@@ -289,20 +289,20 @@ class GenerateD3MPipelines():
                 pipeline=pipeline, module=input_data,
                 name='features', value=pickle.dumps(features),
             ))
-            step0 = make_primitive_module('d3m.primitives.sri.graph.GraphMatchingParser')
+            step0 = make_primitive_module('d3m.primitives.sri.psl.GraphMatchingLinkPrediction')
             connect(input_data, step0, from_output='dataset')
 
-            step1 = make_primitive_module('d3m.primitives.sri.graph.GraphTransformer')
+            '''step1 = make_primitive_module('d3m.primitives.sri.graph.GraphTransformer')
             connect(step0, step1)
 
             step2 = make_primitive_module('d3m.primitives.sri.psl.LinkPrediction')
             set_hyperparams(step2, prediction_column='match')
-            connect(step1, step2)
+            connect(step1, step2)'''
 
             step3 = make_primitive_module('d3m.primitives.data_transformation.construct_predictions.DataFrameCommon')
             set_hyperparams(step3, use_columns=[0, 1])
-            connect(step2, step3)
-            connect(step2, step3, to_input='reference')
+            connect(step0, step3)
+            connect(step0, step3, to_input='reference')
 
             db.add(pipeline)
             db.commit()

@@ -19,7 +19,7 @@ def score(pipeline_id, dataset, metrics, problem, scoring_conf, msg_queue, db):
     if scoring_conf is None:
         scoring_conf = {'train_test_ratio': '0.75',
                         'shuffle': 'true',
-                        'stratified': 'true'
+                        'stratified': 'false'
         }
         evaluation_method = None
     else:

@@ -54,6 +54,7 @@ docker run -ti --rm \
     -e D3MRAM=4Gi \
     -e D3MTIMEOUT=$TIMEOUT \
     $OPTS \
+    -v "$PWD/d3m_ta2_nyu:/usr/src/app/d3m_ta2_nyu" \
     -v "$PWD/eval.sh:/usr/local/bin/eval.sh"\
     -v "$LOCAL_DATA_ROOT/${INPUT}:/input" \
     -v "$LOCAL_OUTPUT_ROOT:/output" \

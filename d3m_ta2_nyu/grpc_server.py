@@ -65,7 +65,7 @@ class CoreService(pb_core_grpc.CoreServicer):
     grpc2tasksubtype = {k: v for v, k in pb_problem.TaskSubtype.items()
                         if k != pb_problem.TASK_TYPE_UNDEFINED}
 
-    installed_primitives = D3MPrimitives.get_primitives_info()
+    installed_primitives = []#D3MPrimitives.get_primitives_info()
 
     def __init__(self, ta2):
         self._ta2 = ta2
