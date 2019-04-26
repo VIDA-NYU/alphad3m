@@ -252,6 +252,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     unsupported_problems = ['TIME_SERIES_FORECASTING', 'COLLABORATIVE_FILTERING', 'OBJECT_DETECTION']
 
+    print('>>>>>>>', data_types)
     if task in unsupported_problems:
         logger.error('%s Not Supported', task)
         sys.exit(148)
@@ -311,30 +312,6 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
         return input
 
-    input_sklearn = create_input(SKLEARN_PRIMITIVES)
-    timeout_sklearn = int(timeout * 0.4)
-
-    def run_sklearn_primitives():
-        logger.info('Starting evaluation Scikit-learn primitives, timeout is %s', timeout_sklearn)
-        game = PipelineGame(input_sklearn, eval_pipeline)
-        nnet = NNetWrapper(game)
-        c = Coach(game, nnet, input_sklearn['ARGS'])
-        c.learn()
-
-    process_sklearn = multiprocessing.Process(target=run_sklearn_primitives)
-    process_sklearn.daemon = True
-    process_sklearn.start()
-    process_sklearn.join(timeout_sklearn)
-
-    if process_sklearn.is_alive():
-        process_sklearn.terminate()
-        logger.info('Finished evaluation Scikit-learn primitives')
-
-    input_all = create_input(ALL_PRIMITIVES)
-
-    game = PipelineGame(input_all, eval_pipeline)
-    nnet = NNetWrapper(game)
-
     def signal_handler(signal, frame):
         record_bestpipeline(input['DATASET'])
         sys.exit(0)
@@ -348,7 +325,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
             if value == float('inf') and not 'error' in game.metric.lower():
                 eval_dict[key] = 0
         evaluations = sorted(eval_dict.items(), key=operator.itemgetter(1))
-        if not 'error' in game.metric.lower():
+        if 'error' not in game.metric.lower():
             evaluations.reverse()
 
         out_p = open(os.path.join('/output', input['DATASET'] + '_best_pipelines.txt'), 'a')
@@ -356,6 +333,30 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
             datasetDoc['about']['datasetName'] + ' ' + evaluations[0][0] + ' ' + str(evaluations[0][1]) + ' ' + str(
                 game.steps) + ' ' + str((eval_times[evaluations[0][0]] - start) / 60.0) + ' ' + str(
                 (end - start) / 60.0) + '\n')
+
+    input_sklearn = create_input(SKLEARN_PRIMITIVES)
+    timeout_sklearn = int(timeout * 0.4)
+
+    def run_sklearn_primitives():
+        logger.info('Starting evaluation Scikit-learn primitives, timeout is %s', timeout_sklearn)
+        game = PipelineGame(input_sklearn, eval_pipeline)
+        nnet = NNetWrapper(game)
+        signal.signal(signal.SIGTERM, signal_handler)
+        c = Coach(game, nnet, input_sklearn['ARGS'])
+        c.learn()
+
+    process_sklearn = multiprocessing.Process(target=run_sklearn_primitives)
+    process_sklearn.daemon = True
+    process_sklearn.start()
+    process_sklearn.join(timeout_sklearn)
+
+    if process_sklearn.is_alive():
+        process_sklearn.terminate()
+        logger.info('Finished evaluation Scikit-learn primitives')
+
+    input_all = create_input(ALL_PRIMITIVES)
+    game = PipelineGame(input_all, eval_pipeline)
+    nnet = NNetWrapper(game)
 
     signal.signal(signal.SIGTERM, signal_handler)
 
@@ -377,8 +378,6 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 def main(dataset, problem_path, output_path):
     setup_logging()
 
-    import time
-    start = time.time()
     import tempfile
     from d3m_ta2_nyu.ta2 import D3mTa2
 
@@ -390,7 +389,6 @@ def main(dataset, problem_path, output_path):
                 fields = pipeline.split(' ')
                 pipelines[fields[0]] = fields[1].split(',')
 
-    problem = {}
     with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
         problem = json.load(fp)
     task = problem['about']['taskType']
@@ -414,4 +412,5 @@ def main(dataset, problem_path, output_path):
 if __name__ == '__main__':
     if len(sys.argv) > 3:
         output_path = sys.argv[3]
+
     main(sys.argv[1], sys.argv[2], output_path)

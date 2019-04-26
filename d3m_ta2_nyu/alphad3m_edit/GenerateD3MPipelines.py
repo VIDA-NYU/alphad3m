@@ -289,20 +289,29 @@ class GenerateD3MPipelines():
                 pipeline=pipeline, module=input_data,
                 name='features', value=pickle.dumps(features),
             ))
-            step0 = make_primitive_module('d3m.primitives.sri.psl.GraphMatchingLinkPrediction')
+
+            step0 = make_primitive_module('d3m.primitives.data_transformation.denormalize.Common')
             connect(input_data, step0, from_output='dataset')
 
-            '''step1 = make_primitive_module('d3m.primitives.sri.graph.GraphTransformer')
+            step1 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
             connect(step0, step1)
 
-            step2 = make_primitive_module('d3m.primitives.sri.psl.LinkPrediction')
-            set_hyperparams(step2, prediction_column='match')
-            connect(step1, step2)'''
+            step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.DataFrameCommon')
+            connect(step1, step2)
 
-            step3 = make_primitive_module('d3m.primitives.data_transformation.construct_predictions.DataFrameCommon')
-            set_hyperparams(step3, use_columns=[0, 1])
-            connect(step0, step3)
-            connect(step0, step3, to_input='reference')
+            step3 = make_primitive_module('d3m.primitives.sri.psl.GraphMatchingLinkPrediction')
+            set_hyperparams(step3, link_prediction_hyperparams="gANjc3JpLnBzbC5saW5rX3ByZWRpY3Rpb24KTGlua1ByZWRpY3Rpb25IeXBlcnBhcmFtcwpxACmBcQF9cQIoWAsAAABwc2xfb3B0aW9uc3EDWAAAAABxBFgMAAAAcHNsX3RlbXBfZGlycQVYDAAAAC90bXAvcHNsL3J1bnEGWBAAAABwb3N0Z3Jlc19kYl9uYW1lcQdYBwAAAHBzbF9kM21xCFgPAAAAYWRtbV9pdGVyYXRpb25zcQlN6ANYCwAAAG1heF90aHJlYWRzcQpLAFgKAAAAanZtX21lbW9yeXELRz/oAAAAAAAAWA8AAAB0cnV0aF90aHJlc2hvbGRxDEc+etfymryvSFgRAAAAcHJlZGljdGlvbl9jb2x1bW5xDVgEAAAAbGlua3EOdWIu")
+
+            connect(input_data, step3, from_output='dataset')
+
+            #connect(input_data, step3, to_input='outputs')
+
+
+            step4 = make_primitive_module('d3m.primitives.data_transformation.construct_predictions.DataFrameCommon')
+            set_hyperparams(step4, use_columns=[0, 1])
+
+            connect(step3, step4)
+            connect(step2, step4, to_input='reference')
 
             db.add(pipeline)
             db.commit()
@@ -310,6 +319,10 @@ class GenerateD3MPipelines():
             return pipeline.id
         finally:
             db.close()
+
+
+
+
 
     @staticmethod
     def make_communityDetection_pipeline_from_strings(origin, dataset, targets=None, features=None,
@@ -545,32 +558,33 @@ class GenerateD3MPipelines():
             step1 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
             connect(step0, step1)
 
-            step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.DataFrameCommon')
-            set_hyperparams(
-                step2,
-                semantic_types=[
-                    'https://metadata.datadrivendiscovery.org/types/Target',
-                    'https://metadata.datadrivendiscovery.org/types/SuggestedTarget'
-                ],
-            )
+            step2 = make_primitive_module('d3m.primitives.data_preprocessing.image_reader.DataFrameCommon')
             connect(step1, step2)
 
-            step3 = make_primitive_module('d3m.primitives.data_preprocessing.DataFrameToTensor.DSBOX')
-            connect(step1, step3)
+            step3 = make_primitive_module('d3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon')
+            set_hyperparams(step3, semantic_types=['https://metadata.datadrivendiscovery.org/types/ImageObject'])
+            connect(step2, step3)
 
-            step4 = make_primitive_module('d3m.primitives.feature_extraction.Vgg16ImageFeature.DSBOX')
-            connect(step3, step4)
+            step4 = make_primitive_module('d3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon')
+            set_hyperparams(step4, semantic_types=['https://metadata.datadrivendiscovery.org/types/SuggestedTarget'])
+            connect(step2, step4)
 
-            step5 = make_primitive_module('d3m.primitives.data_transformation.pca.SKlearn')
-            connect(step4, step5)
+            step5 = make_primitive_module('d3m.primitives.data_transformation.dataframe_to_ndarray.Common')
+            connect(step3, step5)
 
-            step6 = make_primitive_module('d3m.primitives.regression.lasso.SKlearn')
+            step6 = make_primitive_module('d3m.primitives.feature_extraction.vgg16.umich')
             connect(step5, step6)
-            connect(step2, step6, to_input='outputs')
 
-            step7 = make_primitive_module('d3m.primitives.data_transformation.construct_predictions.DataFrameCommon')
+            step7 = make_primitive_module('d3m.primitives.data_transformation.ndarray_to_dataframe.Common')
             connect(step6, step7)
-            connect(step1, step7, to_input='reference')
+
+            step8 = make_primitive_module('d3m.primitives.regression.linear_svr.SKlearn')
+            connect(step7, step8)
+            connect(step4, step8, to_input='outputs')
+
+            step9 = make_primitive_module('d3m.primitives.data_transformation.construct_predictions.DataFrameCommon')
+            connect(step8, step9)
+            connect(step1, step9, to_input='reference')
 
             db.add(pipeline)
             db.commit()

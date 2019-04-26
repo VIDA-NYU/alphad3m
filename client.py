@@ -29,14 +29,14 @@ def do_listprimitives(core):
     core.ListPrimitives(pb_core.ListPrimitivesRequest())
 
 
-def do_search(core, problem, dataset_path):
+def do_search(core, problem, dataset_path, time_bound=30.0):
     version = pb_core.DESCRIPTOR.GetOptions().Extensions[
         pb_core.protocol_version]
 
     search = core.SearchSolutions(pb_core.SearchSolutionsRequest(
         user_agent='ta3_stub',
         version=version,
-        time_bound=2.0,
+        time_bound=time_bound,
         allowed_value_types=[pb_value.CSV_URI],
         problem=pb_problem.ProblemDescription(
             problem=pb_problem.Problem(
@@ -48,7 +48,7 @@ def do_search(core, problem, dataset_path):
                     problem['about']['taskType']
                 ]],
                 task_subtype=TASK_SUBTYPES[SUBTASKS_FROM_SCHEMA[
-                    problem['about']['taskSubType']
+                    problem['about'].get('taskSubType', 'none')
                 ]],
                 performance_metrics=[
                     pb_problem.ProblemPerformanceMetric(

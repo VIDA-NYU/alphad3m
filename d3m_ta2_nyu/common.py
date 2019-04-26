@@ -115,7 +115,7 @@ SUBTASKS_FROM_SCHEMA = {
     'univariate': 'UNIVARIATE',
     'multivariate': 'MULTIVARIATE',
     'overlaping': 'OVERLAPPING',
-    'nonoverlaping': 'NONOVERLAPPING',
+    'nonOverlapping': 'NONOVERLAPPING',
 }
 
 SUBTASKS_TO_SCHEMA = {v: k for k, v in SUBTASKS_FROM_SCHEMA.items()}

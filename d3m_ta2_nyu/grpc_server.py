@@ -94,14 +94,34 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.error("TA3 is using a different protocol version: %r "
                          "(us: %r)", request.version, expected_version)
 
-        template = self._create_pipeline_template()#request.template
+        template = request.template
+
         if template is not None and len(template.steps) > 0:  # isinstance(template, pb_pipeline.PipelineDescription)
             pipeline = decode_pipeline_description(template, pipeline_module.Resolver())
             if pipeline.has_placeholder():
                 # TODO Add support for pipeline templates with placeholder steps
                 logger.error('Pipeline templates with placeholder steps is not supported')
             else:  # Pipeline template fully defined
+
                 search_id = self._ta2.new_session(None)
+                '''import d3m.runtime
+                from d3m.metadata import base as metadata_base
+                from d3m.container.dataset import Dataset
+                runtime = d3m.runtime.Runtime(pipeline=pipeline,
+                                  context=metadata_base.Context.TESTING)
+                dataset = request.inputs[0].dataset_uri
+                if not dataset.startswith('file://'):
+                    dataset = 'file://' + dataset
+
+                # Fitting pipeline on input dataset.
+                fit_results = runtime.fit(inputs=[Dataset.load(dataset_uri=dataset)])
+                fit_results.check_success()
+
+                # Producing results using the fitted pipeline.
+                produce_results = runtime.produce(inputs=[Dataset.load(dataset_uri=dataset)])
+                produce_results.check_success()
+
+                print(produce_results.values)'''
                 self._ta2.build_fixed_pipeline(search_id, pipeline)
 
                 return pb_core.SearchSolutionsResponse(search_id=str(search_id),)
@@ -616,17 +636,14 @@ class CoreService(pb_core_grpc.CoreServicer):
             raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
                         "Didn't get any metrics we know")
 
-        return {
+        problem_dict = {
             'about': {
                 'problemID': problem.problem.id,
                 'problemVersion': problem.problem.version,
                 'problemDescription': problem.problem.description,
-                "taskType": TASKS_TO_SCHEMA.get(task, ''),
-                "taskSubType": SUBTASKS_TO_SCHEMA.get(
-                    self.grpc2tasksubtype.get(problem.problem.task_subtype),
-                    ''),
-                "problemSchemaVersion": "3.0",
-                "problemName": problem.problem.name,
+                'taskType': TASKS_TO_SCHEMA.get(task, ''),
+                'problemSchemaVersion': '3.0',
+                'problemName': problem.problem.name,
 
             },
             'inputs': {
@@ -652,6 +669,14 @@ class CoreService(pb_core_grpc.CoreServicer):
                 'predictionsFile': 'predictions.csv'
             }
         }
+
+        if problem.problem.task_subtype != pb_problem.TASK_SUBTYPE_UNDEFINED \
+           and problem.problem.task_subtype != pb_problem.NONE:
+            problem_dict['about']['taskSubType'] = SUBTASKS_TO_SCHEMA[
+                                                        self.grpc2tasksubtype[problem.problem.task_subtype]
+                                                    ]
+
+        return problem_dict
 
     def _add_step(self, steps, step_descriptions, modules, params, module_to_step, mod):
         if mod.id in module_to_step:
