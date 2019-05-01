@@ -155,6 +155,7 @@ input = {
         }
     }
 
+process_sklearn = None
 
 @database.with_sessionmaker
 def generate(task, dataset, metrics, problem, targets, features, timeout, msg_queue, DBSession):
@@ -312,10 +313,6 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
         return input
 
-    def signal_handler(signal, frame):
-        record_bestpipeline(input['DATASET'])
-        sys.exit(0)
-
     def record_bestpipeline(dataset):
         end = time.time()
 
@@ -334,17 +331,25 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
                 game.steps) + ' ' + str((eval_times[evaluations[0][0]] - start) / 60.0) + ' ' + str(
                 (end - start) / 60.0) + '\n')
 
+    global process_sklearn
     input_sklearn = create_input(SKLEARN_PRIMITIVES)
-    timeout_sklearn = int(timeout * 0.4)
+    timeout_sklearn = 30#int(timeout * 0.4)
 
     def run_sklearn_primitives():
         logger.info('Starting evaluation Scikit-learn primitives, timeout is %s', timeout_sklearn)
         game = PipelineGame(input_sklearn, eval_pipeline)
         nnet = NNetWrapper(game)
-        signal.signal(signal.SIGTERM, signal_handler)
         c = Coach(game, nnet, input_sklearn['ARGS'])
         c.learn()
 
+    def signal_handler(signal, frame):
+        print('Receiving SIGTERM signal')
+        #record_bestpipeline(input['DATASET'])
+        if process_sklearn.is_alive():
+            process_sklearn.terminate()
+        sys.exit(0)
+    # TODO Not use multiprocessing to prioritize sklearn primitives
+    signal.signal(signal.SIGTERM, signal_handler)
     process_sklearn = multiprocessing.Process(target=run_sklearn_primitives)
     process_sklearn.daemon = True
     process_sklearn.start()
@@ -357,8 +362,6 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
     input_all = create_input(ALL_PRIMITIVES)
     game = PipelineGame(input_all, eval_pipeline)
     nnet = NNetWrapper(game)
-
-    signal.signal(signal.SIGTERM, signal_handler)
 
     if input['ARGS'].get('load_model'):
         model_file = os.path.join(input['ARGS'].get('load_folder_file')[0],

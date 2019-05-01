@@ -64,7 +64,7 @@ SCORES_FROM_SCHEMA = {
     'rSquared': 'R_SQUARED',
     'normalizedMutualInformation': 'NORMALIZED_MUTUAL_INFORMATION',
     'jaccardSimilarityScore': 'JACCARD_SIMILARITY_SCORE',
-    'objectDetectionAP': 'OBJECT_DETECTION_AP'
+    'objectDetectionAP': 'OBJECT_DETECTION_AVERAGE_PRECISION'
     # 'precisionAtTopK': 'PRECISION_AT_TOP_K',
 }
 

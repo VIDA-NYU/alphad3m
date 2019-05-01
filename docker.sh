@@ -11,7 +11,7 @@ LOCAL_OUTPUT_ROOT="/Users/rlopez/D3M/tmp"
 set -eu
 
 OPTS=""
-TIMEOUT=30
+TIMEOUT=10
 while true; do
     if [ "$1" = "fast" ]; then
         OPTS="$OPTS -e TA2_DEBUG_BE_FAST=1"

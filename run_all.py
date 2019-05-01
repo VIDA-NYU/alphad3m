@@ -43,7 +43,7 @@ def run_all_datasets():
 
         metric = SCORES_FROM_SCHEMA[problem['inputs']['performanceMetrics'][0]['metric']]
         best_time, score = 'None', 'None'
-        solutions = do_search(core, problem, train_dataset_path, time_bound=3.0)
+        solutions = do_search(core, problem, train_dataset_path, time_bound=5.0)
         search_time = str(datetime.now() - start_time)
         number_solutions = len(solutions)
 
