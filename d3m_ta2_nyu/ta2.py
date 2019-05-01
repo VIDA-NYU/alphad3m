@@ -1001,10 +1001,13 @@ class D3mTa2(Observable):
             session.working = True
 
         logger.info("Creating pipelines from templates...")
-        template_name = task
+        if task in ['GRAPH_MATCHING','COMMUNITY_DETECTION','LINK_PREDICTION','VERTEX_NOMINATION']:
+            template_name = 'CLASSIFICATION'
+        else:
+            template_name = task
         if 'TA2_DEBUG_BE_FAST' in os.environ:
             template_name = 'DEBUG_' + task
-        for template in []:#self.TEMPLATES.get(template_name, []):
+        for template in self.TEMPLATES.get(template_name, []):
             logger.info("Creating pipeline from %r", template)
             if isinstance(template, (list, tuple)):
                 func, args = template[0], template[1:]
@@ -1287,55 +1290,69 @@ class D3mTa2(Observable):
             connect(step2, step3)
 
             step4 = make_primitive_module(imputer)
+            set_hyperparams(
+                step4,
+                strategy='most_frequent'
+            )
+
             connect(step3, step4)
 
             step5 = make_primitive_module(
-                'd3m.primitives.data_transformation'
-                '.cast_to_type.Common')
-            connect(step4, step5)
+                'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')
             set_hyperparams(
                 step5,
+                handle_unknown='ignore'
+            )
+            connect(step4, step5)
+            step6 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.cast_to_type.Common')
+
+            set_hyperparams(
+                step6,
                 type_to_cast='float',
             )
 
-            step6 = make_primitive_module(
+            connect(step5, step6)
+
+            step7 = make_primitive_module(
                 'd3m.primitives.data_transformation'
                 '.extract_columns_by_semantic_types.DataFrameCommon')
             set_hyperparams(
-                step6,
+                step7,
                 semantic_types=[
                     'https://metadata.datadrivendiscovery.org/types/Target',
                 ],
             )
-            connect(step2, step6)
+            connect(step2, step7)
 
-            step7 = make_primitive_module(
+            step8 = make_primitive_module(
                 'd3m.primitives.data_transformation'
                 '.cast_to_type.Common')
-            connect(step6, step7)
+            connect(step7, step8)
 
-            step8 = make_primitive_module(classifier)
-            connect(step5, step8)
-            connect(step7, step8, to_input='outputs')
+            step9 = make_primitive_module(classifier)
+            connect(step6, step9)
+            connect(step8, step9, to_input='outputs')
 
-            step9 = make_primitive_module(
+            step10 = make_primitive_module(
                 'd3m.primitives.data_transformation'
                 '.extract_columns_by_semantic_types.DataFrameCommon')
             set_hyperparams(
-                step9,
+                step10,
                 semantic_types=[
                     'https://metadata.datadrivendiscovery.org/types/Target',
                     ('https://metadata.datadrivendiscovery.org/types' +
                      '/PrimaryKey'),
                 ],
             )
-            connect(step2, step9)
+            connect(step2, step10)
 
-            step10 = make_primitive_module(
+            step11 = make_primitive_module(
                 'd3m.primitives.data_transformation'
                 '.construct_predictions.DataFrameCommon')
-            connect(step8, step10)
-            connect(step9, step10, to_input='reference')
+            connect(step9, step11)
+            connect(step10, step11, to_input='reference')
 
             db.add(pipeline)
             db.commit()
@@ -1347,7 +1364,7 @@ class D3mTa2(Observable):
         'CLASSIFICATION': list(itertools.product(
             [_classification_template],
             # Imputer
-            ['d3m.primitives.data_cleaning.imputer.SKlearn'],
+            ['d3m.primitives.data_cleaning.simple_imputer.SKlearn'],
             # Classifier
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
