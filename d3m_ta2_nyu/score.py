@@ -36,7 +36,9 @@ def score(pipeline_id, dataset, metrics, problem, scoring_conf, msg_queue, db):
     logger.info('About to score pipeline, id=%s, metrics=%s, dataset=%r', pipeline_id, metrics, dataset)
 
     # Load data
+
     dataset = Dataset.load(dataset)
+
     logger.info('Loaded dataset')
 
     if evaluation_method is None:  # It comes from search_solutions, so do the sample and use HOLDOUT

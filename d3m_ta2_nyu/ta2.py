@@ -1071,6 +1071,8 @@ class D3mTa2(Observable):
                 continue
 
             if msg == 'eval':
+                if stopped:
+                    return
                 pipeline_id, = args
                 logger.info("Got pipeline %s from generator process",
                             pipeline_id)

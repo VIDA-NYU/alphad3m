@@ -30,14 +30,20 @@ def run_all_datasets():
         logger.info('Processing dataset "%s" (%d/%d)' % (dataset, i+1, size))
         start_time = datetime.now()
 
-        with open(join(DATASETS_PATH, dataset, 'TRAIN/problem_TRAIN/problemDoc.json')) as fin:
-            problem = json.load(fin)
-
         train_dataset_path = '/input/%s/TRAIN/dataset_TRAIN/datasetDoc.json' % dataset
         test_dataset_path = '/input/%s/TEST/dataset_TEST/datasetDoc.json' % dataset
+        problem_path = join(DATASETS_PATH, dataset, 'TRAIN/problem_TRAIN/problemDoc.json')
+
+        if not os.path.isfile(problem_path):
+            logger.error('Problem file doesnt exist in the format expected')
+            continue
+
+        with open(problem_path) as fin:
+            problem = json.load(fin)
+
         metric = SCORES_FROM_SCHEMA[problem['inputs']['performanceMetrics'][0]['metric']]
         best_time, score = 'None', 'None'
-        solutions = do_search(core, problem, train_dataset_path)
+        solutions = do_search(core, problem, train_dataset_path, time_bound=5.0)
         search_time = str(datetime.now() - start_time)
         number_solutions = len(solutions)
 

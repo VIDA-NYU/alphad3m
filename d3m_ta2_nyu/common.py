@@ -64,7 +64,7 @@ SCORES_FROM_SCHEMA = {
     'rSquared': 'R_SQUARED',
     'normalizedMutualInformation': 'NORMALIZED_MUTUAL_INFORMATION',
     'jaccardSimilarityScore': 'JACCARD_SIMILARITY_SCORE',
-    'objectDetectionAP': 'OBJECT_DETECTION_AP'
+    'objectDetectionAP': 'OBJECT_DETECTION_AVERAGE_PRECISION'
     # 'precisionAtTopK': 'PRECISION_AT_TOP_K',
 }
 
@@ -115,7 +115,7 @@ SUBTASKS_FROM_SCHEMA = {
     'univariate': 'UNIVARIATE',
     'multivariate': 'MULTIVARIATE',
     'overlaping': 'OVERLAPPING',
-    'nonoverlaping': 'NONOVERLAPPING',
+    'nonOverlapping': 'NONOVERLAPPING',
 }
 
 SUBTASKS_TO_SCHEMA = {v: k for k, v in SUBTASKS_FROM_SCHEMA.items()}
