@@ -243,6 +243,16 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
+    def eval_text_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = GenerateD3MPipelines.make_text_pipeline_from_strings(origin,
+                                                                            dataset,
+                                                                            targets, features,
+                                                                            DBSession=DBSession)
+        # Evaluate the pipeline
+        msg_queue.send(('eval', pipeline_id))
+        return msg_queue.recv()
+
     dataset_path = os.path.dirname(dataset[7:])
     f = open(os.path.join(dataset_path, 'datasetDoc.json'))
     datasetDoc = json.load(f)
@@ -259,8 +269,8 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         sys.exit(148)
     
     if 'text' in data_types:
-        logger.error('Text Datatype Not Supported')
-        sys.exit(148)
+        eval_text_pipeline('ALPHAD3M')
+        return
 
     if 'audio' in data_types:
         eval_audio_pipeline('ALPHAD3M')
@@ -333,7 +343,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     global process_sklearn
     input_sklearn = create_input(SKLEARN_PRIMITIVES)
-    timeout_sklearn = 30#int(timeout * 0.4)
+    timeout_sklearn = int(timeout * 0.4)
 
     def run_sklearn_primitives():
         logger.info('Starting evaluation Scikit-learn primitives, timeout is %s', timeout_sklearn)
