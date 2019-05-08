@@ -8,8 +8,6 @@ import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.value_pb2 as pb_value
 import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
-import d3m_ta2_nyu.proto.pipeline_pb2 as pb_pipeline
-from google.protobuf.timestamp_pb2 import Timestamp
 from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, TASKS_FROM_SCHEMA, SUBTASKS_FROM_SCHEMA
 from d3m_ta2_nyu.grpc_logger import LoggingStub
 
@@ -30,8 +28,20 @@ def do_listprimitives(core):
 
 
 def do_search(core, problem, dataset_path, time_bound=30.0):
-    version = pb_core.DESCRIPTOR.GetOptions().Extensions[
-        pb_core.protocol_version]
+    version = pb_core.DESCRIPTOR.GetOptions().Extensions[pb_core.protocol_version]
+
+    metrics = []
+
+    for m in problem['inputs']['performanceMetrics']:
+        if 'posLabel' in m:
+            metrics.append(pb_problem.ProblemPerformanceMetric(
+                metric=METRICS[SCORES_FROM_SCHEMA[m['metric']]],
+                pos_label=m['posLabel'])
+            )
+        else:
+            metrics.append(pb_problem.ProblemPerformanceMetric(
+                metric=METRICS[SCORES_FROM_SCHEMA[m['metric']]],)
+            )
 
     search = core.SearchSolutions(pb_core.SearchSolutionsRequest(
         user_agent='ta3_stub',
@@ -50,12 +60,7 @@ def do_search(core, problem, dataset_path, time_bound=30.0):
                 task_subtype=TASK_SUBTYPES[SUBTASKS_FROM_SCHEMA[
                     problem['about'].get('taskSubType', 'none')
                 ]],
-                performance_metrics=[
-                    pb_problem.ProblemPerformanceMetric(
-                        metric=METRICS[SCORES_FROM_SCHEMA[e['metric']]],
-                    )
-                    for e in problem['inputs']['performanceMetrics']
-                ],
+                performance_metrics=metrics
             ),
             inputs=[
                 pb_problem.ProblemInput(
@@ -108,6 +113,19 @@ def do_describe(core, solutions):
 
 
 def do_score(core, problem, solutions, dataset_path):
+    metrics = []
+
+    for m in problem['inputs']['performanceMetrics']:
+        if 'posLabel' in m:
+            metrics.append(pb_problem.ProblemPerformanceMetric(
+                metric=METRICS[SCORES_FROM_SCHEMA[m['metric']]],
+                pos_label=m['posLabel'])
+            )
+        else:
+            metrics.append(pb_problem.ProblemPerformanceMetric(
+                metric=METRICS[SCORES_FROM_SCHEMA[m['metric']]], )
+            )
+
     for solution in solutions:
         try:
             response = core.ScoreSolution(pb_core.ScoreSolutionRequest(
@@ -115,12 +133,7 @@ def do_score(core, problem, solutions, dataset_path):
                 inputs=[pb_value.Value(
                     dataset_uri='file://%s' % dataset_path,
                 )],
-                performance_metrics=[
-                    pb_problem.ProblemPerformanceMetric(
-                        metric=METRICS[SCORES_FROM_SCHEMA[e['metric']]],
-                    )
-                    for e in problem['inputs']['performanceMetrics']
-                ],
+                performance_metrics=metrics,
                 users=[],
                 configuration=pb_core.ScoringConfiguration(
                     method=pb_core.EvaluationMethod.Value('K_FOLD'),

@@ -671,7 +671,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         }
 
         if problem.problem.task_subtype != pb_problem.TASK_SUBTYPE_UNDEFINED \
-           and problem.problem.task_subtype != pb_problem.NONE:
+           and problem.problem.task_subtype != pb_problem.NONE:  # Avoid TASK_SUBTYPE_UNDEFINED and NONE
             problem_dict['about']['taskSubType'] = SUBTASKS_TO_SCHEMA[
                                                         self.grpc2tasksubtype[problem.problem.task_subtype]
                                                     ]

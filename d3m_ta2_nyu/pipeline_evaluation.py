@@ -74,18 +74,28 @@ def cross_validation(pipeline, dataset, metrics, problem, scoring_conf):
     scoring_conf['number_of_folds'] = scoring_conf.pop('folds')
     scores = evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf)
     logger.info("Cross-validation results:\n%s", scores)
+    results = {}
 
-    return {s['fold']: {s['metric']: s['value']}
-            for _, s in scores.iterrows()}
+    for _, row in scores.iterrows():
+        if row['fold'] not in results:
+            results[row['fold']] = {}
+        results[row['fold']][row['metric']] = row['value']
+
+    return results
 
 
 def holdout(pipeline, dataset, metrics, problem, scoring_conf):
     data_pipeline = train_test_tabular_split
     scores = evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf)
     logger.info("Holdout results:\n%s", scores)
+    results = {}
 
-    return {s['fold']: {s['metric']: s['value']}
-            for _, s in scores.iterrows()}
+    for _, row in scores.iterrows():
+        if row['fold'] not in results:
+            results[row['fold']] = {}
+        results[row['fold']][row['metric']] = row['value']
+
+    return results
 
 
 def _format_metrics(metrics):

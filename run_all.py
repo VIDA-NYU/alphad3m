@@ -43,7 +43,7 @@ def run_all_datasets():
 
         metric = SCORES_FROM_SCHEMA[problem['inputs']['performanceMetrics'][0]['metric']]
         best_time, score = 'None', 'None'
-        solutions = do_search(core, problem, train_dataset_path, time_bound=5.0)
+        solutions = do_search(core, problem, train_dataset_path, time_bound=30.0)
         search_time = str(datetime.now() - start_time)
         number_solutions = len(solutions)
 
@@ -58,9 +58,13 @@ def run_all_datasets():
             if len(tested_solution) > 0:
                 true_file_path = join(DATASETS_PATH, dataset, '%s_dataset/tables/learningData.csv' % dataset)
                 pred_file_path = join(D3MINPUTDIR, 'predictions', os.path.basename(list(tested_solution.values())[0]))
-                labels, predictions = get_ytrue_ypred(true_file_path, pred_file_path)
-                score = calculate_performance(metric, labels, predictions)
-                logger.info('Best pipeline scored: %s=%.2f' % (metric, score))
+                try:
+                    labels, predictions = get_ytrue_ypred(true_file_path, pred_file_path)
+                    score = calculate_performance(metric, labels, predictions)
+                    logger.info('Best pipeline scored: %s=%.2f' % (metric, score))
+                except Exception as e:
+                    logger.error('Error calculating test score')
+                    logger.error(e)
 
         row = [dataset, number_solutions, best_time, search_time, score]
         save_row(statistics_path, row)
