@@ -135,7 +135,7 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         problem = self._convert_problem(context, request.problem)
 
-        timeout = request.time_bound
+        timeout = request.time_bound_search
         if timeout < 0.000001:
             timeout = None  # No limit
         else:
@@ -638,12 +638,12 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         problem_dict = {
             'about': {
-                'problemID': problem.problem.id,
-                'problemVersion': problem.problem.version,
-                'problemDescription': problem.problem.description,
+                'problemID': problem.id,
+                'problemVersion': problem.version,
+                'problemDescription': problem.description,
                 'taskType': TASKS_TO_SCHEMA.get(task, ''),
                 'problemSchemaVersion': '3.0',
-                'problemName': problem.problem.name,
+                'problemName': problem.name,
 
             },
             'inputs': {

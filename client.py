@@ -46,14 +46,14 @@ def do_search(core, problem, dataset_path, time_bound=30.0):
     search = core.SearchSolutions(pb_core.SearchSolutionsRequest(
         user_agent='ta3_stub',
         version=version,
-        time_bound=time_bound,
+        time_bound_search=time_bound,
         allowed_value_types=[pb_value.CSV_URI],
         problem=pb_problem.ProblemDescription(
+            id=problem['about']['problemID'],
+            version=problem['about']['problemVersion'],
+            name=os.path.basename('/input/problem_TRAIN'),
+            description="",
             problem=pb_problem.Problem(
-                id=problem['about']['problemID'],
-                version=problem['about']['problemVersion'],
-                name=os.path.basename('/input/problem_TRAIN'),
-                description="",
                 task_type=TASK_TYPES[TASKS_FROM_SCHEMA[
                     problem['about']['taskType']
                 ]],

@@ -1,4 +1,4 @@
-FROM registry.datadrivendiscovery.org/jpl/docker_images/complete:ubuntu-artful-python36-v2019.2.18-20190228-054439
+FROM registry.datadrivendiscovery.org/jpl/docker_images/complete:ubuntu-bionic-python36-v2019.4.4-20190507-022543
 
 MAINTAINER "remi.rampin@nyu.edu"
 
@@ -11,7 +11,7 @@ WORKDIR /usr/src/app
 # Install requirements
 COPY requirements.txt /usr/src/app/requirements.txt
 RUN pip3 freeze | sort >prev_reqs.txt && \
-    pip3 install Cython==0.28.5 && \
+    pip3 install Cython==0.29.7 && \
     pip3 install -r requirements.txt && \
     pip3 freeze | sort >new_reqs.txt && \
     comm -23 prev_reqs.txt new_reqs.txt | while read i; do echo "Removed package $i" >&2; exit 1; done && \
@@ -35,7 +35,7 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
     rm prev_reqs.txt new_reqs.txt
 
 # Install TA3-TA2 API
-RUN pip3 install https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/archive/6031376c80d07aa10a5a4ff59e8214dfec5252e7/ta3ta2-api-6031376c80d07aa10a5a4ff59e8214dfec5252e7.zip
+RUN pip3 install https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/archive/58f2da314ea5fa5c2d517f9c2463a7aea4f719f3/ta3ta2-api-58f2da314ea5fa5c2d517f9c2463a7aea4f719f3.zip
 
 COPY eval.sh /usr/local/bin/eval.sh
 

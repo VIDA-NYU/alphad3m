@@ -51,8 +51,6 @@ class GenerateD3MPipelines():
         def change_default_hyperparams(primitive_name, primitive):
             if primitive_name == 'd3m.primitives.data_cleaning.imputer.SKlearn':
                 set_hyperparams(primitive, strategy='most_frequent')
-            elif primitive_name == 'd3m.primitives.data_cleaning.simple_imputer.SKlearn':
-                set_hyperparams(primitive, strategy='most_frequent')
             elif primitive_name == 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn':
                 set_hyperparams(primitive, handle_unknown='ignore')
 
