@@ -9,7 +9,7 @@ from d3m.container import Dataset
 from d3m.metadata import base as metadata_base
 import d3m.metadata.base
 import d3m.runtime
-from d3m.metadata.problem import parse_problem_description
+from d3m.metadata.problem import Problem
 from d3m_ta2_nyu.workflow import database, convert
 
 
@@ -91,16 +91,9 @@ def train(pipeline_id, dataset, problem, storage_dir, results_path, msg_queue, d
     # Convert problem description to core package format
     # FIXME: There isn't a way to parse from JSON data, so write it to a file
     # and read it back
-    tmp = tempfile.NamedTemporaryFile('w', encoding='utf-8',
-                                      suffix='.json', delete=False)
-    try:
-        try:
-            json.dump(problem, tmp)
-        finally:
-            tmp.close()
-        d3m_problem = parse_problem_description(tmp.name)
-    finally:
-        os.remove(tmp.name)
+    with open('/input/problemDoc.json', 'w', encoding='utf8') as fin:
+        json.dump(problem, fin)
+    d3m_problem = Problem.load('file:///input/problemDoc.json')
 
     runtime = d3m.runtime.Runtime(pipeline=d3m_pipeline, problem_description=d3m_problem,
                                   context=metadata_base.Context.TESTING)

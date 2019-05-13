@@ -40,7 +40,6 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
     # FIXME: There isn't a way to parse from JSON data, so write it to a file
     # and read it back
 
-    #with tempfile.TemporaryDirectory() as tmpdirname:
     with open('/input/problemDoc.json', 'w', encoding='utf8') as fin:
         json.dump(problem, fin)
     d3m_problem = Problem.load('file:///input/problemDoc.json')
