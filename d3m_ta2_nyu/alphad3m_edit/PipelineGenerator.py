@@ -174,7 +174,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    def eval_audio_pipeline(strings, origin):
+    def eval_audio_pipeline(origin):
         # Create the pipeline in the database
         pipeline_id = GenerateD3MPipelines.make_audio_pipeline_from_strings(origin,
                                                                             dataset,
