@@ -1250,6 +1250,8 @@ class D3mTa2(Observable):
             #         |                  |        Extract (target, index)
             #     [imputer]          CastToType      |
             #         |                  |           |
+            #    One-hot encoder         |           |
+            #         |                  |           |
             #     CastToType            /           /
             #            \            /           /
             #             [classifier]          /
