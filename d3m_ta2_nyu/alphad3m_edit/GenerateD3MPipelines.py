@@ -193,6 +193,13 @@ class GenerateD3MPipelines():
                 pipeline=pipeline, module=input_data,
                 name='features', value=pickle.dumps(features),
             ))
+
+            def set_hyperparams(module, **hyperparams):
+                db.add(database.PipelineParameter(
+                    pipeline=pipeline, module=module,
+                    name='hyperparams', value=pickle.dumps(hyperparams),
+                ))
+
             primitives = ['d3m.primitives.bbn.time_series.ChannelAverager',
                           'd3m.primitives.bbn.time_series.SignalDither',
                           'd3m.primitives.bbn.time_series.SignalFramer',
@@ -215,8 +222,18 @@ class GenerateD3MPipelines():
             if len(primitives) > 1:
                 preprocessors = primitives[0:len(primitives) - 1]
             classifier = primitives[len(primitives) - 1]
+            check_clustered = False
             for preprocessor in preprocessors:
                 step = make_primitive_module(preprocessor)
+                if 'SignalMFCC' in preprocessor:
+                    set_hyperparams(step, num_ceps=3)
+                elif 'ClusterCurveFittingKMeans' in preprocessor:
+                    set_hyperparams(step, n_clusters=512)
+                    check_clustered = True
+                elif 'SignalFramer' in preprocessor and check_clustered:
+                    set_hyperparams(step, frame_length_s=1.0,frame_shift_s=1.0)
+                elif 'BBNTfidfTransformer' in preprocessor:
+                    set_hyperparams(step, sublinear_tf=True)
                 connect(prev_step, step)
                 prev_step = step
 
@@ -224,7 +241,7 @@ class GenerateD3MPipelines():
             connect(step, step2)
             connect(step0, step2, to_input='outputs')
 
-            step3 = make_primitive_module('d3m.primitives.normalization.Denormalize.DSBOX')
+            step3 = make_primitive_module('d3m.primitives.data_transformation.denormalize.Common')
             connect(input_data, step3, from_output='dataset')
 
             step4 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
