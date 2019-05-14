@@ -6,7 +6,7 @@ import tempfile
 import d3m.metadata.base
 import d3m.runtime
 from d3m.metadata.pipeline import Pipeline
-from d3m.metadata.problem import parse_problem_description
+from d3m.metadata.problem import Problem
 from d3m_ta2_nyu.workflow import convert
 
 
@@ -39,15 +39,10 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
     # Convert problem description to core package format
     # FIXME: There isn't a way to parse from JSON data, so write it to a file
     # and read it back
-    tmp = tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.json', delete=False)
-    try:
-        try:
-            json.dump(problem, tmp)
-        finally:
-            tmp.close()
-        d3m_problem = parse_problem_description(tmp.name)
-    finally:
-        os.remove(tmp.name)
+
+    with open('/input/problemDoc.json', 'w', encoding='utf8') as fin:
+        json.dump(problem, fin)
+    d3m_problem = Problem.load('file:///input/problemDoc.json')
 
     formatted_metric = _format_metrics(metrics)
 
@@ -64,7 +59,7 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
         random_seed=0,
     )
 
-    scores = d3m.runtime.combine_folds([fold[0] for fold in results])
+    scores = d3m.runtime.combine_folds([fold for fold in results[0]])
 
     return scores
 
