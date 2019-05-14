@@ -1366,7 +1366,7 @@ class D3mTa2(Observable):
         'CLASSIFICATION': list(itertools.product(
             [_classification_template],
             # Imputer
-            ['d3m.primitives.data_cleaning.simple_imputer.SKlearn'],
+            ['d3m.primitives.data_cleaning.imputer.SKlearn'],
             # Classifier
             [
                 'd3m.primitives.classification.random_forest.SKlearn',

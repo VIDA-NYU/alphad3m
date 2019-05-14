@@ -492,9 +492,9 @@ class GenerateD3MPipelines():
                 name='features', value=pickle.dumps(features),
             ))
 
-            step0 = make_primitive_module('d3m.primitives.sri.graph.VertexNominationParser')
+            step0 = make_primitive_module('d3m.primitives.data_transformation.vertex_nomination_parser.VertexNominationParser')
             connect(input_data, step0, from_output='dataset')
-            step1 = make_primitive_module('d3m.primitives.sri.psl.VertexNomination')
+            step1 = make_primitive_module('d3m.primitives.classification.vertex_nomination.VertexNomination')
             connect(step0, step1)
             db.add(pipeline)
             db.commit()
@@ -645,7 +645,7 @@ class GenerateD3MPipelines():
                 name='features', value=pickle.dumps(features),
             ))
 
-            step0 = make_primitive_module('d3m.primitives.sri.autoflow.DatasetTextReader')
+            step0 = make_primitive_module('d3m.primitives.data_preprocessing.dataset_text_reader.DatasetTextReader')
             connect(input_data, step0, from_output='dataset')
 
             step1 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
@@ -674,7 +674,7 @@ class GenerateD3MPipelines():
             )
             connect(step3, step4)
 
-            step5 = make_primitive_module('d3m.primitives.sri.autoflow.Conditioner')
+            step5 = make_primitive_module('d3m.primitives.data_transformation.conditioner.Conditioner')
             connect(step4, step5)
 
             step6 = make_primitive_module('d3m.primitives.classification.bernoulli_naive_bayes.SKlearn')

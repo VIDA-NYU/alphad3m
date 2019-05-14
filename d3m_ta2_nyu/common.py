@@ -9,15 +9,6 @@ import sklearn.metrics
 logger = logging.getLogger(__name__)
 
 
-def _root_mean_squared_error_avg(y_true, y_pred):
-    l2_sum = 0
-    count = 0
-    for t, p in zip(y_true, y_pred):
-        l2_sum += math.sqrt(sklearn.metrics.mean_squared_error(t, p))
-        count += 1
-    return l2_sum / count
-
-
 SCORES_TO_SKLEARN = dict(
     ACCURACY=sklearn.metrics.accuracy_score,
     PRECISION=lambda y_true, y_pred:
@@ -39,7 +30,6 @@ SCORES_TO_SKLEARN = dict(
     MEAN_SQUARED_ERROR=sklearn.metrics.mean_squared_error,
     ROOT_MEAN_SQUARED_ERROR=lambda y_true, y_pred:
         math.sqrt(sklearn.metrics.mean_squared_error(y_true, y_pred)),
-    ROOT_MEAN_SQUARED_ERROR_AVG=_root_mean_squared_error_avg,
     MEAN_ABSOLUTE_ERROR=sklearn.metrics.mean_absolute_error,
     R_SQUARED=sklearn.metrics.r2_score,
     NORMALIZED_MUTUAL_INFORMATION=sklearn.metrics.normalized_mutual_info_score,
@@ -59,7 +49,6 @@ SCORES_FROM_SCHEMA = {
     'rocAucMacro': 'ROC_AUC_MACRO',
     'meanSquaredError': 'MEAN_SQUARED_ERROR',
     'rootMeanSquaredError': 'ROOT_MEAN_SQUARED_ERROR',
-    'rootMeanSquaredErrorAvg': 'ROOT_MEAN_SQUARED_ERROR_AVG',
     'meanAbsoluteError': 'MEAN_ABSOLUTE_ERROR',
     'rSquared': 'R_SQUARED',
     'normalizedMutualInformation': 'NORMALIZED_MUTUAL_INFORMATION',
@@ -83,7 +72,6 @@ SCORES_RANKING_ORDER = dict(
     ROC_AUC_MACRO=-1,
     MEAN_SQUARED_ERROR=1,
     ROOT_MEAN_SQUARED_ERROR=1,
-    ROOT_MEAN_SQUARED_ERROR_AVG=1,
     MEAN_ABSOLUTE_ERROR=1,
     R_SQUARED=-1,
     NORMALIZED_MUTUAL_INFORMATION=-1,
@@ -102,7 +90,8 @@ TASKS_FROM_SCHEMA = {
     'graphMatching': 'GRAPH_MATCHING',
     'timeSeriesForecasting': 'TIME_SERIES_FORECASTING',
     'collaborativeFiltering': 'COLLABORATIVE_FILTERING',
-    'objectDetection': 'OBJECT_DETECTION'
+    'objectDetection': 'OBJECT_DETECTION',
+    'vertexClassification':'VERTEX_CLASSIFICATION'
 }
 
 TASKS_TO_SCHEMA = {v: k for k, v in TASKS_FROM_SCHEMA.items()}

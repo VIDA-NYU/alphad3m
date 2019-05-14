@@ -24,7 +24,8 @@ def run_all_datasets():
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
     statistics_path = join(dirname(__file__), 'statistics_datasets.csv')
     datasets = sorted([x for x in os.listdir(DATASETS_PATH) if os.path.isdir(join(DATASETS_PATH, x))])
-    datasets = ['185_baseball']
+    old_datasets = ['1491_one_hundred_plants_margin', '1491_one_hundred_plants_margin_clust', '1567_poker_hand', '185_baseball', '196_autoMpg', '22_handgeometry', '26_radon_seed', '27_wordLevels', '299_libras_move', '30_personae', '313_spectrometer', '31_urbansound', '32_wikiqa', '38_sick', '4550_MiceProtein', '49_facebook', '534_cps_85_wages', '56_sunspots', '56_sunspots_monthly', '57_hypothyroid', '59_umls', '60_jester', '66_chlorineConcentration', '6_70_com_amazon', '6_86_com_DBLP', 'DS01876', 'LL0_1100_popularkids', 'LL0_186_braziltourism', 'LL0_207_autoPrice', 'LL0_acled', 'LL0_acled_reduced', 'LL1_336_MS_Geolife_transport_mode_prediction', 'LL1_336_MS_Geolife_transport_mode_prediction_separate_lat_lon', 'LL1_3476_HMDB_actio_recognition', 'LL1_726_TIDY_GPS_carpool_bus_service_rating_prediction', 'LL1_736_stock_market', 'LL1_EDGELIST_net_nomination_seed', 'LL1_crime_chicago', 'LL1_net_nomination_seed', 'LL1_penn_fudan_pedestrian', 'uu1_datasmash', 'uu2_gp_hyperparameter_estimation', 'uu2_gp_hyperparameter_estimation_v2', 'uu3_world_development_indicators', 'uu4_SPECT', 'uu5_heartstatlog', 'uu6_hepatitis', 'uu7_pima_diabetes']
+    datasets = [x for x in datasets if x not in old_datasets][5:]
     size = len(datasets)
 
     for i, dataset in enumerate(datasets):
@@ -44,7 +45,7 @@ def run_all_datasets():
 
         metric = SCORES_FROM_SCHEMA[problem['inputs']['performanceMetrics'][0]['metric']]
         best_time, score = 'None', 'None'
-        solutions = do_search(core, problem, train_dataset_path, time_bound=2.0)
+        solutions = do_search(core, problem, train_dataset_path, time_bound=15.0)
         search_time = str(datetime.now() - start_time)
         number_solutions = len(solutions)
 
