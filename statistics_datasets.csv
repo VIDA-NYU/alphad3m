@@ -59,10 +59,13 @@ SEMI_1044_eye_movements	0	None	0:00:04.813979	None
 SEMI_1040_sylva_prior	0	None	0:00:05.126945	None
 SEMI_1044_eye_movements	0	None	0:00:04.950124	None
 SEMI_1053_jm1	0	None	0:00:04.977612	None
-SEMI_1217_click_prediction_small	0	None	0:00:05.287271	None
-SEMI_1459_artificial_characters	0	None	0:00:04.853755	None
-
-32_wikiqa	7	0:01:32.834420	0:10:05.340520	None
-22_handgeometry	0	None	0:00:10.324061	None
-22_handgeometry	0	None	0:00:42.312828	None
-22_handgeometry	0	None	0:00:35.277487	None
+SEMI_1217_click_prediction_small	0	None	0:00:05.039693	None
+SEMI_1459_artificial_characters	0	None	0:00:04.727567	None
+SEMI_155_pokerhand	0	None	0:00:05.764026	None
+uu10_posts_3	0	None	0:03:02.097982	None
+uu3_world_development_indicators_raw	0	None	0:03:00.234855	None
+uu8_posts_1	6	0:00:48.034987	0:03:03.099237	None
+uu9_posts_2	6	0:00:42.070486	0:03:01.099328	9.72659279797155
+uu_101_object_categories	0	None	0:00:07.769018	None
+534_cps_85_wages	13	0:00:13.086225	0:03:04.486686	45.54353537735849
+56_sunspots	0	None	0:00:07.011526	None
