@@ -1001,8 +1001,10 @@ class D3mTa2(Observable):
             session.working = True
 
         logger.info("Creating pipelines from templates...")
-        if task in ['GRAPH_MATCHING','COMMUNITY_DETECTION','LINK_PREDICTION','VERTEX_NOMINATION']:
+        if task in ['GRAPH_MATCHING','COMMUNITY_DETECTION','LINK_PREDICTION','VERTEX_NOMINATION','OBJECT_DETECTION']:
             template_name = 'CLASSIFICATION'
+        elif task in ['TIME_SERIES_FORECASTING','COLLABORATIVE_FILTERING']:
+            template_name = 'REGRESSION'
         else:
             template_name = task
         if 'TA2_DEBUG_BE_FAST' in os.environ:

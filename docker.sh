@@ -5,8 +5,8 @@
 # Example test: ./docker.sh test seed_datasets_current/185_baseball/TEST ta2:latest
 
 # Change this if you're not Remi
-LOCAL_DATA_ROOT="/Users/rlopez/D3M/datasets"
-LOCAL_OUTPUT_ROOT="/Users/rlopez/D3M/tmp"
+LOCAL_DATA_ROOT="/home/raoni/reps/datasets"
+LOCAL_OUTPUT_ROOT="/home/raoni/d3m/tmp"
 
 set -eu
 

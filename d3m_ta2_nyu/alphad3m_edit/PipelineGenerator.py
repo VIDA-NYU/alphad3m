@@ -183,6 +183,15 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
+    def eval_object_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = GenerateD3MPipelines.make_object_detection_pipeline_from_strings(origin,
+                                                                            dataset,
+                                                                            targets, features, DBSession=DBSession)
+        # Evaluate the pipeline
+        msg_queue.send(('eval', pipeline_id))
+        return msg_queue.recv()
+
     def eval_graphMatch_pipeline(origin):
         # Create the pipeline in the database
         pipeline_id = GenerateD3MPipelines.make_graphMatching_pipeline_from_strings(origin,
@@ -261,13 +270,18 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
     for data_res in data_resources:
         data_types.append(data_res['resType'])
 
-    unsupported_problems = ['TIME_SERIES_FORECASTING', 'COLLABORATIVE_FILTERING', 'OBJECT_DETECTION']
-
+    unsupported_problems = ['TIME_SERIES_FORECASTING', 'COLLABORATIVE_FILTERING']
     print('>>>>>>>', data_types)
+
+
     if task in unsupported_problems:
         logger.error('%s Not Supported', task)
         sys.exit(148)
-    
+
+    if 'OBJECT_DETECTION' in task:
+        eval_object_pipeline('ALPHAD3M')
+        return
+
     if 'text' in data_types:
         eval_text_pipeline('ALPHAD3M')
         return
