@@ -91,7 +91,9 @@ TASKS_FROM_SCHEMA = {
     'timeSeriesForecasting': 'TIME_SERIES_FORECASTING',
     'collaborativeFiltering': 'COLLABORATIVE_FILTERING',
     'objectDetection': 'OBJECT_DETECTION',
-    'vertexClassification':'VERTEX_CLASSIFICATION'
+    'vertexClassification':'VERTEX_CLASSIFICATION',
+    'semiSupervisedClassification': 'SEMISUPERVISED_CLASSIFICATION',
+    'semiSupervisedRegression': 'SEMISUPERVISED_REGRESSION'
 }
 
 TASKS_TO_SCHEMA = {v: k for k, v in TASKS_FROM_SCHEMA.items()}

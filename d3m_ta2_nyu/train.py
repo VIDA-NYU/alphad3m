@@ -91,9 +91,11 @@ def train(pipeline_id, dataset, problem, storage_dir, results_path, msg_queue, d
     # Convert problem description to core package format
     # FIXME: There isn't a way to parse from JSON data, so write it to a file
     # and read it back
-    with open('/input/problemDoc.json', 'w', encoding='utf8') as fin:
-        json.dump(problem, fin)
-    d3m_problem = Problem.load('file:///input/problemDoc.json')
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_path = os.path.join(tmp_dir, 'problemDoc.json')
+        with open(tmp_path, 'w', encoding='utf8') as fin:
+            json.dump(problem, fin)
+        d3m_problem = Problem.load('file://' + tmp_path)
 
     runtime = d3m.runtime.Runtime(pipeline=d3m_pipeline, problem_description=d3m_problem,
                                   context=metadata_base.Context.TESTING)

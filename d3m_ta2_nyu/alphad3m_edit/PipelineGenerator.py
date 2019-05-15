@@ -286,7 +286,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         elif 'LINK_PREDICTION' in task:
             eval_linkprediction_pipeline('ALPHAD3M')
             return
-        elif 'VERTEX_NOMINATION' in task:
+        elif 'VERTEX_NOMINATION' in task or 'VERTEX_CLASSIFICATION' in task:
             eval_vertexnomination_pipeline('ALPHAD3M')
             return
         logger.error('%s Not Supported', task)

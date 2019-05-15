@@ -1,12 +1,11 @@
 import logging
 import numpy
-import os
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from d3m_ta2_nyu.pipeline_evaluation import cross_validation, holdout
 from d3m_ta2_nyu.workflow import database
-from sklearn.model_selection import train_test_split
+from d3m_ta2_nyu.common import normalize_score, SCORES_FROM_SCHEMA
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +80,39 @@ def score(pipeline_id, dataset, metrics, problem, scoring_conf, msg_queue, db):
                 holdout_scores.append(database.CrossValidationScore(fold=fold, metric=metric, value=value))
 
         # TODO Create Holdout table in database
+        holdout_db = database.CrossValidation(pipeline_id=pipeline_id, scores=holdout_scores)
+        db.add(holdout_db)
+
+    elif evaluation_method == pb_core.EvaluationMethod.Value('RANKING'):
+        metrics = []
+        for metric in problem['inputs']['performanceMetrics']:
+            metric_name = metric['metric']
+            try:
+                metric_name = SCORES_FROM_SCHEMA[metric_name]
+            except KeyError:
+                logger.error("Unknown metric %r", metric_name)
+                raise ValueError("Unknown metric %r" % metric_name)
+
+            formatted_metric = {'metric': metric_name}
+
+            if len(metric) > 1:  # Metric has parameters
+                formatted_metric['params'] = {}
+                for param in metric.keys():
+                    if param != 'metric':
+                        formatted_metric['params'][param] = metric[param]
+
+            metrics.append(formatted_metric)
+
+        scores = holdout(pipeline, dataset, metrics, problem, {})
+
+        # Store scores
+        holdout_scores = []
+        for fold, fold_scores in scores.items():
+            for metric, current_score in fold_scores.items():
+                new_score = normalize_score(metric, current_score, 'desc')
+                holdout_scores.append(database.CrossValidationScore(fold=fold, metric='RANK', value=new_score))
+
+        # TODO Create Ranking table in database
         holdout_db = database.CrossValidation(pipeline_id=pipeline_id, scores=holdout_scores)
         db.add(holdout_db)
 

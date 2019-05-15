@@ -39,10 +39,11 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
     # Convert problem description to core package format
     # FIXME: There isn't a way to parse from JSON data, so write it to a file
     # and read it back
-
-    with open('/input/problemDoc.json', 'w', encoding='utf8') as fin:
-        json.dump(problem, fin)
-    d3m_problem = Problem.load('file:///input/problemDoc.json')
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_path = os.path.join(tmp_dir, 'problemDoc.json')
+        with open(tmp_path, 'w', encoding='utf8') as fin:
+            json.dump(problem, fin)
+        d3m_problem = Problem.load('file://' + tmp_path)
 
     formatted_metric = _format_metrics(metrics)
 

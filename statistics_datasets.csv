@@ -44,7 +44,8 @@ uu2_gp_hyperparameter_estimation_v2     0       None    0:15:05.307663  None
 uu3_world_development_indicators
 uu4_SPECT       31      0:00:09.015272  0:15:02.382555  0.766355140186916
 uu5_heartstatlog        38      0:00:21.034338  0:15:03.129923  None
-
+uu6_hepatitis   11      0:00:12.030765  0:15:02.328623  0.5294117647058824
+uu7_pima_diabetes       40      0:00:30.980870  0:15:00.526774  None
 
 
 LL1_736_population_spawn	0	None	0:00:05.039639	None
@@ -53,3 +54,10 @@ LL1_TXT_CLS_airline_opinion	1	0:00:30.423303	0:00:36.920924	0.7342896174863388
 LL1_TXT_CLS_apple_products_sentiment	1	0:00:17.961913	0:00:23.705153	0.7069408740359897
 LL1_VTXC_1343_cora	0	None	0:00:05.097901	None
 LL1_VTXC_1369_synthetic	0	None	0:00:04.813709	None
+LL1_multilearn_emotions	23	0:00:21.162115	0:15:07.627199	NoneSEMI_1040_sylva_prior	0	None	0:00:04.972775	None
+SEMI_1044_eye_movements	0	None	0:00:04.813979	None
+SEMI_1040_sylva_prior	0	None	0:00:05.126945	None
+SEMI_1044_eye_movements	0	None	0:00:04.950124	None
+SEMI_1053_jm1	0	None	0:00:04.977612	None
+SEMI_1217_click_prediction_small	0	None	0:00:05.287271	None
+SEMI_1459_artificial_characters	0	None	0:00:04.853755	None
