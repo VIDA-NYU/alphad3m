@@ -411,9 +411,8 @@ class GenerateD3MPipelines():
             step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.DataFrameCommon')
             connect(step1, step2)
 
-            step3 = make_primitive_module('d3m.primitives.sri.psl.GraphMatchingLinkPrediction')
-            set_hyperparams(step3, link_prediction_hyperparams="gANjc3JpLnBzbC5saW5rX3ByZWRpY3Rpb24KTGlua1ByZWRpY3Rpb25IeXBlcnBhcmFtcwpxACmBcQF9cQIoWAsAAABwc2xfb3B0aW9uc3EDWAAAAABxBFgMAAAAcHNsX3RlbXBfZGlycQVYDAAAAC90bXAvcHNsL3J1bnEGWBAAAABwb3N0Z3Jlc19kYl9uYW1lcQdYBwAAAHBzbF9kM21xCFgPAAAAYWRtbV9pdGVyYXRpb25zcQlN6ANYCwAAAG1heF90aHJlYWRzcQpLAFgKAAAAanZtX21lbW9yeXELRz/oAAAAAAAAWA8AAAB0cnV0aF90aHJlc2hvbGRxDEc+etfymryvSFgRAAAAcHJlZGljdGlvbl9jb2x1bW5xDVgEAAAAbGlua3EOdWIu")
-
+            step3 = make_primitive_module('d3m.primitives.link_prediction.graph_matching_link_prediction.GraphMatchingLinkPrediction')
+            set_hyperparams(step3, link_prediction_hyperparams="gANjc3JpLnBzbC5saW5rX3ByZWRpY3Rpb24KTGlua1ByZWRpY3Rpb25IeXBlcnBhcmFtcwpxACmBcQF9cQIoWAsAAABwc2xfb3B0aW9uc3EDWAAAAABxBFgQAAAAcG9zdGdyZXNfZGJfbmFtZXEFWAcAAABwc2xfZDNtcQZYDwAAAGFkbW1faXRlcmF0aW9uc3EHTegDWAsAAABtYXhfdGhyZWFkc3EISwBYCgAAAGp2bV9tZW1vcnlxCUc/6AAAAAAAAFgPAAAAdHJ1dGhfdGhyZXNob2xkcQpHPnrX8pq8r0hYEQAAAHByZWRpY3Rpb25fY29sdW1ucQtYBAAAAGxpbmtxDHViLg==")
             connect(input_data, step3, from_output='dataset')
 
             #connect(input_data, step3, to_input='outputs')
@@ -485,9 +484,9 @@ class GenerateD3MPipelines():
                 pipeline=pipeline, module=input_data,
                 name='features', value=pickle.dumps(features),
             ))
-            step0 = make_primitive_module('d3m.primitives.sri.graph.CommunityDetectionParser')
+            step0 = make_primitive_module('d3m.primitives.community_detection.community_detection_parser.CommunityDetectionParser')
             connect(input_data, step0, from_output='dataset')
-            step1 = make_primitive_module('d3m.primitives.sri.psl.CommunityDetection')
+            step1 = make_primitive_module('d3m.primitives.classification.community_detection.CommunityDetection')
             set_hyperparams(
                 step1,
                 jvm_memory=0.8
@@ -544,11 +543,11 @@ class GenerateD3MPipelines():
                 pipeline=pipeline, module=input_data,
                 name='features', value=pickle.dumps(features),
             ))
-            step0 = make_primitive_module('d3m.primitives.sri.graph.GraphMatchingParser')
+            step0 = make_primitive_module('d3m.primitives.data_transformation.graph_matching_parser.GraphMatchingParser')
             connect(input_data, step0, from_output='dataset')
-            step1 = make_primitive_module('d3m.primitives.sri.graph.GraphTransformer')
+            step1 = make_primitive_module('d3m.primitives.data_transformation.graph_transformer.GraphTransformer')
             connect(step0, step1)
-            step2 = make_primitive_module('d3m.primitives.sri.psl.LinkPrediction')
+            step2 = make_primitive_module('d3m.primitives.link_prediction.link_prediction.LinkPrediction')
             connect(step1, step2)
             step3 = make_primitive_module('d3m.primitives.data_transformation.construct_predictions.DataFrameCommon')
             connect(step2, step3)
