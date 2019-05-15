@@ -580,7 +580,7 @@ class GenerateD3MPipelines():
             connect(step1, step2)
 
             step3 = make_primitive_module('d3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon')
-            set_hyperparams(step3, semantic_types=['http://schema.org/ImageObject'])
+            set_hyperparams(step3, semantic_types=['https://metadata.datadrivendiscovery.org/types/ImageObject'])
             connect(step2, step3)
 
             step4 = make_primitive_module('d3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon')
@@ -590,7 +590,7 @@ class GenerateD3MPipelines():
             step5 = make_primitive_module('d3m.primitives.data_transformation.dataframe_to_ndarray.Common')
             connect(step3, step5)
 
-            step6 = make_primitive_module('d3m.primitives.feature_extraction.vgg16.umich')
+            step6 = make_primitive_module('d3m.primitives.feature_extraction.vgg16.Umich')
             connect(step5, step6)
 
             step7 = make_primitive_module('d3m.primitives.data_transformation.ndarray_to_dataframe.Common')

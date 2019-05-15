@@ -103,16 +103,17 @@ def score(pipeline_id, dataset, metrics, problem, scoring_conf, msg_queue, db):
 
             metrics.append(formatted_metric)
 
-        scores = holdout(pipeline, dataset, metrics, problem, {})
+        scores = holdout(pipeline, dataset, metrics, problem, {'train_test_ratio': '0.75', 'shuffle': 'true'})
 
         # Store scores
         holdout_scores = []
         for fold, fold_scores in scores.items():
             for metric, current_score in fold_scores.items():
                 new_score = normalize_score(metric, current_score, 'desc')
-                holdout_scores.append(database.CrossValidationScore(fold=fold, metric='RANK', value=new_score))
+                new_metric = 'RANK'
+                holdout_scores.append(database.CrossValidationScore(fold=fold, metric=new_metric, value=new_score))
 
-        # TODO Create Ranking table in database
+        # TODO Should results be stored in CrossValidation table?
         holdout_db = database.CrossValidation(pipeline_id=pipeline_id, scores=holdout_scores)
         db.add(holdout_db)
 

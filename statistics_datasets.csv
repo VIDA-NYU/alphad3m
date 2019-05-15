@@ -33,19 +33,19 @@ LL1_336_MS_Geolife_transport_mode_prediction	6	0:01:11.943044	0:15:25.572655	Non
 LL1_336_MS_Geolife_transport_mode_prediction_separate_lat_lon	13	0:00:56.292374	0:15:07.538742	None
 LL1_3476_HMDB_actio_recognition	8	0:00:55.703567	0:15:07.554816	0.15873015873015872
 LL1_726_TIDY_GPS_carpool_bus_service_rating_prediction	11	0:00:22.092232	0:05:14.909972	0.31142857142857144
-LL1_736_stock_market    0       None    0:00:04.890026  None
+LL1_736_stock_market	0	None	0:00:04.890026	None
 LL1_EDGELIST_net_nomination_seed	1	0:00:18.285315	0:00:25.285908	0.85
-LL1_crime_chicago       43      0:00:09.018798  0:15:06.864177  0.65
+LL1_crime_chicago	43	:00:09.018798	0:15:06.864177	0.65
 LL1_net_nomination_seed	1	0:00:29.208316	0:00:36.434912	0.8125
-LL1_penn_fudan_pedestrian       0       None    0:00:04.811714  None
+LL1_penn_fudan_pedestrian	0	None	0:00:04.811714	None
 uu1_datasmash	1	0:00:24.041930	0:00:30.066980	0.16666666666666666
-uu2_gp_hyperparameter_estimation        2       0:02:42.401173  0:15:02.670292  None
-uu2_gp_hyperparameter_estimation_v2     0       None    0:15:05.307663  None
-uu3_world_development_indicators
-uu4_SPECT       31      0:00:09.015272  0:15:02.382555  0.766355140186916
-uu5_heartstatlog        38      0:00:21.034338  0:15:03.129923  None
-uu6_hepatitis   11      0:00:12.030765  0:15:02.328623  0.5294117647058824
-uu7_pima_diabetes       40      0:00:30.980870  0:15:00.526774  None
+uu2_gp_hyperparameter_estimation	2	0:02:42.401173	0:15:02.670292	None
+uu2_gp_hyperparameter_estimation_v2	0	None	0:15:05.307663	None
+uu3_world_development_indicators	8	0:00:50.830247	0:10:19.567293	None
+uu4_SPECT	31	0:00:09.015272	0:15:02.382555	0.766355140186916
+uu5_heartstatlog	38	0:00:21.034338	0:15:03.129923	None
+uu6_hepatitis	11	0:00:12.030765	0:15:02.328623	0.5294117647058824
+uu7_pima_diabetes	40	0:00:30.980870	0:15:00.526774	None
 
 
 LL1_736_population_spawn	0	None	0:00:05.039639	None
@@ -61,3 +61,8 @@ SEMI_1044_eye_movements	0	None	0:00:04.950124	None
 SEMI_1053_jm1	0	None	0:00:04.977612	None
 SEMI_1217_click_prediction_small	0	None	0:00:05.287271	None
 SEMI_1459_artificial_characters	0	None	0:00:04.853755	None
+
+32_wikiqa	7	0:01:32.834420	0:10:05.340520	None
+22_handgeometry	0	None	0:00:10.324061	None
+22_handgeometry	0	None	0:00:42.312828	None
+22_handgeometry	0	None	0:00:35.277487	None
