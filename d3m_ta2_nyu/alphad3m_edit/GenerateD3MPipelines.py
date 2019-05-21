@@ -412,8 +412,7 @@ class GenerateD3MPipelines():
             connect(step1, step2)
 
             step3 = make_primitive_module('d3m.primitives.link_prediction.graph_matching_link_prediction.GraphMatchingLinkPrediction')
-            set_hyperparams(step3, link_prediction_hyperparams="gANjc3JpLnBzbC5saW5rX3ByZWRpY3Rpb24KTGlua1ByZWRpY3Rpb25IeXBlcnBhcmFtcwpxACmBcQF9cQIoWAsAAABwc2xfb3B0aW9uc3EDWAAAAABxBFgMAAAAcHNsX3RlbXBfZGlycQVYDAAAAC90bXAvcHNsL3J1bnEGWBAAAABwb3N0Z3Jlc19kYl9uYW1lcQdYBwAAAHBzbF9kM21xCFgPAAAAYWRtbV9pdGVyYXRpb25zcQlN6ANYCwAAAG1heF90aHJlYWRzcQpLAFgKAAAAanZtX21lbW9yeXELRz/oAAAAAAAAWA8AAAB0cnV0aF90aHJlc2hvbGRxDEc+etfymryvSFgRAAAAcHJlZGljdGlvbl9jb2x1bW5xDVgEAAAAbGlua3EOdWIu")
-
+            set_hyperparams(step3, link_prediction_hyperparams="gANjc3JpLnBzbC5saW5rX3ByZWRpY3Rpb24KTGlua1ByZWRpY3Rpb25IeXBlcnBhcmFtcwpxACmBcQF9cQIoWAsAAABwc2xfb3B0aW9uc3EDWAAAAABxBFgQAAAAcG9zdGdyZXNfZGJfbmFtZXEFWAcAAABwc2xfZDNtcQZYDwAAAGFkbW1faXRlcmF0aW9uc3EHTegDWAsAAABtYXhfdGhyZWFkc3EISwBYCgAAAGp2bV9tZW1vcnlxCUc/6AAAAAAAAFgPAAAAdHJ1dGhfdGhyZXNob2xkcQpHPnrX8pq8r0hYEQAAAHByZWRpY3Rpb25fY29sdW1ucQtYBAAAAGxpbmtxDHViLg==")
             connect(input_data, step3, from_output='dataset')
 
             #connect(input_data, step3, to_input='outputs')

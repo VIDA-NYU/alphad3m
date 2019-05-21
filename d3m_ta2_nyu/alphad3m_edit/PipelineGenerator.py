@@ -3,13 +3,11 @@ import json
 import os
 import sys
 import operator
-import pickle
 import logging
 import multiprocessing
 
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
-from pathlib import Path
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.multiprocessing import Receiver
 from d3m_ta2_nyu.d3m_primitives import D3MPrimitives
@@ -28,21 +26,9 @@ def setup_logging():
         format='%(asctime)s:%(levelname)s:TA2:%(name)s:%(message)s')
 
     
-def getPrimitives():
-    installed_primitives_file = os.path.join(os.path.dirname(__file__), 'installed_primitives.json')
-    installed_primitives_file_path = Path(installed_primitives_file)
+def get_primitives():
     sklearn_primitives = {}
-
-    if installed_primitives_file_path.is_file():
-        with open(installed_primitives_file) as fin:
-            all_primitives = json.load(fin)
-        logger.info('Loading primitives from file')
-
-    else:
-        all_primitives = D3MPrimitives.get_primitives_dict()
-        with open(installed_primitives_file, 'w') as fout:
-            json.dump(all_primitives, fout, indent=4)
-        logger.info('Loading primitives from D3M index')
+    all_primitives = D3MPrimitives.get_primitives_info_summarized()
 
     for group in list(all_primitives.keys()):
         sklearn_primitives[group] = {}
@@ -53,7 +39,7 @@ def getPrimitives():
     return all_primitives, sklearn_primitives
 
 
-ALL_PRIMITIVES, SKLEARN_PRIMITIVES = getPrimitives()
+ALL_PRIMITIVES, SKLEARN_PRIMITIVES = get_primitives()
 
 GRAMMAR = {
     'NON_TERMINALS': {
@@ -66,7 +52,7 @@ GRAMMAR = {
 }
 
 
-def getTerminals(non_terminals, primitives, task):
+def get_terminals(non_terminals, primitives, task):
     terminals = {}
     count = len(GRAMMAR['NON_TERMINALS'])+1
     for non_terminal in non_terminals:
@@ -82,7 +68,7 @@ def getTerminals(non_terminals, primitives, task):
     return terminals
 
 
-def getRules(non_terminals, primitives, task):
+def get_rules(non_terminals, primitives, task):
     rules = { 'S->ESTIMATORS':1,
               'S->DATA_CLEANING ESTIMATORS':2,
               'S->DATA_TRANSFORMATION ESTIMATORS':3,
@@ -273,7 +259,6 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
     unsupported_problems = ['TIME_SERIES_FORECASTING', 'COLLABORATIVE_FILTERING']
     print('>>>>>>>', data_types)
 
-
     if task in unsupported_problems:
         logger.error('%s Not Supported', task)
         sys.exit(148)
@@ -321,8 +306,8 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         sys.exit(148)
 
     def create_input(selected_primitves):
-        GRAMMAR['TERMINALS'] = getTerminals(GRAMMAR['NON_TERMINALS'], selected_primitves, task)
-        r, l = getRules(GRAMMAR['NON_TERMINALS'], selected_primitves, task)
+        GRAMMAR['TERMINALS'] = get_terminals(GRAMMAR['NON_TERMINALS'], selected_primitves, task)
+        r, l = get_rules(GRAMMAR['NON_TERMINALS'], selected_primitves, task)
 
         GRAMMAR['RULES'] = r
         GRAMMAR['RULES_LOOKUP'] = l

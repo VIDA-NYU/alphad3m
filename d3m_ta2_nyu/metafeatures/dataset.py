@@ -129,7 +129,7 @@ class ComputeMetafeatures():
         def make_primitive_module(name):
             if name[0] == '.':
                 name = 'd3m.primitives' + name
-            return make_module('d3m', '2019.2.12', name)
+            return make_module('d3m', '2019.4.4', name)
 
         def connect(from_module, to_module,
                     from_output='produce', to_input='inputs'):
@@ -160,7 +160,7 @@ class ComputeMetafeatures():
         step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.DataFrameCommon')
         connect(step1, step2)
 
-        step3 = make_primitive_module('d3m.primitives.metafeature_extraction.metafeature_extractor.BYU')
+        step3 = make_primitive_module('d3m.primitives.metafeature_extraction.meta_feature_extractor.BYU')
         connect(step2, step3)
 
         db.add(pipeline)

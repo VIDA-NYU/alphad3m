@@ -1,0 +1,1906 @@
+[
+    {
+        "id": "cdb18166-e2ca-4418-b5a4-fffbe98f7844",
+        "name": "BBN MLP Classifier",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.bbn.sklearn_wrap.BBNMLPClassifier",
+        "digest": "6dcb62626fd22f63fa0f006506cf81459dffa75482789c8cdec3b211cbd510e6"
+    },
+    {
+        "id": "503e69a1-5fc4-4f14-912a-4b564cb1b171",
+        "name": "Audio Reader",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.bbn.time_series.AudioReader",
+        "digest": "d641c1451a5e32b9e3d194b76786e0633ac1c87fc1991d79766d18480d4e709b"
+    },
+    {
+        "id": "fefcb78f-c2f5-4557-a23b-0910b2127769",
+        "name": "Tfidf Transformer",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.bbn.time_series.BBNTfidfTransformer",
+        "digest": "5281293136af3be3e2ba80ea4d04aad4e994abb1dc00bb67d11fb2c6f4ddd6bf"
+    },
+    {
+        "id": "35afd4db-e11d-4e2d-a780-9e123b752bd7",
+        "name": "Channel Averager",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.bbn.time_series.ChannelAverager",
+        "digest": "e28a0b12076fb02fc65b602f77c61f0bb5a58235539fc5aab2f676b474623cae"
+    },
+    {
+        "id": "b358a1fd-8bf8-4991-935f-2f1806dae54d",
+        "name": "Clustering for Curve Fitting",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.bbn.time_series.ClusterCurveFittingKMeans",
+        "digest": "fb4ff8eb5924b9be8962ccee9d46964e6f0e7957b57fd005e6e9c854f47ba567"
+    },
+    {
+        "id": "1c5080bd-7b2f-4dbb-ac5f-0a65b59526a7",
+        "name": "I-vector extractor",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.bbn.time_series.IVectorExtractor",
+        "digest": "0fcb072a1694db626459a38a01a86152dca8d5d2ffb8cf4779f18e2f1f2c0460"
+    },
+    {
+        "id": "7c1d88a3-2388-4ba8-97c6-aa0aa2673024",
+        "name": "Segment Curve Fitter",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.bbn.time_series.SegmentCurveFitter",
+        "digest": "e3dc7b120223cd291d064cdeaf978073d6d889af302d080a1ee87d199e680edb"
+    },
+    {
+        "id": "bdcceba0-b6bd-4611-92de-225e3353f07d",
+        "name": "Sequence to Bag-of-Tokens transformer",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.bbn.time_series.SequenceToBagOfTokens",
+        "digest": "6b8be562aeb66f420f3f57eb03be9df23d6374a77e504bdd0b22fa8cab8f268b"
+    },
+    {
+        "id": "1ea935ec-e767-4a18-bbd5-b5f66855f4f3",
+        "name": "Signal Dithering",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.bbn.time_series.SignalDither",
+        "digest": "e5a2e45a1c2e5be52d2a35b5b5254ef8390a5240841bb3361ba1ba03dc3b01fe"
+    },
+    {
+        "id": "4d7160ef-ca70-4150-b513-36b90817ba45",
+        "name": "Signal Framing",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.bbn.time_series.SignalFramer",
+        "digest": "008c928af3b5c71f818f3b0ca6c5a401d19141a10452da981024ce389d4a2c92"
+    },
+    {
+        "id": "a184a1d1-3187-4d1f-99c6-e1d5665c2c99",
+        "name": "MFCC Feature Extraction",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.bbn.time_series.SignalMFCC",
+        "digest": "9bd35e487c6c528d974c67050dd9d83fb8f8c2490c9df8222c43207d2ba1f183"
+    },
+    {
+        "id": "952b659c-d290-465b-9e89-160947e29c06",
+        "name": "Targets Reader",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.bbn.time_series.TargetsReader",
+        "digest": "2b42b747dd666de548b896eab7cc4ba612942722b292b76c716c62bb193bc24b"
+    },
+    {
+        "id": "2a6f820a-3943-4bb7-a580-689a91c338f3",
+        "name": "Uniform Segmentation",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.bbn.time_series.UniformSegmentation",
+        "digest": "50dc422d24da6d97bd3d9f1c2941cbbb4e2cbea20c413255d4f7ec3410655371"
+    },
+    {
+        "id": "1b2a32a6-0ec5-3ca0-9386-b8b1f1b831d1",
+        "name": "sklearn.ensemble.bagging.BaggingClassifier",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.bagging.SKlearn",
+        "digest": "c29dfe94e16281494ba988fdc2ddff97aa232f7d4aeb776cbbe17cc7dbd56998"
+    },
+    {
+        "id": "87dfa2c3-d0de-48aa-b3e5-814496ae211e",
+        "name": "common_primitives.BayesianLogisticRegression",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.classification.bayesian_logistic_regression.Common",
+        "digest": "237706731bc6568271c51ebea2aa6533e92473d9be61f5a1b39a8d38462cbf33"
+    },
+    {
+        "id": "dfb1004e-02ac-3399-ba57-8a95639312cd",
+        "name": "sklearn.naive_bayes.BernoulliNB",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.bernoulli_naive_bayes.SKlearn",
+        "digest": "955b574d41ad481f965d292df28feeb3505af8b733f4099404c9d2e7da5f9c8c"
+    },
+    {
+        "id": "5b08a46a-28f6-4987-a8c6-840edd5877b0",
+        "name": "Community Detection",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.classification.community_detection.CommunityDetection",
+        "digest": "0bd3daa2bc559e67d3eaf507db96860118ff0ba1c7ba99d07c5d8bf35772838a"
+    },
+    {
+        "id": "393f9de8-a5b9-4d92-aaff-8808d563b6c4",
+        "name": "Echo",
+        "version": "1.0.0",
+        "python_path": "d3m.primitives.classification.corex_supervised.EchoIB",
+        "digest": "f7c923598f486f9a94e8e1bcbd251ce9bc1c68ff3d3528eaaf21f699d893d2ed"
+    },
+    {
+        "id": "e770fae6-da6d-45f8-86bf-38a121a4e65a",
+        "name": "Nearest Neighbor Classification with Cover Trees",
+        "version": "3.0.0",
+        "python_path": "d3m.primitives.classification.cover_tree.Fastlvm",
+        "digest": "cc351533f7f6b7a5546633ef960c991a3c33ab7dd0d2c2b0e1c0cedb4076cc6e"
+    },
+    {
+        "id": "e20d003d-6a9f-35b0-b4b5-20e42b30282a",
+        "name": "sklearn.tree.tree.DecisionTreeClassifier",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.decision_tree.SKlearn",
+        "digest": "e5e68ca981a65dcdc8ab5e4de112dd588494c27c6c7d6340b83ad8a5dcacec6e"
+    },
+    {
+        "id": "a1056ddf-2e89-3d8d-8308-2146170ae54d",
+        "name": "sklearn.dummy.DummyClassifier",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.dummy.SKlearn",
+        "digest": "2d884efb5434fae5398e2443a46c2044b96a5f1314073c9dd1d6eb9da34f0777"
+    },
+    {
+        "id": "c8a28f02-ef4a-35a8-87f1-cf79980f5c3e",
+        "name": "sklearn.ensemble.forest.ExtraTreesClassifier",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.extra_trees.SKlearn",
+        "digest": "dd1280a790bafc2c01ba4f51210f5d29100cf952ea045c07480e5c7bea20d2b1"
+    },
+    {
+        "id": "c9d5da5d-0520-468e-92df-bd3a85bb4fac",
+        "name": "jhu.gclass",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.classification.gaussian_classification.JHU",
+        "digest": "5c471ce0ae7b600c8ae75738e5b5656a855a6be2fbb18d171f66a7b0a33baec7"
+    },
+    {
+        "id": "36d5472c-e0a4-4ed6-a1d0-2665feacff39",
+        "name": "Mean Baseline",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.classification.gaussian_classification.MeanBaseline",
+        "digest": "edc325efa2a9db0285066c1e08b891e279c0db62f8add06c690a928c40622f33"
+    },
+    {
+        "id": "464783a8-771e-340d-999b-ae90b9f84f0b",
+        "name": "sklearn.naive_bayes.GaussianNB",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.gaussian_naive_bayes.SKlearn",
+        "digest": "2de6e690b5b0e231153d31d063b6c13b2e50ab90be34c0eded7af855d57b82a4"
+    },
+    {
+        "id": "4d989759-affd-4a51-a4e6-1a05a5c1d1c8",
+        "name": "General Relational Dataset",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.classification.general_relational_dataset.GeneralRelationalDataset",
+        "digest": "96339b38d9dc12fe5ef70c4c01a07c37eecd603c96cb746e745a59ccf140287e"
+    },
+    {
+        "id": "01d2c086-91bf-3ca5-b023-5139cf239c77",
+        "name": "sklearn.ensemble.gradient_boosting.GradientBoostingClassifier",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.gradient_boosting.SKlearn",
+        "digest": "28c1e3094bddacbb334ed96593eb2ee9535e9f3fdd688c3c3673d3e08cf8d565"
+    },
+    {
+        "id": "754f7210-a0b7-3b7a-8c98-f43c7b663d28",
+        "name": "sklearn.neighbors.classification.KNeighborsClassifier",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.k_neighbors.SKlearn",
+        "digest": "f44997399ceb458408028181dee3ff3014a7a9643f31d11831d30848808b8c23"
+    },
+    {
+        "id": "259aa747-795c-435e-8e33-8c32a4c83c6b",
+        "name": "LightGBM GBTree classifier",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.classification.light_gbm.DataFrameCommon",
+        "digest": "dc78ff1bc4ceeaeaa55722909f72893aef66c002c361e61774280f244c356b36"
+    },
+    {
+        "id": "a323b46a-6c15-373e-91b4-20efbd65402f",
+        "name": "sklearn.discriminant_analysis.LinearDiscriminantAnalysis",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.linear_discriminant_analysis.SKlearn",
+        "digest": "2b92bc7d7bb04b1a14a2949fb8bfb89b7b43072795c93bd6e9c5d11dcc97ab97"
+    },
+    {
+        "id": "71749b20-80e9-3a8e-998e-25da5bbc1abc",
+        "name": "sklearn.svm.classes.LinearSVC",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.linear_svc.SKlearn",
+        "digest": "b125d258988be5a5fa5119f8f7a1bf43cb43af16312357e739b807b3b3ed944e"
+    },
+    {
+        "id": "b9c81b40-8ed1-3b23-80cf-0d6fe6863962",
+        "name": "sklearn.linear_model.logistic.LogisticRegression",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.logistic_regression.SKlearn",
+        "digest": "60555f9e970d82915dfa3dd2ec251eb83c68a703bf11509c814e217301f3381c"
+    },
+    {
+        "id": "3fd60679-cc91-3703-9ce5-34098babbbdc",
+        "name": "lupi_svm.LupiSvmClassifier",
+        "version": "v3.0.0",
+        "python_path": "d3m.primitives.classification.lupi_svm.LupiSvmClassifier",
+        "digest": "e3ddb16d3885d5ddef82dfa0701114e662e50f05789eb8f92623231dab51af4e"
+    },
+    {
+        "id": "89d7ffbd-df5d-352f-a038-311b7d379cd0",
+        "name": "sklearn.neural_network.multilayer_perceptron.MLPClassifier",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.mlp.SKlearn",
+        "digest": "00f975556adeae22ebc532b91e8c6e642d0eb5cc7d0c9b347cf982a5f303a55f"
+    },
+    {
+        "id": "adf13b4b-9fe5-38a2-a1ea-d1b1cc342576",
+        "name": "sklearn.naive_bayes.MultinomialNB",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.multinomial_naive_bayes.SKlearn",
+        "digest": "cd7417dcead1586d319214451d69ce968c3c027d8ee850f6a13753f20826a4ff"
+    },
+    {
+        "id": "90e7b335-5af0-35ad-932c-9c771fe84693",
+        "name": "sklearn.neighbors.nearest_centroid.NearestCentroid",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.nearest_centroid.SKlearn",
+        "digest": "20285ff4524042cdaa5749cad98a294a48651418d54cf95bd1fb3cf4746e46a3"
+    },
+    {
+        "id": "85e5c88d-9eec-3452-8f2f-414f17d3e4d5",
+        "name": "sklearn.linear_model.passive_aggressive.PassiveAggressiveClassifier",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.passive_aggressive.SKlearn",
+        "digest": "a4d6dd978077c21bc3a87fbe12fc8c00144fd7f645d4fb71fa6aa5e935853b02"
+    },
+    {
+        "id": "321dbf4d-07d9-3274-bd1b-2751520ed1d7",
+        "name": "sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.quadratic_discriminant_analysis.SKlearn",
+        "digest": "2018aba3cba011eb2f3d4632ff6b8b45ea9d88e5dd147913507687d3cb2177ff"
+    },
+    {
+        "id": "37c2b19d-bdab-4a30-ba08-6be49edcc6af",
+        "name": "Random forest classifier",
+        "version": "0.4.0",
+        "python_path": "d3m.primitives.classification.random_forest.DataFrameCommon",
+        "digest": "28336a5ed3ab73929209a31ca9837970bedef792ff9c700bf0af80fedba7293d"
+    },
+    {
+        "id": "1dd82833-5692-39cb-84fb-2455683075f3",
+        "name": "sklearn.ensemble.forest.RandomForestClassifier",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.random_forest.SKlearn",
+        "digest": "b1c373d38eeffe7ca7e2fe12b7cae22b2518b9bef3cbf4c7b9167af3a972bee3"
+    },
+    {
+        "id": "84f39131-6618-4d90-9590-b79d41dfb093",
+        "name": "find projections",
+        "version": "2.2.0",
+        "python_path": "d3m.primitives.classification.search.Find_projections",
+        "digest": "2773fa418f16aae21b7a8ef87bf51805ed8c5afad5d9fae9262308ae56cec77d"
+    },
+    {
+        "id": "448590e7-8cf6-4bfd-abc4-db2980d8114e",
+        "name": "find projections",
+        "version": "2.2.0",
+        "python_path": "d3m.primitives.classification.search_hybrid.Find_projections",
+        "digest": "aaa898aa9e6d2fe28abda7f55508e1f0bdcc076889594c0869d9b6e0f3332bad"
+    },
+    {
+        "id": "2305e400-131e-356d-bf77-e8db19517b7a",
+        "name": "sklearn.linear_model.stochastic_gradient.SGDClassifier",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.sgd.SKlearn",
+        "digest": "f947e7e292c0834db4c725ceef043776e99931f1e004b0b22cb3c2d1a24280df"
+    },
+    {
+        "id": "0ae7d42d-f765-3348-a28c-57d94880aa6a",
+        "name": "sklearn.svm.classes.SVC",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.classification.svc.SKlearn",
+        "digest": "ac92df6bc8251c73a600f664e21cb151fdf94a2b3016a14a937562ba897c839c"
+    },
+    {
+        "id": "f8de43e0-7f81-4edd-9ef6-51bcd2953784",
+        "name": "Tensor Machine Binary Classifier",
+        "version": "2.6.0",
+        "python_path": "d3m.primitives.classification.tensor_machines_binary_classification.TensorMachinesBinaryClassification",
+        "digest": "1cc06344178fe0dde758a8a1ccede888a2ab010c733cbcbbb05a24a0e6053685"
+    },
+    {
+        "id": "2fa0afb2-1b7b-462d-a7c9-11b44efe9eb0",
+        "name": "Tree-Augmented Naive Bayes Classifier",
+        "version": "v2019.4",
+        "python_path": "d3m.primitives.classification.tree_augmented_naive_bayes.BayesianInfRPI",
+        "digest": "36857cad416eca8ebfe9360ab4397922dfaef26c1881c85b635764fba47c98dc"
+    },
+    {
+        "id": "dca25a46-7a5f-48d9-ac9b-d14d4d671b0b",
+        "name": "Vertex Nomination",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.classification.vertex_nomination.VertexNomination",
+        "digest": "ea8b2dcf497f4680b40e66dbda1da322c58e0fd03eb1fd8b60893c374a080a10"
+    },
+    {
+        "id": "7476950e-4373-4cf5-a852-7e16afb8e098",
+        "name": "XGBoost DART classifier",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.classification.xgboost_dart.DataFrameCommon",
+        "digest": "13d84dfcd46ee401e6e5791ba3a984d98bec69c3077fdda4bf0257ed2bfd3dcb"
+    },
+    {
+        "id": "fe0841b7-6e70-4bc3-a56c-0670a95ebc6a",
+        "name": "XGBoost GBTree classifier",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.classification.xgboost_gbtree.DataFrameCommon",
+        "digest": "3451cbac128faa7ec3f777e12361e7e0a0005e47236859348ff372d203a3cf45"
+    },
+    {
+        "id": "6d94cfb0-4225-4446-b5b1-afd8803f2bf5",
+        "name": "EKSS",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.clustering.ekss.Umich",
+        "digest": "b74ae920a53d66a963f4772a20b391d89abd1538f4651a03f4864acaa4ec89e4"
+    },
+    {
+        "id": "49af9397-d9a2-450f-93eb-c3b631ba6646",
+        "name": "Gaussian Mixture Models",
+        "version": "3.0.0",
+        "python_path": "d3m.primitives.clustering.gmm.Fastlvm",
+        "digest": "56c87c821d1e239b2dbc0b82b9c922dfc38336f02bcdc0de3253eedaed7ab44d"
+    },
+    {
+        "id": "ca014488-6004-4b54-9403-5920fbe5a834",
+        "name": "hdbscan",
+        "version": "1.0.2",
+        "python_path": "d3m.primitives.clustering.hdbscan.Hdbscan",
+        "digest": "418c095df03c20a671d53168555e35469b9bcf0c827f73044f6650985ce20d0c"
+    },
+    {
+        "id": "30ac35ef-b4af-4396-b048-a75afae68068",
+        "name": "sklearn.neighbors.classification.KNeighborsClassifier",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.clustering.k_means.Common",
+        "digest": "444162d627669a91b2612a9c910bd44764481d6027221534e11b0aa7db79b729"
+    },
+    {
+        "id": "66c3bb07-63f7-409e-9f0f-5b07fbf7cd8e",
+        "name": "K-means Clustering",
+        "version": "3.0.0",
+        "python_path": "d3m.primitives.clustering.k_means.Fastlvm",
+        "digest": "7ece7c8e3ebd8696eb17139485697c52149eef39730dba176a7aee221e721a4a"
+    },
+    {
+        "id": "f4554388-fb0e-3bd5-b2da-0d935dce80bd",
+        "name": "sklearn.cluster.k_means_.KMeans",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.clustering.k_means.SKlearn",
+        "digest": "5fd9a9daa786d52a20a4efd9928b3dfcfefe99017c92e037df1408a82a91e1af"
+    },
+    {
+        "id": "77bf4b92-2faa-3e38-bb7e-804131243a7f",
+        "name": "Sloth",
+        "version": "2.0.3",
+        "python_path": "d3m.primitives.clustering.k_means.Sloth",
+        "digest": "fcfb34045d9cabffbdf82ef1c7f5385312a1ac26544f12aafb93828ee5b469d2"
+    },
+    {
+        "id": "044e5c71-7507-4f58-a139-bc5481179d62",
+        "name": "KSS",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.clustering.kss.Umich",
+        "digest": "6e59b74fd0c71727fbf3325da3cac3ec16c4aa73cabde86ea10bef31a233ee9c"
+    },
+    {
+        "id": "83083e82-088b-47f4-9c0b-ba29adf5a51d",
+        "name": "SSC_ADMM",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.clustering.ssc_admm.Umich",
+        "digest": "aca26e59851705d1173490600e65affc1d2919770037a3510552786cc8a05555"
+    },
+    {
+        "id": "a36f322f-e02d-4618-b022-d741d672366f",
+        "name": "SSC_CVX",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.clustering.ssc_cvx.Umich",
+        "digest": "ec5837eac0db7b9ffe2d710eed811a62d29acf2271cd3471912135511b11e38d"
+    },
+    {
+        "id": "50f89f90-7cef-4bb6-b56f-642f85bd1d58",
+        "name": "SSC_OMP",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.clustering.ssc_omp.Umich",
+        "digest": "39a669255d3633289102a594adc5c07d6dbda1fffd154a94d91addacaadbf82d"
+    },
+    {
+        "id": "e149ba15-4004-4642-a00f-e7c833653a54",
+        "name": "Community Detection Parser",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.community_detection.community_detection_parser.CommunityDetectionParser",
+        "digest": "8e9efefa97cd6adec72d9ffeab361ab539060fbb25f4d787ca45f410e838fec6"
+    },
+    {
+        "id": "dsbox-cleaning-featurizer",
+        "name": "DSBox Cleaning Featurizer",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.data_cleaning.CleaningFeaturizer.DSBOX",
+        "digest": "26e6ec13f7b97b7955f9a1220ba5a11699216234fb883846ba4102e53606fcd2"
+    },
+    {
+        "id": "dsbox-fold-columns",
+        "name": "DSBox Fold Columns",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.data_cleaning.FoldColumns.DSBOX",
+        "digest": "b0dd73d18812c61afc0d87a88b242cecee2c74492dc79cf9f7b777d2607341be"
+    },
+    {
+        "id": "dsbox-multi-table-feature-labler",
+        "name": "DSBox feature labeler",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.data_cleaning.Labeler.DSBOX",
+        "digest": "a60d69b0ba3b4fdf8c71982c9ebcc8286d7f732d1a60297f4c1323f358cfcf4c"
+    },
+    {
+        "id": "d2fa8df2-6517-3c26-bafc-87b701c4043a",
+        "name": "simon",
+        "version": "1.2.1",
+        "python_path": "d3m.primitives.data_cleaning.column_type_profiler.Simon",
+        "digest": "93cb8bcfe91d86ca5d24e41c64ee5b4c81fc18a1c0a35e6aa52d75b010c7f3ab"
+    },
+    {
+        "id": "d016df89-de62-3c53-87ed-c06bb6a23cde",
+        "name": "sklearn.impute.SimpleImputer",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_cleaning.imputer.SKlearn",
+        "digest": "8c36c71cc0018d0566008dd256748672a4d686bf00174f2c17ae063238be7b29"
+    },
+    {
+        "id": "94c5c918-9ad5-3496-8e52-2359056e0120",
+        "name": "sklearn.impute.MissingIndicator",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_cleaning.missing_indicator.SKlearn",
+        "digest": "3f26abdd9a153fe1aab714ee08091cf80eaf884be77b5cd75eab9a395db36b52"
+    },
+    {
+        "id": "6c425897-6ffe-45b8-949f-002d872ccf12",
+        "name": "Annotated tabular extractor",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_cleaning.tabular_extractor.Common",
+        "digest": "645a8dae32e1f38f720c6bad60b14ee17492fce9a18481c831b704b95a57dbff"
+    },
+    {
+        "id": "0b2edee8-df52-49f2-85b6-470abb28f4eb",
+        "name": "GO_DEC",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.data_compression.go_dec.Umich",
+        "digest": "d876c6cda8d1500c4b30b4cde14329a56e634a74548d8fac0e1344fa974a5e2d"
+    },
+    {
+        "id": "fe20ef05-7eaf-428b-934f-4de0b8011ed2",
+        "name": "GRASTA",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.data_compression.grasta.Umich",
+        "digest": "49f40f8c44812745960b575e213ff0edf69eab320fcee4ca15895dcdef7372cb"
+    },
+    {
+        "id": "acf412e2-1087-4257-a26e-73c39c2c8d7d",
+        "name": "GRASTA_MASKED",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.data_compression.grasta_masked.Umich",
+        "digest": "48bf9ddfde1b3ef1caf85923f4e72b1b75d9a9bd91d04f08e85e761d7f96b58b"
+    },
+    {
+        "id": "a5afb336-608b-4d04-bbab-e8921f605d04",
+        "name": "GROUSE",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.data_compression.grouse.Umich",
+        "digest": "0d5ed3b23dd27ce3cbc21d78eb17339b5340c3012e300ccb9bbc36d73af6dd2e"
+    },
+    {
+        "id": "ff4056f0-9644-458a-ba24-66fe3a3bc53a",
+        "name": "PCP_IALM",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.data_compression.pcp_ialm.Umich",
+        "digest": "874fcf4e3573f35e446873b863392ad95c872a0471249d6dc168cc228dab7e38"
+    },
+    {
+        "id": "a1d3dc5d-fe3a-4e9c-b661-bd9198a934cd",
+        "name": "RPCA_LBD",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.data_compression.rpca_lbd.Umich",
+        "digest": "054007a8b95c196cad81e7f6bb563d0f6c74400b460ca5d6ea5033efc14a1970"
+    },
+    {
+        "id": "df3153a1-4411-47e2-bbc0-9d5e9925ad79",
+        "name": "Random Samples",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_generation.random.Test",
+        "digest": "a3993d0992f74c2d00135ebd057084f3f07bf3960f73fe2540f2df2cf31db65e"
+    },
+    {
+        "id": "18f0bb42-6350-3753-8f2d-d1c3da70f279",
+        "name": "ISI DSBox Data Encoder",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.Encoder.DSBOX",
+        "digest": "b9563bc4c9391c954b7a88efc0b18ef31e0d7d49f20031929675af2068e001d5"
+    },
+    {
+        "id": "dsbox-ensemble-voting",
+        "name": "DSBox ensemble voting",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.EnsembleVoting.DSBOX",
+        "digest": "a374b8d1569836938f9f12ae0d19b4a6a77338a8d5b5846f542f916139bcee12"
+    },
+    {
+        "id": "ebebb1fa-a20c-38b9-9f22-bc92bc548c19",
+        "name": "DSBox Greedy Imputer",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.GreedyImputation.DSBOX",
+        "digest": "014d48a9a0b0644aecf0d032979820a866cf05b43bd6616ef816800d5647f02a"
+    },
+    {
+        "id": "dsbox-horizontal-concat",
+        "name": "DSBox horizontal concat",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.HorizontalConcat.DSBOX",
+        "digest": "2209b6bee82592874af05286e5b066099cb5062bf8e8ad244c88b541fa43e481"
+    },
+    {
+        "id": "f70b2324-1102-35f7-aaf6-7cd8e860acc4",
+        "name": "DSBox Iterative Regression Imputer",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.IterativeRegressionImputation.DSBOX",
+        "digest": "4bf68666ab36d9faeb594985b7f7514b08618217bd570d55d5504329fa5e31cd"
+    },
+    {
+        "id": "7894b699-61e9-3a50-ac9f-9bc510466667",
+        "name": "DSBox Mean Imputer",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.MeanImputation.DSBOX",
+        "digest": "40774821c19ef2d7864c689552a1070ccf778fb6d9912b29c310a8e000a1c33e"
+    },
+    {
+        "id": "DSBox-splitter",
+        "name": "DSBox Splitter",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.Splitter.DSBOX",
+        "digest": "f699ebd9f24800101f3c8144f81e6f4e8b13cd5d441d51b5b7acc9be6c92beb7"
+    },
+    {
+        "id": "DSBox-unary-encoder",
+        "name": "DSBox Unary Data Encoder",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.UnaryEncoder.DSBOX",
+        "digest": "667ae162880c0f459662d49281e03ff442409a8a1ff3f7f6c7fdcdb0f38457f0"
+    },
+    {
+        "id": "dsbox-unfold",
+        "name": "DSBox unfold",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.Unfold.DSBOX",
+        "digest": "9824fd76896fc084bebe6273f3431dbc3301bdac4c28de3b9ebafeaaf3724687"
+    },
+    {
+        "id": "dsbox-vertical-concat",
+        "name": "DSBox vertically concat",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.VerticalConcat.DSBOX",
+        "digest": "8de0704d9618e5287a30a78ac36191f0fd87024c45a1028e6bf8a291cb94e9b2"
+    },
+    {
+        "id": "05e6eba3-2f5a-4934-8309-a6d17e099400",
+        "name": "Columns audio reader",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_preprocessing.audio_reader.DataFrameCommon",
+        "digest": "5441b2a9a3398f41bcef4774147ac9221b357720087394ee0b30d055eace1272"
+    },
+    {
+        "id": "a0a60c4c-4e69-3ebe-81c9-7432c5b41c38",
+        "name": "AudioSlicer",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.data_preprocessing.audio_slicer.Umich",
+        "digest": "635864de6d8eff7f15de06dd916b24e9e46d2d81c77dbceaff7d7fa80d0cc376"
+    },
+    {
+        "id": "13777068-9dc0-3c5b-b4da-99350d67ee3f",
+        "name": "sklearn.preprocessing.data.Binarizer",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.binarizer.SKlearn",
+        "digest": "f5cf817cf609b0a242aa1e3940451f0ef4774815897dec29130e046890ccfb0d"
+    },
+    {
+        "id": "0609859b-8ed9-397f-ac7a-7c4f63863560",
+        "name": "sklearn.feature_extraction.text.CountVectorizer",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.count_vectorizer.SKlearn",
+        "digest": "37a2ce7d5982c2408c8d80c239275343d801825af16edfccf220917ada4afffb"
+    },
+    {
+        "id": "989562ac-b50f-4462-99cb-abef80d765b2",
+        "name": "Columns CSV reader",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_preprocessing.csv_reader.DataFrameCommon",
+        "digest": "ffef1594820f3271ed0df93c82161e799a6e239710eb9f59b82e1affea43b948"
+    },
+    {
+        "id": "005941a3-e3ca-49d9-9e99-4f5566831acd",
+        "name": "Columns text reader",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.data_preprocessing.dataset_text_reader.DatasetTextReader",
+        "digest": "e6525b45b9908224053332eefb8ff43ce1d21b5071c8ed8eef62ed2d60556dc0"
+    },
+    {
+        "id": "f259b009-5e0f-37b1-b117-441aba2b65c8",
+        "name": "sklearn.cluster.hierarchical.FeatureAgglomeration",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.feature_agglomeration.SKlearn",
+        "digest": "e65b13e359e393a75e65975ec1a7f93b3b1eed0e62215fb37f4c1f3397a154da"
+    },
+    {
+        "id": "006251ce-4489-411b-9979-07782edb9085",
+        "name": "Image reader",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_preprocessing.image_reader.Common",
+        "digest": "de8c272dcd4e3970458f39364edecf4ec0bee0c689585d0874235f54cd995807"
+    },
+    {
+        "id": "8f2e51e8-da59-456d-ae29-53912b2b9f3d",
+        "name": "Columns image reader",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.data_preprocessing.image_reader.DataFrameCommon",
+        "digest": "9ecf3f1221ef44dfe0a47ef078e39e0df66ef74912ea43086243c61db5525df9"
+    },
+    {
+        "id": "39ae30f7-39ed-40af-8679-5cf108499605",
+        "name": "Label decoder for UnseenLabelEncoderPrimitive",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_preprocessing.label_decoder.DataFrameCommon",
+        "digest": "49ebf98d0de1c11dd482766a53b3c6691c76ac5c89c0e71fe4d57db838b541fb"
+    },
+    {
+        "id": "26fc8fd3-f6b2-4c65-8afb-edb54ed2a3e4",
+        "name": "Label encoder with an unseen category",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.data_preprocessing.label_encoder.DataFrameCommon",
+        "digest": "f266b3d12273b826c2502a20f1ad0cd2f82e889ac5233b9b2e36dd51b2291712"
+    },
+    {
+        "id": "32fec24f-6861-4a4c-88f3-d4ec2bc1b486",
+        "name": "jhu.lcc",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_preprocessing.largest_connected_component.JHU",
+        "digest": "ba55ef0db37f29816c0ac60af7f25667a55bdc4bbd1d2b0d34aed910e34f08b9"
+    },
+    {
+        "id": "64d2ef5d-b221-3033-8342-76d0293fa99c",
+        "name": "sklearn.preprocessing.data.MaxAbsScaler",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.max_abs_scaler.SKlearn",
+        "digest": "330815b07ee1234bff7c1261795a3d23eb34ece1d058a11f3d43e2367047a2e7"
+    },
+    {
+        "id": "08d0579d-38da-307b-8b75-6a213ef2972e",
+        "name": "sklearn.preprocessing.data.MinMaxScaler",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.min_max_scaler.SKlearn",
+        "digest": "40bc51243ac52835ed5e7979919d7959d7543e1daf3ad3de02f15f010156eca6"
+    },
+    {
+        "id": "980b3a2d-1574-31f3-8326-ddc62f8fc2c3",
+        "name": "sklearn.preprocessing.data.Normalizer",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.normalizer.SKlearn",
+        "digest": "cfbbbb9d63cb9e038bef711f33b64f6ffac2bc62f642ea85bc632c830fdf59d5"
+    },
+    {
+        "id": "8b1c1140-8c21-4f41-aeca-662b7d35aa29",
+        "name": "Numeric range filter",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_preprocessing.numeric_range_filter.DatasetCommon",
+        "digest": "18fd9bc5aeb6df3a24188814875bffb6d27d063728766ca7aef4680813a0e36f"
+    },
+    {
+        "id": "ca3a4357-a49f-31f0-82ed-244b66e29426",
+        "name": "sklearn.kernel_approximation.Nystroem",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.nystroem.SKlearn",
+        "digest": "2a238fda8e901e7524d918879dcee13e916af12498492b65dc83e573deebbec0"
+    },
+    {
+        "id": "eaec420d-46eb-4ddf-a2cd-b8097345ff3e",
+        "name": "One-hot maker",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.data_preprocessing.one_hot_encoder.MakerCommon",
+        "digest": "61a5599db6413b3b1b02e0a3db89181923b1dfd54a8b05ac872c3e9e98d974f1"
+    },
+    {
+        "id": "f6315ca9-ca39-4e13-91ba-1964ee27281c",
+        "name": "Pandas one hot encoder",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_preprocessing.one_hot_encoder.PandasCommon",
+        "digest": "70b054ce59a5e38c6afe1187402ded81e21a9b13d769ffcbacd805b3cfa2083a"
+    },
+    {
+        "id": "93acb44b-532a-37d3-987a-8e61a8489d77",
+        "name": "sklearn.preprocessing.data.PolynomialFeatures",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.polynomial_features.SKlearn",
+        "digest": "c7ebfc18bb7c4617aac1b356c2c13a22117a528d81df8620302518c2ec75ec1e"
+    },
+    {
+        "id": "ebfeb6f0-e366-4082-b1a7-602fd50acc96",
+        "name": "Random Sampling Imputer",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.data_preprocessing.random_sampling_imputer.BYU",
+        "digest": "cbee04602076d4bf58866d67e60822644981f27141194378137b4f365a40001d"
+    },
+    {
+        "id": "8889ff47-1d2e-3a80-bdef-8397a95e1c6e",
+        "name": "sklearn.ensemble.forest.RandomTreesEmbedding",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.random_trees_embedding.SKlearn",
+        "digest": "7e91cc790649ccb7360b82de2da119b5871b468dfbdfa74b753b6438c923bf7a"
+    },
+    {
+        "id": "0823123d-45a3-3dc8-9ef1-ff643236993a",
+        "name": "sklearn.kernel_approximation.RBFSampler",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.rbf_sampler.SKlearn",
+        "digest": "37eab842a612aea9a7295f822c7592d3d4702e8165f38bb982f9cbeac0d6e727"
+    },
+    {
+        "id": "d1b4c4b7-63ba-4ee6-ab30-035157cccf22",
+        "name": "Regex dataset filter",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_preprocessing.regex_filter.DatasetCommon",
+        "digest": "93c17f0920bf7ecc3851aaabee14d72354919f170a7469bf8a483d4362319066"
+    },
+    {
+        "id": "854727ed-c82c-3137-ac59-fd52bc9ba385",
+        "name": "sklearn.preprocessing.data.RobustScaler",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.robust_scaler.SKlearn",
+        "digest": "c290859cb30b7dbf6c2141260320c8cb0f7e64ad89ed7496fa979306d441664b"
+    },
+    {
+        "id": "d639947e-ece0-3a39-a666-e974acf4521d",
+        "name": "sklearn.preprocessing.data.StandardScaler",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.standard_scaler.SKlearn",
+        "digest": "53890564fea5360b0ee8170af04a5590e293b640909838cae5d9e3416c1b31ec"
+    },
+    {
+        "id": "622893c7-42fc-4561-a6f6-071fb85d610a",
+        "name": "Term list dataset filter",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_preprocessing.term_filter.DatasetCommon",
+        "digest": "b67cddb7c93532ddec5d3794e9c0febfade80767322b4689a6e17becb5319891"
+    },
+    {
+        "id": "0b21fcca-8b35-457d-a65d-36294c6f80a2",
+        "name": "Columns text reader",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_preprocessing.text_reader.DataFrameCommon",
+        "digest": "d65fd7f06c0655ef48ea55c633b972e7ce816942d58752ff4fe57fdcfb14a132"
+    },
+    {
+        "id": "1f7ce2c7-1ec8-3483-9a65-eedd4b5811d6",
+        "name": "sklearn.feature_extraction.text.TfidfVectorizer",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn",
+        "digest": "d2f7bc6d15275e53721b1f26aefe0a17d3a2b9e49090ff9e23131eb59abfee82"
+    },
+    {
+        "id": "a99664ce-9c9f-4385-9cd3-c12f41706d8a",
+        "name": "TRECS",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.data_preprocessing.trecs.Umich",
+        "digest": "06d55aecdf45d169faecd8aacb34dc9a48401c65a2d72e5e0b1a20f32042dc8e"
+    },
+    {
+        "id": "9231fde3-7322-3c41-b4cf-d00a93558c44",
+        "name": "sklearn.decomposition.truncated_svd.TruncatedSVD",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_preprocessing.truncated_svd.SKlearn",
+        "digest": "73372e3566966c63281364acc5cdbe0c512b177ea7c544b452bd021b2b73dd69"
+    },
+    {
+        "id": "a29b0080-aeff-407d-9edb-0aa3eefbde01",
+        "name": "Columns video reader",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.data_preprocessing.video_reader.DataFrameCommon",
+        "digest": "06b082fc87b9b6b95792be24a75e8f8a46f181b225b000d0201c138daca56bf0"
+    },
+    {
+        "id": "7ddf2fd8-2f7f-4e53-96a7-0d9f5aeecf93",
+        "name": "ISI DSBox To Numeric DataFrame",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.data_transformation.ToNumeric.DSBOX",
+        "digest": "29e50713fa59bf17028dd45e141a5fdf17e4cb43b7f606d48d2821ca4fe4568c"
+    },
+    {
+        "id": "d7e14b12-abeb-42d8-942f-bdb077b4fd37",
+        "name": "Add semantic types to columns",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.add_semantic_types.DataFrameCommon",
+        "digest": "a4d05bb78f0c482caa2afeef87b2a34169d22c9e66a7725a6f6875ab8352b212"
+    },
+    {
+        "id": "b940ccbd-9e9b-3166-af50-210bfd79251b",
+        "name": "jhu.ase",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.adjacency_spectral_embedding.JHU",
+        "digest": "3fbf80c2a00f38716daf751f17800cc39e86b4a44197da8ec763e741609e65ad"
+    },
+    {
+        "id": "eb5fe752-f22a-4090-948b-aafcef203bf5",
+        "name": "Casts DataFrame",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.data_transformation.cast_to_type.Common",
+        "digest": "42b4e2c41e63f81cd0d31b5b806e431e661aeb79b96ae86bf68322eaef15d5b4"
+    },
+    {
+        "id": "fdc99781-08d0-4cc0-b41a-2d17adcfaa1e",
+        "name": "Collaborative Filtering Parser",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.data_transformation.collaborative_filtering_parser.CollaborativeFilteringParser",
+        "digest": "1b5c59b3153f8e72154a56a98ebd6b05599d729e93924a99934503747dd90100"
+    },
+    {
+        "id": "d510cb7a-1782-4f51-b44c-58f0236e47c7",
+        "name": "Parses strings into their types",
+        "version": "0.5.0",
+        "python_path": "d3m.primitives.data_transformation.column_parser.DataFrameCommon",
+        "digest": "edad77a01c547b5142cb3d58cbd526982cbea5aeb227395bee7bcebe9f80687c"
+    },
+    {
+        "id": "6fdcf530-2cfe-4e87-9d9e-b8770753e19c",
+        "name": "Autoflow Data Conditioner",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.data_transformation.conditioner.Conditioner",
+        "digest": "bb70df807793eb9de40268180e6d9afea04c1618fac7f0a12f87d93ff1e3e291"
+    },
+    {
+        "id": "ec24b04c-dbcc-11e8-9f8b-f2801f1b9fd1",
+        "name": "Autoflow Static Ensembler",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.data_transformation.conditioner.StaticEnsembler",
+        "digest": "d2dcb2097e06bf5b582091b2d44f0c11de12527dabe67ae87ba5b7c587e3d19c"
+    },
+    {
+        "id": "8d38b340-f83f-4877-baaa-162f8e551736",
+        "name": "Construct pipeline predictions output",
+        "version": "0.3.0",
+        "python_path": "d3m.primitives.data_transformation.construct_predictions.DataFrameCommon",
+        "digest": "68a8d025a517e89a358c7a8a837c196b446cbbf516a81504fd07cb0ec7c9a05a"
+    },
+    {
+        "id": "4ad9ce62-283d-4765-a87b-78b55d89a4ed",
+        "name": "Cut audio columns",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.cut_audio.DataFrameCommon",
+        "digest": "cf70c5244787e56fa0be6e002d2287748abe1d9f7a50ccb0071d2795e90a4a98"
+    },
+    {
+        "id": "901ff55d-0a0a-4bfd-8195-3a947ba2a8f5",
+        "name": "DataFrame to list converter",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.dataframe_to_list.Common",
+        "digest": "9ecd0fd35f30a67e663eea0f3d54b120ffa04bfb495521bb89fdb8ef778dbb98"
+    },
+    {
+        "id": "34f71b2e-17bb-488d-a2ba-b60b8c305539",
+        "name": "DataFrame to ndarray converter",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.dataframe_to_ndarray.Common",
+        "digest": "b4479c021160314070c18dcb9f148d0c5cf528b55a22ce751bf4e2f4a1884e14"
+    },
+    {
+        "id": "4b42ce1e-9b98-4a25-b68e-fad13311eb65",
+        "name": "Extract a DataFrame from a Dataset",
+        "version": "0.3.0",
+        "python_path": "d3m.primitives.data_transformation.dataset_to_dataframe.Common",
+        "digest": "6ee6b94c42491892321d83c7a88a6a93b173c532d9783eafd520c7fd4bd03c55"
+    },
+    {
+        "id": "f31f8c1f-d1c5-43e5-a4b2-2ae4a761ef2e",
+        "name": "Denormalize datasets",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.data_transformation.denormalize.Common",
+        "digest": "81f07c01fddaff5d5d931730d73f691bd35645c4dc4c7bcb00f137d197dad42f"
+    },
+    {
+        "id": "30f51c3a-d5fc-4bc1-b6bf-ab62b89489fd",
+        "name": "Edge List to Graph",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.data_transformation.edge_list_to_graph.EdgeListToGraph",
+        "digest": "b811eaf18e50d1c0c862a315c6be8c751714fa358a9556933054bed9c822def1"
+    },
+    {
+        "id": "81d7e261-e25b-4721-b091-a31cd46e99ae",
+        "name": "Extracts columns",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.extract_columns.DataFrameCommon",
+        "digest": "677b3fb49d6123e119b2519d706c54c53d618eb51be0e320b0906c6bd2948418"
+    },
+    {
+        "id": "4503a4c6-42f7-45a1-a1d4-ed69699cf5e1",
+        "name": "Extracts columns by semantic type",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon",
+        "digest": "67977ed362c96178cd3e61cafd94f84e17a288cf5ed9c5f2f5a0cb81a99f77bc"
+    },
+    {
+        "id": "79674d68-9b93-4359-b385-7b5f60645b06",
+        "name": "Extracts columns by structural type",
+        "version": "0.0.1",
+        "python_path": "d3m.primitives.data_transformation.extract_columns_by_structural_types.DataFrameCommon",
+        "digest": "e4946b0994472e85376c185cbbd44417fda854442677124ace0f84583de5701b"
+    },
+    {
+        "id": "03633ffa-425e-37d4-9f1c-bbb552f1e995",
+        "name": "sklearn.decomposition.fastica_.FastICA",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_transformation.fast_ica.SKlearn",
+        "digest": "6cb642901783384d533b84acbce853011326ea884d21fe5c580657bd881cde1e"
+    },
+    {
+        "id": "3c4a1c2a-0f88-4fb1-a1b5-23226a38741b",
+        "name": "Graph Matching Parser",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.data_transformation.graph_matching_parser.GraphMatchingParser",
+        "digest": "40a38d822cf868d0696727db022e780f8f080375579cb330ffcce4d8825a26f2"
+    },
+    {
+        "id": "0a934c8d-610f-44ab-9c44-6ced17194d4c",
+        "name": "Graph Node Splitter",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.data_transformation.graph_node_splitter.GraphNodeSplitter",
+        "digest": "de3e8f88987fd92b07d5c67da38b3d36b51c3b4e4bb4df34a1ce7ed37602814e"
+    },
+    {
+        "id": "5f565b7a-9cb7-48c3-ae4d-84a57eb790af",
+        "name": "Graph to Edge List",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.data_transformation.graph_to_edge_list.GraphToEdgeList",
+        "digest": "f70b385961cc6f8f22fc106a7ffe8ad98020ad801a5d6cd94b5fe96182d8e38f"
+    },
+    {
+        "id": "da0405b0-2d6f-4107-94f6-658913c7cc70",
+        "name": "Graph Transformer",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.data_transformation.graph_transformer.GraphTransformer",
+        "digest": "f8373181f8f83d4c9b24c7674a630defdf5e1518517baca6d3e5174fa9b68c12"
+    },
+    {
+        "id": "aff6a77a-faa0-41c5-9595-de2e7f7c4760",
+        "name": "Concatenate two dataframes",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.data_transformation.horizontal_concat.DataFrameConcat",
+        "digest": "4093596509a79d179f9e48a2696d7ade4e3646720cb76311455b3109ba11ddd8"
+    },
+    {
+        "id": "8fa6178b-84f7-37d8-87e8-4d3a44c86569",
+        "name": "jhu.lse",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.laplacian_spectral_embedding.JHU",
+        "digest": "ac06448734dd510df4b2184f919b90d5e822f75135fb312c73e0ec6d5368a970"
+    },
+    {
+        "id": "dd4598cf-2384-438a-a264-f6c77185132b",
+        "name": "List to DataFrame converter",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.list_to_dataframe.Common",
+        "digest": "b93925d968094b21c468249af2f6c6b064f2b191bd40233003909f73b82f4907"
+    },
+    {
+        "id": "40ff1396-0725-4cf9-b7b9-c6eca6237f65",
+        "name": "List to ndarray converter",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.list_to_ndarray.Common",
+        "digest": "6de58b89fcc8d9f3c147d07e81f4335c229740c73f2750f1329d06fd3cb1cf5a"
+    },
+    {
+        "id": "f5241b2e-64f7-44ad-9675-df3d08066437",
+        "name": "ndarray to Dataframe converter",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.ndarray_to_dataframe.Common",
+        "digest": "5c8d54e495d901f424126348f92c943d3943dc6e9ebb35c68063e2b761c3216c"
+    },
+    {
+        "id": "b5101331-64b4-451a-beb6-260b40d1436b",
+        "name": "ndarray to list converter",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.ndarray_to_list.Common",
+        "digest": "0aa61e1d1000937fec19cb5808b1035f56ff55a0332d28d576ead79f3db341e0"
+    },
+    {
+        "id": "2ee36ea4-5ec3-4c18-909f-9e157fb6d18f",
+        "name": "Normalize column references",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.normalize_column_references.Common",
+        "digest": "8b71959e5a752dc8afd92ababdf1f99f1a65a30655e7d14b9d2eef046f3ae119"
+    },
+    {
+        "id": "dbb3792d-a44b-4941-a88e-5520c0a23488",
+        "name": "Normalize graphs",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.normalize_graphs.Common",
+        "digest": "5cc50757ce474727af791b4db11424d30e679915eda1b0c1e651d293e4b22b04"
+    },
+    {
+        "id": "c977e879-1bf5-3829-b5b0-39b00233aff5",
+        "name": "sklearn.preprocessing.data.OneHotEncoder",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_transformation.one_hot_encoder.SKlearn",
+        "digest": "d7e4329c643afa6a06e7d00f36e5dfc1c4aa8eb454d75c3b7120ed4386b20c66"
+    },
+    {
+        "id": "a048aaa7-4475-3834-b739-de3105ec7217",
+        "name": "sklearn.preprocessing._encoders.OrdinalEncoder",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.data_transformation.ordinal_encoder.SKlearn",
+        "digest": "1670f53abdf62e845b12b3227f8978eb2eb82f64dbd7d9b1a053fdaea22898f8"
+    },
+    {
+        "id": "fe87544d-ef93-48d0-b420-76768d351f39",
+        "name": "Ravel a DataFrame into a row",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.ravel.DataFrameRowCommon",
+        "digest": "8ffa39c563375d2be0578b91cc86bf0147c96adbfeca0eeb0b20a844dda43dd4"
+    },
+    {
+        "id": "3b09ba74-cc90-4f22-9e0a-0cf4f29a7e28",
+        "name": "Removes columns",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.remove_columns.DataFrameCommon",
+        "digest": "5985087daff1256b21f796c61da07c458e3e4b25dd55d3e35df42a0a68e05a49"
+    },
+    {
+        "id": "2eeff053-395a-497d-88db-7374c27812e6",
+        "name": "Column remover",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.data_transformation.remove_columns.DatasetCommon",
+        "digest": "e01e826db5e644464fa5443483125d7cc4129296a81d656785b13f0ccc043e26"
+    },
+    {
+        "id": "130513b9-09ca-4785-b386-37ab31d0cf8b",
+        "name": "Removes duplicate columns",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.remove_duplicate_columns.DataFrameCommon",
+        "digest": "ff9cc44efc8940d898b9233bcee717c34be72c25276b6cdca0dd7516e649253c"
+    },
+    {
+        "id": "3002bc5b-fa47-4a3d-882e-a8b5f3d756aa",
+        "name": "Remove semantic types from columns",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.remove_semantic_types.DataFrameCommon",
+        "digest": "bcabd4bbcd8903d04f238730e9603b13537b8ab617a0fec281a8f74df5922ea1"
+    },
+    {
+        "id": "7b067a78-4ad4-411d-9cf9-87bcee38ac73",
+        "name": "Rename all the duplicated name column in DataFrame",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.data_transformation.rename_duplicate_name.DataFrameCommon",
+        "digest": "ee0bebfa087e764b0c5c453869e7d99a51a4b47336bc1fdc904bef92cee368aa"
+    },
+    {
+        "id": "7bae062e-f8b0-4358-91f2-9288a51f3e82",
+        "name": "Replace semantic types for columns",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.data_transformation.replace_semantic_types.DataFrameCommon",
+        "digest": "f23cd7a255bc2c6d9d8fae82b8427badd3bd10a4ca206711a96d9f35c1c7b011"
+    },
+    {
+        "id": "48c99864-14f3-4a61-b3a6-e439f22825f6",
+        "name": "Stack numpy arrays in a column",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.stack_ndarray_column.Common",
+        "digest": "df59f8c83bd6b325c5b5c986d4631ef60085c80486e8fb08798289061fddc50a"
+    },
+    {
+        "id": "39082f18-4d35-4582-94a0-83ee22099adf",
+        "name": "Stacking Operator",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.data_transformation.stacking_operator.StackingOperator",
+        "digest": "89d3806a70bc8a69b509ffc2eb9d9958b14a6a898264c94ab5809bec269c1351"
+    },
+    {
+        "id": "98c79128-555a-4a6b-85fb-d4f4064c94ab",
+        "name": "Semantic type updater",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.data_transformation.update_semantic_types.DatasetCommon",
+        "digest": "b04f80df08f8054ae36a54df4b76ed6d1e099698a126d73fd1516bcd5bfbf0bf"
+    },
+    {
+        "id": "a22f9bd3-818e-44e9-84a3-9592c5a85408",
+        "name": "Vertex Nomination Parser",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.data_transformation.vertex_nomination_parser.VertexNominationParser",
+        "digest": "59b96a11c2a26488108bc5fb8697354d3341d42f65679d1bf96b7d4b3b006c7a"
+    },
+    {
+        "id": "4ae75c66-e8d1-41ec-9d6e-5074e081fbe6",
+        "name": "Zero Count",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.data_transformation.zero_count.ZeroCount",
+        "digest": "daf31518e020c2d0fd2c1e52d1974e865060576d7303e0bf4c1f3703cb2c3b37"
+    },
+    {
+        "id": "534c6167-9728-4a03-87aa-abec365931ee",
+        "name": "datasmash.d3m_PFSA_CATEGORICAL_FORECASTING",
+        "version": "0.4.10",
+        "python_path": "d3m.primitives.datasmash.PFSA_CATEGORICAL_FORCASTER",
+        "digest": "4621e8fa460b9320e71c5800b97da8f63340a23bccc46e1546c7bdbcc0843254"
+    },
+    {
+        "id": "c052a14f-194a-4dca-ace5-a12ec1e89197",
+        "name": "datasmash.d3m_CGSmashClassification",
+        "version": "0.4.10",
+        "python_path": "d3m.primitives.datasmash.d3m_CGSmashClassification",
+        "digest": "acfa4daf7d81199efb222615dcbd3b99e71cd449da477c66ceeadc2239b03410"
+    },
+    {
+        "id": "8e5fbab0-e257-42c3-80ac-a2f0a3cdb3e9",
+        "name": "datasmash.d3m_CSmashClassification",
+        "version": "0.4.10",
+        "python_path": "d3m.primitives.datasmash.d3m_CSmashClassification",
+        "digest": "458ee50616573d357418be6a80a64ebe1e526cc0bec9a1fb2c46bb459da7a6ce"
+    },
+    {
+        "id": "fe8da525-2bd1-42b2-ace8-b34769511b28",
+        "name": "datasmash.d3m_GSmashClassification",
+        "version": "0.4.10",
+        "python_path": "d3m.primitives.datasmash.d3m_GSmashClassification",
+        "digest": "945c50da607ce901c6413a3060ceba81d8a0b64dfa5172e5e0aa2a7ebd5b8570"
+    },
+    {
+        "id": "3b593a75-fd8f-4779-8489-2ab69e4bf55a",
+        "name": "datasmash.d3m_Quantizer",
+        "version": "0.4.10",
+        "python_path": "d3m.primitives.datasmash.d3m_Quantizer",
+        "digest": "825f926d11c09dfe89ee8b478b71df33159060394f7a3bd105709e9a1e05c661"
+    },
+    {
+        "id": "2273710f-5306-4dc1-888c-a928d8e7f205",
+        "name": "datasmash.d3m_SmashClassification",
+        "version": "0.4.10",
+        "python_path": "d3m.primitives.datasmash.d3m_SmashClassification",
+        "digest": "b0482af4357cae4fa379d204a219a863eca602aab24cb87d264161b857b645e4"
+    },
+    {
+        "id": "74767ad3-ac44-4d20-9c1c-248f56a42428",
+        "name": "datasmash.d3m_SmashClustering",
+        "version": "0.4.10",
+        "python_path": "d3m.primitives.datasmash.d3m_SmashClustering",
+        "digest": "ec361e455652c4f6f01da5e3b50b840f1f99d275dc3c52a95d4c135df2404147"
+    },
+    {
+        "id": "40cbbab4-1415-404e-9935-f1a56c1ece10",
+        "name": "datasmash.d3m_SmashDistanceMetricLearning",
+        "version": "0.4.10",
+        "python_path": "d3m.primitives.datasmash.d3m_SmashDistanceMetricLearning",
+        "digest": "299a21a8674759a7e627dd2382dc2da2a1e3a385ee6d6e921f9686cba25650d6"
+    },
+    {
+        "id": "1df5f748-122f-45a7-aff8-46cf5332c097",
+        "name": "datasmash.d3m_SmashEmbedding",
+        "version": "0.4.10",
+        "python_path": "d3m.primitives.datasmash.d3m_SmashEmbedding",
+        "digest": "460e851cedf9dc5ecbb1bb611506e4cdf864ba258adf2e3229bd1f315e1b47a2"
+    },
+    {
+        "id": "42ac4412-1194-475f-beb6-d982a347c862",
+        "name": "datasmash.d3m_SmashFeaturization",
+        "version": "0.4.10",
+        "python_path": "d3m.primitives.datasmash.d3m_SmashFeaturization",
+        "digest": "f9d057ca581a99995fd013a1c9d18227d200834ae9e2ea370e026d41103e60e4"
+    },
+    {
+        "id": "2a1acac4-daa0-4ac0-a543-71956f0681b3",
+        "name": "datasmash.d3m_XG1",
+        "version": "0.4.10",
+        "python_path": "d3m.primitives.datasmash.d3m_XG1",
+        "digest": "d7605bfd5c3efc05ef88527472ca02e76b96f7da00927688407682ca7d58acc4"
+    },
+    {
+        "id": "d989655c-a583-4bc3-94bc-cdd7b3ccb3aa",
+        "name": "datasmash.d3m_XG2",
+        "version": "0.4.10",
+        "python_path": "d3m.primitives.datasmash.d3m_XG2",
+        "digest": "fa12a6c011df19ff5e43864252259982032c598bfcdad45309e1739c8ae909d0"
+    },
+    {
+        "id": "475c26dc-eb2e-43d3-acdb-159b80d9f099",
+        "name": "unicorn",
+        "version": "1.1.0",
+        "python_path": "d3m.primitives.digital_image_processing.unicorn.Unicorn",
+        "digest": "36e181638c89766ab20f15f495a0f0b2b60cb22a22c84fe7264dfe56f54380df"
+    },
+    {
+        "id": "799802fb-2e11-4ab7-9c5e-dda09eb52a70",
+        "name": "Compute scores given the metrics to use",
+        "version": "0.3.0",
+        "python_path": "d3m.primitives.evaluation.compute_scores.Common",
+        "digest": "bb28b6fdc33e7a36de00e826cc40f5037bfb728f1de896f9ef12074145d2be70"
+    },
+    {
+        "id": "1654f000-2178-4520-be4c-a95bc26b8d3a",
+        "name": "Fixed split tabular dataset splits",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.evaluation.fixed_split_dataset_split.Commmon",
+        "digest": "ebfbf42cc9b6bae77288cf14b0b12fb29321cd0f9f5a3913caa6003650b8b79c"
+    },
+    {
+        "id": "bfedaf3a-6dd0-4a83-ad83-3a50fe882bf8",
+        "name": "K-fold cross-validation tabular dataset splits",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.evaluation.kfold_dataset_split.Common",
+        "digest": "145c8d4a81a73dfaf6138b5ce212ef876ddb111d78031213ba05aab349a063bb"
+    },
+    {
+        "id": "002f9ad1-46e3-40f4-89ed-eeffbb3a102b",
+        "name": "K-fold cross-validation timeseries dataset splits",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.evaluation.kfold_timeseries_split.Common",
+        "digest": "3725a67593798c5ee6a0335c51912f93864d39a997a7a87cf0878caa2bc35680"
+    },
+    {
+        "id": "48c683ad-da9e-48cf-b3a0-7394dba5e5d2",
+        "name": "No-split tabular dataset splits",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.evaluation.no_split_dataset_split.Common",
+        "digest": "d50a9b613a702fc865c40fca40b08d4d57b9c42f98a62bfdc7c67a404dd5517f"
+    },
+    {
+        "id": "744c4090-e2f6-489e-8efc-8b1e051bfad6",
+        "name": "Redact columns for evaluation",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.evaluation.redact_columns.Common",
+        "digest": "d527e097759131ee26757c54fee1483e8eeab782acdd7cfc8611740aaf175995"
+    },
+    {
+        "id": "3fcc6dc4-6681-4c86-948e-066d14e7d803",
+        "name": "Train-score tabular dataset splits",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.evaluation.train_score_dataset_split.Common",
+        "digest": "f1e41aa3b45081539800239a8ce552fa3502a3dc6af64a65bc79d0f81192e07b"
+    },
+    {
+        "id": "d2d4fefc-0859-3522-91df-7e445f61a69b",
+        "name": "CorexContinuous",
+        "version": "1.0.0",
+        "python_path": "d3m.primitives.feature_construction.corex_continuous.CorexContinuous",
+        "digest": "c0fcb1cb59866b698d9aaa2d455b902ef5631f9b174be15203405f5a92f0ef2f"
+    },
+    {
+        "id": "18e63b10-c5b7-34bc-a670-f2c831d6b4bf",
+        "name": "CorexText",
+        "version": "1.0.0",
+        "python_path": "d3m.primitives.feature_construction.corex_text.CorexText",
+        "digest": "3c018dc2180226c73b664047e6bc51d0bf5a4cc0f10fc007e97fe95eb3263052"
+    },
+    {
+        "id": "c4cd2401-6a66-4ddb-9954-33d5a5b61c52",
+        "name": "Deep Feature Synthesis",
+        "version": "0.3.3",
+        "python_path": "d3m.primitives.feature_construction.deep_feature_synthesis.Featuretools",
+        "digest": "be8d286b007b86d69b6666b76a91cbed224ae776707a2ffaef521c1507762ac8"
+    },
+    {
+        "id": "2363d81d-7b05-361d-969b-72f3b5070107",
+        "name": "AudioFeaturization",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.feature_extraction.audio_featurization.Umich",
+        "digest": "de2062df2d38feb43f95cc0ae60f44ae0cb454cf3932c63be492de7e546c0402"
+    },
+    {
+        "id": "a7df6ced-79b3-43b5-8360-32f8ff263748",
+        "name": "I3D",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.feature_extraction.i3d.Umich",
+        "digest": "8f151da985de84b187f27018ae600a660e2eff0fb324c7d401ac02425d99d8a0"
+    },
+    {
+        "id": "fec6eba2-4a1b-3ea9-a31f-1da371941ede",
+        "name": "sklearn.decomposition.kernel_pca.KernelPCA",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.feature_extraction.kernel_pca.SKlearn",
+        "digest": "5c5783f2c4eaf5003c35d379db4c6b57f431cde2dd87241e952b7233516a4ad4"
+    },
+    {
+        "id": "ea3b78a6-dc8c-4772-a329-b653583817b4",
+        "name": "Fast Approximate Entrywise L1-Norm Low Rank Factorization",
+        "version": "2.6.0",
+        "python_path": "d3m.primitives.feature_extraction.l1_low_rank.L1LowRank",
+        "digest": "4ff58141b41e919b9097d91dc9bdffd83901c84befe8d465fb3ce19e40865f44"
+    },
+    {
+        "id": "1e4a39a4-10ee-3d1a-9dc7-24b915f86130",
+        "name": "LogMelSpectrogram",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.feature_extraction.log_mel_spectrogram.Umich",
+        "digest": "ff6758b93cc4bd44e1819ec1297be5336a697fb9e530cd64736b59dc3b58dae1"
+    },
+    {
+        "id": "cf450079-9333-4a3f-aed4-b77a4e8c7be7",
+        "name": "nk_sent2vec",
+        "version": "1.1.0",
+        "python_path": "d3m.primitives.feature_extraction.nk_sent2vec.D3m_s2v",
+        "digest": "8885e77d9a487beb4e3cb110015102f8f54db5c09006efda7f1af38009aeaa60"
+    },
+    {
+        "id": "1ca1285d-af54-47d3-abfe-42b22924bb3f",
+        "name": "Principal Component Analysis",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.feature_extraction.pca.Common",
+        "digest": "1d4254624d52a1892c1876f1dda581f2d2dc17a3fb3373e706b8df3268754fd0"
+    },
+    {
+        "id": "2fb28cd1-5de6-3663-a2dc-09c786fba7f4",
+        "name": "sklearn.decomposition.pca.PCA",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.feature_extraction.pca.SKlearn",
+        "digest": "f70a569f2d01af7ea18208f91d204727839630dd7e5667e29ec8ed53760c9529"
+    },
+    {
+        "id": "513218c2-a255-44e1-8660-8227e6f31a7b",
+        "name": "Sparse Principal Component Analysis",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.feature_extraction.sparse_pca.Common",
+        "digest": "0d8f8c986be3772806e846459455c139fc744a10a01b333678fa00105eee1334"
+    },
+    {
+        "id": "fda1e12e-d89e-49f3-86cb-7dfaa82bbb9c",
+        "name": "VGG16",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.feature_extraction.vgg16.Umich",
+        "digest": "e8c3c56916ed6c9cb7b76efe3d2b5804870f317a1cfb6c7d642605e0bd6a8399"
+    },
+    {
+        "id": "1055a114-5c94-33b0-9100-675fd0200e72",
+        "name": "sklearn.feature_selection.univariate_selection.GenericUnivariateSelect",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.feature_selection.generic_univariate_select.SKlearn",
+        "digest": "ffd60cac765f2956050defa50e9a45c7edf04b5a2dcd4c3ffb8efee9407e4ad3"
+    },
+    {
+        "id": "4d46e77b-9c29-4631-b382-02333e928f10",
+        "name": "JMIplus_auto feature selector",
+        "version": "v2019.4",
+        "python_path": "d3m.primitives.feature_selection.joint_mutual_information.AutoRPI",
+        "digest": "97d7212bf0962f21e0653eff399f219444edc25953b3a67a41fc42ef5e405a72"
+    },
+    {
+        "id": "04573880-d64f-4791-8932-52b7c3877639",
+        "name": "PCA Features",
+        "version": "3.0.2",
+        "python_path": "d3m.primitives.feature_selection.pca_features.Pcafeatures",
+        "digest": "bb6d6eafb7a066bd64cf440eda072d94392e3752332b287673de2687b3b44d65"
+    },
+    {
+        "id": "ef6f3887-b253-4bfd-8b35-ada449efad0c",
+        "name": "RF Features",
+        "version": "3.1.1",
+        "python_path": "d3m.primitives.feature_selection.rffeatures.Rffeatures",
+        "digest": "c857d55270187a4c9c14368670bc014f0e5be52c17148800eabd0dfd22d68694"
+    },
+    {
+        "id": "215f554e-15f4-4174-9743-03cddad91dc4",
+        "name": "S2TMBplus feature selector",
+        "version": "v2019.4",
+        "python_path": "d3m.primitives.feature_selection.score_based_markov_blanket.RPI",
+        "digest": "650d410e567ec6e7c1507b056a09507a2f7d5a6ade15b6196478afef4d65e8b0"
+    },
+    {
+        "id": "09a4cffa-a59f-30ac-b78f-101c35b3f7c6",
+        "name": "sklearn.feature_selection.univariate_selection.SelectFwe",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.feature_selection.select_fwe.SKlearn",
+        "digest": "baa42bba59fea05e5da83fd54dbc4ee9cea2be7488eb1c376bdd0e279c63a30c"
+    },
+    {
+        "id": "16696c4d-bed9-34a2-b9ae-b882c069512d",
+        "name": "sklearn.feature_selection.univariate_selection.SelectPercentile",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.feature_selection.select_percentile.SKlearn",
+        "digest": "c2d98ef025ecb5016f82bddb4db3f42d60d8126d0dd14b527c4d3d692f8aefc7"
+    },
+    {
+        "id": "9d1a2e58-5f97-386c-babd-5a9b4e9b6d6c",
+        "name": "STMBplus_auto feature selector",
+        "version": "v2019.4",
+        "python_path": "d3m.primitives.feature_selection.simultaneous_markov_blanket.AutoRPI",
+        "digest": "0f2417376c3ad5b7f520b13e35438e1d57f46e95d994e58b8a33b4dc96afe5d1"
+    },
+    {
+        "id": "980c43c7-ab2a-3dc9-943b-db08a7c25cb6",
+        "name": "sklearn.feature_selection.variance_threshold.VarianceThreshold",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.feature_selection.variance_threshold.SKlearn",
+        "digest": "5dfb928f1e48f38f9958fc94ad95cc91516d272449d7679bd1689261b9108b5a"
+    },
+    {
+        "id": "5194ef94-3683-319a-9d8d-5c3fdd09de24",
+        "name": "jhu.gclust",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.graph_clustering.gaussian_clustering.JHU",
+        "digest": "d5914a6e66675d727745794dc86863217b52f3c0e80329e505a1a7fe194dabec"
+    },
+    {
+        "id": "ff22e721-e4f5-32c9-ab51-b90f32603a56",
+        "name": "jhu.sgm",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.graph_matching.seeded_graph_matching.JHU",
+        "digest": "5f9c46984998705f29c4249e3adf2c972c9b0e778bbb4c195964d0494bf9ec3e"
+    },
+    {
+        "id": "915dcd56-d2ee-4c4c-9c7f-c6ed056fe905",
+        "name": "GoTurn",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.learner.goturn.Umich",
+        "digest": "94d6867a6bdad77a4fdf58d8c7e824523b62b3d45769380f0a602d20a79ec415"
+    },
+    {
+        "id": "f9440843-5791-4d58-b0a8-617b5cb2371d",
+        "name": "Collaborative Filtering Link Prediction",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.link_prediction.collaborative_filtering_link_prediction.CollaborativeFilteringLinkPrediction",
+        "digest": "3f9e1320d5a8184c9c0261fbd5c8ed78b4b6e22c667bb3e205f113eddae2a842"
+    },
+    {
+        "id": "09f2eea8-667c-44b8-a955-6a153ba9ccc3",
+        "name": "jhu.link_pred_graph_reader",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.link_prediction.data_conversion.JHU",
+        "digest": "67ab16125d3fb6522dc0420d0136424ef894edecee32ea45d66c6ce95cf76ead"
+    },
+    {
+        "id": "2d782d55-f7ac-4abe-b228-39afcda1bbb3",
+        "name": "Graph Matching Link Prediction",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.link_prediction.graph_matching_link_prediction.GraphMatchingLinkPrediction",
+        "digest": "9e3935a484de2099e02bba7b07936c91a859b082f75c692998fcd1d8b3b4f793"
+    },
+    {
+        "id": "d83aa8fe-0433-4462-be54-b4074959b6fc",
+        "name": "Link Prediction",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.link_prediction.link_prediction.LinkPrediction",
+        "digest": "9fe233969996e234310cdeb3ead083cf1e6f4bb07a9058721872a6eecf858f64"
+    },
+    {
+        "id": "25e97696-b96f-4f5c-8620-b340fe83414d",
+        "name": "jhu.link_pred_rc",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.link_prediction.rank_classification.JHU",
+        "digest": "6a784955811b6f100b3c391c95417c4063e31649e7937c5c2efa03d106cb09ed"
+    },
+    {
+        "id": "915832a4-8059-438d-9118-f4fb4f7b0aaf",
+        "name": "Compute meta-features",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.metafeature_extraction.compute_metafeatures.Common",
+        "digest": "a354f8335fefc4236d5aa763403e7d1ede5625b79965c0c5790d6bc0cda94690"
+    },
+    {
+        "id": "28d12214-8cb0-4ac0-8946-d31fcbcd4142",
+        "name": "Dataset Metafeature Extraction",
+        "version": "0.4.3",
+        "python_path": "d3m.primitives.metafeature_extraction.meta_feature_extractor.BYU",
+        "digest": "c3ada53d06a883fcbb24098f2c37b1be9ac1ad2aa92a2f968eb7222b61669f2e"
+    },
+    {
+        "id": "a3d490a4-ef39-4de1-be02-4c43726b3b24",
+        "name": "Gaussian Latent Dirichlet Allocation Topic Modelling",
+        "version": "3.0.0",
+        "python_path": "d3m.primitives.natural_language_processing.glda.Fastlvm",
+        "digest": "844ac8725abdf367b6ee5d2082196b8c3ce2a3e5b8af9183b621f5cad18a1f4b"
+    },
+    {
+        "id": "e582e738-2f7d-4b5d-964f-022d15f19018",
+        "name": "Hierarchical Dirichlet Process Topic Modelling",
+        "version": "3.0.0",
+        "python_path": "d3m.primitives.natural_language_processing.hdp.Fastlvm",
+        "digest": "38adf4ed4bbfe1b92b96cd36af5908692459239209d00b530bf184caa7d65d7f"
+    },
+    {
+        "id": "f410b951-1cb6-481c-8d95-2d97b31d411d",
+        "name": "Latent Dirichlet Allocation Topic Modelling",
+        "version": "3.0.0",
+        "python_path": "d3m.primitives.natural_language_processing.lda.Fastlvm",
+        "digest": "93fb5a3e8c6200e4fb1a201d3625775a270e597159340f4173d34b88e1c14a5d"
+    },
+    {
+        "id": "dsbox-denormalize(from d3m)",
+        "name": "DSBox denormalize",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.normalization.Denormalize.DSBOX",
+        "digest": "852d097272bbe022e7308ac623171943bd799de5ae6862c4c29e8d7696465ad2"
+    },
+    {
+        "id": "dsbox-multi-table-feature-scaler",
+        "name": "DSBox feature scaler",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.normalization.IQRScaler.DSBOX",
+        "digest": "2ac1a14e784cfaf283868390baa45f3262a05200b0f5f4a5e3102b2767c528b2"
+    },
+    {
+        "id": "176e7277-fe37-402b-86e6-bdb7f7a9cf89",
+        "name": "retina_net",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.object_detection.retina_net.JPLPrimitives",
+        "digest": "db71b2cdad3e01f542260d55441792f120e9c085befe063eb6df79dee21b35b1"
+    },
+    {
+        "id": "fe58e7bb-f6c7-4d91-b897-69faf33bece5",
+        "name": "Map DataFrame cell values to new values using provided primitive",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.operator.column_map.DataFrameCommon",
+        "digest": "d392075d9a924b7f7701269196040e5ae2de11234f04b3642afcf1357e4c4718"
+    },
+    {
+        "id": "5bef5738-1638-48d6-9935-72445f0eecdc",
+        "name": "Map DataFrame resources to new resources using provided primitive",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.operator.dataset_map.DataFrameCommon",
+        "digest": "226cebe4853c7938207321dc0ea6e87f169a6e87fe1b02ae7cfcf0f8e66a47cc"
+    },
+    {
+        "id": "56c715a1-6017-48ad-a6ed-fd8275fd3440",
+        "name": "Diagonal multivariate normal distribution primitive, mainly for being used as a weight prior of another primitive.",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.operator.diagonal_mvn.Common",
+        "digest": "52f9768900e68425fcd73d09de2ccafbacf3e79c5c20616aff5a22f50f60a095"
+    },
+    {
+        "id": "5c9d5acf-7754-420f-a49f-90f4d9d0d694",
+        "name": "Increment Values",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.operator.increment.Test",
+        "digest": "9591ea23f5f9635a07d1cb74f5365adc48fc9acc071ef5585c5bc508d9ed1690"
+    },
+    {
+        "id": "e0f83c35-fe3d-4fa6-92cf-f7421408eab5",
+        "name": "Produce the same as the input",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.operator.null.TransformerTest",
+        "digest": "701279f5b303b763648801d4ed29b5f38cd6b3405e953a6a242343d6d153e11b"
+    },
+    {
+        "id": "5310d7c4-89a0-4dab-8419-3285e650105a",
+        "name": "Produce the same as the input",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.operator.null.UnsupervisedLearnerTest",
+        "digest": "872046b7b655240f31384fcf34f3c4d822679fb5eda6a6b46bbf7be23981b19c"
+    },
+    {
+        "id": "6b061902-5e40-4a7a-9a21-b995dce1b2aa",
+        "name": "Sum results of other primitives",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.operator.primitive_sum.Test",
+        "digest": "ad75eba62d6cc1e4dd7f30e827881a54818dc21a0bcd818028a7276aa35fa6a3"
+    },
+    {
+        "id": "9c00d42d-382d-4177-a0e7-082da88a29c8",
+        "name": "Sum Values",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.operator.sum.Test",
+        "digest": "9863a44efe3c960cca07cf4ff36471e0f538c93e2955a2c1f7fe620496eea62a"
+    },
+    {
+        "id": "966dd2c4-d439-3ad6-b49f-17706595606c",
+        "name": "sklearn.linear_model.bayes.ARDRegression",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.ard.SKlearn",
+        "digest": "4ac3790809cf41c3c471d6c79ed1be0f52afa52549372f39c55fdff9f21a412c"
+    },
+    {
+        "id": "f254fda2-bab3-42b4-a09d-1ccd1877327e",
+        "name": "Convolutional neural network primitive using PyTorch",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.regression.convolutional_neural_net.TorchCommon",
+        "digest": "b06d9dffbf468dc95af5ca7bd82ac6ea6409f1b8cb6e2c0bea2467f846bf3a7d"
+    },
+    {
+        "id": "eb145d24-8833-4ed7-96be-ee5c7df61b41",
+        "name": "Echo",
+        "version": "1.0.0",
+        "python_path": "d3m.primitives.regression.corex_supervised.EchoIB",
+        "digest": "8e2d70e29fbbcf2f5c728e3637b0b121102aa14e4576503c95c6a5cd86d24cd0"
+    },
+    {
+        "id": "18e63b10-c5b7-34bc-a670-f2c831d6b4bf",
+        "name": "EchoLinearRegression",
+        "version": "1.0.0",
+        "python_path": "d3m.primitives.regression.corex_supervised.EchoLinear",
+        "digest": "3c018dc2180226c73b664047e6bc51d0bf5a4cc0f10fc007e97fe95eb3263052"
+    },
+    {
+        "id": "92360c43-6e6f-4ff3-b1e6-5851792d8fcc",
+        "name": "Nearest Neighbor Regressor with Cover Trees",
+        "version": "3.0.0",
+        "python_path": "d3m.primitives.regression.cover_tree.Fastlvm",
+        "digest": "2f2f446761b2129726ff15c0769c37c67f643212663e249f1f52960306fb2915"
+    },
+    {
+        "id": "6c420bd8-01d1-321f-9a35-afc4b758a5c6",
+        "name": "sklearn.tree.tree.DecisionTreeRegressor",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.decision_tree.SKlearn",
+        "digest": "7e79c45b3b76210873fae0a89497f17251666f191b9c085545c20701e56eb332"
+    },
+    {
+        "id": "05aa5b6a-3b27-34dc-9ba7-8511fb13f253",
+        "name": "sklearn.dummy.DummyRegressor",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.dummy.SKlearn",
+        "digest": "4b60f67c658759a06fa140121b1bc96f0c5711bc5287de258957489e66375af9"
+    },
+    {
+        "id": "35321059-2a1a-31fd-9509-5494efc751c7",
+        "name": "sklearn.ensemble.forest.ExtraTreesRegressor",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.extra_trees.SKlearn",
+        "digest": "0b2ef82da635e6a9f7e053782a25c2d338aa6b1ccd75806721a9ae1c367874db"
+    },
+    {
+        "id": "b158a49d-5deb-462e-b7e3-e321624dad89",
+        "name": "Coreset-based Fast Least Absolute Deviations Solver",
+        "version": "2.6.0",
+        "python_path": "d3m.primitives.regression.fast_lad.FastLAD",
+        "digest": "f4b0e29c25c39ec7c175cbabfa0584325bf25f50e2b0b163cf971fdf177e296c"
+    },
+    {
+        "id": "1307cda3-ba46-4274-a742-cadec75da2ec",
+        "name": "Feed-forward neural network",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.regression.feed_forward_neural_net.TorchCommon",
+        "digest": "267eb5bbbeb3823b54263e00791ee47c73eabaf4526e35fed31f16204f641d83"
+    },
+    {
+        "id": "3894e630-d67b-35d9-ab78-233e264f6324",
+        "name": "sklearn.gaussian_process.gpr.GaussianProcessRegressor",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.gaussian_process.SKlearn",
+        "digest": "8782c5ef7ed147468c7bf9ccb8cd60a0644a5616fee55008c811abb7002a4dcd"
+    },
+    {
+        "id": "2a031907-6b2c-3390-b365-921f89c8816a",
+        "name": "sklearn.ensemble.gradient_boosting.GradientBoostingRegressor",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.gradient_boosting.SKlearn",
+        "digest": "d36cdae9f9b5123ad52c3e292061477cf9edcc1124731799cb45ad99c63e209d"
+    },
+    {
+        "id": "50b499a5-cef8-3028-8a99-ae553819f855",
+        "name": "sklearn.neighbors.regression.KNeighborsRegressor",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.k_neighbors.SKlearn",
+        "digest": "76dfbe3909951a9d4f9a650b43d9727d7ae4a53e9b6257c70e0f94d2ed59a200"
+    },
+    {
+        "id": "0fca4b96-d46b-3598-a4a5-bfa428d039fc",
+        "name": "sklearn.kernel_ridge.KernelRidge",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.kernel_ridge.SKlearn",
+        "digest": "dfef7c0c816fb43939d648dcb449ecdc7cf804984fd0d70cc21659edb6e097bd"
+    },
+    {
+        "id": "989a40cd-114c-309d-9a94-59d2669d6c94",
+        "name": "sklearn.linear_model.least_angle.Lars",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.lars.SKlearn",
+        "digest": "e04834cd5df0a7deb482ba18be02008190f2edc66518b8e05028eb15785efecb"
+    },
+    {
+        "id": "a7100c7d-8d8e-3f2a-a0ee-b4380383ed6c",
+        "name": "sklearn.linear_model.coordinate_descent.Lasso",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.lasso.SKlearn",
+        "digest": "030d68dd0876f61ef0e6ae2eb28f779b1c1594c2f94e3b482c4e256abda1b4c2"
+    },
+    {
+        "id": "cfd0482b-d639-3d2b-b876-87f25277a088",
+        "name": "sklearn.linear_model.coordinate_descent.LassoCV",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.lasso_cv.SKlearn",
+        "digest": "4c1d22ad52a400987d0398d32c41507b20589b85c196029fdcc460b591b94dd7"
+    },
+    {
+        "id": "28ad180e-ef88-427a-ac00-0673efc72b3b",
+        "name": "Bayesian linear regression",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.regression.linear_regression.Common",
+        "digest": "643938feb3f30377a0b9a1336631635c97a3b136daf09166a9cad9423ab3157a"
+    },
+    {
+        "id": "f40ffdc0-1d6d-3234-8fd0-a3e4d7a136a7",
+        "name": "sklearn.svm.classes.LinearSVR",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.linear_svr.SKlearn",
+        "digest": "d49fec9602eca84512182a22ca256382b8097560ff718331e2779b04a0583414"
+    },
+    {
+        "id": "f20ac610-1bf0-4401-b188-ef9dd8616a76",
+        "name": "Loss primitive (i.e., a PyTorch Criterion) for end-to-end training of primitive chains inheriting from GradientCompositionalityMixin",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.regression.loss.TorchCommon",
+        "digest": "1facfd826227375ca34a1af63e16ffc1cd465ce40f6c4ee7b392104c094392ff"
+    },
+    {
+        "id": "a4fedbf8-f69a-3440-9423-559291dfbd61",
+        "name": "sklearn.neural_network.multilayer_perceptron.MLPRegressor",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.mlp.SKlearn",
+        "digest": "3bcb8c936271c25477c46920cfbf66ed1793c065c63539879aedc5ab88266e65"
+    },
+    {
+        "id": "4a0336ae-63b9-4a42-860e-86c5b64afbdd",
+        "name": "Monomial Regressor",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.regression.monomial.Test",
+        "digest": "6ff77b12913f61b41a6511b7c926c07650965ca63289cb9a5059b86611b43f7c"
+    },
+    {
+        "id": "fab94f96-74f4-4987-ab45-2a992cb37e0b",
+        "name": "OWLRegression",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.regression.owl_regression.Umich",
+        "digest": "ffe4c2e5e9050d9d27efa770d385006da6ba49e72028dcdec422534a8e4f906a"
+    },
+    {
+        "id": "50ce5919-a155-3c72-a230-f4ab4b5babba",
+        "name": "sklearn.linear_model.passive_aggressive.PassiveAggressiveRegressor",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.passive_aggressive.SKlearn",
+        "digest": "0f97d5f83e131397b7dfdf309cecb4b6bce8d77394f1f4ca683df6f676821066"
+    },
+    {
+        "id": "f0fd7a62-09b5-3abc-93bb-f5f999f7cc80",
+        "name": "sklearn.ensemble.forest.RandomForestRegressor",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.random_forest.SKlearn",
+        "digest": "8e21fe6143ccc4e9276ba6b7dea7104ff79a73955aed04f44dc79b21d6be39ae"
+    },
+    {
+        "id": "90d9eefc-2db3-4738-a0e7-72eedab2d93a",
+        "name": "RFM Preconditioned Gaussian Kernel Ridge Regression",
+        "version": "2.6.0",
+        "python_path": "d3m.primitives.regression.rfm_precondition_ed_gaussian_krr.RFMPreconditionedGaussianKRR",
+        "digest": "673b009b1c3f0505968dea4fdb0551e92d8acbe7ce3dbd497d6ebe32873e36a2"
+    },
+    {
+        "id": "c7a35a32-444c-4530-aeb4-e7a95cbe2cbf",
+        "name": "RFM Preconditioned Polynomial Kernel Ridge Regression",
+        "version": "2.6.0",
+        "python_path": "d3m.primitives.regression.rfm_precondition_ed_polynomial_krr.RFMPreconditionedPolynomialKRR",
+        "digest": "16e825ba665006573f2eb065233194c637510d75f6dfdfc6ac5ee124c24b1aea"
+    },
+    {
+        "id": "2fb16403-8509-3f02-bdbf-9696e2fcad55",
+        "name": "sklearn.linear_model.ridge.Ridge",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.ridge.SKlearn",
+        "digest": "4c41c13eb6eb619db49d68993fb08d3cce440ffa6b585719b1185943d49db7e6"
+    },
+    {
+        "id": "2a581b8d-baf0-4278-842e-082b796f3edd",
+        "name": "find projections",
+        "version": "2.2.0",
+        "python_path": "d3m.primitives.regression.search_hybrid_numeric.Find_projections",
+        "digest": "26dacf6cb42dd48b7fcea6ebdf6f0ce9d363df321f08dbf9fcdeb6f4e8c39e77"
+    },
+    {
+        "id": "fbc8d328-a553-4289-a21c-b1407a21a900",
+        "name": "find projections numeric",
+        "version": "2.2.0",
+        "python_path": "d3m.primitives.regression.search_numeric.Find_projections",
+        "digest": "7df8d1acf67957c568d36d0cdbaad9e0b42c748c52d6f650512598b3f4a7a7b6"
+    },
+    {
+        "id": "db3a7669-72e1-3c95-91c1-0c2a3f137d78",
+        "name": "sklearn.linear_model.stochastic_gradient.SGDRegressor",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.sgd.SKlearn",
+        "digest": "f8dd46ff17f5f50a89228d8457646b520d820a496983059fa53355017460594c"
+    },
+    {
+        "id": "ebbc3404-902d-33cc-a10c-e42b06dfe60c",
+        "name": "sklearn.svm.classes.SVR",
+        "version": "2019.4.4",
+        "python_path": "d3m.primitives.regression.svr.SKlearn",
+        "digest": "93f3e73bece234cc96400eb996dd41e0d3a10db33807bc79593ab6cf705834c4"
+    },
+    {
+        "id": "79a494ee-22a2-4768-8dcb-aa282486c5ef",
+        "name": "Tensor Machine Regularized Least Squares",
+        "version": "2.6.0",
+        "python_path": "d3m.primitives.regression.tensor_machines_regularized_least_squares.TensorMachinesRegularizedLeastSquares",
+        "digest": "f6d3dfef117b251ec6d1aed78f3d5335c62ebf3595664d68d929b7baa1673547"
+    },
+    {
+        "id": "cdbb80e4-e9de-4caa-a710-16b5d727b959",
+        "name": "XGBoost GBTree regressor",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.regression.xgboost_gbtree.DataFrameCommon",
+        "digest": "a8afcf79a43c0b266c11e01b8243f79e152d4eb861b4c82457030dc924769e40"
+    },
+    {
+        "id": "b2612849-39e4-33ce-bfda-24f3e2cb1e93",
+        "name": "DSBox Profiler",
+        "version": "1.4.4",
+        "python_path": "d3m.primitives.schema_discovery.Profiler.DSBOX",
+        "digest": "f424823b3b1961d269e9b48de0c0d8ad398304342c236859dce225215b4dea11"
+    },
+    {
+        "id": "e193afa1-b45e-4d29-918f-5bb1fa3b88a7",
+        "name": "Determine missing semantic types for columns automatically",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.schema_discovery.profiler.Common",
+        "digest": "46a0581ac741448b98c256e6a5655b2d29a5da53cd314c7dd65a8b659371ba93"
+    },
+    {
+        "id": "273b03a2-5c9e-4a2c-93f2-18d293f2994d",
+        "name": "RFD",
+        "version": "0.0.5",
+        "python_path": "d3m.primitives.similarity_modeling.rfd.Umich",
+        "digest": "27a10a20fcd94dee601a2550432fba69b4d2a7074f3daa6ff42ee9a8900f6900"
+    },
+    {
+        "id": "2d6d3223-1b3c-49cc-9ddd-50f571818268",
+        "name": "kanine",
+        "version": "1.0.2",
+        "python_path": "d3m.primitives.time_series_classification.k_neighbors.Kanine",
+        "digest": "9d111d297bf566893fb00d154bb50a4bd677fe4d7e0297e3603408ca748dad37"
+    },
+    {
+        "id": "d351fcf8-5d6c-48d4-8bf6-a56fe11e62d6",
+        "name": "shallot",
+        "version": "1.0.2",
+        "python_path": "d3m.primitives.time_series_classification.shapelet_learning.Shallot",
+        "digest": "71671caf2ecc30d7da833bf5eb408fc2f26633b63bd7b55f4415072cba52b917"
+    },
+    {
+        "id": "d473d487-2c32-49b2-98b5-a2b48571e07c",
+        "name": "parrot",
+        "version": "1.0.3",
+        "python_path": "d3m.primitives.time_series_forecasting.arima.Parrot",
+        "digest": "0615e155b5a17e73a83249ebefac16f3ba164f50dd47b072ed18c49e637d214b"
+    },
+    {
+        "id": "03b1288c-d4f5-4fa8-9a49-32e82c5efaf2",
+        "name": "Relational Timeseries",
+        "version": "1.3.9",
+        "python_path": "d3m.primitives.time_series_forecasting.time_series_to_list.RelationalTimeseries",
+        "digest": "ae393bdf6637d21b2928dfd0e1a828026bbe80356e2478e7df8af0785a4d2c7b"
+    },
+    {
+        "id": "76b5a479-c209-4d94-92b5-7eba7a4d4499",
+        "name": "VAR",
+        "version": "1.0.0",
+        "python_path": "d3m.primitives.time_series_forecasting.vector_autoregression.VAR",
+        "digest": "88e40dcf530adea199583dd97dfe3d2b60acf773ffa35cc04531bcc9109512e3"
+    },
+    {
+        "id": "fde90b15-155a-3c2a-866c-4a19354cf0c7",
+        "name": "jhu.sgc",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.vertex_nomination.spectral_graph_clustering.JHU",
+        "digest": "539dd34302e50beccf88818fb8b916ac9e78ce6c203c59398ff0e3a7674cf7f3"
+    },
+    {
+        "id": "dad3e96a-88a3-4e96-ba38-c152c210912f",
+        "name": "jhu.1gvn",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.vertex_nomination.spectral_vertex_nomination.JHU",
+        "digest": "ea44e394fa9ef6348278312b951c75be1c8d510024f883819ffb0e20675b0c84"
+    }
+]

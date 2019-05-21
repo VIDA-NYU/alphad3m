@@ -1,67 +1,18 @@
+import os
 import logging
 import json
 import tempfile
-import os
 import pickle
+import d3m.runtime
+import d3m.metadata.base
 from sqlalchemy.orm import joinedload
-
 from d3m.container import Dataset
 from d3m.metadata import base as metadata_base
-import d3m.metadata.base
-import d3m.runtime
 from d3m.metadata.problem import Problem
 from d3m_ta2_nyu.workflow import database, convert
 
 
 logger = logging.getLogger(__name__)
-
-
-class CustomRuntime(d3m.runtime.Runtime):
-    def __init__(self, targets, **kwargs):
-        super(CustomRuntime, self).__init__(**kwargs)
-
-        self.__targets = targets
-
-    def _mark_columns(self, dataset):
-        dataset = dataset.copy()
-
-        # Set suggested target as attribute
-        for resID, res in dataset.items():
-            length = dataset.metadata.query([
-                resID,
-                d3m.metadata.base.ALL_ELEMENTS,
-            ])['dimension']['length']
-            for col_idx in range(length):
-                col_selector = [
-                    resID,
-                    d3m.metadata.base.ALL_ELEMENTS,
-                    col_idx,
-                ]
-                col_meta = dataset.metadata.query(col_selector)
-                if ('https://metadata.datadrivendiscovery.org/types/'
-                        'SuggestedTarget' in col_meta['semantic_types']):
-                    dataset.metadata = dataset.metadata.add_semantic_type(
-                        col_selector,
-                        'https://metadata.datadrivendiscovery.org/types/'
-                        'Attribute',
-                    )
-
-        # Mark targets
-        for res_id, col_idx in self.__targets:
-            dataset.metadata = dataset.metadata.add_semantic_type(
-                [res_id, d3m.metadata.base.ALL_ELEMENTS, col_idx],
-                'https://metadata.datadrivendiscovery.org/types/Target',
-            )
-            dataset.metadata = dataset.metadata.add_semantic_type(
-                [res_id, d3m.metadata.base.ALL_ELEMENTS, col_idx],
-                'https://metadata.datadrivendiscovery.org/types/TrueTarget',
-            )
-            dataset.metadata = dataset.metadata.remove_semantic_type(
-                [res_id, d3m.metadata.base.ALL_ELEMENTS, col_idx],
-                'https://metadata.datadrivendiscovery.org/types/Attribute',
-            )
-
-        return dataset
 
 
 @database.with_db
