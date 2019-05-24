@@ -1,11 +1,10 @@
 import logging
 import pickle
 import frozendict
-from d3m_ta2_nyu.workflow.execute import execute_train
 from d3m_ta2_nyu.workflow import database
 from d3m.container import Dataset
 from d3m.metadata import base as metadata_base
-
+from d3m_ta2_nyu.execute import execute
 logger = logging.getLogger(__name__)
 
 METAFEATURES_DEFAULT = [
@@ -164,8 +163,9 @@ class ComputeMetafeatures():
         connect(step2, step3)
 
         db.add(pipeline)
-        db.flush()
+        db.commit()
         logger.info(origin + ' PIPELINE ID: %s', pipeline.id)
+
         return pipeline.id
 
     def compute_metafeatures(self, origin):
@@ -174,14 +174,15 @@ class ComputeMetafeatures():
         self._add_target_columns_metadata()
         # Create the metafeatures computing pipeline
         pipeline_id = self._create_metafeatures_pipeline(db, origin)
-        # Run training
-        logger.info("Computing Metafeatures")
+        # Run the pipeline
+        logger.info('Computing Metafeatures')
         metafeature_vector = {x: 0 for x in METAFEATURES_DEFAULT}
         try:
-
-            train_run, outputs = execute_train(db, pipeline_id, self.dataset)
+            # TODO Improve the sending of parameters
+            outputs = execute(pipeline_id, self.dataset_uri, None, None, None,
+                              db_filename='/output/supporting_files/db.sqlite3')
             for key, value in outputs.items():
-                metafeature_results = value['produce'].metadata.query(())['data_metafeatures']
+                metafeature_results = value.metadata.query(())['data_metafeatures']
                 for metafeature_key, metafeature_value in metafeature_results.items():
                     if isinstance(metafeature_value, frozendict.FrozenOrderedDict):
                         for k, v in metafeature_value.items():
@@ -196,7 +197,7 @@ class ComputeMetafeatures():
             return list(metafeature_vector.values())
 
         except Exception:
-            logger.exception("Error running Metafeatures")
+            logger.exception('Error running Metafeatures')
             # FIXME: This is a default to address metafeatures not generating features for datasets with numeric targets
             return list(metafeature_vector.values())
         finally:

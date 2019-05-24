@@ -7,6 +7,7 @@
 # Change this if you're not Remi
 LOCAL_DATA_ROOT="/Users/rlopez/D3M/datasets"
 LOCAL_OUTPUT_ROOT="/Users/rlopez/D3M/tmp"
+LOCAL_STATIC_ROOT="/Users/rlopez/D3M/static"
 
 set -eu
 
@@ -50,6 +51,7 @@ docker run -ti --rm \
     -e D3MRUN="$MODE" \
     -e D3MINPUTDIR=/input \
     -e D3MOUTPUTDIR=/output \
+    -e D3MSTATICDIR=/static \
     -e D3MCPU=4 \
     -e D3MRAM=4Gi \
     -e D3MTIMEOUT=$TIMEOUT \
@@ -59,5 +61,6 @@ docker run -ti --rm \
     -v "$PWD/eval.sh:/usr/local/bin/eval.sh"\
     -v "$LOCAL_DATA_ROOT/${INPUT}:/input" \
     -v "$LOCAL_OUTPUT_ROOT:/output" \
+    -v "$LOCAL_STATIC_ROOT:/static" \
     --name ta2_container \
     "$@"

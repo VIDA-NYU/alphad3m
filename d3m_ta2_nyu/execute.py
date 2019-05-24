@@ -2,7 +2,6 @@ import os
 import logging
 import json
 import tempfile
-import pickle
 import d3m.runtime
 import d3m.metadata.base
 from sqlalchemy.orm import joinedload
@@ -16,8 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 @database.with_db
-def train(pipeline_id, dataset, problem, storage_dir, results_path, msg_queue, db):
+def execute(pipeline_id, dataset, problem, results_path, msg_queue, db):
     # Get pipeline from database
+
     pipeline = (
         db.query(database.Pipeline)
             .filter(database.Pipeline.id == pipeline_id)
@@ -25,28 +25,30 @@ def train(pipeline_id, dataset, problem, storage_dir, results_path, msg_queue, d
                      joinedload(database.Pipeline.connections))
     ).one()
 
-    logger.info('About to train pipeline, id=%s, dataset=%r',
+    logger.info('About to execute pipeline, id=%s, dataset=%r',
                 pipeline_id, dataset)
 
     # Load data
     dataset = Dataset.load(dataset)
     logger.info('Loaded dataset')
 
-    # Training step - fit pipeline on training data
-    logger.info('Running training')
+    json_pipeline = convert.to_d3m_json(pipeline)
+    logger.info('Pipeline to be executed:\n%s',
+                '\n'.join([x['primitive']['python_path'] for x in json_pipeline['steps']]))
 
-    d3m_pipeline = d3m.metadata.pipeline.Pipeline.from_json_structure(
-        convert.to_d3m_json(pipeline),
-    )
+    d3m_pipeline = d3m.metadata.pipeline.Pipeline.from_json_structure(json_pipeline, )
 
     # Convert problem description to core package format
     # FIXME: There isn't a way to parse from JSON data, so write it to a file
     # and read it back
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_path = os.path.join(tmp_dir, 'problemDoc.json')
-        with open(tmp_path, 'w', encoding='utf8') as fin:
-            json.dump(problem, fin)
-        d3m_problem = Problem.load('file://' + tmp_path)
+    d3m_problem = None
+
+    if problem is not None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = os.path.join(tmp_dir, 'problemDoc.json')
+            with open(tmp_path, 'w', encoding='utf8') as fin:
+                json.dump(problem, fin)
+            d3m_problem = Problem.load('file://' + tmp_path)
 
     runtime = d3m.runtime.Runtime(pipeline=d3m_pipeline, problem_description=d3m_problem,
                                   context=metadata_base.Context.TESTING)
@@ -61,5 +63,4 @@ def train(pipeline_id, dataset, problem, storage_dir, results_path, msg_queue, d
     else:
         logger.info('NOT storing fit results')
 
-    with open(os.path.join(storage_dir, 'fitted_solution_%s.pkl' % pipeline_id), 'wb') as fout:
-        pickle.dump(runtime, fout)
+    return fit_results.values

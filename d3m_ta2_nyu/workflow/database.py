@@ -187,6 +187,8 @@ def with_db(wrapped):
         db = DBSession()
         try:
             return wrapped(*args, **kwargs, db=db)
+        except:
+            print('>>>> error')
         finally:
             db.close()
     return wrapper

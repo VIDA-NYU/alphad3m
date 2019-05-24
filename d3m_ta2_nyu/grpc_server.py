@@ -94,7 +94,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.error("TA3 is using a different protocol version: %r "
                          "(us: %r)", request.version, expected_version)
 
-        template = request.template
+        template = request.template# self._create_pipeline_template()#request.template
 
         if template is not None and len(template.steps) > 0:  # isinstance(template, pb_pipeline.PipelineDescription)
             pipeline = decode_pipeline_description(template, pipeline_module.Resolver())
@@ -102,26 +102,21 @@ class CoreService(pb_core_grpc.CoreServicer):
                 # TODO Add support for pipeline templates with placeholder steps
                 logger.error('Pipeline templates with placeholder steps is not supported')
             else:  # Pipeline template fully defined
-
+                print('>>>>>>>>>>>>>')
                 search_id = self._ta2.new_session(None)
-                '''import d3m.runtime
+                import d3m.runtime
                 from d3m.metadata import base as metadata_base
                 from d3m.container.dataset import Dataset
-                runtime = d3m.runtime.Runtime(pipeline=pipeline,
-                                  context=metadata_base.Context.TESTING)
+                r = d3m.runtime.Runtime(pipeline=pipeline, context=metadata_base.Context.TESTING)
                 dataset = request.inputs[0].dataset_uri
                 if not dataset.startswith('file://'):
                     dataset = 'file://' + dataset
-
+                print('>>>>>>', dataset)
                 # Fitting pipeline on input dataset.
-                fit_results = runtime.fit(inputs=[Dataset.load(dataset_uri=dataset)])
+                fit_results = r.fit(inputs=[d3m.container.list.List([1,2,3,4])])
                 fit_results.check_success()
+                print(fit_results.values)
 
-                # Producing results using the fitted pipeline.
-                produce_results = runtime.produce(inputs=[Dataset.load(dataset_uri=dataset)])
-                produce_results.check_success()
-
-                print(produce_results.values)'''
                 self._ta2.build_fixed_pipeline(search_id, pipeline)
 
                 return pb_core.SearchSolutionsResponse(search_id=str(search_id),)
