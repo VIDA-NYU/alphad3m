@@ -969,7 +969,7 @@ class D3mTa2(Observable):
         db = self.DBSession()
         pipeline_database = database.Pipeline(origin='Fixed pipeline template', dataset='NA')
         # TODO Convert D3M pipeline to our database pipeline
-        print('>>>>', d3m_pipeline.to_json_structure())
+        #print('>>>>', d3m_pipeline.to_json_structure())
         db.add(pipeline_database)
         db.commit()
         pipeline_id = pipeline_database.id

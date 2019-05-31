@@ -15,22 +15,24 @@ logger = logging.getLogger(__name__)
 
 with pkg_resources.resource_stream(
         'd3m_ta2_nyu',
-        'pipelines/kfold_tabular_split.yaml') as fp:
+        '../resource/pipelines/kfold_tabular_split.yaml') as fp:
     kfold_tabular_split = Pipeline.from_yaml(fp)
 
 with pkg_resources.resource_stream(
         'd3m_ta2_nyu',
-        'pipelines/train-test-tabular-split.yaml') as fp:
+        '../resource/pipelines/train-test-tabular-split.yaml') as fp:
     train_test_tabular_split = Pipeline.from_yaml(fp)
 
 with pkg_resources.resource_stream(
         'd3m_ta2_nyu',
-        'pipelines/scoring.yaml') as fp:
+        '../resource/pipelines/scoring.yaml') as fp:
     scoring = Pipeline.from_yaml(fp)
 
 
 def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
     json_pipeline = convert.to_d3m_json(pipeline)
+    #with open(os.path.join(os.path.dirname(__file__),'temporal.json')) as fin:
+    #    json_pipeline = json.load(fin)
     logger.info("Pipeline to be scored:\n%s",
                 '\n'.join([x['primitive']['python_path'] for x in json_pipeline['steps']]))
 
@@ -60,6 +62,7 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
         random_seed=0,
     )
 
+    results[1][0].check_success()
     scores = d3m.runtime.combine_folds([fold for fold in results[0]])
 
     return scores

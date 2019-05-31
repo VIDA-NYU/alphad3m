@@ -143,6 +143,7 @@ input = {
 
 process_sklearn = None
 
+
 @database.with_sessionmaker
 def generate(task, dataset, metrics, problem, targets, features, timeout, msg_queue, DBSession):
     import time
@@ -152,57 +153,64 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_pipeline_from_strings(strings, origin,
-                                                                      dataset, targets, features,
+        pipeline_id = GenerateD3MPipelines.make_pipeline_from_strings(strings, origin, dataset, targets, features,
                                                                       DBSession=DBSession)
 
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
+    def eval_text_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = GenerateD3MPipelines.make_text_pipeline_from_strings(origin, dataset, targets, features,
+                                                                           DBSession=DBSession)
+        # Evaluate the pipeline
+        msg_queue.send(('eval', pipeline_id))
+        return msg_queue.recv()
+
+    def eval_image_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = GenerateD3MPipelines.make_image_pipeline_from_strings(origin, dataset, targets, features,
+                                                                            DBSession=DBSession)
+        # Evaluate the pipeline
+        msg_queue.send(('eval', pipeline_id))
+        return msg_queue.recv()
+
     def eval_audio_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_audio_pipeline_from_strings(origin,
-                                                                            dataset,
-                                                                            targets, features, DBSession=DBSession)
+        pipeline_id = GenerateD3MPipelines.make_audio_pipeline_from_strings(origin, dataset, targets, features,
+                                                                            DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
     def eval_object_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_object_detection_pipeline_from_strings(origin,
-                                                                            dataset,
-                                                                            targets, features, DBSession=DBSession)
+        pipeline_id = GenerateD3MPipelines.make_objectdetection_pipeline_from_strings(origin, dataset, targets,
+                                                                                      features, DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    def eval_graphMatch_pipeline(origin):
+    def eval_graphmatch_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_graphMatching_pipeline_from_strings(origin,
-                                                                                    dataset,
-                                                                                    targets, features,
+        pipeline_id = GenerateD3MPipelines.make_graphmatching_pipeline_from_strings(origin, dataset, targets, features,
                                                                                     DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    def eval_communityDetection_pipeline(origin):
+    def eval_communitydetection_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_communityDetection_pipeline_from_strings(origin,
-                                                                                         dataset,
-                                                                                         targets, features,
-                                                                                         DBSession=DBSession)
+        pipeline_id = GenerateD3MPipelines.make_communitydetection_pipeline_from_strings(origin, dataset, targets,
+                                                                                         features, DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
     def eval_linkprediction_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_linkprediction_pipeline_from_strings(origin,
-                                                                                     dataset,
-                                                                                     targets, features,
+        pipeline_id = GenerateD3MPipelines.make_linkprediction_pipeline_from_strings(origin, dataset, targets, features,
                                                                                      DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
@@ -210,86 +218,46 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     def eval_vertexnomination_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_vertexnomination_pipeline_from_strings(origin,
-                                                                                     dataset,
-                                                                                     targets, features,
-                                                                                     DBSession=DBSession)
+        pipeline_id = GenerateD3MPipelines.make_vertexnomination_pipeline_from_strings(origin, dataset, targets,
+                                                                                       features, DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    def eval_image_pipeline(origin):
+    def eval_timeseries_class_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_image_pipeline_from_strings(origin,
-                                                                            dataset,
-                                                                            targets, features,
-                                                                            DBSession=DBSession)
+        pipeline_id = GenerateD3MPipelines.make_timeseries_class_pipeline_from_strings(origin, dataset, targets,
+                                                                                       features, DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    def eval_timeseries_pipeline(origin):
+    def eval_timeseries_fore_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_timeseries_pipeline_from_strings(origin,
-                                                                            dataset,
-                                                                            targets, features,
-                                                                            DBSession=DBSession)
-        # Evaluate the pipeline
-        msg_queue.send(('eval', pipeline_id))
-        return msg_queue.recv()
-
-    def eval_text_pipeline(origin):
-        # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_text_pipeline_from_strings(origin,
-                                                                            dataset,
-                                                                            targets, features,
-                                                                            DBSession=DBSession)
+        pipeline_id = GenerateD3MPipelines.make_timeseries_fore_pipeline_from_strings(origin, dataset, targets,
+                                                                                      features, DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
     dataset_path = os.path.dirname(dataset[7:])
     f = open(os.path.join(dataset_path, 'datasetDoc.json'))
-    datasetDoc = json.load(f)
-    data_resources = datasetDoc['dataResources']
+    dataset_doc = json.load(f)
+    data_resources = dataset_doc['dataResources']
     data_types = []
     for data_res in data_resources:
         data_types.append(data_res['resType'])
 
-    unsupported_problems = ['TIME_SERIES_FORECASTING', 'COLLABORATIVE_FILTERING']
-    print('>>>>>>>', data_types)
+    unsupported_problems = ['COLLABORATIVE_FILTERING']
+    print('>>>>>>>', data_types, task)
 
     if task in unsupported_problems:
         logger.error('%s Not Supported', task)
         sys.exit(148)
 
-    if 'OBJECT_DETECTION' in task:
-        eval_object_pipeline('ALPHAD3M')
-        return
-
     if 'text' in data_types:
         eval_text_pipeline('ALPHAD3M')
         return
-
-    if 'audio' in data_types:
-        eval_audio_pipeline('ALPHAD3M')
-        return
-
-    if 'graph' in data_types or 'edgeList' in data_types:
-        if 'GRAPH_MATCHING' in task:
-            eval_graphMatch_pipeline('ALPHAD3M')
-            return
-        elif 'COMMUNITY_DETECTION' in task:
-            eval_communityDetection_pipeline('ALPHAD3M')
-            return
-        elif 'LINK_PREDICTION' in task:
-            eval_linkprediction_pipeline('ALPHAD3M')
-            return
-        elif 'VERTEX_NOMINATION' in task or 'VERTEX_CLASSIFICATION' in task:
-            eval_vertexnomination_pipeline('ALPHAD3M')
-            return
-        logger.error('%s Not Supported', task)
-        sys.exit(148)
 
     if 'image' in data_types:
         if 'REGRESSION' in task:
@@ -298,12 +266,40 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         logger.error('%s Not Supported', task)
         sys.exit(148)
 
-    if 'timeseries' in data_types:
-        if 'CLASSIFICATION' in task:
-            eval_timeseries_pipeline('ALPHAD3M')
+    if 'audio' in data_types:
+        eval_audio_pipeline('ALPHAD3M')
+        return
+
+    if 'graph' in data_types or 'edgeList' in data_types:
+        if 'GRAPH_MATCHING' in task:
+            eval_graphmatch_pipeline('ALPHAD3M')
+            return
+        elif 'COMMUNITY_DETECTION' in task:
+            eval_communitydetection_pipeline('ALPHAD3M')
+            return
+        elif 'LINK_PREDICTION' in task:
+            eval_linkprediction_pipeline('ALPHAD3M')
+            return
+        elif 'VERTEX_NOMINATION' in task:
+            eval_vertexnomination_pipeline('ALPHAD3M')
             return
         logger.error('%s Not Supported', task)
         sys.exit(148)
+
+    if 'timeseries' in data_types:
+        if 'CLASSIFICATION' in task:
+            eval_timeseries_class_pipeline('ALPHAD3M')
+            return
+        logger.error('%s Not Supported', task)
+        sys.exit(148)
+
+    if 'TIME_SERIES_FORECASTING' in task:
+        eval_timeseries_fore_pipeline('ALPHAD3M')
+        return
+
+    if 'OBJECT_DETECTION' in task:
+        eval_object_pipeline('ALPHAD3M')
+        return
 
     def create_input(selected_primitves):
         GRAMMAR['TERMINALS'] = get_terminals(GRAMMAR['NON_TERMINALS'], selected_primitves, task)
@@ -317,7 +313,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         input['DATA_TYPE'] = 'TABULAR'
         input['METRIC'] = metrics[0]['metric']
         input['DATASET_METAFEATURES'] = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
-        input['DATASET'] = datasetDoc['about']['datasetName']
+        input['DATASET'] = dataset_doc['about']['datasetName']
         input['ARGS']['stepsfile'] = os.path.join('/output', input['DATASET'] + '_pipeline_steps.txt')
 
         return input
@@ -336,7 +332,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
         out_p = open(os.path.join('/output', input['DATASET'] + '_best_pipelines.txt'), 'a')
         out_p.write(
-            datasetDoc['about']['datasetName'] + ' ' + evaluations[0][0] + ' ' + str(evaluations[0][1]) + ' ' + str(
+            dataset_doc['about']['datasetName'] + ' ' + evaluations[0][0] + ' ' + str(evaluations[0][1]) + ' ' + str(
                 game.steps) + ' ' + str((eval_times[evaluations[0][0]] - start) / 60.0) + ' ' + str(
                 (end - start) / 60.0) + '\n')
 

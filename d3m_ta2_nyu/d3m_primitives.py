@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 PRIMITIVES_INFO_COM_PATH = os.path.join(os.path.dirname(__file__), '../resource/primitives_info_com.json')
 PRIMITIVES_INFO_SUM_PATH = os.path.join(os.path.dirname(__file__), '../resource/primitives_info_sum.json')
 
+
 class D3MPrimitives():
 
     INSTALLED_PRIMITIVES = index.search()
