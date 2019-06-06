@@ -1,4 +1,4 @@
-FROM registry.datadrivendiscovery.org/jpl/docker_images/complete:ubuntu-bionic-python36-v2019.4.4-20190507-022543
+FROM  registry.datadrivendiscovery.org/jpl/docker_images/complete:ubuntu-bionic-python36-v2019.5.8
 
 MAINTAINER "remi.rampin@nyu.edu"
 
@@ -36,7 +36,10 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
     rm prev_reqs.txt new_reqs.txt
 
 # Install TA3-TA2 API
-RUN pip3 install https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/archive/58f2da314ea5fa5c2d517f9c2463a7aea4f719f3/ta3ta2-api-58f2da314ea5fa5c2d517f9c2463a7aea4f719f3.zip
+RUN pip3 install https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/archive/74844731f8654b6fbd9de1c6f8ed3a8fddd6872d/ta3ta2-api-74844731f8654b6fbd9de1c6f8ed3a8fddd6872d.zip
+
+
+RUN pip3 install datamart_nyu
 
 COPY eval.sh /usr/local/bin/eval.sh
 
