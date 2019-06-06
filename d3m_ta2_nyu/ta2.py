@@ -246,6 +246,7 @@ class Session(Observable):
             # If we are out of pipelines to score, maybe submit pipelines for
             # tuning
             logger.info("Session %s: scoring done", self.id)
+            print(self._tune_when_ready, self.stop_requested)
 
             tune = []
             if self._tune_when_ready and self.stop_requested:
@@ -258,14 +259,12 @@ class Session(Observable):
                     if pipeline.id not in self.tuned_pipelines:
                         tune.append(pipeline.id)
 
-                if tune:
+                if len(tune) > 0:
                     # Found some pipelines to tune, do that
                     logger.warning("Found %d pipelines to tune", len(tune))
                     for pipeline_id in tune:
                         logger.info("    %s", pipeline_id)
-                        self._ta2._run_queue.put(
-                            TuneHyperparamsJob(self, pipeline_id, self.problem)
-                        )
+                        self._ta2._run_queue.put(TuneHyperparamsJob(self, pipeline_id, self.problem))
                         self.pipelines_tuning.add(pipeline_id)
                     return
                 logger.info("Found no pipeline to tune")
@@ -382,11 +381,13 @@ class Session(Observable):
                                "provided rank %s. origin=%s",
                                pipeline_id, rank, pipeline.origin)
 
-            filename = os.path.join(self._ranked_pipelines_dir, '%s.json' % pipeline_id)
             obj = to_d3m_json(pipeline)
-            obj['pipeline_rank'] = rank
-            with open(filename, 'w') as fp:
-                json.dump(obj, fp, indent=2)
+            #obj['pipeline_rank'] = rank
+            with open(os.path.join(self._ranked_pipelines_dir, '%s.json' % pipeline_id), 'w') as fout:
+                json.dump(obj, fout, indent=2)
+            with open(os.path.join(self._ranked_pipelines_dir, '%s.rank' % pipeline_id), 'w') as fout:
+                fout.write(str(rank))
+
         finally:
             db.close()
 
@@ -969,7 +970,6 @@ class D3mTa2(Observable):
         db = self.DBSession()
         pipeline_database = database.Pipeline(origin='Fixed pipeline template', dataset='NA')
         # TODO Convert D3M pipeline to our database pipeline
-        #print('>>>>', d3m_pipeline.to_json_structure())
         db.add(pipeline_database)
         db.commit()
         pipeline_id = pipeline_database.id

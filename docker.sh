@@ -12,7 +12,7 @@ LOCAL_STATIC_ROOT="/Users/rlopez/D3M/static"
 set -eu
 
 OPTS=""
-TIMEOUT=10
+TIMEOUT=3
 while true; do
     if [ "$1" = "fast" ]; then
         OPTS="$OPTS -e TA2_DEBUG_BE_FAST=1"
