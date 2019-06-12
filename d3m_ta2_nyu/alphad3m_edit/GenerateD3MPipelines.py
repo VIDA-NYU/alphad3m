@@ -393,21 +393,21 @@ class GenerateD3MPipelines():
                     name='hyperparams', value=pickle.dumps(hyperparams),
                 ))
 
-            primitives = ['d3m.primitives.bbn.time_series.ChannelAverager',
-                          'd3m.primitives.bbn.time_series.SignalDither',
-                          'd3m.primitives.bbn.time_series.SignalFramer',
-                          'd3m.primitives.bbn.time_series.SignalMFCC',
-                          'd3m.primitives.bbn.time_series.UniformSegmentation',
-                          'd3m.primitives.bbn.time_series.SegmentCurveFitter',
-                          'd3m.primitives.bbn.time_series.ClusterCurveFittingKMeans',
-                          'd3m.primitives.bbn.time_series.SignalFramer',
-                          'd3m.primitives.bbn.time_series.SequenceToBagOfTokens',
-                          'd3m.primitives.bbn.time_series.BBNTfidfTransformer',
-                          'd3m.primitives.bbn.sklearn_wrap.BBNMLPClassifier']
-            step0 = make_primitive_module('d3m.primitives.bbn.time_series.TargetsReader')
+            primitives = ['d3m.primitives.data_preprocessing.channel_averager.ChannelAverager',
+                          'd3m.primitives.data_preprocessing.signal_dither.SignalDither',
+                          'd3m.primitives.time_series_segmentation.signal_framer.SignalFramer',
+                          'd3m.primitives.feature_extraction.signal_mfcc.SignalMFCC',
+                          'd3m.primitives.time_series_segmentation.uniform_segmentation.UniformSegmentation',
+                          'd3m.primitives.data_transformation.segment_curve_fitter.SegmentCurveFitter',
+                          'd3m.primitives.clustering.cluster_curve_fitting_kmeans.ClusterCurveFittingKMeans',
+                          'd3m.primitives.time_series_segmentation.signal_framer.SignalFramer',
+                          'd3m.primitives.data_transformation.sequence_to_bag_of_tokens.SequenceToBagOfTokens',
+                          'd3m.primitives.feature_extraction.tfidf_vectorizer.BBNTfidfTransformer',
+                          'd3m.primitives.classification.mlp.BBNMLPClassifier']
+            step0 = make_primitive_module('d3m.primitives.data_preprocessing.targets_reader.TargetsReader')
             connect(input_data, step0, from_output='dataset')
 
-            step1 = make_primitive_module('d3m.primitives.bbn.time_series.AudioReader')
+            step1 = make_primitive_module('d3m.primitives.data_preprocessing.audio_reader.AudioReader')
             connect(input_data, step1, from_output='dataset')
 
             step = prev_step = step1
