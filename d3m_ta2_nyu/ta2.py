@@ -1007,7 +1007,8 @@ class D3mTa2(Observable):
 
         do_rank = True if top_pipelines > 0 else False
         logger.info("Creating pipelines from templates...")
-        if task in ['GRAPH_MATCHING', 'LINK_PREDICTION', 'VERTEX_NOMINATION', 'OBJECT_DETECTION', 'CLUSTERING']:
+        if task in ['GRAPH_MATCHING', 'LINK_PREDICTION', 'VERTEX_NOMINATION', 'OBJECT_DETECTION', 'CLUSTERING',
+                    'SEMISUPERVISED_CLASSIFICATION']:
             template_name = 'CLASSIFICATION'
         elif task in ['TIME_SERIES_FORECASTING', 'COLLABORATIVE_FILTERING']:
             template_name = 'REGRESSION'
@@ -1015,7 +1016,7 @@ class D3mTa2(Observable):
             template_name = task
         if 'TA2_DEBUG_BE_FAST' in os.environ:
             template_name = 'DEBUG_' + task
-        for template in []:#self.TEMPLATES.get(template_name, []):
+        for template in self.TEMPLATES.get(template_name, []):
             logger.info("Creating pipeline from %r", template)
             if isinstance(template, (list, tuple)):
                 func, args = template[0], template[1:]
