@@ -2,11 +2,11 @@ id: c8ed65df-aa68-4ee0-bbb5-c5f76a40bcf8
 schema: https://metadata.datadrivendiscovery.org/schemas/v0/pipeline.json
 source:
   name: Mitar
-created: '2018-07-27T19:39:00.676949Z'
+created: "2018-07-27T19:39:00.676949Z"
 context: TESTING
 name: K-fold split of tabular datasets
-description: K-fold split of tabular datasets for cross-validation.
-digest: 72bf7c1d757a87cd2b6ec2609ac042cf09861015bbd3fef730c2156e1e647d67
+description: |
+  K-fold split of tabular datasets for cross-validation.
 inputs:
   - name: folds
   - name: full dataset
@@ -18,14 +18,13 @@ outputs:
   - name: score datasets
     data: steps.1.produce
 steps:
-  # Step 0
+  # Step 0.
   - type: PRIMITIVE
     primitive:
       id: bfedaf3a-6dd0-4a83-ad83-3a50fe882bf8
-      name: K-fold cross-validation tabular dataset splits
       version: 0.1.0
       python_path: d3m.primitives.evaluation.kfold_dataset_split.Common
-      digest: 662325fcb057716abb7fe5a1a0602f36a6e8eed8730a0274e0d39934a843b3f8
+      name: K-fold cross-validation tabular dataset splits
     arguments:
       inputs:
         type: CONTAINER
@@ -36,18 +35,19 @@ steps:
     outputs:
       - id: produce
       - id: produce_score_data
-  # Step 1: We redact privileged attributes for both score and test splits
+  # Step 1. We redact privileged attributes for both score and test splits.
   - type: PRIMITIVE
     primitive:
       id: 744c4090-e2f6-489e-8efc-8b1e051bfad6
-      name: Redact columns for evaluation
       version: 0.2.0
       python_path: d3m.primitives.evaluation.redact_columns.Common
-      digest: 55a121f26c3f755fa5a085080ee23399597d7140dba816cdec7a8f354aa5e8be
+      name: Redact columns for evaluation
     arguments:
       inputs:
         type: CONTAINER
         data: steps.0.produce_score_data
+    outputs:
+      - id: produce
     hyperparams:
       semantic_types:
         type: VALUE
@@ -58,20 +58,19 @@ steps:
         data:
           - https://metadata.datadrivendiscovery.org/types/RedactedPrivilegedData
           - https://metadata.datadrivendiscovery.org/types/MissingData
-    outputs:
-    - id: produce
-  # Step 2: We further redact targets in test split
+  # Step 2. We further redact targets in test split.
   - type: PRIMITIVE
     primitive:
       id: 744c4090-e2f6-489e-8efc-8b1e051bfad6
-      name: Redact columns for evaluation
       version: 0.2.0
       python_path: d3m.primitives.evaluation.redact_columns.Common
-      digest: 55a121f26c3f755fa5a085080ee23399597d7140dba816cdec7a8f354aa5e8be
+      name: Redact columns for evaluation
     arguments:
       inputs:
         type: CONTAINER
         data: steps.1.produce
+    outputs:
+      - id: produce
     hyperparams:
       semantic_types:
         type: VALUE
@@ -82,5 +81,3 @@ steps:
         data:
           - https://metadata.datadrivendiscovery.org/types/RedactedTarget
           - https://metadata.datadrivendiscovery.org/types/MissingData
-    outputs:
-    - id: produce
