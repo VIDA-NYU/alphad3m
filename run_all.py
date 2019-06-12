@@ -24,7 +24,7 @@ def run_all_datasets():
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
     statistics_path = join(dirname(__file__), 'resource/statistics_datasets.csv')
     datasets = sorted([x for x in os.listdir(DATASETS_PATH) if os.path.isdir(join(DATASETS_PATH, x))])
-    datasets = ['185_baseball']
+    datasets = ['LL0_acled']
     size = len(datasets)
 
     for i, dataset in enumerate(datasets):
@@ -36,7 +36,7 @@ def run_all_datasets():
         problem_path = join(DATASETS_PATH, dataset, 'TRAIN/problem_TRAIN/problemDoc.json')
 
         if not os.path.isfile(problem_path):
-            logger.error('Problem file doesnt exist in the format expected')
+            logger.error('The problem file of dataset %s doesnt exist in the format expected', dataset)
             continue
 
         with open(problem_path) as fin:

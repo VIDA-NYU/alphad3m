@@ -322,7 +322,7 @@ class GenerateD3MPipelines():
             step5 = make_primitive_module('d3m.primitives.data_transformation.dataframe_to_ndarray.Common')
             connect(step3, step5)
 
-            step6 = make_primitive_module('d3m.primitives.feature_extraction.vgg16.Umich')
+            step6 = make_primitive_module('d3m.primitives.feature_extraction.vgg16_image_feature.DSBOX')
             connect(step5, step6)
 
             step7 = make_primitive_module('d3m.primitives.data_transformation.ndarray_to_dataframe.Common')
@@ -788,9 +788,10 @@ class GenerateD3MPipelines():
                 name='features', value=pickle.dumps(features),
             ))
 
-            step0 = make_primitive_module('d3m.primitives.data_transformation.vertex_nomination_parser.VertexNominationParser')
+            step0 = make_primitive_module('d3m.primitives.data_transformation.vertex_classification_parser.VertexClassificationParser')
             connect(input_data, step0, from_output='dataset')
-            step1 = make_primitive_module('d3m.primitives.classification.vertex_nomination.VertexNomination')
+
+            step1 = make_primitive_module('d3m.primitives.classification.vertex_nomination.VertexClassification')
             connect(step0, step1)
             db.add(pipeline)
             db.commit()
