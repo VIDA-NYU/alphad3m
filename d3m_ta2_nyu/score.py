@@ -14,7 +14,7 @@ RANDOM_SEED = 65682867
 
 
 @database.with_db
-def score(pipeline_id, dataset, metrics, problem, scoring_conf, msg_queue, db):
+def score(pipeline_id, dataset_uri, metrics, problem, scoring_conf, do_rank, resolver, msg_queue, db):
     if scoring_conf is None:
         scoring_conf = {'train_test_ratio': '0.75',
                         'shuffle': 'true',
@@ -32,12 +32,10 @@ def score(pipeline_id, dataset, metrics, problem, scoring_conf, msg_queue, db):
                      joinedload(database.Pipeline.connections))
     ).one()
 
-    logger.info('About to score pipeline, id=%s, metrics=%s, dataset=%r', pipeline_id, metrics, dataset)
+    logger.info('About to score pipeline, id=%s, metrics=%s, dataset=%r', pipeline_id, metrics, dataset_uri)
 
     # Load data
-
-    dataset = Dataset.load(dataset)
-
+    dataset = Dataset.load(dataset_uri)
     logger.info('Loaded dataset')
 
     if evaluation_method is None:  # It comes from search_solutions, so do the sample and use HOLDOUT
@@ -59,7 +57,7 @@ def score(pipeline_id, dataset, metrics, problem, scoring_conf, msg_queue, db):
         evaluation_method = pb_core.EvaluationMethod.Value('HOLDOUT')
 
     if evaluation_method == pb_core.EvaluationMethod.Value('K_FOLD'):
-        scores = cross_validation(pipeline, dataset, metrics, problem, scoring_conf)
+        scores = cross_validation(pipeline, dataset, metrics, problem, scoring_conf, resolver)
 
         # Store scores
         cross_validation_scores = []
@@ -71,7 +69,7 @@ def score(pipeline_id, dataset, metrics, problem, scoring_conf, msg_queue, db):
         db.add(crossval_db)
 
     elif evaluation_method == pb_core.EvaluationMethod.Value('HOLDOUT'):
-        scores = holdout(pipeline, dataset, metrics, problem, scoring_conf)
+        scores = holdout(pipeline, dataset, metrics, problem, scoring_conf, resolver)
 
         # Store scores
         holdout_scores = []
@@ -80,8 +78,9 @@ def score(pipeline_id, dataset, metrics, problem, scoring_conf, msg_queue, db):
                 holdout_scores.append(database.CrossValidationScore(fold=fold, metric=metric, value=value))
 
         # TODO Create Holdout table in database
-        holdout_db = database.CrossValidation(pipeline_id=pipeline_id, scores=holdout_scores)
-        db.add(holdout_db)
+        if not do_rank:
+            holdout_db = database.CrossValidation(pipeline_id=pipeline_id, scores=holdout_scores)
+            db.add(holdout_db)
 
     elif evaluation_method == pb_core.EvaluationMethod.Value('RANKING'):
         metrics = []
@@ -103,7 +102,7 @@ def score(pipeline_id, dataset, metrics, problem, scoring_conf, msg_queue, db):
 
             metrics.append(formatted_metric)
 
-        scores = holdout(pipeline, dataset, metrics, problem, {'train_test_ratio': '0.75', 'shuffle': 'true'})
+        scores = holdout(pipeline, dataset, metrics, problem, {'train_test_ratio': '0.75', 'shuffle': 'true'}, resolver)
 
         # Store scores
         holdout_scores = []
@@ -111,6 +110,22 @@ def score(pipeline_id, dataset, metrics, problem, scoring_conf, msg_queue, db):
             for metric, current_score in fold_scores.items():
                 new_score = normalize_score(metric, current_score, 'desc')
                 new_metric = 'RANK'
+                holdout_scores.append(database.CrossValidationScore(fold=fold, metric=new_metric, value=new_score))
+
+        # TODO Should results be stored in CrossValidation table?
+        holdout_db = database.CrossValidation(pipeline_id=pipeline_id, scores=holdout_scores)
+        db.add(holdout_db)
+
+    if do_rank and len(scores) > 0:  # Need to rank too
+        logger.info("Calculating RANK in search solution for pipeline %s", pipeline_id)
+        dataset = Dataset.load(dataset_uri)  # load complete dataset
+        scores = holdout(pipeline, dataset, metrics, problem, {'train_test_ratio': '0.75', 'shuffle': 'true'}, resolver)
+        #holdout_scores = []
+        for fold, fold_scores in scores.items():
+            for metric, current_score in fold_scores.items():
+                new_score = normalize_score(metric, current_score, 'desc')
+                new_metric = 'RANK'
+                logger.info('Normalizing values: fold=%s, metric=%s, score=%s', fold, new_metric, new_score)
                 holdout_scores.append(database.CrossValidationScore(fold=fold, metric=new_metric, value=new_score))
 
         # TODO Should results be stored in CrossValidation table?

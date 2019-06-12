@@ -9,10 +9,10 @@ from d3m.container import Dataset
 from d3m.metadata import base as metadata_base
 from d3m.metadata.problem import Problem
 from d3m_ta2_nyu.workflow import database, convert
+from d3m.metadata.pipeline import Resolver
 
 
 logger = logging.getLogger(__name__)
-
 
 @database.with_db
 def execute(pipeline_id, dataset, problem, results_path, msg_queue, db):
@@ -36,7 +36,9 @@ def execute(pipeline_id, dataset, problem, results_path, msg_queue, db):
     logger.info('Pipeline to be executed:\n%s',
                 '\n'.join([x['primitive']['python_path'] for x in json_pipeline['steps']]))
 
-    d3m_pipeline = d3m.metadata.pipeline.Pipeline.from_json_structure(json_pipeline, )
+    #d3m_pipeline = d3m.metadata.pipeline.Pipeline.from_json_structure(json_pipeline, )
+    resolver = Resolver()
+    d3m_pipeline = resolver.get_pipeline(json_pipeline, )
 
     # Convert problem description to core package format
     # FIXME: There isn't a way to parse from JSON data, so write it to a file

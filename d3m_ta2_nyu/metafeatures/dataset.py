@@ -159,7 +159,7 @@ class ComputeMetafeatures():
         step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.DataFrameCommon')
         connect(step1, step2)
 
-        step3 = make_primitive_module('d3m.primitives.metafeature_extraction.meta_feature_extractor.BYU')
+        step3 = make_primitive_module('d3m.primitives.metalearning.metafeature_extractor.BYU')
         connect(step2, step3)
 
         db.add(pipeline)

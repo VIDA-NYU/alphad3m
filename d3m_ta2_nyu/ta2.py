@@ -31,6 +31,7 @@ import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 from d3m_ta2_nyu.utils import Observable, ProgressStatus
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json
+from d3m.metadata.pipeline import Resolver
 
 
 MAX_RUNNING_PROCESSES = 1
@@ -246,7 +247,6 @@ class Session(Observable):
             # If we are out of pipelines to score, maybe submit pipelines for
             # tuning
             logger.info("Session %s: scoring done", self.id)
-            print(self._tune_when_ready, self.stop_requested)
 
             tune = []
             if self._tune_when_ready and self.stop_requested:
@@ -425,23 +425,26 @@ class Job(object):
 class ScoreJob(Job):
     timeout = 8 * 60
 
-    def __init__(self, ta2, pipeline_id, dataset, metrics, problem, scoring_conf=None):
+    def __init__(self, ta2, pipeline_id, dataset_uri, metrics, problem, scoring_conf=None, do_rank=False):
         Job.__init__(self)
         self.ta2 = ta2
         self.pipeline_id = pipeline_id
-        self.dataset = dataset
+        self.dataset_uri = dataset_uri
         self.metrics = metrics
         self.problem = problem
         self.scoring_conf = scoring_conf
+        self.do_rank = do_rank
 
     def start(self, db_filename, **kwargs):
         self.msg = Receiver()
         self.proc = run_process('d3m_ta2_nyu.score.score', 'score', self.msg,
                                 pipeline_id=self.pipeline_id,
-                                dataset=self.dataset,
+                                dataset_uri=self.dataset_uri,
                                 metrics=self.metrics,
                                 problem=self.problem,
                                 scoring_conf=self.scoring_conf,
+                                do_rank=self.do_rank,
+                                resolver=self.ta2 .resolver,
                                 db_filename=db_filename)
         self.started = time.time()
         self.ta2.notify('scoring_start',
@@ -659,6 +662,9 @@ class D3mTa2(Observable):
         self.searched_pipelines = None
         self.scored_pipelines = None
         self.ranked_pipelines = None
+        self.run_pipelines = None
+        black_list=['d3m.primitives.semisupervised_classification.iterative_labeling.AutonBox']
+        self.resolver = Resolver(primitives_blacklist=black_list)
 
         self.create_outputfolders(self.storage_root)
 
@@ -667,9 +673,11 @@ class D3mTa2(Observable):
             self.searched_pipelines = os.path.join(self.pipelines_root, 'pipelines_searched')
             self.scored_pipelines = os.path.join(self.pipelines_root, 'pipelines_scored')
             self.ranked_pipelines = os.path.join(self.pipelines_root, 'pipelines_ranked')
+            self.run_pipelines = os.path.join(self.pipelines_root, 'pipeline_runs')
             self.create_outputfolders(self.searched_pipelines)
             self.create_outputfolders(self.scored_pipelines)
             self.create_outputfolders(self.ranked_pipelines)
+            self.create_outputfolders(self.run_pipelines)
 
         if self.predictions_root is not None:
             self.create_outputfolders(self.predictions_root)
@@ -952,13 +960,12 @@ class D3mTa2(Observable):
         self._run_queue.put(job)
         return id(job)
 
-    def build_pipelines(self, session_id, task, dataset, metrics,
-                        targets=None, features=None, tune=None, timeout=None):
+    def build_pipelines(self, session_id, task, dataset, metrics, targets=None, features=None, timeout=None,
+                        top_pipelines=0, tune=None):
         if not metrics:
             raise ValueError("no metrics")
-        self.executor.submit(self._build_pipelines,
-                             session_id, task, dataset, metrics,
-                             targets, features, timeout=timeout, tune=tune)
+        self.executor.submit(self._build_pipelines, session_id, task, dataset, metrics, targets, features, timeout,
+                             top_pipelines, tune)
 
     def build_fixed_pipeline(self, session_id, pipeline):
         self.executor.submit(self._build_fixed_pipeline, session_id, pipeline)
@@ -978,12 +985,9 @@ class D3mTa2(Observable):
         logger.info("Created fixed pipeline %s", pipeline_id)
 
     # Runs in a worker thread from executor
-    def _build_pipelines(self, session_id, task, dataset,
-                         metrics, targets, features, tune=None,
-                         timeout=None):
+    def _build_pipelines(self, session_id, task, dataset, metrics, targets, features, timeout, top_pipelines, tune):
         """Generates pipelines for the session, using the generator process.
         """
-        # Start AlphaD3M process
         session = self.sessions[session_id]
         with session.lock:
             session.targets = targets
@@ -1001,10 +1005,11 @@ class D3mTa2(Observable):
             # gets created
             session.working = True
 
+        do_rank = True if top_pipelines > 0 else False
         logger.info("Creating pipelines from templates...")
-        if task in ['GRAPH_MATCHING','LINK_PREDICTION','VERTEX_NOMINATION','OBJECT_DETECTION']:
+        if task in ['GRAPH_MATCHING', 'LINK_PREDICTION', 'VERTEX_NOMINATION', 'OBJECT_DETECTION']:
             template_name = 'CLASSIFICATION'
-        elif task in ['TIME_SERIES_FORECASTING','COLLABORATIVE_FILTERING']:
+        elif task in ['TIME_SERIES_FORECASTING', 'COLLABORATIVE_FILTERING']:
             template_name = 'REGRESSION'
         else:
             template_name = task
@@ -1018,20 +1023,17 @@ class D3mTa2(Observable):
             else:
                 tpl_func = template
             try:
-                self._build_pipeline_from_template(session, tpl_func,
-                                                   dataset)
+                self._build_pipeline_from_template(session, tpl_func, dataset, do_rank)
             except Exception:
                 logger.exception("Error building pipeline from %r",
                                  template)
 
         if 'TA2_DEBUG_BE_FAST' not in os.environ:
-            self._build_pipelines_from_generator(session, task, dataset,
-                                                 metrics, timeout)
+            self._build_pipelines_from_generator(session, task, dataset, metrics, timeout, do_rank)
 
         session.tune_when_ready(tune)
 
-    def _build_pipelines_from_generator(self, session, task, dataset,
-                                        metrics, timeout=None):
+    def _build_pipelines_from_generator(self, session, task, dataset, metrics, timeout, do_rank):
         logger.info("Starting AlphaD3M process, timeout is %s", timeout)
         msg_queue = Receiver()
         proc = run_process(
@@ -1079,7 +1081,7 @@ class D3mTa2(Observable):
                 pipeline_id, = args
                 logger.info("Got pipeline %s from generator process",
                             pipeline_id)
-                score = self.run_pipeline(session, dataset, pipeline_id)
+                score = self.run_pipeline(session, dataset, pipeline_id, do_rank)
 
                 logger.info("Sending score to generator process")
                 try:  # Fixme, just to avoid Broken pipe error
@@ -1093,7 +1095,7 @@ class D3mTa2(Observable):
 
         logger.warning("Generator process exited with %r", proc.returncode)
 
-    def run_pipeline(self, session, dataset, pipeline_id):
+    def run_pipeline(self, session, dataset, pipeline_id, do_rank):
 
         """Score a single pipeline.
 
@@ -1104,8 +1106,7 @@ class D3mTa2(Observable):
         with session.with_observer_queue() as queue:
             session.add_scoring_pipeline(pipeline_id)
             logger.info("Created pipeline %s", pipeline_id)
-            self._run_queue.put(ScoreJob(self, pipeline_id, dataset,
-                                         session.metrics, session.problem))
+            self._run_queue.put(ScoreJob(self, pipeline_id, dataset, session.metrics, session.problem, do_rank=do_rank))
             session.notify('new_pipeline', pipeline_id=pipeline_id)
 
             while True:
@@ -1145,7 +1146,7 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
-    def _build_pipeline_from_template(self, session, template, dataset):
+    def _build_pipeline_from_template(self, session, template, dataset, do_rank):
         # Create workflow from a template
         pipeline_id = template(self, dataset=dataset,
                                targets=session.targets,
@@ -1156,8 +1157,7 @@ class D3mTa2(Observable):
 
         logger.info("Created pipeline %s", pipeline_id)
 
-        self._run_queue.put(ScoreJob(self, pipeline_id, dataset,
-                                     session.metrics, session.problem))
+        self._run_queue.put(ScoreJob(self, pipeline_id, dataset, session.metrics, session.problem, do_rank=do_rank))
         session.notify('new_pipeline', pipeline_id=pipeline_id)
 
     # Runs in a background thread
@@ -1376,7 +1376,7 @@ class D3mTa2(Observable):
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
                 'd3m.primitives.classification.k_neighbors.SKlearn',
-                'd3m.primitives.classification.bayesian_logistic_regression.Common',
+                'd3m.primitives.classification.logistic_regression.Common',
                 'd3m.primitives.classification.bernoulli_naive_bayes.SKlearn',
                 'd3m.primitives.classification.decision_tree.SKlearn',
                 'd3m.primitives.classification.gaussian_naive_bayes.SKlearn',

@@ -49,7 +49,8 @@ def train(pipeline_id, dataset, problem, storage_dir, results_path, msg_queue, d
         d3m_problem = Problem.load('file://' + tmp_path)
 
     runtime = d3m.runtime.Runtime(pipeline=d3m_pipeline, problem_description=d3m_problem,
-                                  context=metadata_base.Context.TESTING)
+                                  context=metadata_base.Context.TESTING,
+                                  scratch_dir=os.path.join(os.environ['D3MOUTPUTDIR'], 'pipeline_runs'))
 
     # Fitting pipeline on input dataset.
     fit_results = runtime.fit(inputs=[dataset])

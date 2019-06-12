@@ -11,6 +11,7 @@ from d3m_ta2_nyu.workflow import convert
 
 
 logger = logging.getLogger(__name__)
+primitives_blacklist = []
 
 
 with pkg_resources.resource_stream(
@@ -29,14 +30,12 @@ with pkg_resources.resource_stream(
     scoring = Pipeline.from_yaml(fp)
 
 
-def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
+def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf, resolver):
     json_pipeline = convert.to_d3m_json(pipeline)
-    #with open(os.path.join(os.path.dirname(__file__),'temporal.json')) as fin:
-    #    json_pipeline = json.load(fin)
     logger.info("Pipeline to be scored:\n%s",
                 '\n'.join([x['primitive']['python_path'] for x in json_pipeline['steps']]))
 
-    d3m_pipeline = d3m.metadata.pipeline.Pipeline.from_json_structure(json_pipeline, )
+    d3m_pipeline = resolver.get_pipeline(json_pipeline, )
 
     # Convert problem description to core package format
     # FIXME: There isn't a way to parse from JSON data, so write it to a file
@@ -57,8 +56,9 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
         inputs=[dataset],
         data_params=scoring_conf,
         metrics=formatted_metric,
-        volumes_dir=os.environ.get('D3M_PRIMITIVE_STATIC', None),
+        volumes_dir=os.environ.get('D3MSTATICDIR', None),
         context=d3m.metadata.base.Context.TESTING,
+        scratch_dir=os.path.join(os.environ['D3MOUTPUTDIR'], 'pipeline_runs'),
         random_seed=0,
     )
 
@@ -68,10 +68,10 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
     return scores
 
 
-def cross_validation(pipeline, dataset, metrics, problem, scoring_conf):
+def cross_validation(pipeline, dataset, metrics, problem, scoring_conf, resolver):
     data_pipeline = kfold_tabular_split
     scoring_conf['number_of_folds'] = scoring_conf.pop('folds')
-    scores = evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf)
+    scores = evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf, resolver)
     logger.info("Cross-validation results:\n%s", scores)
     results = {}
 
@@ -83,9 +83,9 @@ def cross_validation(pipeline, dataset, metrics, problem, scoring_conf):
     return results
 
 
-def holdout(pipeline, dataset, metrics, problem, scoring_conf):
+def holdout(pipeline, dataset, metrics, problem, scoring_conf, resolver):
     data_pipeline = train_test_tabular_split
-    scores = evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf)
+    scores = evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf, resolver)
     logger.info("Holdout results:\n%s", scores)
     results = {}
 
