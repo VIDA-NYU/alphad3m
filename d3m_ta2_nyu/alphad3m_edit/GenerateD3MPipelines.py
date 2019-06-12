@@ -847,9 +847,12 @@ class GenerateD3MPipelines():
                 name='features', value=pickle.dumps(features),
             ))
 
-            step0 = make_primitive_module('d3m.primitives.time_series_classification.shapelet_learning.Shallot')
+            step0 = make_primitive_module('d3m.primitives.data_transformation.denormalize.Common')
             connect(input_data, step0, from_output='dataset')
-            connect(input_data, step0, to_input='outputs')
+
+            step1 = make_primitive_module('d3m.primitives.time_series_classification.k_neighbors.Kanine')
+            connect(step0, step1)
+            connect(step0, step1, to_input='outputs')
 
             db.add(pipeline)
             db.commit()
