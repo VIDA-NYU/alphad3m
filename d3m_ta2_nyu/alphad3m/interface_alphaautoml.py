@@ -260,9 +260,9 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         return
 
     if 'image' in data_types:
-        #if 'REGRESSION' in task:
-        eval_image_pipeline('ALPHAD3M')
-        return
+        if 'REGRESSION' in task:
+            eval_image_pipeline('ALPHAD3M')
+            return
         logger.error('%s Not Supported', task)
         sys.exit(148)
 

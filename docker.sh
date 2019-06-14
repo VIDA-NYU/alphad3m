@@ -58,6 +58,7 @@ docker run -ti --rm \
     $OPTS \
     -v "$PWD/d3m_ta2_nyu:/usr/src/app/d3m_ta2_nyu" \
     -v "$PWD/resource:/usr/src/app/resource" \
+    -v "$PWD/tests.py:/usr/src/app/tests.py"\
     -v "$PWD/eval.sh:/usr/local/bin/eval.sh"\
     -v "$LOCAL_DATA_ROOT/${INPUT}:/input" \
     -v "$LOCAL_OUTPUT_ROOT:/output" \

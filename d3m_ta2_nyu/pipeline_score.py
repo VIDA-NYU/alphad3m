@@ -186,23 +186,6 @@ def holdout(pipeline, dataset, metrics, problem, scoring_conf):
     return results
 
 
-def _format_metrics(metrics):
-    formatted_metrics = []
-
-    for metric in metrics:
-        formatted_metric = {'metric': d3m.metadata.problem.PerformanceMetric[metric['metric']]}
-        if 'params' in metric:
-            formatted_metric['params'] = {}
-            if 'posLabel' in metric['params']:
-                formatted_metric['params']['pos_label'] = metric['params']['posLabel']
-            if 'K' in metric['params']:
-                formatted_metric['params']['k'] = metric['params']['K']
-
-        formatted_metrics.append(formatted_metric)
-
-    return formatted_metrics
-
-
 def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
     json_pipeline = convert.to_d3m_json(pipeline)
     #with open(os.path.join(os.path.dirname(__file__),'temporal.json')) as fin:
@@ -241,3 +224,20 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
     scores = d3m.runtime.combine_folds([fold for fold in results[0]])
 
     return scores
+
+
+def _format_metrics(metrics):
+    formatted_metrics = []
+
+    for metric in metrics:
+        formatted_metric = {'metric': d3m.metadata.problem.PerformanceMetric[metric['metric']]}
+        if 'params' in metric:
+            formatted_metric['params'] = {}
+            if 'posLabel' in metric['params']:
+                formatted_metric['params']['pos_label'] = metric['params']['posLabel']
+            if 'K' in metric['params']:
+                formatted_metric['params']['k'] = metric['params']['K']
+
+        formatted_metrics.append(formatted_metric)
+
+    return formatted_metrics
