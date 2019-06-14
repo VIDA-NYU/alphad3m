@@ -9,7 +9,7 @@ os.environ['MPLBACKEND'] = 'Agg'
 logger = logging.getLogger(__name__)
 
 
-class GenerateD3MPipelines():
+class D3MPipelineGenerator():
     @staticmethod
     def make_pipeline_from_strings(primitives, origin, dataset, targets=None, features=None, DBSession=None):
 

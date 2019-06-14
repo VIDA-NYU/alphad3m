@@ -12,7 +12,7 @@ PRIMITIVES_INFO_COM_PATH = os.path.join(os.path.dirname(__file__), '../resource/
 PRIMITIVES_INFO_SUM_PATH = os.path.join(os.path.dirname(__file__), '../resource/primitives_info_sum.json')
 
 
-class D3MPrimitives():
+class D3MPrimitiveLoader():
 
     INSTALLED_PRIMITIVES = index.search()
 
@@ -28,14 +28,14 @@ class D3MPrimitives():
         """
         Returns the family (DATA_PREPROCESSING, CLASSIFICATION, REGRESSION ...) object given a primitive name
         """
-        return D3MPrimitives.get_primitive_class(name).metadata.to_json_structure()['primitive_family']
+        return D3MPrimitiveLoader.get_primitive_class(name).metadata.to_json_structure()['primitive_family']
 
     @staticmethod
     def get_primitive_names():
         """
         Returns a list with the name of the available primitives
         """
-        return list(D3MPrimitives.INSTALLED_PRIMITIVES.keys())
+        return list(D3MPrimitiveLoader.INSTALLED_PRIMITIVES.keys())
 
     @staticmethod
     def get_primitives_info_summarized():
@@ -49,9 +49,9 @@ class D3MPrimitives():
         else:
             primitives = {}
             count = 1
-            for name in D3MPrimitives.INSTALLED_PRIMITIVES:
+            for name in D3MPrimitiveLoader.INSTALLED_PRIMITIVES:
                 try:
-                    family = D3MPrimitives.get_family(name)
+                    family = D3MPrimitiveLoader.get_family(name)
                 except:
                     logger.error('No information about primitive %s', name)
                     family = 'None'
@@ -77,7 +77,7 @@ class D3MPrimitives():
         else:
             primitives = []
 
-            for primitive_name in D3MPrimitives.INSTALLED_PRIMITIVES:
+            for primitive_name in D3MPrimitiveLoader.INSTALLED_PRIMITIVES:
                 try:
                     primitive_obj = index.get_primitive(primitive_name)
                 except:

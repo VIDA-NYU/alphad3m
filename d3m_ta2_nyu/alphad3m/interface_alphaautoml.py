@@ -10,12 +10,12 @@ import multiprocessing
 os.environ['MPLBACKEND'] = 'Agg'
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.multiprocessing import Receiver
-from d3m_ta2_nyu.d3m_primitives import D3MPrimitives
+from d3m_ta2_nyu.primitive_loader import D3MPrimitiveLoader
 from alphaAutoMLEdit.Coach import Coach
 from alphaAutoMLEdit.pipeline.PipelineGame import PipelineGame
 from alphaAutoMLEdit.pipeline.pytorch.NNet import NNetWrapper
-from .GenerateD3MPipelines import GenerateD3MPipelines
-from d3m_ta2_nyu.metafeatures.dataset import ComputeMetafeatures
+from .d3mpipeline_generator import D3MPipelineGenerator
+from d3m_ta2_nyu.metafeature.metafeature_extractor import ComputeMetafeatures
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ def setup_logging():
     
 def get_primitives():
     sklearn_primitives = {}
-    all_primitives = D3MPrimitives.get_primitives_info_summarized()
+    all_primitives = D3MPrimitiveLoader.get_primitives_info_summarized()
 
     for group in list(all_primitives.keys()):
         sklearn_primitives[group] = {}
@@ -153,7 +153,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_pipeline_from_strings(strings, origin, dataset, targets, features,
+        pipeline_id = D3MPipelineGenerator.make_pipeline_from_strings(strings, origin, dataset, targets, features,
                                                                       DBSession=DBSession)
 
         # Evaluate the pipeline
@@ -162,7 +162,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     def eval_text_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_text_pipeline_from_strings(origin, dataset, targets, features,
+        pipeline_id = D3MPipelineGenerator.make_text_pipeline_from_strings(origin, dataset, targets, features,
                                                                            DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
@@ -170,7 +170,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     def eval_image_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_image_pipeline_from_strings(origin, dataset, targets, features,
+        pipeline_id = D3MPipelineGenerator.make_image_pipeline_from_strings(origin, dataset, targets, features,
                                                                             DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
@@ -178,7 +178,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     def eval_audio_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_audio_pipeline_from_strings(origin, dataset, targets, features,
+        pipeline_id = D3MPipelineGenerator.make_audio_pipeline_from_strings(origin, dataset, targets, features,
                                                                             DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
@@ -186,7 +186,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     def eval_object_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_objectdetection_pipeline_from_strings(origin, dataset, targets,
+        pipeline_id = D3MPipelineGenerator.make_objectdetection_pipeline_from_strings(origin, dataset, targets,
                                                                                       features, DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
@@ -194,7 +194,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     def eval_graphmatch_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_graphmatching_pipeline_from_strings(origin, dataset, targets, features,
+        pipeline_id = D3MPipelineGenerator.make_graphmatching_pipeline_from_strings(origin, dataset, targets, features,
                                                                                     DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
@@ -202,7 +202,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     def eval_communitydetection_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_communitydetection_pipeline_from_strings(origin, dataset, targets,
+        pipeline_id = D3MPipelineGenerator.make_communitydetection_pipeline_from_strings(origin, dataset, targets,
                                                                                          features, DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
@@ -210,7 +210,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     def eval_linkprediction_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_linkprediction_pipeline_from_strings(origin, dataset, targets, features,
+        pipeline_id = D3MPipelineGenerator.make_linkprediction_pipeline_from_strings(origin, dataset, targets, features,
                                                                                      DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
@@ -218,7 +218,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     def eval_vertexnomination_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_vertexnomination_pipeline_from_strings(origin, dataset, targets,
+        pipeline_id = D3MPipelineGenerator.make_vertexnomination_pipeline_from_strings(origin, dataset, targets,
                                                                                        features, DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
@@ -226,7 +226,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     def eval_timeseries_class_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_timeseries_class_pipeline_from_strings(origin, dataset, targets,
+        pipeline_id = D3MPipelineGenerator.make_timeseries_class_pipeline_from_strings(origin, dataset, targets,
                                                                                        features, DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
@@ -234,7 +234,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     def eval_timeseries_fore_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = GenerateD3MPipelines.make_timeseries_fore_pipeline_from_strings(origin, dataset, targets,
+        pipeline_id = D3MPipelineGenerator.make_timeseries_fore_pipeline_from_strings(origin, dataset, targets,
                                                                                       features, DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))

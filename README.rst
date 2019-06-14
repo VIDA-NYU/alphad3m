@@ -8,21 +8,19 @@ Installation
 
 You should use Docker::
 
-    docker build -t d3m_ta2_nyu .
+    docker build -t ta2:latest .
     # Or pull the image from GitLab
-    docker pull registry.gitlab.com/vida-nyu/d3m/ta2:devel
+    docker pull registry.gitlab.com/vida-nyu/d3m/ta2:latest
 
-Running on test data
+Running on data
 --------------------
 
 With Docker, you can use the ``docker.sh`` script. Don't forget to update the paths in the script to point to the datasets on your own machine.
 
 ::
 
-    # Train
+    # Search pipelines
     ./docker.sh search seed_datasets_current/185_baseball/TRAIN ta2:latest
-    # Run all test executables
-    ./docker.sh test seed_datasets_current/185_baseball/TEST ta2:latest
 
 Updating dependencies
 ---------------------

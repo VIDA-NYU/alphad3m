@@ -4,7 +4,7 @@ import frozendict
 from d3m_ta2_nyu.workflow import database
 from d3m.container import Dataset
 from d3m.metadata import base as metadata_base
-from d3m_ta2_nyu.execute import execute
+from d3m_ta2_nyu.pipeline_execute import execute
 logger = logging.getLogger(__name__)
 
 METAFEATURES_DEFAULT = [

@@ -23,7 +23,7 @@ from . import __version__
 
 from google.protobuf.timestamp_pb2 import Timestamp
 from d3m_ta2_nyu.grpc_logger import log_service
-from d3m_ta2_nyu.d3m_primitives import D3MPrimitives
+from d3m_ta2_nyu.primitive_loader import D3MPrimitiveLoader
 from d3m_ta2_nyu.utils import PersistentQueue
 from d3m_ta2_nyu.common import TASKS_FROM_SCHEMA, SCORES_TO_SCHEMA, TASKS_TO_SCHEMA, SUBTASKS_TO_SCHEMA, normalize_score
 from ta3ta2_api.utils import decode_pipeline_description, encode_pipeline_description
@@ -65,7 +65,7 @@ class CoreService(pb_core_grpc.CoreServicer):
     grpc2tasksubtype = {k: v for v, k in pb_problem.TaskSubtype.items()
                         if k != pb_problem.TASK_TYPE_UNDEFINED}
 
-    installed_primitives = D3MPrimitives.get_primitives_info_complete()
+    installed_primitives = D3MPrimitiveLoader.get_primitives_info_complete()
 
     def __init__(self, ta2):
         self._ta2 = ta2

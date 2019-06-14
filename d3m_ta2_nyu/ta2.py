@@ -31,7 +31,6 @@ import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 from d3m_ta2_nyu.utils import Observable, ProgressStatus
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json
-from d3m.metadata.pipeline import Resolver
 
 
 MAX_RUNNING_PROCESSES = 1
@@ -437,14 +436,13 @@ class ScoreJob(Job):
 
     def start(self, db_filename, **kwargs):
         self.msg = Receiver()
-        self.proc = run_process('d3m_ta2_nyu.score.score', 'score', self.msg,
+        self.proc = run_process('d3m_ta2_nyu.pipeline_score.score', 'score', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 dataset_uri=self.dataset_uri,
                                 metrics=self.metrics,
                                 problem=self.problem,
                                 scoring_conf=self.scoring_conf,
                                 do_rank=self.do_rank,
-                                resolver=self.ta2 .resolver,
                                 db_filename=db_filename)
         self.started = time.time()
         self.ta2.notify('scoring_start',
@@ -488,7 +486,7 @@ class TrainJob(Job):
     def start(self, db_filename, **kwargs):
         logger.info("Training pipeline for %s", self.pipeline_id)
         self.msg = Receiver()
-        self.proc = run_process('d3m_ta2_nyu.train.train', 'train', self.msg,
+        self.proc = run_process('d3m_ta2_nyu.pipeline_train.train', 'train', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 dataset=self.dataset,
                                 problem=self.problem,
@@ -529,7 +527,7 @@ class TestJob(Job):
     def start(self, db_filename, **kwargs):
         logger.info("Testing pipeline for %s", self.pipeline_id)
         self.msg = Receiver()
-        self.proc = run_process('d3m_ta2_nyu.test.test', 'test', self.msg,
+        self.proc = run_process('d3m_ta2_nyu.pipeline_test.test', 'test', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 dataset=self.dataset,
                                 storage_dir=self.ta2.storage_root,
@@ -580,7 +578,7 @@ class TuneHyperparamsJob(Job):
                 os.mkdir(subdir)
             self.results = os.path.join(subdir, 'predictions.csv')
         self.msg = Receiver()
-        self.proc = run_process('d3m_ta2_nyu.tune_and_score.tune',
+        self.proc = run_process('d3m_ta2_nyu.pipeline_tune.tune',
                                 'tune', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 metrics=self.session.metrics,
@@ -663,8 +661,6 @@ class D3mTa2(Observable):
         self.scored_pipelines = None
         self.ranked_pipelines = None
         self.run_pipelines = None
-        black_list=['d3m.primitives.semisupervised_classification.iterative_labeling.AutonBox']
-        self.resolver = Resolver(primitives_blacklist=black_list)
 
         self.create_outputfolders(self.storage_root)
 
@@ -1016,7 +1012,7 @@ class D3mTa2(Observable):
             template_name = task
         if 'TA2_DEBUG_BE_FAST' in os.environ:
             template_name = 'DEBUG_' + task
-        for template in self.TEMPLATES.get(template_name, []):
+        for template in []:#self.TEMPLATES.get(template_name, []):
             logger.info("Creating pipeline from %r", template)
             if isinstance(template, (list, tuple)):
                 func, args = template[0], template[1:]
@@ -1038,8 +1034,8 @@ class D3mTa2(Observable):
         logger.info("Starting AlphaD3M process, timeout is %s", timeout)
         msg_queue = Receiver()
         proc = run_process(
-            'd3m_ta2_nyu.alphad3m_edit'
-            '.PipelineGenerator.generate',
+            'd3m_ta2_nyu.alphad3m'
+            '.interface_alphaautoml.generate',
             'alphad3m',
             msg_queue,
             task=task,
