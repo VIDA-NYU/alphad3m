@@ -1,12 +1,12 @@
-id: 3c11d171-e2ad-4d26-a034-04f3b062306c
+id: c8ed65df-aa68-4ee0-bbb5-c5f76a40bcf8
 schema: https://metadata.datadrivendiscovery.org/schemas/v0/pipeline.json
 source:
   name: Mitar
-created: "2018-07-28T01:24:39.642266Z"
+created: "2018-07-27T19:39:00.676949Z"
 context: TESTING
-name: Train-test split of tabular datasets
+name: K-fold split of tabular datasets
 description: |
-  Train-test split of tabular datasets.
+  K-fold split of tabular datasets for cross-validation.
 inputs:
   - name: folds
   - name: full dataset
@@ -21,10 +21,10 @@ steps:
   # Step 0.
   - type: PRIMITIVE
     primitive:
-      id: 3fcc6dc4-6681-4c86-948e-066d14e7d803
+      id: bfedaf3a-6dd0-4a83-ad83-3a50fe882bf8
       version: 0.1.0
-      python_path: d3m.primitives.evaluation.train_score_dataset_split.Common
-      name: Train-score tabular dataset splits
+      python_path: d3m.primitives.evaluation.kfold_dataset_split.Common
+      name: K-fold cross-validation tabular dataset splits
     arguments:
       inputs:
         type: CONTAINER

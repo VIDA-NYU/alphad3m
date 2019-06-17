@@ -23,7 +23,7 @@ from . import __version__
 
 from google.protobuf.timestamp_pb2 import Timestamp
 from d3m_ta2_nyu.grpc_logger import log_service
-from d3m_ta2_nyu.d3m_primitives import D3MPrimitives
+from d3m_ta2_nyu.primitive_loader import D3MPrimitiveLoader
 from d3m_ta2_nyu.utils import PersistentQueue
 from d3m_ta2_nyu.common import TASKS_FROM_SCHEMA, SCORES_TO_SCHEMA, TASKS_TO_SCHEMA, SUBTASKS_TO_SCHEMA, normalize_score
 from ta3ta2_api.utils import decode_pipeline_description, encode_pipeline_description
@@ -65,7 +65,7 @@ class CoreService(pb_core_grpc.CoreServicer):
     grpc2tasksubtype = {k: v for v, k in pb_problem.TaskSubtype.items()
                         if k != pb_problem.TASK_TYPE_UNDEFINED}
 
-    installed_primitives = []#D3MPrimitives.get_primitives_info()
+    installed_primitives = D3MPrimitiveLoader.get_primitives_info_complete()
 
     def __init__(self, ta2):
         self._ta2 = ta2
@@ -94,7 +94,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.error("TA3 is using a different protocol version: %r "
                          "(us: %r)", request.version, expected_version)
 
-        template = request.template
+        template = request.template#self._create_pipeline_template()#request.template
 
         if template is not None and len(template.steps) > 0:  # isinstance(template, pb_pipeline.PipelineDescription)
             pipeline = decode_pipeline_description(template, pipeline_module.Resolver())
@@ -102,26 +102,12 @@ class CoreService(pb_core_grpc.CoreServicer):
                 # TODO Add support for pipeline templates with placeholder steps
                 logger.error('Pipeline templates with placeholder steps is not supported')
             else:  # Pipeline template fully defined
-
                 search_id = self._ta2.new_session(None)
-                '''import d3m.runtime
-                from d3m.metadata import base as metadata_base
-                from d3m.container.dataset import Dataset
-                runtime = d3m.runtime.Runtime(pipeline=pipeline,
-                                  context=metadata_base.Context.TESTING)
+
                 dataset = request.inputs[0].dataset_uri
                 if not dataset.startswith('file://'):
                     dataset = 'file://' + dataset
 
-                # Fitting pipeline on input dataset.
-                fit_results = runtime.fit(inputs=[Dataset.load(dataset_uri=dataset)])
-                fit_results.check_success()
-
-                # Producing results using the fitted pipeline.
-                produce_results = runtime.produce(inputs=[Dataset.load(dataset_uri=dataset)])
-                produce_results.check_success()
-
-                print(produce_results.values)'''
                 self._ta2.build_fixed_pipeline(search_id, pipeline)
 
                 return pb_core.SearchSolutionsResponse(search_id=str(search_id),)
@@ -134,7 +120,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             dataset = 'file://' + dataset
 
         problem = self._convert_problem(context, request.problem)
-
+        top_pipelines = request.rank_solutions_limit
         timeout = request.time_bound_search
         if timeout < 0.000001:
             timeout = None  # No limit
@@ -146,11 +132,9 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         session = self._ta2.sessions[search_id]
         task = TASKS_FROM_SCHEMA[session.problem['about']['taskType']]
-        self._ta2.build_pipelines(search_id,
-                                  task,
-                                  dataset, session.metrics,
-                                  tune=0,  # FIXME: no tuning in TA3 mode
-                                  timeout=timeout)
+
+        self._ta2.build_pipelines(search_id, task, dataset, session.metrics, timeout=timeout,
+                                  top_pipelines=top_pipelines, tune=0)  # FIXME: no tuning in TA3 mode
 
         return pb_core.SearchSolutionsResponse(
             search_id=str(search_id),
@@ -767,7 +751,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         import tempfile
         from os.path import dirname, join
 
-        with open(join(dirname(__file__), 'pipelines/random-sample.yml'), 'r') as pipeline_file:
+        with open(join(dirname(__file__), '../resource/pipelines/random-sample.yml'), 'r') as pipeline_file:
             pipeline = pipeline_module.Pipeline.from_yaml(
                 pipeline_file,
                 resolver=pipeline_module.Resolver(),

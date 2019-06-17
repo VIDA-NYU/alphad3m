@@ -22,9 +22,8 @@ D3MINPUTDIR = '/Users/rlopez/D3M/tmp/'
 def run_all_datasets():
     channel = grpc.insecure_channel('localhost:45042')
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
-    statistics_path = join(dirname(__file__), 'statistics_datasets.csv')
+    statistics_path = join(dirname(__file__), 'resource/statistics_datasets.csv')
     datasets = sorted([x for x in os.listdir(DATASETS_PATH) if os.path.isdir(join(DATASETS_PATH, x))])
-    datasets = ['185_baseball']
     size = len(datasets)
 
     for i, dataset in enumerate(datasets):
@@ -36,7 +35,7 @@ def run_all_datasets():
         problem_path = join(DATASETS_PATH, dataset, 'TRAIN/problem_TRAIN/problemDoc.json')
 
         if not os.path.isfile(problem_path):
-            logger.error('Problem file doesnt exist in the format expected')
+            logger.error('The problem file of dataset %s doesnt exist in the format expected', dataset)
             continue
 
         with open(problem_path) as fin:
@@ -44,7 +43,7 @@ def run_all_datasets():
 
         metric = SCORES_FROM_SCHEMA[problem['inputs']['performanceMetrics'][0]['metric']]
         best_time, score = 'None', 'None'
-        solutions = do_search(core, problem, train_dataset_path, time_bound=2.0)
+        solutions = do_search(core, problem, train_dataset_path, time_bound=3.0, pipelines_limit=10)
         search_time = str(datetime.now() - start_time)
         number_solutions = len(solutions)
 

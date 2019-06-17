@@ -1,6 +1,6 @@
-FROM registry.datadrivendiscovery.org/jpl/docker_images/complete:ubuntu-bionic-python36-v2019.4.4-20190507-022543
+FROM  registry.datadrivendiscovery.org/jpl/docker_images/complete:ubuntu-bionic-python36-v2019.6.7-20190611-205824
 
-MAINTAINER "remi.rampin@nyu.edu"
+MAINTAINER "remi.rampin@nyu.edu, rlopez@nyu.edu, raoni@nyu.edu"
 
 RUN apt-get update -yy && \
     apt-get install -yy git swig sqlite3 && \
@@ -27,6 +27,7 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
 
 # Install TA2
 COPY d3m_ta2_nyu /usr/src/app/d3m_ta2_nyu
+COPY resource /usr/src/app/resource
 COPY setup.py README.rst /usr/src/app/
 RUN pip3 freeze | sort >prev_reqs.txt && \
     pip3 install -e /usr/src/app && \
@@ -35,7 +36,10 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
     rm prev_reqs.txt new_reqs.txt
 
 # Install TA3-TA2 API
-RUN pip3 install https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/archive/58f2da314ea5fa5c2d517f9c2463a7aea4f719f3/ta3ta2-api-58f2da314ea5fa5c2d517f9c2463a7aea4f719f3.zip
+RUN pip3 install https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/archive/5f806841f6aa8df64540cee37805586116633e6c/ta3ta2-api-5f806841f6aa8df64540cee37805586116633e6c.zip
+
+# Install Datamart API
+RUN pip3 install datamart_nyu
 
 COPY eval.sh /usr/local/bin/eval.sh
 

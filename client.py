@@ -27,7 +27,7 @@ def do_listprimitives(core):
     core.ListPrimitives(pb_core.ListPrimitivesRequest())
 
 
-def do_search(core, problem, dataset_path, time_bound=30.0):
+def do_search(core, problem, dataset_path, time_bound=30.0, pipelines_limit=0):
     version = pb_core.DESCRIPTOR.GetOptions().Extensions[pb_core.protocol_version]
 
     metrics = []
@@ -47,10 +47,11 @@ def do_search(core, problem, dataset_path, time_bound=30.0):
         user_agent='ta3_stub',
         version=version,
         time_bound_search=time_bound,
+        rank_solutions_limit=pipelines_limit,
         allowed_value_types=[pb_value.CSV_URI],
         problem=pb_problem.ProblemDescription(
             id=problem['about']['problemID'],
-            version=problem['about']['problemVersion'],
+            version=problem['about']['problemVersion'] if 'problemVersion' in problem['about'] else '0.0.1',
             name=os.path.basename('/input/problem_TRAIN'),
             description="",
             problem=pb_problem.Problem(

@@ -1,11 +1,10 @@
 import logging
 import pickle
 import frozendict
-from d3m_ta2_nyu.workflow.execute import execute_train
 from d3m_ta2_nyu.workflow import database
 from d3m.container import Dataset
 from d3m.metadata import base as metadata_base
-
+from d3m_ta2_nyu.pipeline_execute import execute
 logger = logging.getLogger(__name__)
 
 METAFEATURES_DEFAULT = [
@@ -129,7 +128,7 @@ class ComputeMetafeatures():
         def make_primitive_module(name):
             if name[0] == '.':
                 name = 'd3m.primitives' + name
-            return make_module('d3m', '2019.2.12', name)
+            return make_module('d3m', '2019.4.4', name)
 
         def connect(from_module, to_module,
                     from_output='produce', to_input='inputs'):
@@ -160,12 +159,13 @@ class ComputeMetafeatures():
         step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.DataFrameCommon')
         connect(step1, step2)
 
-        step3 = make_primitive_module('d3m.primitives.metafeature_extraction.metafeature_extractor.BYU')
+        step3 = make_primitive_module('d3m.primitives.metalearning.metafeature_extractor.BYU')
         connect(step2, step3)
 
         db.add(pipeline)
-        db.flush()
+        db.commit()
         logger.info(origin + ' PIPELINE ID: %s', pipeline.id)
+
         return pipeline.id
 
     def compute_metafeatures(self, origin):
@@ -174,14 +174,15 @@ class ComputeMetafeatures():
         self._add_target_columns_metadata()
         # Create the metafeatures computing pipeline
         pipeline_id = self._create_metafeatures_pipeline(db, origin)
-        # Run training
-        logger.info("Computing Metafeatures")
+        # Run the pipeline
+        logger.info('Computing Metafeatures')
         metafeature_vector = {x: 0 for x in METAFEATURES_DEFAULT}
         try:
-
-            train_run, outputs = execute_train(db, pipeline_id, self.dataset)
+            # TODO Improve the sending of parameters
+            outputs = execute(pipeline_id, self.dataset_uri, None, None, None,
+                              db_filename='/output/supporting_files/db.sqlite3')
             for key, value in outputs.items():
-                metafeature_results = value['produce'].metadata.query(())['data_metafeatures']
+                metafeature_results = value.metadata.query(())['data_metafeatures']
                 for metafeature_key, metafeature_value in metafeature_results.items():
                     if isinstance(metafeature_value, frozendict.FrozenOrderedDict):
                         for k, v in metafeature_value.items():
@@ -196,7 +197,7 @@ class ComputeMetafeatures():
             return list(metafeature_vector.values())
 
         except Exception:
-            logger.exception("Error running Metafeatures")
+            logger.exception('Error running Metafeatures')
             # FIXME: This is a default to address metafeatures not generating features for datasets with numeric targets
             return list(metafeature_vector.values())
         finally:
