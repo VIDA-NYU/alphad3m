@@ -1,6 +1,19 @@
 Changelog
 =========
 
+0.9 (2019-06-18)
+------------------
+
+Submission for June dry-run.
+
+* Added standard Reference Runtime to execute pipelines
+* Added data sampling strategies and priorization of some D3M primitives
+* Updated to core package v2019.6.7 and TA2-TA3 API v2019.6.11
+* Added `RANK` metric (and corresponding `RANKING` evaluation method) for TA2-only evaluation
+* Added `rank_solutions_limit` parameter in `SearchSolutions` which allows request both searching and ranking at the same time
+* Updated TA3-TA2 API functions: ListPrimitivesRequest, SearchSolutions and ScoreSolution
+
+
 0.8.1 (2018-08-08)
 ------------------
 
