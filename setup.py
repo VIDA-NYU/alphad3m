@@ -18,7 +18,7 @@ req = [
     'pandas',
     'smac']
 setup(name='d3m_ta2_nyu',
-      version='0.8.1',
+      version='0.9',
       packages=['d3m_ta2_nyu'],
       package_data={'d3m_ta2_nyu': 'pipelines/*.yaml'},
       entry_points={
@@ -29,8 +29,8 @@ setup(name='d3m_ta2_nyu',
       install_requires=req,
       description="NYU's TA2 system",
       long_description=description,
-      author="Remi Rampin",
-      author_email='remi.rampin@nyu.edu',
-      maintainer="Remi Rampin",
-      maintainer_email='remi.rampin@nyu.edu',
+      author="Remi Rampin, Raoni Lourenco, Roque Lopez",
+      author_email='remi.rampin@nyu.edu, raoni@nyu.edu, rlopez@nyu.edu',
+      maintainer="Remi Rampin, Raoni Lourenco, Roque Lopez",
+      maintainer_email='remi.rampin@nyu.edu, raoni@nyu.edu, rlopez@nyu.edu',
       keywords=['datadrivendiscovery', 'automl', 'd3m', 'ta2', 'nyu'])
