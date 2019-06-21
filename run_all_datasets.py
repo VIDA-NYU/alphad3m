@@ -24,6 +24,7 @@ def run_all_datasets():
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
     statistics_path = join(dirname(__file__), 'resource/statistics_datasets.csv')
     datasets = sorted([x for x in os.listdir(DATASETS_PATH) if os.path.isdir(join(DATASETS_PATH, x))])
+    datasets = ['185_baseball']
     size = len(datasets)
 
     for i, dataset in enumerate(datasets):
@@ -43,11 +44,11 @@ def run_all_datasets():
 
         metric = SCORES_FROM_SCHEMA[problem['inputs']['performanceMetrics'][0]['metric']]
         best_time, score = 'None', 'None'
-        solutions = do_search(core, problem, train_dataset_path, time_bound=3.0, pipelines_limit=10)
+        solutions = do_search(core, problem, train_dataset_path, time_bound=3.0, pipelines_limit=1)
         search_time = str(datetime.now() - start_time)
         number_solutions = len(solutions)
 
-        if number_solutions > 0:
+        if False:#number_solutions > 0:
             best_time = sorted(solutions.values(), key=lambda x: x[2])[0][2]
             best_solution = sorted(solutions.items(), key=lambda x: x[1][0])[-1][0]
             logger.info('Best pipeline: solution_id=%s' % best_solution)

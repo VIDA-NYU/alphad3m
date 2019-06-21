@@ -8,7 +8,7 @@ import shutil
 from d3m.container import Dataset
 
 from d3m_ta2_nyu.common import SCORES_RANKING_ORDER
-from d3m_ta2_nyu.crossval import cross_validation
+from d3m_ta2_nyu.pipeline_score import score
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.parameter_tuning.estimator_config import is_estimator
 from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, \
@@ -17,16 +17,12 @@ from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, \
 
 logger = logging.getLogger(__name__)
 
-
-FOLDS = 4
-RANDOM = 65682867  # The most random of all numbers
-
-MAX_SAMPLE = 1000
+RANDOM_SEED = 65682867
+MAX_SAMPLE = 100
 
 
 @database.with_db
-def tune(pipeline_id, metrics, targets, results_path, msg_queue, db,
-         timeout=600):
+def tune(pipeline_id, metrics, problem, targets, results_path, msg_queue, db, timeout=600):
     # Load pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -34,31 +30,9 @@ def tune(pipeline_id, metrics, targets, results_path, msg_queue, db,
         .options(joinedload(database.Pipeline.modules),
                  joinedload(database.Pipeline.connections))
     ).one()
-    dataset = pipeline.dataset
+    dataset_uri = pipeline.dataset
 
-    logger.info("About to tune pipeline, id=%s, dataset=%r",
-                pipeline_id, dataset)
-
-    # Load data
-    dataset = Dataset.load(dataset)
-    logger.info("Loaded dataset")
-
-    for res_id in dataset:
-        if ('https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
-                in dataset.metadata.query([res_id])['semantic_types']):
-            break
-    else:
-        res_id = next(iter(dataset))
-    if (hasattr(dataset[res_id], 'columns') and
-            len(dataset[res_id]) > MAX_SAMPLE):
-        # Sample the dataset to stay reasonably fast
-        logger.info("Sampling down data from %d to %d",
-                    len(dataset[res_id]), MAX_SAMPLE)
-        sample = numpy.concatenate(
-            [numpy.repeat(True, MAX_SAMPLE),
-             numpy.repeat(False, len(dataset[res_id]) - MAX_SAMPLE)])
-        numpy.random.RandomState(seed=RANDOM).shuffle(sample)
-        dataset[res_id] = dataset[res_id][sample]
+    logger.info("About to tune pipeline, id=%s, dataset=%r", pipeline_id, dataset_uri)
 
     # TODO: tune all modules, not only the estimator
     estimator_module = None
@@ -85,15 +59,13 @@ def tune(pipeline_id, metrics, targets, results_path, msg_queue, db,
             name='hyperparams',
             value=pickle.dumps(hy),
         ))
-        scores, _ = cross_validation(
-            pipeline, metrics, dataset, targets,
-            lambda i: None,
-            db, FOLDS)
+        scores = score(pipeline_id, dataset_uri, metrics, problem, None, False, False, lambda i: None,
+                      db_filename='/output/supporting_files/db.sqlite3')  # TODO Change this static string path
 
         # Don't store those runs
         db.rollback()
 
-        return scores[metrics[0]] * SCORES_RANKING_ORDER[metrics[0]]
+        return scores[metrics[0]['metric']] * SCORES_RANKING_ORDER[metrics[0]['metric']]
 
     # Run tuning, gets best configuration
     best_configuration = tuning.tune(evaluate, wallclock=timeout)
@@ -124,10 +96,8 @@ def tune(pipeline_id, metrics, targets, results_path, msg_queue, db,
             shutil.rmtree(os.path.join('/tmp', f))
 
     # Score the new pipeline
-    scores, predictions = cross_validation(
-        new_pipeline, metrics, dataset, targets,
-        lambda i: None,
-        db, FOLDS)
+    scores = score(new_pipeline.id, dataset_uri, metrics, problem, None, False, False, lambda i: None,
+                   db_filename='/output/supporting_files/db.sqlite3')  # TODO Change this static string path
     logger.info("Scoring done: %s", ", ".join("%s=%s" % s
                                               for s in scores.items()))
 
@@ -135,6 +105,7 @@ def tune(pipeline_id, metrics, targets, results_path, msg_queue, db,
     scores = [database.CrossValidationScore(metric=metric,
                                             value=numpy.mean(values))
               for metric, values in scores.items()]
+
     crossval = database.CrossValidation(pipeline_id=new_pipeline.id,
                                         scores=scores)
     db.add(crossval)
@@ -142,7 +113,7 @@ def tune(pipeline_id, metrics, targets, results_path, msg_queue, db,
     # Store predictions
     if results_path is not None:
         logger.info("Storing predictions at %s", results_path)
-        predictions.sort_index().to_csv(results_path)
+        #predictions.sort_index().to_csv(results_path)
     else:
         logger.info("NOT storing predictions")
 

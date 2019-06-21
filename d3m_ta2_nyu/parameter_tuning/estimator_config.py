@@ -8,6 +8,7 @@ from d3m.metadata.hyperparams import Bounded, Enumeration, Uniform, UniformInt, 
 
 PRIMITIVES = index.search()
 
+
 def primitive_config(cs, primitive_name):
     PrimitiveClass = index.get_primitive(primitive_name)
     HyperparameterClass = typing.get_type_hints(PrimitiveClass.__init__)['hyperparams']
@@ -20,7 +21,12 @@ def primitive_config(cs, primitive_name):
                 lower = config[p].lower
                 upper = config[p].upper
                 default = config[p].get_default()
-                if type(default) == int:
+                if lower is None:
+                    lower = default
+                if upper is None:
+                    upper = default*2 if default != 0 else 10
+
+                if config[p].structural_type == int:
                     cs_param = UniformIntegerHyperparameter(parameter_name, lower, upper, default_value=default)
                 else:
                     cs_param = UniformFloatHyperparameter(parameter_name, lower, upper, default_value=default)
@@ -54,8 +60,10 @@ def primitive_config(cs, primitive_name):
 def get_random_hyperparameters(estimator):
     pass
 
+
 def get_default_hyperparameters(estimator):
     pass
+
 
 def encode_hyperparameter(estimator,parameter,value):
     pass

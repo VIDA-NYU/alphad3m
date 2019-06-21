@@ -1,6 +1,7 @@
-import numpy as np
 import os
 import typing
+import importlib
+import numpy as np
 # Import ConfigSpace and different types of parameters
 from smac.configspace import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, FloatHyperparameter
@@ -9,12 +10,12 @@ from smac.facade.smac_facade import SMAC
 from smac.scenario.scenario import Scenario
 
 from d3m_ta2_nyu.parameter_tuning.estimator_config import primitive_config
-from d3m_ta2_nyu.workflow.module_loader import get_class
-
 from d3m import index
 
 
-
+def get_class(name):
+    package, classname = name.rsplit('.', 1)
+    return getattr(importlib.import_module(package), classname)
 
 
 def estimator_from_cfg(cfg, name):
@@ -47,6 +48,7 @@ def hyperparams_from_cfg(name, cfg):
             kw_args[key] = hyperparameter_config[key].get_default()
 
     hy = HyperparameterClass(**kw_args)
+
     return hy
 
 
