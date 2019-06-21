@@ -31,6 +31,9 @@ import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 from d3m_ta2_nyu.utils import Observable, ProgressStatus
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json
+import datamart
+import datamart_nyu
+from d3m.container import Dataset
 
 
 MAX_RUNNING_PROCESSES = 1
@@ -1000,6 +1003,44 @@ class D3mTa2(Observable):
             # Force working=True so we get 'done_searching' even if no pipeline
             # gets created
             session.working = True
+        #Search for data augmentation
+        dc = Dataset.load(dataset)
+        dm = datamart_nyu.RESTDatamart('https://datamart.d3m.vida-nyu.org')
+        cursor = dm.search_with_data(
+            query=datamart.DatamartQuery(
+                keywords=session.problem['dataAugmentation'][1]['domain'],
+                variables=[],
+            ),
+            supplied_data=dc,
+        )
+        search_results = cursor.get_next_page()
+
+        def print_results(results):
+            if not results:
+                return
+            for result in results:
+                print(result.score())
+                print(result.get_json_metadata()['metadata']['name'])
+                if (result.get_augment_hint()):
+                    left_columns = []
+                    for column_ in result.get_augment_hint().left_columns:
+                        left_columns.append([])
+                        for column in column_:
+                            left_columns[-1].append((column.resource_id, column.column_index))
+                    print("Left Columns: %s" % str(left_columns))
+                    right_columns = []
+                    for column_ in result.get_augment_hint().right_columns:
+                        right_columns.append([])
+                        for column in column_:
+                            right_columns[-1].append((column.resource_id, column.column_index))
+                    print("Right Columns: %s" % str(right_columns))
+                else:
+                    print(result.id())
+                print("-------------------")
+
+        print_results(search_results)
+        import base64
+        search_result = base64.b64encode(pickle.dumps(pickle.dumps(search_results[0]))).decode('utf8')
 
         do_rank = True if top_pipelines > 0 else False
         logger.info("Creating pipelines from templates...")
@@ -1020,7 +1061,7 @@ class D3mTa2(Observable):
             else:
                 tpl_func = template
             try:
-                self._build_pipeline_from_template(session, tpl_func, dataset, do_rank)
+                self._build_pipeline_from_template(session, tpl_func, dataset, search_result, do_rank)
             except Exception:
                 logger.exception("Error building pipeline from %r",
                                  template)
@@ -1143,11 +1184,12 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
-    def _build_pipeline_from_template(self, session, template, dataset, do_rank):
+    def _build_pipeline_from_template(self, session, template, dataset,search_result, do_rank):
         # Create workflow from a template
         pipeline_id = template(self, dataset=dataset,
                                targets=session.targets,
-                               features=session.features)
+                               features=session.features,
+                               search_result=search_result)
 
         # Add it to the session
         session.add_scoring_pipeline(pipeline_id)
@@ -1198,7 +1240,7 @@ class D3mTa2(Observable):
         logger.info("Wrote executable %s", filename)
 
     def _classification_template(self, imputer, classifier, dataset,
-                                 targets, features):
+                                 targets, features,search_result):
         db = self.DBSession()
 
         pipeline = database.Pipeline(
@@ -1268,9 +1310,17 @@ class D3mTa2(Observable):
                 name='features', value=pickle.dumps(features),
             ))
 
+            step_aug = make_primitive_module(
+                'd3m.primitives.data_augmentation.datamart_augmentation.Common')
+            connect(input_data, step_aug, from_output='dataset')
+            set_hyperparams(
+                step_aug,
+                search_result=search_result
+            )
+
             step0 = make_primitive_module(
                 'd3m.primitives.data_transformation.denormalize.Common')
-            connect(input_data, step0, from_output='dataset')
+            connect(step_aug, step0)
 
             step1 = make_primitive_module(
                 'd3m.primitives.data_transformation'

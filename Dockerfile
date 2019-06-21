@@ -1,4 +1,4 @@
-FROM  registry.datadrivendiscovery.org/jpl/docker_images/complete:ubuntu-bionic-python36-v2019.6.7-20190611-205824
+FROM  registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-devel
 
 MAINTAINER "remi.rampin@nyu.edu, rlopez@nyu.edu, raoni@nyu.edu"
 
