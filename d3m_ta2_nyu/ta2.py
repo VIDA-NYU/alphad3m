@@ -1015,33 +1015,6 @@ class D3mTa2(Observable):
         )
         search_results = cursor.get_next_page()
 
-        def print_results(results):
-            if not results:
-                return
-            for result in results:
-                print(result.score())
-                print(result.get_json_metadata()['metadata']['name'])
-                if (result.get_augment_hint()):
-                    left_columns = []
-                    for column_ in result.get_augment_hint().left_columns:
-                        left_columns.append([])
-                        for column in column_:
-                            left_columns[-1].append((column.resource_id, column.column_index))
-                    print("Left Columns: %s" % str(left_columns))
-                    right_columns = []
-                    for column_ in result.get_augment_hint().right_columns:
-                        right_columns.append([])
-                        for column in column_:
-                            right_columns[-1].append((column.resource_id, column.column_index))
-                    print("Right Columns: %s" % str(right_columns))
-                else:
-                    print(result.id())
-                print("-------------------")
-
-        print_results(search_results)
-        import base64
-        search_result = base64.b64encode(pickle.dumps(pickle.dumps(search_results[0]))).decode('utf8')
-
         do_rank = True if top_pipelines > 0 else False
         logger.info("Creating pipelines from templates...")
         if task in ['GRAPH_MATCHING', 'LINK_PREDICTION', 'VERTEX_NOMINATION', 'OBJECT_DETECTION', 'CLUSTERING',
@@ -1061,7 +1034,7 @@ class D3mTa2(Observable):
             else:
                 tpl_func = template
             try:
-                self._build_pipeline_from_template(session, tpl_func, dataset, search_result, do_rank)
+                self._build_pipeline_from_template(session, tpl_func, dataset, search_results[0].serialize(), do_rank)
             except Exception:
                 logger.exception("Error building pipeline from %r",
                                  template)
@@ -1315,7 +1288,9 @@ class D3mTa2(Observable):
             connect(input_data, step_aug, from_output='dataset')
             set_hyperparams(
                 step_aug,
-                search_result=search_result
+                search_result=search_result,
+                system_identifier="NYU"
+
             )
 
             step0 = make_primitive_module(
