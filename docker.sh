@@ -1,34 +1,35 @@
 #!/bin/sh
 
-# Example train: ./docker.sh tpl fast search seed_datasets_current/uu4_SPECT/TRAIN ta2-test:latest
-# Example test: ./docker.sh test seed_datasets_current/uu4_SPECT/TEST ta2-test:latest
-# Example ta2-ta3: ./docker.sh ta3 seed_datasets_current/uu4_SPECT/TRAIN ta2-test:latest
+# Example train: ./docker.sh fast search seed_datasets_current/185_baseball/TRAIN ta2:latest
+# Example ta2ta3: ./docker.sh ta2ta3 seed_datasets_current/185_baseball/ ta2:latest
+# Example test: ./docker.sh test seed_datasets_current/185_baseball/TEST ta2:latest
 
 # Change this if you're not Remi
-LOCAL_DATA_ROOT="/home/remram/Documents/programming/d3m/data"
-LOCAL_OUTPUT_ROOT="/home/remram/Documents/programming/d3m/tmp"
+LOCAL_DATA_ROOT="/Users/rlopez/D3M/datasets"
+LOCAL_OUTPUT_ROOT="/Users/rlopez/D3M/tmp"
+LOCAL_STATIC_ROOT="/Users/rlopez/D3M/static"
 
 set -eu
 
 OPTS=""
-TIMEOUT=30
-if [ "$1" = "tpl" ]; then
-    OPTS="$OPTS -e TA2_USE_TEMPLATES=1"
-    shift
-fi
-if [ "$1" = "fast" ]; then
-    OPTS="$OPTS -e TA2_DEBUG_BE_FAST=1"
-    TIMEOUT=5
-    shift
-fi
+TIMEOUT=3
+while true; do
+    if [ "$1" = "fast" ]; then
+        OPTS="$OPTS -e TA2_DEBUG_BE_FAST=1"
+        TIMEOUT=5
+        shift
+    else
+        break
+    fi
+done
 case "$1" in
-    ta3)
-        MODE=ta2ta3
+    search)
+        MODE=search
         INPUT="$2"
         shift 2
     ;;
-    search)
-        MODE=search
+    ta2ta3)
+        MODE=ta2ta3
         INPUT="$2"
         shift 2
     ;;
@@ -38,9 +39,9 @@ case "$1" in
         set -- "$3" bash -c "cd /output/executables; for i in *; do D3MTESTOPT=/output/executables/\$i eval.sh; done"
     ;;
     *)
-        echo "Usage:\n  $(basename $0) ta3 seed_datasets_current/uu4_SPECT/TRAIN <image>" >&2
-        echo "  $(basename $0) search seed_datasets_current/uu4_SPECT/TRAIN <image>" >&2
-        echo "  $(basename $0) test seed_datasets_current/uu4_SPECT/TEST 0123-4567-89abcdef <image>" >&2
+        echo "Usage:\n  $(basename $0) search seed_datasets_current/185_baseball/TRAIN <image>" >&2
+        echo "  $(basename $0) ta2ta3 seed_datasets_current/185_baseball/TRAIN <image>" >&2
+        echo "  $(basename $0) test seed_datasets_current/185_baseball/TEST 0123-4567-89abcdef <image>" >&2
         exit 2
     ;;
 esac
@@ -50,13 +51,17 @@ docker run -ti --rm \
     -e D3MRUN="$MODE" \
     -e D3MINPUTDIR=/input \
     -e D3MOUTPUTDIR=/output \
+    -e D3MSTATICDIR=/static \
     -e D3MCPU=4 \
-    -e D3MRAM=4 \
+    -e D3MRAM=4Gi \
     -e D3MTIMEOUT=$TIMEOUT \
     $OPTS \
     -v "$PWD/d3m_ta2_nyu:/usr/src/app/d3m_ta2_nyu" \
+    -v "$PWD/resource:/usr/src/app/resource" \
+    -v "$PWD/tests.py:/usr/src/app/tests.py"\
+    -v "$PWD/eval.sh:/usr/local/bin/eval.sh"\
     -v "$LOCAL_DATA_ROOT/${INPUT}:/input" \
     -v "$LOCAL_OUTPUT_ROOT:/output" \
-    -v "$PWD/search_config.json:/input/search_config.json" \
-    -v "$PWD/test_config.json:/input/test_config.json" \
+    -v "$LOCAL_STATIC_ROOT:/static" \
+    --name ta2_container \
     "$@"

@@ -7,26 +7,27 @@ leave this module.
 
 import calendar
 import datetime
-from google.protobuf.timestamp_pb2 import Timestamp
 import grpc
 import logging
 import pickle
-from uuid import UUID
-
-from . import __version__
-
-from d3m_ta2_nyu.common import TASKS_FROM_SCHEMA, \
-    SCORES_TO_SCHEMA, TASKS_TO_SCHEMA, SUBTASKS_TO_SCHEMA, normalize_score
-from d3m_ta2_nyu.grpc_logger import log_service
+import d3m_ta2_nyu.workflow.convert
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
 import d3m_ta2_nyu.proto.value_pb2 as pb_value
 import d3m_ta2_nyu.proto.pipeline_pb2 as pb_pipeline
 import d3m_ta2_nyu.proto.primitive_pb2 as pb_primitive
-from d3m_ta2_nyu.utils import PersistentQueue
-import d3m_ta2_nyu.workflow.convert
 
+from uuid import UUID
+from . import __version__
+
+from google.protobuf.timestamp_pb2 import Timestamp
+from d3m_ta2_nyu.grpc_logger import log_service
+from d3m_ta2_nyu.primitive_loader import D3MPrimitiveLoader
+from d3m_ta2_nyu.utils import PersistentQueue
+from d3m_ta2_nyu.common import TASKS_FROM_SCHEMA, SCORES_TO_SCHEMA, TASKS_TO_SCHEMA, SUBTASKS_TO_SCHEMA, normalize_score
+from ta3ta2_api.utils import decode_pipeline_description, encode_pipeline_description
+from d3m.metadata import pipeline as pipeline_module
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,8 @@ class CoreService(pb_core_grpc.CoreServicer):
     grpc2tasksubtype = {k: v for v, k in pb_problem.TaskSubtype.items()
                         if k != pb_problem.TASK_TYPE_UNDEFINED}
 
+    installed_primitives = D3MPrimitiveLoader.get_primitives_info_complete()
+
     def __init__(self, ta2):
         self._ta2 = ta2
         self._ta2.add_observer(self._ta2_event)
@@ -86,9 +89,29 @@ class CoreService(pb_core_grpc.CoreServicer):
                         "Search with more than 1 input is not supported")
         expected_version = pb_core.DESCRIPTOR.GetOptions().Extensions[
             pb_core.protocol_version]
+
         if request.version != expected_version:
             logger.error("TA3 is using a different protocol version: %r "
                          "(us: %r)", request.version, expected_version)
+
+        template = request.template#self._create_pipeline_template()#request.template
+
+        if template is not None and len(template.steps) > 0:  # isinstance(template, pb_pipeline.PipelineDescription)
+            pipeline = decode_pipeline_description(template, pipeline_module.Resolver())
+            if pipeline.has_placeholder():
+                # TODO Add support for pipeline templates with placeholder steps
+                logger.error('Pipeline templates with placeholder steps is not supported')
+            else:  # Pipeline template fully defined
+                search_id = self._ta2.new_session(None)
+
+                dataset = request.inputs[0].dataset_uri
+                if not dataset.startswith('file://'):
+                    dataset = 'file://' + dataset
+
+                self._ta2.build_fixed_pipeline(search_id, pipeline)
+
+                return pb_core.SearchSolutionsResponse(search_id=str(search_id),)
+
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
             raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
@@ -97,8 +120,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             dataset = 'file://' + dataset
 
         problem = self._convert_problem(context, request.problem)
-
-        timeout = request.time_bound
+        top_pipelines = request.rank_solutions_limit
+        timeout = request.time_bound_search
         if timeout < 0.000001:
             timeout = None  # No limit
         else:
@@ -109,11 +132,9 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         session = self._ta2.sessions[search_id]
         task = TASKS_FROM_SCHEMA[session.problem['about']['taskType']]
-        self._ta2.build_pipelines(search_id,
-                                  task,
-                                  dataset, session.metrics,
-                                  tune=0,  # FIXME: no tuning in TA3 mode
-                                  timeout=timeout)
+
+        self._ta2.build_pipelines(search_id, task, dataset, session.metrics, timeout=timeout,
+                                  top_pipelines=top_pipelines, tune=0)  # FIXME: no tuning in TA3 mode
 
         return pb_core.SearchSolutionsResponse(
             search_id=str(search_id),
@@ -135,8 +156,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             progress = session.progress
 
             if scores:
-                if session.metrics and session.metrics[0] in scores:
-                    metric = session.metrics[0]
+                if session.metrics and session.metrics[0]['metric'] in scores:
+                    metric = session.metrics[0]['metric']
                     internal_score = normalize_score(metric, scores[metric],
                                                      'asc')
                 else:
@@ -244,9 +265,18 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
 
-        metrics = [self.grpc2metric[m.metric]
-                   for m in request.performance_metrics
-                   if m.metric in self.grpc2metric]
+        metrics = []
+        for m in request.performance_metrics:
+            if m.metric in self.grpc2metric:
+                decoded_metric = {'metric': self.grpc2metric[m.metric]}
+                if m.pos_label or m.k:
+                    decoded_metric['params'] = {}
+                    if m.pos_label:
+                        decoded_metric['params']['posLabel'] = m.pos_label
+                    if m.k:
+                        decoded_metric['params']['K'] = m.k
+
+                metrics.append(decoded_metric)
 
         logger.info("Got ScoreSolution request, dataset=%s, "
                     "metrics=%s",
@@ -257,8 +287,24 @@ class CoreService(pb_core_grpc.CoreServicer):
             # FIXME: Currently scoring only works with dataset in DB
             raise error(context, grpc.StatusCode.UNIMPLEMENTED,
                         "Currently, you can only score on the search dataset")
-        # TODO: Get already computed results
-        job_id = self._ta2.score_pipeline(pipeline_id, metrics, None)
+        problem = None
+        for session_id in self._ta2.sessions.keys():
+            if pipeline_id in self._ta2.sessions[session_id].pipelines:
+                problem = self._ta2.sessions[session_id].problem
+                break
+
+        #  TODO Improve how to cast request.configuration to dict
+        scoring_conf = {
+                        'method': request.configuration.method,
+                        'train_test_ratio': request.configuration.train_test_ratio,
+                        'random_seed': request.configuration.random_seed,
+                        'shuffle': str(request.configuration.shuffle).lower(),
+                        'stratified': str(request.configuration.stratified).lower()
+                        }
+        if scoring_conf['method'] == pb_core.EvaluationMethod.Value('K_FOLD'):
+            scoring_conf['folds'] = str(request.configuration.folds)
+
+        job_id = self._ta2.score_pipeline(pipeline_id, metrics, dataset, problem, scoring_conf)
         self._requests[job_id] = PersistentQueue()
 
         return pb_core.ScoreSolutionResponse(
@@ -341,7 +387,14 @@ class CoreService(pb_core_grpc.CoreServicer):
             # FIXME: Currently training only works with dataset in DB
             raise error(context, grpc.StatusCode.UNIMPLEMENTED,
                         "Currently, you can only train on the search dataset")
-        job_id = self._ta2.train_pipeline(pipeline_id)
+
+        problem = None
+        for session_id in self._ta2.sessions.keys():
+            if pipeline_id in self._ta2.sessions[session_id].pipelines:
+                problem = self._ta2.sessions[session_id].problem
+                break
+
+        job_id = self._ta2.train_pipeline(pipeline_id, dataset, problem)
         self._requests[job_id] = PersistentQueue()
 
         return pb_core.FitSolutionResponse(
@@ -377,6 +430,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         state=pb_core.COMPLETED,
                         status="Training completed",
                     ),
+                    exposed_outputs={'outputs.0': pb_value.Value(csv_uri='file://%s' % kwargs['results_path'])},
                     fitted_solution_id=str(pipeline_id),
                 )
                 break
@@ -395,7 +449,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         """Run testing from a trained pipeline.
         """
         pipeline_id = UUID(hex=request.fitted_solution_id)
-
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
             raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
@@ -409,14 +462,14 @@ class CoreService(pb_core_grpc.CoreServicer):
         self._requests[job_id] = PersistentQueue()
 
         return pb_core.ProduceSolutionResponse(
-            request_id=job_id,
+            request_id='%x' % job_id,
         )
 
     def GetProduceSolutionResults(self, request, context):
         """Wait for the requested test run to be done.
         """
         try:
-            job_id = request.request_id
+            job_id = int(request.request_id, 16)
             queue = self._requests[job_id]
         except (ValueError, KeyError):
             raise error(context, grpc.StatusCode.NOT_FOUND,
@@ -427,7 +480,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 logger.info("Client closed GetProduceSolutionResults "
                             "stream")
                 break
-            if event == 'test_success':
+            if event == 'testing_success':
                 yield pb_core.GetProduceSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.COMPLETED,
@@ -441,7 +494,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     },
                 )
                 break
-            elif event == 'test_error':
+            elif event == 'testing_error':
                 yield pb_core.GetProduceSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.ERRORED,
@@ -453,7 +506,7 @@ class CoreService(pb_core_grpc.CoreServicer):
     def SolutionExport(self, request, context):
         """Export a trained pipeline as an executable.
         """
-        pipeline_id = UUID(hex=request.fitted_solution_id)
+        pipeline_id = UUID(hex=request.solution_id)
         session_id = None
         for session_key in self._ta2.sessions:
             session = self._ta2.sessions[session_key]
@@ -463,34 +516,37 @@ class CoreService(pb_core_grpc.CoreServicer):
                     break
         if session_id is None:
             raise error(context, grpc.StatusCode.NOT_FOUND,
-                        "Unknown solution ID %r", request.fitted_solution_id)
+                        "Unknown solution ID %r", request.solution_id)
         session = self._ta2.sessions[session_id]
         rank = request.rank
-        if rank <= 0.0:
+        if rank < 0.0:
             rank = None
         pipeline = self._ta2.get_workflow(pipeline_id)
-        if not pipeline.trained:
-            raise error(context, grpc.StatusCode.NOT_FOUND,
-                        "Solution not fitted: %r",
-                        request.fitted_solution_id)
+
         self._ta2.write_executable(pipeline)
-        session.write_exported_pipeline(pipeline_id,
-                                        self._ta2.pipelines_exported_root,
-                                        rank)
+        session.write_exported_pipeline(pipeline_id, rank)
         return pb_core.SolutionExportResponse()
 
     def Hello(self, request, context):
-        version = pb_core.DESCRIPTOR.GetOptions().Extensions[
-            pb_core.protocol_version]
+        version = pb_core.DESCRIPTOR.GetOptions().Extensions[pb_core.protocol_version]
         user_agent = "nyu_ta2 %s" % __version__
 
         return pb_core.HelloResponse(
             user_agent=user_agent,
-            version=version
+            version=version,
+            allowed_value_types=[pb_value.RAW, pb_value.DATASET_URI, pb_value.CSV_URI],
+            supported_extensions=[]
         )
 
     def ListPrimitives(self, request, context):
-        raise NotImplementedError
+        primitives = []
+
+        for primitive in self.installed_primitives:
+            primitives.append(pb_primitive.Primitive(id=primitive['id'], version=primitive['version'],
+                                                     python_path=primitive['python_path'], name=primitive['name'],
+                                                     digest=None))
+
+        return pb_core.ListPrimitivesResponse(primitives=primitives)
 
     def DescribeSolution(self, request, context):
         pipeline_id = UUID(hex=request.solution_id)
@@ -507,6 +563,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         for param in pipeline.parameters:
             params.setdefault(param.module_id, {})[param.name] = param.value
         module_to_step = {}
+
         for mod in modules.values():
             self._add_step(steps, step_descriptions, modules, params, module_to_step, mod)
 
@@ -548,27 +605,33 @@ class CoreService(pb_core_grpc.CoreServicer):
                            ", ".join(m.metric for m in metrics
                                      if m.metric not in self.grpc2metric))
 
-        metrics = [{'metric': SCORES_TO_SCHEMA[self.grpc2metric[m.metric]]}
-                   for m in metrics
-                   if m.metric in self.grpc2metric]
-        if not metrics:
+        decoded_metrics = []
+        for m in metrics:
+            if m.metric in self.grpc2metric:
+                decoded_metric = {'metric': SCORES_TO_SCHEMA[self.grpc2metric[m.metric]]}
+                if m.pos_label:
+                    decoded_metric['posLabel'] = m.pos_label
+                if m.k:
+                    decoded_metric['K'] = m.k
+
+                decoded_metrics.append(decoded_metric)
+
+        if not decoded_metrics:
             raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
                         "Didn't get any metrics we know")
 
-        return {
+        problem_dict = {
             'about': {
-                'problemID': problem.problem.id,
-                'problemVersion': problem.problem.version,
-                'problemDescription': problem.problem.description,
-                "taskType": TASKS_TO_SCHEMA.get(task, ''),
-                "taskSubType": SUBTASKS_TO_SCHEMA.get(
-                    self.grpc2tasksubtype.get(problem.problem.task_type),
-                    ''),
-                "problemSchemaVersion": "3.0",
-                "problemName": problem.problem.name,
+                'problemID': problem.id,
+                'problemVersion': problem.version,
+                'problemDescription': problem.description,
+                'taskType': TASKS_TO_SCHEMA.get(task, ''),
+                'problemSchemaVersion': '3.0',
+                'problemName': problem.name,
+
             },
             'inputs': {
-                'performanceMetrics': metrics,
+                'performanceMetrics': decoded_metrics,
                 'data': [
                     {
                         'datasetID': i.dataset_id,
@@ -586,7 +649,18 @@ class CoreService(pb_core_grpc.CoreServicer):
                     for i in problem.inputs
                 ],
             },
+            'expectedOutputs': {
+                'predictionsFile': 'predictions.csv'
+            }
         }
+
+        if problem.problem.task_subtype != pb_problem.TASK_SUBTYPE_UNDEFINED \
+           and problem.problem.task_subtype != pb_problem.NONE:  # Avoid TASK_SUBTYPE_UNDEFINED and NONE
+            problem_dict['about']['taskSubType'] = SUBTASKS_TO_SCHEMA[
+                                                        self.grpc2tasksubtype[problem.problem.task_subtype]
+                                                    ]
+
+        return problem_dict
 
     def _add_step(self, steps, step_descriptions, modules, params, module_to_step, mod):
         if mod.id in module_to_step:
@@ -663,13 +737,32 @@ class CoreService(pb_core_grpc.CoreServicer):
             )
         )
 
-        step_descriptions.append(
+        step_descriptions.append(  # FIXME it's empty
             pb_core.StepDescription(
                 primitive=pb_core.PrimitiveStepDescription()
             )
         )
-
         step_nb = 'steps.%d' % len(steps)
         steps.append(step)
         module_to_step[mod.id] = step_nb
         return step_nb
+
+    def _create_pipeline_template(self):
+        import tempfile
+        from os.path import dirname, join
+
+        with open(join(dirname(__file__), '../resource/pipelines/random-sample.yml'), 'r') as pipeline_file:
+            pipeline = pipeline_module.Pipeline.from_yaml(
+                pipeline_file,
+                resolver=pipeline_module.Resolver(),
+                strict_digest=True,
+            )
+
+        with tempfile.TemporaryDirectory() as scratch_dir:
+            pipeline_message = encode_pipeline_description(
+                pipeline,
+                [pb_value.RAW, pb_value.CSV_URI],
+                scratch_dir
+            )
+
+        return pipeline_message

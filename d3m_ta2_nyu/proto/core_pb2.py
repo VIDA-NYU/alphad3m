@@ -8,7 +8,6 @@ from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
-from google.protobuf import descriptor_pb2
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
@@ -26,7 +25,8 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='core.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\ncore.proto\x1a google/protobuf/descriptor.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x0epipeline.proto\x1a\x0fprimitive.proto\x1a\rproblem.proto\x1a\x0bvalue.proto\"\x9c\x01\n\x14ScoringConfiguration\x12!\n\x06method\x18\x01 \x01(\x0e\x32\x11.EvaluationMethod\x12\r\n\x05\x66olds\x18\x02 \x01(\x05\x12\x18\n\x10train_test_ratio\x18\x03 \x01(\x01\x12\x0f\n\x07shuffle\x18\x04 \x01(\x08\x12\x13\n\x0brandom_seed\x18\x05 \x01(\x05\x12\x12\n\nstratified\x18\x06 \x01(\x08\"x\n\x05Score\x12)\n\x06metric\x18\x01 \x01(\x0b\x32\x19.ProblemPerformanceMetric\x12\x0c\n\x04\x66old\x18\x02 \x01(\x05\x12\x1f\n\x07targets\x18\x03 \x03(\x0b\x32\x0e.ProblemTarget\x12\x15\n\x05value\x18\x04 \x01(\x0b\x32\x06.Value\"\x8d\x01\n\x08Progress\x12\x1d\n\x05state\x18\x01 \x01(\x0e\x32\x0e.ProgressState\x12\x0e\n\x06status\x18\x02 \x01(\t\x12)\n\x05start\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\'\n\x03\x65nd\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"O\n\x14UpdateProblemRequest\x12\x11\n\tsearch_id\x18\x01 \x01(\t\x12$\n\x07problem\x18\x02 \x01(\x0b\x32\x13.ProblemDescription\"\x17\n\x15UpdateProblemResponse\"\xf2\x01\n\x16SearchSolutionsRequest\x12\x12\n\nuser_agent\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x12\n\ntime_bound\x18\x03 \x01(\x01\x12\x10\n\x08priority\x18\x04 \x01(\x01\x12\'\n\x13\x61llowed_value_types\x18\x05 \x03(\x0e\x32\n.ValueType\x12$\n\x07problem\x18\x06 \x01(\x0b\x32\x13.ProblemDescription\x12&\n\x08template\x18\x07 \x01(\x0b\x32\x14.PipelineDescription\x12\x16\n\x06inputs\x18\x08 \x03(\x0b\x32\x06.Value\",\n\x17SearchSolutionsResponse\x12\x11\n\tsearch_id\x18\x01 \x01(\t\".\n\x19\x45ndSearchSolutionsRequest\x12\x11\n\tsearch_id\x18\x01 \x01(\t\"\x1c\n\x1a\x45ndSearchSolutionsResponse\"/\n\x1aStopSearchSolutionsRequest\x12\x11\n\tsearch_id\x18\x01 \x01(\t\"\x1d\n\x1bStopSearchSolutionsResponse\"c\n\x13SolutionSearchScore\x12\x34\n\x15scoring_configuration\x18\x01 \x01(\x0b\x32\x15.ScoringConfiguration\x12\x16\n\x06scores\x18\x02 \x03(\x0b\x32\x06.Score\"5\n GetSearchSolutionsResultsRequest\x12\x11\n\tsearch_id\x18\x01 \x01(\t\"\xba\x01\n!GetSearchSolutionsResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x12\n\ndone_ticks\x18\x02 \x01(\x01\x12\x11\n\tall_ticks\x18\x03 \x01(\x01\x12\x13\n\x0bsolution_id\x18\x04 \x01(\t\x12\x16\n\x0einternal_score\x18\x05 \x01(\x01\x12$\n\x06scores\x18\x06 \x03(\x0b\x32\x14.SolutionSearchScore\".\n\x17\x44\x65scribeSolutionRequest\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\"\x97\x01\n\x18PrimitiveStepDescription\x12?\n\x0bhyperparams\x18\x01 \x03(\x0b\x32*.PrimitiveStepDescription.HyperparamsEntry\x1a:\n\x10HyperparamsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x15\n\x05value\x18\x02 \x01(\x0b\x32\x06.Value:\x02\x38\x01\"=\n\x1aSubpipelineStepDescription\x12\x1f\n\x05steps\x18\x01 \x03(\x0b\x32\x10.StepDescription\"z\n\x0fStepDescription\x12.\n\tprimitive\x18\x01 \x01(\x0b\x32\x19.PrimitiveStepDescriptionH\x00\x12/\n\x08pipeline\x18\x02 \x01(\x0b\x32\x1b.SubpipelineStepDescriptionH\x00\x42\x06\n\x04step\"c\n\x18\x44\x65scribeSolutionResponse\x12&\n\x08pipeline\x18\x01 \x01(\x0b\x32\x14.PipelineDescription\x12\x1f\n\x05steps\x18\x02 \x03(\x0b\x32\x10.StepDescription\"I\n\x0cStepProgress\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x1c\n\x05steps\x18\x02 \x03(\x0b\x32\r.StepProgress\">\n\x0fSolutionRunUser\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0f\n\x07\x63hoosen\x18\x02 \x01(\x08\x12\x0e\n\x06reason\x18\x03 \x01(\t\"\xca\x01\n\x14ScoreSolutionRequest\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\x12\x16\n\x06inputs\x18\x02 \x03(\x0b\x32\x06.Value\x12\x36\n\x13performance_metrics\x18\x03 \x03(\x0b\x32\x19.ProblemPerformanceMetric\x12\x1f\n\x05users\x18\x04 \x03(\x0b\x32\x10.SolutionRunUser\x12,\n\rconfiguration\x18\x05 \x01(\x0b\x32\x15.ScoringConfiguration\"+\n\x15ScoreSolutionResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"4\n\x1eGetScoreSolutionResultsRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"V\n\x1fGetScoreSolutionResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x16\n\x06scores\x18\x02 \x03(\x0b\x32\x06.Score\"\xa2\x01\n\x12\x46itSolutionRequest\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\x12\x16\n\x06inputs\x18\x02 \x03(\x0b\x32\x06.Value\x12\x16\n\x0e\x65xpose_outputs\x18\x03 \x03(\t\x12&\n\x12\x65xpose_value_types\x18\x04 \x03(\x0e\x32\n.ValueType\x12\x1f\n\x05users\x18\x05 \x03(\x0b\x32\x10.SolutionRunUser\")\n\x13\x46itSolutionResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"2\n\x1cGetFitSolutionResultsRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"\x82\x02\n\x1dGetFitSolutionResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x1c\n\x05steps\x18\x02 \x03(\x0b\x32\r.StepProgress\x12K\n\x0f\x65xposed_outputs\x18\x03 \x03(\x0b\x32\x32.GetFitSolutionResultsResponse.ExposedOutputsEntry\x12\x1a\n\x12\x66itted_solution_id\x18\x04 \x01(\t\x1a=\n\x13\x45xposedOutputsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x15\n\x05value\x18\x02 \x01(\x0b\x32\x06.Value:\x02\x38\x01\"\xad\x01\n\x16ProduceSolutionRequest\x12\x1a\n\x12\x66itted_solution_id\x18\x01 \x01(\t\x12\x16\n\x06inputs\x18\x02 \x03(\x0b\x32\x06.Value\x12\x16\n\x0e\x65xpose_outputs\x18\x03 \x03(\t\x12&\n\x12\x65xpose_value_types\x18\x04 \x03(\x0e\x32\n.ValueType\x12\x1f\n\x05users\x18\x05 \x03(\x0b\x32\x10.SolutionRunUser\"-\n\x17ProduceSolutionResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"6\n GetProduceSolutionResultsRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"\xee\x01\n!GetProduceSolutionResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x1c\n\x05steps\x18\x02 \x03(\x0b\x32\r.StepProgress\x12O\n\x0f\x65xposed_outputs\x18\x03 \x03(\x0b\x32\x36.GetProduceSolutionResultsResponse.ExposedOutputsEntry\x1a=\n\x13\x45xposedOutputsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x15\n\x05value\x18\x02 \x01(\x0b\x32\x06.Value:\x02\x38\x01\"A\n\x15SolutionExportRequest\x12\x1a\n\x12\x66itted_solution_id\x18\x01 \x01(\t\x12\x0c\n\x04rank\x18\x02 \x01(\x01\"\x18\n\x16SolutionExportResponse\"\x17\n\x15ListPrimitivesRequest\"8\n\x16ListPrimitivesResponse\x12\x1e\n\nprimitives\x18\x01 \x03(\x0b\x32\n.Primitive\"\x0e\n\x0cHelloRequest\"{\n\rHelloResponse\x12\x12\n\nuser_agent\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\'\n\x13\x61llowed_value_types\x18\x03 \x03(\x0e\x32\n.ValueType\x12\x1c\n\x14supported_extensions\x18\x04 \x03(\t*\x82\x01\n\x10\x45valuationMethod\x12\x1f\n\x1b\x45VALUATION_METHOD_UNDEFINED\x10\x00\x12\x0b\n\x07HOLDOUT\x10\x01\x12\n\n\x06K_FOLD\x10\x02\x12\x11\n\rLEAVE_ONE_OUT\x10\x64\x12\x0e\n\nPREDICTION\x10\x65\x12\x11\n\rTRAINING_DATA\x10\x66*[\n\rProgressState\x12\x14\n\x10PROGRESS_UNKNOWN\x10\x00\x12\x0b\n\x07PENDING\x10\x01\x12\x0b\n\x07RUNNING\x10\x02\x12\r\n\tCOMPLETED\x10\x03\x12\x0b\n\x07\x45RRORED\x10\x04\x32\x88\t\n\x04\x43ore\x12\x46\n\x0fSearchSolutions\x12\x17.SearchSolutionsRequest\x1a\x18.SearchSolutionsResponse\"\x00\x12\x66\n\x19GetSearchSolutionsResults\x12!.GetSearchSolutionsResultsRequest\x1a\".GetSearchSolutionsResultsResponse\"\x00\x30\x01\x12O\n\x12\x45ndSearchSolutions\x12\x1a.EndSearchSolutionsRequest\x1a\x1b.EndSearchSolutionsResponse\"\x00\x12R\n\x13StopSearchSolutions\x12\x1b.StopSearchSolutionsRequest\x1a\x1c.StopSearchSolutionsResponse\"\x00\x12I\n\x10\x44\x65scribeSolution\x12\x18.DescribeSolutionRequest\x1a\x19.DescribeSolutionResponse\"\x00\x12@\n\rScoreSolution\x12\x15.ScoreSolutionRequest\x1a\x16.ScoreSolutionResponse\"\x00\x12`\n\x17GetScoreSolutionResults\x12\x1f.GetScoreSolutionResultsRequest\x1a .GetScoreSolutionResultsResponse\"\x00\x30\x01\x12:\n\x0b\x46itSolution\x12\x13.FitSolutionRequest\x1a\x14.FitSolutionResponse\"\x00\x12Z\n\x15GetFitSolutionResults\x12\x1d.GetFitSolutionResultsRequest\x1a\x1e.GetFitSolutionResultsResponse\"\x00\x30\x01\x12\x46\n\x0fProduceSolution\x12\x17.ProduceSolutionRequest\x1a\x18.ProduceSolutionResponse\"\x00\x12\x66\n\x19GetProduceSolutionResults\x12!.GetProduceSolutionResultsRequest\x1a\".GetProduceSolutionResultsResponse\"\x00\x30\x01\x12\x43\n\x0eSolutionExport\x12\x16.SolutionExportRequest\x1a\x17.SolutionExportResponse\"\x00\x12@\n\rUpdateProblem\x12\x15.UpdateProblemRequest\x1a\x16.UpdateProblemResponse\"\x00\x12\x43\n\x0eListPrimitives\x12\x16.ListPrimitivesRequest\x1a\x17.ListPrimitivesResponse\"\x00\x12(\n\x05Hello\x12\r.HelloRequest\x1a\x0e.HelloResponse\"\x00:8\n\x10protocol_version\x12\x1c.google.protobuf.FileOptions\x18\xd4\xa6\x03 \x01(\tB\x16Z\x08pipeline\xa2\xb5\x1a\x08\x32\x30\x31\x38.7.7b\x06proto3')
+  serialized_options=_b('Z\010pipeline\242\265\032\t2019.6.11'),
+  serialized_pb=_b('\n\ncore.proto\x1a google/protobuf/descriptor.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x0epipeline.proto\x1a\x0fprimitive.proto\x1a\rproblem.proto\x1a\x0bvalue.proto\"\x9c\x01\n\x14ScoringConfiguration\x12!\n\x06method\x18\x01 \x01(\x0e\x32\x11.EvaluationMethod\x12\r\n\x05\x66olds\x18\x02 \x01(\x05\x12\x18\n\x10train_test_ratio\x18\x03 \x01(\x01\x12\x0f\n\x07shuffle\x18\x04 \x01(\x08\x12\x13\n\x0brandom_seed\x18\x05 \x01(\x05\x12\x12\n\nstratified\x18\x06 \x01(\x08\"\x88\x01\n\x05Score\x12)\n\x06metric\x18\x01 \x01(\x0b\x32\x19.ProblemPerformanceMetric\x12\x0c\n\x04\x66old\x18\x02 \x01(\x05\x12\x15\n\x05value\x18\x04 \x01(\x0b\x32\x06.Value\x12\x13\n\x0brandom_seed\x18\x05 \x01(\x05\x12\x1a\n\nnormalized\x18\x06 \x01(\x0b\x32\x06.Value\"\x8d\x01\n\x08Progress\x12\x1d\n\x05state\x18\x01 \x01(\x0e\x32\x0e.ProgressState\x12\x0e\n\x06status\x18\x02 \x01(\t\x12)\n\x05start\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\'\n\x03\x65nd\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"O\n\x14UpdateProblemRequest\x12\x11\n\tsearch_id\x18\x01 \x01(\t\x12$\n\x07problem\x18\x02 \x01(\x0b\x32\x13.ProblemDescription\"\x17\n\x15UpdateProblemResponse\"\xaf\x02\n\x16SearchSolutionsRequest\x12\x12\n\nuser_agent\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x19\n\x11time_bound_search\x18\x03 \x01(\x01\x12\x10\n\x08priority\x18\x04 \x01(\x01\x12\'\n\x13\x61llowed_value_types\x18\x05 \x03(\x0e\x32\n.ValueType\x12$\n\x07problem\x18\x06 \x01(\x0b\x32\x13.ProblemDescription\x12&\n\x08template\x18\x07 \x01(\x0b\x32\x14.PipelineDescription\x12\x16\n\x06inputs\x18\x08 \x03(\x0b\x32\x06.Value\x12\x16\n\x0etime_bound_run\x18\t \x01(\x01\x12\x1c\n\x14rank_solutions_limit\x18\n \x01(\x05\",\n\x17SearchSolutionsResponse\x12\x11\n\tsearch_id\x18\x01 \x01(\t\".\n\x19\x45ndSearchSolutionsRequest\x12\x11\n\tsearch_id\x18\x01 \x01(\t\"\x1c\n\x1a\x45ndSearchSolutionsResponse\"/\n\x1aStopSearchSolutionsRequest\x12\x11\n\tsearch_id\x18\x01 \x01(\t\"\x1d\n\x1bStopSearchSolutionsResponse\"c\n\x13SolutionSearchScore\x12\x34\n\x15scoring_configuration\x18\x01 \x01(\x0b\x32\x15.ScoringConfiguration\x12\x16\n\x06scores\x18\x02 \x03(\x0b\x32\x06.Score\"5\n GetSearchSolutionsResultsRequest\x12\x11\n\tsearch_id\x18\x01 \x01(\t\"\xba\x01\n!GetSearchSolutionsResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x12\n\ndone_ticks\x18\x02 \x01(\x01\x12\x11\n\tall_ticks\x18\x03 \x01(\x01\x12\x13\n\x0bsolution_id\x18\x04 \x01(\t\x12\x16\n\x0einternal_score\x18\x05 \x01(\x01\x12$\n\x06scores\x18\x06 \x03(\x0b\x32\x14.SolutionSearchScore\".\n\x17\x44\x65scribeSolutionRequest\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\"\x97\x01\n\x18PrimitiveStepDescription\x12?\n\x0bhyperparams\x18\x01 \x03(\x0b\x32*.PrimitiveStepDescription.HyperparamsEntry\x1a:\n\x10HyperparamsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x15\n\x05value\x18\x02 \x01(\x0b\x32\x06.Value:\x02\x38\x01\"=\n\x1aSubpipelineStepDescription\x12\x1f\n\x05steps\x18\x01 \x03(\x0b\x32\x10.StepDescription\"z\n\x0fStepDescription\x12.\n\tprimitive\x18\x01 \x01(\x0b\x32\x19.PrimitiveStepDescriptionH\x00\x12/\n\x08pipeline\x18\x02 \x01(\x0b\x32\x1b.SubpipelineStepDescriptionH\x00\x42\x06\n\x04step\"c\n\x18\x44\x65scribeSolutionResponse\x12&\n\x08pipeline\x18\x01 \x01(\x0b\x32\x14.PipelineDescription\x12\x1f\n\x05steps\x18\x02 \x03(\x0b\x32\x10.StepDescription\"I\n\x0cStepProgress\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x1c\n\x05steps\x18\x02 \x03(\x0b\x32\r.StepProgress\"=\n\x0fSolutionRunUser\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06\x63hosen\x18\x02 \x01(\x08\x12\x0e\n\x06reason\x18\x03 \x01(\t\"\xca\x01\n\x14ScoreSolutionRequest\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\x12\x16\n\x06inputs\x18\x02 \x03(\x0b\x32\x06.Value\x12\x36\n\x13performance_metrics\x18\x03 \x03(\x0b\x32\x19.ProblemPerformanceMetric\x12\x1f\n\x05users\x18\x04 \x03(\x0b\x32\x10.SolutionRunUser\x12,\n\rconfiguration\x18\x05 \x01(\x0b\x32\x15.ScoringConfiguration\"+\n\x15ScoreSolutionResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"4\n\x1eGetScoreSolutionResultsRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"V\n\x1fGetScoreSolutionResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x16\n\x06scores\x18\x02 \x03(\x0b\x32\x06.Score\"\xa2\x01\n\x12\x46itSolutionRequest\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\x12\x16\n\x06inputs\x18\x02 \x03(\x0b\x32\x06.Value\x12\x16\n\x0e\x65xpose_outputs\x18\x03 \x03(\t\x12&\n\x12\x65xpose_value_types\x18\x04 \x03(\x0e\x32\n.ValueType\x12\x1f\n\x05users\x18\x05 \x03(\x0b\x32\x10.SolutionRunUser\")\n\x13\x46itSolutionResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"2\n\x1cGetFitSolutionResultsRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"\x82\x02\n\x1dGetFitSolutionResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x1c\n\x05steps\x18\x02 \x03(\x0b\x32\r.StepProgress\x12K\n\x0f\x65xposed_outputs\x18\x03 \x03(\x0b\x32\x32.GetFitSolutionResultsResponse.ExposedOutputsEntry\x12\x1a\n\x12\x66itted_solution_id\x18\x04 \x01(\t\x1a=\n\x13\x45xposedOutputsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x15\n\x05value\x18\x02 \x01(\x0b\x32\x06.Value:\x02\x38\x01\"\xad\x01\n\x16ProduceSolutionRequest\x12\x1a\n\x12\x66itted_solution_id\x18\x01 \x01(\t\x12\x16\n\x06inputs\x18\x02 \x03(\x0b\x32\x06.Value\x12\x16\n\x0e\x65xpose_outputs\x18\x03 \x03(\t\x12&\n\x12\x65xpose_value_types\x18\x04 \x03(\x0e\x32\n.ValueType\x12\x1f\n\x05users\x18\x05 \x03(\x0b\x32\x10.SolutionRunUser\"-\n\x17ProduceSolutionResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"6\n GetProduceSolutionResultsRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"\xee\x01\n!GetProduceSolutionResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x1c\n\x05steps\x18\x02 \x03(\x0b\x32\r.StepProgress\x12O\n\x0f\x65xposed_outputs\x18\x03 \x03(\x0b\x32\x36.GetProduceSolutionResultsResponse.ExposedOutputsEntry\x1a=\n\x13\x45xposedOutputsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x15\n\x05value\x18\x02 \x01(\x0b\x32\x06.Value:\x02\x38\x01\":\n\x15SolutionExportRequest\x12\x13\n\x0bsolution_id\x18\x03 \x01(\t\x12\x0c\n\x04rank\x18\x02 \x01(\x01\"\x18\n\x16SolutionExportResponse\"w\n\x14\x44\x61taAvailableRequest\x12\x12\n\nuser_agent\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x12\n\ntime_bound\x18\x03 \x01(\x01\x12\x10\n\x08priority\x18\x04 \x01(\x01\x12\x14\n\x04\x64\x61ta\x18\x05 \x03(\x0b\x32\x06.Value\"\x17\n\x15\x44\x61taAvailableResponse\"*\n\x13SaveSolutionRequest\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\",\n\x14SaveSolutionResponse\x12\x14\n\x0csolution_uri\x18\x01 \x01(\t\"+\n\x13LoadSolutionRequest\x12\x14\n\x0csolution_uri\x18\x01 \x01(\t\"+\n\x14LoadSolutionResponse\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\"7\n\x19SaveFittedSolutionRequest\x12\x1a\n\x12\x66itted_solution_id\x18\x01 \x01(\t\"9\n\x1aSaveFittedSolutionResponse\x12\x1b\n\x13\x66itted_solution_uri\x18\x01 \x01(\t\"8\n\x19LoadFittedSolutionRequest\x12\x1b\n\x13\x66itted_solution_uri\x18\x01 \x01(\t\"8\n\x1aLoadFittedSolutionResponse\x12\x1a\n\x12\x66itted_solution_id\x18\x01 \x01(\t\"\x17\n\x15ListPrimitivesRequest\"8\n\x16ListPrimitivesResponse\x12\x1e\n\nprimitives\x18\x01 \x03(\x0b\x32\n.Primitive\"\x0e\n\x0cHelloRequest\"{\n\rHelloResponse\x12\x12\n\nuser_agent\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\'\n\x13\x61llowed_value_types\x18\x03 \x03(\x0e\x32\n.ValueType\x12\x1c\n\x14supported_extensions\x18\x04 \x03(\t*\x8f\x01\n\x10\x45valuationMethod\x12\x1f\n\x1b\x45VALUATION_METHOD_UNDEFINED\x10\x00\x12\x0b\n\x07HOLDOUT\x10\x01\x12\n\n\x06K_FOLD\x10\x02\x12\x0b\n\x07RANKING\x10\x63\x12\x11\n\rLEAVE_ONE_OUT\x10\x64\x12\x0e\n\nPREDICTION\x10\x65\x12\x11\n\rTRAINING_DATA\x10\x66*[\n\rProgressState\x12\x14\n\x10PROGRESS_UNKNOWN\x10\x00\x12\x0b\n\x07PENDING\x10\x01\x12\x0b\n\x07RUNNING\x10\x02\x12\r\n\tCOMPLETED\x10\x03\x12\x0b\n\x07\x45RRORED\x10\x04\x32\xea\x0b\n\x04\x43ore\x12\x46\n\x0fSearchSolutions\x12\x17.SearchSolutionsRequest\x1a\x18.SearchSolutionsResponse\"\x00\x12\x66\n\x19GetSearchSolutionsResults\x12!.GetSearchSolutionsResultsRequest\x1a\".GetSearchSolutionsResultsResponse\"\x00\x30\x01\x12O\n\x12\x45ndSearchSolutions\x12\x1a.EndSearchSolutionsRequest\x1a\x1b.EndSearchSolutionsResponse\"\x00\x12R\n\x13StopSearchSolutions\x12\x1b.StopSearchSolutionsRequest\x1a\x1c.StopSearchSolutionsResponse\"\x00\x12I\n\x10\x44\x65scribeSolution\x12\x18.DescribeSolutionRequest\x1a\x19.DescribeSolutionResponse\"\x00\x12@\n\rScoreSolution\x12\x15.ScoreSolutionRequest\x1a\x16.ScoreSolutionResponse\"\x00\x12`\n\x17GetScoreSolutionResults\x12\x1f.GetScoreSolutionResultsRequest\x1a .GetScoreSolutionResultsResponse\"\x00\x30\x01\x12:\n\x0b\x46itSolution\x12\x13.FitSolutionRequest\x1a\x14.FitSolutionResponse\"\x00\x12Z\n\x15GetFitSolutionResults\x12\x1d.GetFitSolutionResultsRequest\x1a\x1e.GetFitSolutionResultsResponse\"\x00\x30\x01\x12\x46\n\x0fProduceSolution\x12\x17.ProduceSolutionRequest\x1a\x18.ProduceSolutionResponse\"\x00\x12\x66\n\x19GetProduceSolutionResults\x12!.GetProduceSolutionResultsRequest\x1a\".GetProduceSolutionResultsResponse\"\x00\x30\x01\x12\x43\n\x0eSolutionExport\x12\x16.SolutionExportRequest\x1a\x17.SolutionExportResponse\"\x00\x12@\n\rUpdateProblem\x12\x15.UpdateProblemRequest\x1a\x16.UpdateProblemResponse\"\x00\x12@\n\rDataAvailable\x12\x15.DataAvailableRequest\x1a\x16.DataAvailableResponse\"\x00\x12\x43\n\x0eListPrimitives\x12\x16.ListPrimitivesRequest\x1a\x17.ListPrimitivesResponse\"\x00\x12(\n\x05Hello\x12\r.HelloRequest\x1a\x0e.HelloResponse\"\x00\x12=\n\x0cSaveSolution\x12\x14.SaveSolutionRequest\x1a\x15.SaveSolutionResponse\"\x00\x12=\n\x0cLoadSolution\x12\x14.LoadSolutionRequest\x1a\x15.LoadSolutionResponse\"\x00\x12O\n\x12SaveFittedSolution\x12\x1a.SaveFittedSolutionRequest\x1a\x1b.SaveFittedSolutionResponse\"\x00\x12O\n\x12LoadFittedSolution\x12\x1a.LoadFittedSolutionRequest\x1a\x1b.LoadFittedSolutionResponse\"\x00:8\n\x10protocol_version\x12\x1c.google.protobuf.FileOptions\x18\xd4\xa6\x03 \x01(\tB\x17Z\x08pipeline\xa2\xb5\x1a\t2019.6.11b\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_descriptor__pb2.DESCRIPTOR,google_dot_protobuf_dot_timestamp__pb2.DESCRIPTOR,pipeline__pb2.DESCRIPTOR,primitive__pb2.DESCRIPTOR,problem__pb2.DESCRIPTOR,value__pb2.DESCRIPTOR,])
 
@@ -38,33 +38,37 @@ _EVALUATIONMETHOD = _descriptor.EnumDescriptor(
   values=[
     _descriptor.EnumValueDescriptor(
       name='EVALUATION_METHOD_UNDEFINED', index=0, number=0,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='HOLDOUT', index=1, number=1,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='K_FOLD', index=2, number=2,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='LEAVE_ONE_OUT', index=3, number=100,
-      options=None,
+      name='RANKING', index=3, number=99,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='PREDICTION', index=4, number=101,
-      options=None,
+      name='LEAVE_ONE_OUT', index=4, number=100,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='TRAINING_DATA', index=5, number=102,
-      options=None,
+      name='PREDICTION', index=5, number=101,
+      serialized_options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='TRAINING_DATA', index=6, number=102,
+      serialized_options=None,
       type=None),
   ],
   containing_type=None,
-  options=None,
-  serialized_start=3847,
-  serialized_end=3977,
+  serialized_options=None,
+  serialized_start=4475,
+  serialized_end=4618,
 )
 _sym_db.RegisterEnumDescriptor(_EVALUATIONMETHOD)
 
@@ -77,29 +81,29 @@ _PROGRESSSTATE = _descriptor.EnumDescriptor(
   values=[
     _descriptor.EnumValueDescriptor(
       name='PROGRESS_UNKNOWN', index=0, number=0,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='PENDING', index=1, number=1,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='RUNNING', index=2, number=2,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='COMPLETED', index=3, number=3,
-      options=None,
+      serialized_options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
       name='ERRORED', index=4, number=4,
-      options=None,
+      serialized_options=None,
       type=None),
   ],
   containing_type=None,
-  options=None,
-  serialized_start=3979,
-  serialized_end=4070,
+  serialized_options=None,
+  serialized_start=4620,
+  serialized_end=4711,
 )
 _sym_db.RegisterEnumDescriptor(_PROGRESSSTATE)
 
@@ -107,6 +111,7 @@ ProgressState = enum_type_wrapper.EnumTypeWrapper(_PROGRESSSTATE)
 EVALUATION_METHOD_UNDEFINED = 0
 HOLDOUT = 1
 K_FOLD = 2
+RANKING = 99
 LEAVE_ONE_OUT = 100
 PREDICTION = 101
 TRAINING_DATA = 102
@@ -123,7 +128,7 @@ protocol_version = _descriptor.FieldDescriptor(
   has_default_value=False, default_value=_b("").decode('utf-8'),
   message_type=None, enum_type=None, containing_type=None,
   is_extension=True, extension_scope=None,
-  options=None, file=DESCRIPTOR)
+  serialized_options=None, file=DESCRIPTOR)
 
 
 _SCORINGCONFIGURATION = _descriptor.Descriptor(
@@ -139,49 +144,49 @@ _SCORINGCONFIGURATION = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='folds', full_name='ScoringConfiguration.folds', index=1,
       number=2, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='train_test_ratio', full_name='ScoringConfiguration.train_test_ratio', index=2,
       number=3, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='shuffle', full_name='ScoringConfiguration.shuffle', index=3,
       number=4, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='random_seed', full_name='ScoringConfiguration.random_seed', index=4,
       number=5, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='stratified', full_name='ScoringConfiguration.stratified', index=5,
       number=6, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
@@ -205,42 +210,49 @@ _SCORE = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='fold', full_name='Score.fold', index=1,
       number=2, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='targets', full_name='Score.targets', index=2,
-      number=3, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='value', full_name='Score.value', index=3,
+      name='value', full_name='Score.value', index=2,
       number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='random_seed', full_name='Score.random_seed', index=3,
+      number=5, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='normalized', full_name='Score.normalized', index=4,
+      number=6, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=301,
-  serialized_end=421,
+  serialized_start=302,
+  serialized_end=438,
 )
 
 
@@ -257,42 +269,42 @@ _PROGRESS = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='status', full_name='Progress.status', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='start', full_name='Progress.start', index=2,
       number=3, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='end', full_name='Progress.end', index=3,
       number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=424,
-  serialized_end=565,
+  serialized_start=441,
+  serialized_end=582,
 )
 
 
@@ -309,28 +321,28 @@ _UPDATEPROBLEMREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='problem', full_name='UpdateProblemRequest.problem', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=567,
-  serialized_end=646,
+  serialized_start=584,
+  serialized_end=663,
 )
 
 
@@ -347,14 +359,14 @@ _UPDATEPROBLEMRESPONSE = _descriptor.Descriptor(
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=648,
-  serialized_end=671,
+  serialized_start=665,
+  serialized_end=688,
 )
 
 
@@ -371,70 +383,84 @@ _SEARCHSOLUTIONSREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='version', full_name='SearchSolutionsRequest.version', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='time_bound', full_name='SearchSolutionsRequest.time_bound', index=2,
+      name='time_bound_search', full_name='SearchSolutionsRequest.time_bound_search', index=2,
       number=3, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='priority', full_name='SearchSolutionsRequest.priority', index=3,
       number=4, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='allowed_value_types', full_name='SearchSolutionsRequest.allowed_value_types', index=4,
       number=5, type=14, cpp_type=8, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='problem', full_name='SearchSolutionsRequest.problem', index=5,
       number=6, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='template', full_name='SearchSolutionsRequest.template', index=6,
       number=7, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='inputs', full_name='SearchSolutionsRequest.inputs', index=7,
       number=8, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='time_bound_run', full_name='SearchSolutionsRequest.time_bound_run', index=8,
+      number=9, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='rank_solutions_limit', full_name='SearchSolutionsRequest.rank_solutions_limit', index=9,
+      number=10, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=674,
-  serialized_end=916,
+  serialized_start=691,
+  serialized_end=994,
 )
 
 
@@ -451,21 +477,21 @@ _SEARCHSOLUTIONSRESPONSE = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=918,
-  serialized_end=962,
+  serialized_start=996,
+  serialized_end=1040,
 )
 
 
@@ -482,21 +508,21 @@ _ENDSEARCHSOLUTIONSREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=964,
-  serialized_end=1010,
+  serialized_start=1042,
+  serialized_end=1088,
 )
 
 
@@ -513,14 +539,14 @@ _ENDSEARCHSOLUTIONSRESPONSE = _descriptor.Descriptor(
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1012,
-  serialized_end=1040,
+  serialized_start=1090,
+  serialized_end=1118,
 )
 
 
@@ -537,21 +563,21 @@ _STOPSEARCHSOLUTIONSREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1042,
-  serialized_end=1089,
+  serialized_start=1120,
+  serialized_end=1167,
 )
 
 
@@ -568,14 +594,14 @@ _STOPSEARCHSOLUTIONSRESPONSE = _descriptor.Descriptor(
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1091,
-  serialized_end=1120,
+  serialized_start=1169,
+  serialized_end=1198,
 )
 
 
@@ -592,28 +618,28 @@ _SOLUTIONSEARCHSCORE = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='scores', full_name='SolutionSearchScore.scores', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1122,
-  serialized_end=1221,
+  serialized_start=1200,
+  serialized_end=1299,
 )
 
 
@@ -630,21 +656,21 @@ _GETSEARCHSOLUTIONSRESULTSREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1223,
-  serialized_end=1276,
+  serialized_start=1301,
+  serialized_end=1354,
 )
 
 
@@ -661,56 +687,56 @@ _GETSEARCHSOLUTIONSRESULTSRESPONSE = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='done_ticks', full_name='GetSearchSolutionsResultsResponse.done_ticks', index=1,
       number=2, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='all_ticks', full_name='GetSearchSolutionsResultsResponse.all_ticks', index=2,
       number=3, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='solution_id', full_name='GetSearchSolutionsResultsResponse.solution_id', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='internal_score', full_name='GetSearchSolutionsResultsResponse.internal_score', index=4,
       number=5, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='scores', full_name='GetSearchSolutionsResultsResponse.scores', index=5,
       number=6, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1279,
-  serialized_end=1465,
+  serialized_start=1357,
+  serialized_end=1543,
 )
 
 
@@ -727,21 +753,21 @@ _DESCRIBESOLUTIONREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1467,
-  serialized_end=1513,
+  serialized_start=1545,
+  serialized_end=1591,
 )
 
 
@@ -758,28 +784,28 @@ _PRIMITIVESTEPDESCRIPTION_HYPERPARAMSENTRY = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='value', full_name='PrimitiveStepDescription.HyperparamsEntry.value', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=_descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001')),
+  serialized_options=_b('8\001'),
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1609,
-  serialized_end=1667,
+  serialized_start=1687,
+  serialized_end=1745,
 )
 
 _PRIMITIVESTEPDESCRIPTION = _descriptor.Descriptor(
@@ -795,21 +821,21 @@ _PRIMITIVESTEPDESCRIPTION = _descriptor.Descriptor(
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[_PRIMITIVESTEPDESCRIPTION_HYPERPARAMSENTRY, ],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1516,
-  serialized_end=1667,
+  serialized_start=1594,
+  serialized_end=1745,
 )
 
 
@@ -826,21 +852,21 @@ _SUBPIPELINESTEPDESCRIPTION = _descriptor.Descriptor(
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1669,
-  serialized_end=1730,
+  serialized_start=1747,
+  serialized_end=1808,
 )
 
 
@@ -857,21 +883,21 @@ _STEPDESCRIPTION = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='pipeline', full_name='StepDescription.pipeline', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
@@ -880,8 +906,8 @@ _STEPDESCRIPTION = _descriptor.Descriptor(
       name='step', full_name='StepDescription.step',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=1732,
-  serialized_end=1854,
+  serialized_start=1810,
+  serialized_end=1932,
 )
 
 
@@ -898,28 +924,28 @@ _DESCRIBESOLUTIONRESPONSE = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='steps', full_name='DescribeSolutionResponse.steps', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1856,
-  serialized_end=1955,
+  serialized_start=1934,
+  serialized_end=2033,
 )
 
 
@@ -936,28 +962,28 @@ _STEPPROGRESS = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='steps', full_name='StepProgress.steps', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1957,
-  serialized_end=2030,
+  serialized_start=2035,
+  serialized_end=2108,
 )
 
 
@@ -974,35 +1000,35 @@ _SOLUTIONRUNUSER = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='choosen', full_name='SolutionRunUser.choosen', index=1,
+      name='chosen', full_name='SolutionRunUser.chosen', index=1,
       number=2, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='reason', full_name='SolutionRunUser.reason', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2032,
-  serialized_end=2094,
+  serialized_start=2110,
+  serialized_end=2171,
 )
 
 
@@ -1019,49 +1045,49 @@ _SCORESOLUTIONREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='inputs', full_name='ScoreSolutionRequest.inputs', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='performance_metrics', full_name='ScoreSolutionRequest.performance_metrics', index=2,
       number=3, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='users', full_name='ScoreSolutionRequest.users', index=3,
       number=4, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='configuration', full_name='ScoreSolutionRequest.configuration', index=4,
       number=5, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2097,
-  serialized_end=2299,
+  serialized_start=2174,
+  serialized_end=2376,
 )
 
 
@@ -1078,21 +1104,21 @@ _SCORESOLUTIONRESPONSE = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2301,
-  serialized_end=2344,
+  serialized_start=2378,
+  serialized_end=2421,
 )
 
 
@@ -1109,21 +1135,21 @@ _GETSCORESOLUTIONRESULTSREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2346,
-  serialized_end=2398,
+  serialized_start=2423,
+  serialized_end=2475,
 )
 
 
@@ -1140,28 +1166,28 @@ _GETSCORESOLUTIONRESULTSRESPONSE = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='scores', full_name='GetScoreSolutionResultsResponse.scores', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2400,
-  serialized_end=2486,
+  serialized_start=2477,
+  serialized_end=2563,
 )
 
 
@@ -1178,49 +1204,49 @@ _FITSOLUTIONREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='inputs', full_name='FitSolutionRequest.inputs', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='expose_outputs', full_name='FitSolutionRequest.expose_outputs', index=2,
       number=3, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='expose_value_types', full_name='FitSolutionRequest.expose_value_types', index=3,
       number=4, type=14, cpp_type=8, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='users', full_name='FitSolutionRequest.users', index=4,
       number=5, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2489,
-  serialized_end=2651,
+  serialized_start=2566,
+  serialized_end=2728,
 )
 
 
@@ -1237,21 +1263,21 @@ _FITSOLUTIONRESPONSE = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2653,
-  serialized_end=2694,
+  serialized_start=2730,
+  serialized_end=2771,
 )
 
 
@@ -1268,21 +1294,21 @@ _GETFITSOLUTIONRESULTSREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2696,
-  serialized_end=2746,
+  serialized_start=2773,
+  serialized_end=2823,
 )
 
 
@@ -1299,28 +1325,28 @@ _GETFITSOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='value', full_name='GetFitSolutionResultsResponse.ExposedOutputsEntry.value', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=_descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001')),
+  serialized_options=_b('8\001'),
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2946,
-  serialized_end=3007,
+  serialized_start=3023,
+  serialized_end=3084,
 )
 
 _GETFITSOLUTIONRESULTSRESPONSE = _descriptor.Descriptor(
@@ -1336,42 +1362,42 @@ _GETFITSOLUTIONRESULTSRESPONSE = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='steps', full_name='GetFitSolutionResultsResponse.steps', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='exposed_outputs', full_name='GetFitSolutionResultsResponse.exposed_outputs', index=2,
       number=3, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='fitted_solution_id', full_name='GetFitSolutionResultsResponse.fitted_solution_id', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[_GETFITSOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY, ],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2749,
-  serialized_end=3007,
+  serialized_start=2826,
+  serialized_end=3084,
 )
 
 
@@ -1388,49 +1414,49 @@ _PRODUCESOLUTIONREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='inputs', full_name='ProduceSolutionRequest.inputs', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='expose_outputs', full_name='ProduceSolutionRequest.expose_outputs', index=2,
       number=3, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='expose_value_types', full_name='ProduceSolutionRequest.expose_value_types', index=3,
       number=4, type=14, cpp_type=8, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='users', full_name='ProduceSolutionRequest.users', index=4,
       number=5, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3010,
-  serialized_end=3183,
+  serialized_start=3087,
+  serialized_end=3260,
 )
 
 
@@ -1447,21 +1473,21 @@ _PRODUCESOLUTIONRESPONSE = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3185,
-  serialized_end=3230,
+  serialized_start=3262,
+  serialized_end=3307,
 )
 
 
@@ -1478,21 +1504,21 @@ _GETPRODUCESOLUTIONRESULTSREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3232,
-  serialized_end=3286,
+  serialized_start=3309,
+  serialized_end=3363,
 )
 
 
@@ -1509,28 +1535,28 @@ _GETPRODUCESOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='value', full_name='GetProduceSolutionResultsResponse.ExposedOutputsEntry.value', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=_descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001')),
+  serialized_options=_b('8\001'),
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2946,
-  serialized_end=3007,
+  serialized_start=3023,
+  serialized_end=3084,
 )
 
 _GETPRODUCESOLUTIONRESULTSRESPONSE = _descriptor.Descriptor(
@@ -1546,35 +1572,35 @@ _GETPRODUCESOLUTIONRESULTSRESPONSE = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='steps', full_name='GetProduceSolutionResultsResponse.steps', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='exposed_outputs', full_name='GetProduceSolutionResultsResponse.exposed_outputs', index=2,
       number=3, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[_GETPRODUCESOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY, ],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3289,
-  serialized_end=3527,
+  serialized_start=3366,
+  serialized_end=3604,
 )
 
 
@@ -1586,33 +1612,33 @@ _SOLUTIONEXPORTREQUEST = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='fitted_solution_id', full_name='SolutionExportRequest.fitted_solution_id', index=0,
-      number=1, type=9, cpp_type=9, label=1,
+      name='solution_id', full_name='SolutionExportRequest.solution_id', index=0,
+      number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='rank', full_name='SolutionExportRequest.rank', index=1,
       number=2, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3529,
-  serialized_end=3594,
+  serialized_start=3606,
+  serialized_end=3664,
 )
 
 
@@ -1629,14 +1655,345 @@ _SOLUTIONEXPORTRESPONSE = _descriptor.Descriptor(
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3596,
-  serialized_end=3620,
+  serialized_start=3666,
+  serialized_end=3690,
+)
+
+
+_DATAAVAILABLEREQUEST = _descriptor.Descriptor(
+  name='DataAvailableRequest',
+  full_name='DataAvailableRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='user_agent', full_name='DataAvailableRequest.user_agent', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='version', full_name='DataAvailableRequest.version', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='time_bound', full_name='DataAvailableRequest.time_bound', index=2,
+      number=3, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='priority', full_name='DataAvailableRequest.priority', index=3,
+      number=4, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='data', full_name='DataAvailableRequest.data', index=4,
+      number=5, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=3692,
+  serialized_end=3811,
+)
+
+
+_DATAAVAILABLERESPONSE = _descriptor.Descriptor(
+  name='DataAvailableResponse',
+  full_name='DataAvailableResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=3813,
+  serialized_end=3836,
+)
+
+
+_SAVESOLUTIONREQUEST = _descriptor.Descriptor(
+  name='SaveSolutionRequest',
+  full_name='SaveSolutionRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='solution_id', full_name='SaveSolutionRequest.solution_id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=3838,
+  serialized_end=3880,
+)
+
+
+_SAVESOLUTIONRESPONSE = _descriptor.Descriptor(
+  name='SaveSolutionResponse',
+  full_name='SaveSolutionResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='solution_uri', full_name='SaveSolutionResponse.solution_uri', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=3882,
+  serialized_end=3926,
+)
+
+
+_LOADSOLUTIONREQUEST = _descriptor.Descriptor(
+  name='LoadSolutionRequest',
+  full_name='LoadSolutionRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='solution_uri', full_name='LoadSolutionRequest.solution_uri', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=3928,
+  serialized_end=3971,
+)
+
+
+_LOADSOLUTIONRESPONSE = _descriptor.Descriptor(
+  name='LoadSolutionResponse',
+  full_name='LoadSolutionResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='solution_id', full_name='LoadSolutionResponse.solution_id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=3973,
+  serialized_end=4016,
+)
+
+
+_SAVEFITTEDSOLUTIONREQUEST = _descriptor.Descriptor(
+  name='SaveFittedSolutionRequest',
+  full_name='SaveFittedSolutionRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='fitted_solution_id', full_name='SaveFittedSolutionRequest.fitted_solution_id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=4018,
+  serialized_end=4073,
+)
+
+
+_SAVEFITTEDSOLUTIONRESPONSE = _descriptor.Descriptor(
+  name='SaveFittedSolutionResponse',
+  full_name='SaveFittedSolutionResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='fitted_solution_uri', full_name='SaveFittedSolutionResponse.fitted_solution_uri', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=4075,
+  serialized_end=4132,
+)
+
+
+_LOADFITTEDSOLUTIONREQUEST = _descriptor.Descriptor(
+  name='LoadFittedSolutionRequest',
+  full_name='LoadFittedSolutionRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='fitted_solution_uri', full_name='LoadFittedSolutionRequest.fitted_solution_uri', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=4134,
+  serialized_end=4190,
+)
+
+
+_LOADFITTEDSOLUTIONRESPONSE = _descriptor.Descriptor(
+  name='LoadFittedSolutionResponse',
+  full_name='LoadFittedSolutionResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='fitted_solution_id', full_name='LoadFittedSolutionResponse.fitted_solution_id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=4192,
+  serialized_end=4248,
 )
 
 
@@ -1653,14 +2010,14 @@ _LISTPRIMITIVESREQUEST = _descriptor.Descriptor(
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3622,
-  serialized_end=3645,
+  serialized_start=4250,
+  serialized_end=4273,
 )
 
 
@@ -1677,21 +2034,21 @@ _LISTPRIMITIVESRESPONSE = _descriptor.Descriptor(
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3647,
-  serialized_end=3703,
+  serialized_start=4275,
+  serialized_end=4331,
 )
 
 
@@ -1708,14 +2065,14 @@ _HELLOREQUEST = _descriptor.Descriptor(
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3705,
-  serialized_end=3719,
+  serialized_start=4333,
+  serialized_end=4347,
 )
 
 
@@ -1732,48 +2089,48 @@ _HELLORESPONSE = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='version', full_name='HelloResponse.version', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='allowed_value_types', full_name='HelloResponse.allowed_value_types', index=2,
       number=3, type=14, cpp_type=8, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='supported_extensions', full_name='HelloResponse.supported_extensions', index=3,
       number=4, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
   ],
-  options=None,
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3721,
-  serialized_end=3844,
+  serialized_start=4349,
+  serialized_end=4472,
 )
 
 _SCORINGCONFIGURATION.fields_by_name['method'].enum_type = _EVALUATIONMETHOD
 _SCORE.fields_by_name['metric'].message_type = problem__pb2._PROBLEMPERFORMANCEMETRIC
-_SCORE.fields_by_name['targets'].message_type = problem__pb2._PROBLEMTARGET
 _SCORE.fields_by_name['value'].message_type = value__pb2._VALUE
+_SCORE.fields_by_name['normalized'].message_type = value__pb2._VALUE
 _PROGRESS.fields_by_name['state'].enum_type = _PROGRESSSTATE
 _PROGRESS.fields_by_name['start'].message_type = google_dot_protobuf_dot_timestamp__pb2._TIMESTAMP
 _PROGRESS.fields_by_name['end'].message_type = google_dot_protobuf_dot_timestamp__pb2._TIMESTAMP
@@ -1824,6 +2181,7 @@ _GETPRODUCESOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY.containing_type = _GETPRO
 _GETPRODUCESOLUTIONRESULTSRESPONSE.fields_by_name['progress'].message_type = _PROGRESS
 _GETPRODUCESOLUTIONRESULTSRESPONSE.fields_by_name['steps'].message_type = _STEPPROGRESS
 _GETPRODUCESOLUTIONRESULTSRESPONSE.fields_by_name['exposed_outputs'].message_type = _GETPRODUCESOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY
+_DATAAVAILABLEREQUEST.fields_by_name['data'].message_type = value__pb2._VALUE
 _LISTPRIMITIVESRESPONSE.fields_by_name['primitives'].message_type = primitive__pb2._PRIMITIVE
 _HELLORESPONSE.fields_by_name['allowed_value_types'].enum_type = value__pb2._VALUETYPE
 DESCRIPTOR.message_types_by_name['ScoringConfiguration'] = _SCORINGCONFIGURATION
@@ -1861,6 +2219,16 @@ DESCRIPTOR.message_types_by_name['GetProduceSolutionResultsRequest'] = _GETPRODU
 DESCRIPTOR.message_types_by_name['GetProduceSolutionResultsResponse'] = _GETPRODUCESOLUTIONRESULTSRESPONSE
 DESCRIPTOR.message_types_by_name['SolutionExportRequest'] = _SOLUTIONEXPORTREQUEST
 DESCRIPTOR.message_types_by_name['SolutionExportResponse'] = _SOLUTIONEXPORTRESPONSE
+DESCRIPTOR.message_types_by_name['DataAvailableRequest'] = _DATAAVAILABLEREQUEST
+DESCRIPTOR.message_types_by_name['DataAvailableResponse'] = _DATAAVAILABLERESPONSE
+DESCRIPTOR.message_types_by_name['SaveSolutionRequest'] = _SAVESOLUTIONREQUEST
+DESCRIPTOR.message_types_by_name['SaveSolutionResponse'] = _SAVESOLUTIONRESPONSE
+DESCRIPTOR.message_types_by_name['LoadSolutionRequest'] = _LOADSOLUTIONREQUEST
+DESCRIPTOR.message_types_by_name['LoadSolutionResponse'] = _LOADSOLUTIONRESPONSE
+DESCRIPTOR.message_types_by_name['SaveFittedSolutionRequest'] = _SAVEFITTEDSOLUTIONREQUEST
+DESCRIPTOR.message_types_by_name['SaveFittedSolutionResponse'] = _SAVEFITTEDSOLUTIONRESPONSE
+DESCRIPTOR.message_types_by_name['LoadFittedSolutionRequest'] = _LOADFITTEDSOLUTIONREQUEST
+DESCRIPTOR.message_types_by_name['LoadFittedSolutionResponse'] = _LOADFITTEDSOLUTIONRESPONSE
 DESCRIPTOR.message_types_by_name['ListPrimitivesRequest'] = _LISTPRIMITIVESREQUEST
 DESCRIPTOR.message_types_by_name['ListPrimitivesResponse'] = _LISTPRIMITIVESRESPONSE
 DESCRIPTOR.message_types_by_name['HelloRequest'] = _HELLOREQUEST
@@ -2139,6 +2507,76 @@ SolutionExportResponse = _reflection.GeneratedProtocolMessageType('SolutionExpor
   ))
 _sym_db.RegisterMessage(SolutionExportResponse)
 
+DataAvailableRequest = _reflection.GeneratedProtocolMessageType('DataAvailableRequest', (_message.Message,), dict(
+  DESCRIPTOR = _DATAAVAILABLEREQUEST,
+  __module__ = 'core_pb2'
+  # @@protoc_insertion_point(class_scope:DataAvailableRequest)
+  ))
+_sym_db.RegisterMessage(DataAvailableRequest)
+
+DataAvailableResponse = _reflection.GeneratedProtocolMessageType('DataAvailableResponse', (_message.Message,), dict(
+  DESCRIPTOR = _DATAAVAILABLERESPONSE,
+  __module__ = 'core_pb2'
+  # @@protoc_insertion_point(class_scope:DataAvailableResponse)
+  ))
+_sym_db.RegisterMessage(DataAvailableResponse)
+
+SaveSolutionRequest = _reflection.GeneratedProtocolMessageType('SaveSolutionRequest', (_message.Message,), dict(
+  DESCRIPTOR = _SAVESOLUTIONREQUEST,
+  __module__ = 'core_pb2'
+  # @@protoc_insertion_point(class_scope:SaveSolutionRequest)
+  ))
+_sym_db.RegisterMessage(SaveSolutionRequest)
+
+SaveSolutionResponse = _reflection.GeneratedProtocolMessageType('SaveSolutionResponse', (_message.Message,), dict(
+  DESCRIPTOR = _SAVESOLUTIONRESPONSE,
+  __module__ = 'core_pb2'
+  # @@protoc_insertion_point(class_scope:SaveSolutionResponse)
+  ))
+_sym_db.RegisterMessage(SaveSolutionResponse)
+
+LoadSolutionRequest = _reflection.GeneratedProtocolMessageType('LoadSolutionRequest', (_message.Message,), dict(
+  DESCRIPTOR = _LOADSOLUTIONREQUEST,
+  __module__ = 'core_pb2'
+  # @@protoc_insertion_point(class_scope:LoadSolutionRequest)
+  ))
+_sym_db.RegisterMessage(LoadSolutionRequest)
+
+LoadSolutionResponse = _reflection.GeneratedProtocolMessageType('LoadSolutionResponse', (_message.Message,), dict(
+  DESCRIPTOR = _LOADSOLUTIONRESPONSE,
+  __module__ = 'core_pb2'
+  # @@protoc_insertion_point(class_scope:LoadSolutionResponse)
+  ))
+_sym_db.RegisterMessage(LoadSolutionResponse)
+
+SaveFittedSolutionRequest = _reflection.GeneratedProtocolMessageType('SaveFittedSolutionRequest', (_message.Message,), dict(
+  DESCRIPTOR = _SAVEFITTEDSOLUTIONREQUEST,
+  __module__ = 'core_pb2'
+  # @@protoc_insertion_point(class_scope:SaveFittedSolutionRequest)
+  ))
+_sym_db.RegisterMessage(SaveFittedSolutionRequest)
+
+SaveFittedSolutionResponse = _reflection.GeneratedProtocolMessageType('SaveFittedSolutionResponse', (_message.Message,), dict(
+  DESCRIPTOR = _SAVEFITTEDSOLUTIONRESPONSE,
+  __module__ = 'core_pb2'
+  # @@protoc_insertion_point(class_scope:SaveFittedSolutionResponse)
+  ))
+_sym_db.RegisterMessage(SaveFittedSolutionResponse)
+
+LoadFittedSolutionRequest = _reflection.GeneratedProtocolMessageType('LoadFittedSolutionRequest', (_message.Message,), dict(
+  DESCRIPTOR = _LOADFITTEDSOLUTIONREQUEST,
+  __module__ = 'core_pb2'
+  # @@protoc_insertion_point(class_scope:LoadFittedSolutionRequest)
+  ))
+_sym_db.RegisterMessage(LoadFittedSolutionRequest)
+
+LoadFittedSolutionResponse = _reflection.GeneratedProtocolMessageType('LoadFittedSolutionResponse', (_message.Message,), dict(
+  DESCRIPTOR = _LOADFITTEDSOLUTIONRESPONSE,
+  __module__ = 'core_pb2'
+  # @@protoc_insertion_point(class_scope:LoadFittedSolutionResponse)
+  ))
+_sym_db.RegisterMessage(LoadFittedSolutionResponse)
+
 ListPrimitivesRequest = _reflection.GeneratedProtocolMessageType('ListPrimitivesRequest', (_message.Message,), dict(
   DESCRIPTOR = _LISTPRIMITIVESREQUEST,
   __module__ = 'core_pb2'
@@ -2169,23 +2607,19 @@ _sym_db.RegisterMessage(HelloResponse)
 
 google_dot_protobuf_dot_descriptor__pb2.FileOptions.RegisterExtension(protocol_version)
 
-DESCRIPTOR.has_options = True
-DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('Z\010pipeline\242\265\032\0102018.7.7'))
-_PRIMITIVESTEPDESCRIPTION_HYPERPARAMSENTRY.has_options = True
-_PRIMITIVESTEPDESCRIPTION_HYPERPARAMSENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
-_GETFITSOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY.has_options = True
-_GETFITSOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
-_GETPRODUCESOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY.has_options = True
-_GETPRODUCESOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
+DESCRIPTOR._options = None
+_PRIMITIVESTEPDESCRIPTION_HYPERPARAMSENTRY._options = None
+_GETFITSOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY._options = None
+_GETPRODUCESOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY._options = None
 
 _CORE = _descriptor.ServiceDescriptor(
   name='Core',
   full_name='Core',
   file=DESCRIPTOR,
   index=0,
-  options=None,
-  serialized_start=4073,
-  serialized_end=5233,
+  serialized_options=None,
+  serialized_start=4714,
+  serialized_end=6228,
   methods=[
   _descriptor.MethodDescriptor(
     name='SearchSolutions',
@@ -2194,7 +2628,7 @@ _CORE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_SEARCHSOLUTIONSREQUEST,
     output_type=_SEARCHSOLUTIONSRESPONSE,
-    options=None,
+    serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
     name='GetSearchSolutionsResults',
@@ -2203,7 +2637,7 @@ _CORE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_GETSEARCHSOLUTIONSRESULTSREQUEST,
     output_type=_GETSEARCHSOLUTIONSRESULTSRESPONSE,
-    options=None,
+    serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
     name='EndSearchSolutions',
@@ -2212,7 +2646,7 @@ _CORE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_ENDSEARCHSOLUTIONSREQUEST,
     output_type=_ENDSEARCHSOLUTIONSRESPONSE,
-    options=None,
+    serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
     name='StopSearchSolutions',
@@ -2221,7 +2655,7 @@ _CORE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_STOPSEARCHSOLUTIONSREQUEST,
     output_type=_STOPSEARCHSOLUTIONSRESPONSE,
-    options=None,
+    serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
     name='DescribeSolution',
@@ -2230,7 +2664,7 @@ _CORE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_DESCRIBESOLUTIONREQUEST,
     output_type=_DESCRIBESOLUTIONRESPONSE,
-    options=None,
+    serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
     name='ScoreSolution',
@@ -2239,7 +2673,7 @@ _CORE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_SCORESOLUTIONREQUEST,
     output_type=_SCORESOLUTIONRESPONSE,
-    options=None,
+    serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
     name='GetScoreSolutionResults',
@@ -2248,7 +2682,7 @@ _CORE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_GETSCORESOLUTIONRESULTSREQUEST,
     output_type=_GETSCORESOLUTIONRESULTSRESPONSE,
-    options=None,
+    serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
     name='FitSolution',
@@ -2257,7 +2691,7 @@ _CORE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_FITSOLUTIONREQUEST,
     output_type=_FITSOLUTIONRESPONSE,
-    options=None,
+    serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
     name='GetFitSolutionResults',
@@ -2266,7 +2700,7 @@ _CORE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_GETFITSOLUTIONRESULTSREQUEST,
     output_type=_GETFITSOLUTIONRESULTSRESPONSE,
-    options=None,
+    serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
     name='ProduceSolution',
@@ -2275,7 +2709,7 @@ _CORE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_PRODUCESOLUTIONREQUEST,
     output_type=_PRODUCESOLUTIONRESPONSE,
-    options=None,
+    serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
     name='GetProduceSolutionResults',
@@ -2284,7 +2718,7 @@ _CORE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_GETPRODUCESOLUTIONRESULTSREQUEST,
     output_type=_GETPRODUCESOLUTIONRESULTSRESPONSE,
-    options=None,
+    serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
     name='SolutionExport',
@@ -2293,7 +2727,7 @@ _CORE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_SOLUTIONEXPORTREQUEST,
     output_type=_SOLUTIONEXPORTRESPONSE,
-    options=None,
+    serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
     name='UpdateProblem',
@@ -2302,25 +2736,70 @@ _CORE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_UPDATEPROBLEMREQUEST,
     output_type=_UPDATEPROBLEMRESPONSE,
-    options=None,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='DataAvailable',
+    full_name='Core.DataAvailable',
+    index=13,
+    containing_service=None,
+    input_type=_DATAAVAILABLEREQUEST,
+    output_type=_DATAAVAILABLERESPONSE,
+    serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
     name='ListPrimitives',
     full_name='Core.ListPrimitives',
-    index=13,
+    index=14,
     containing_service=None,
     input_type=_LISTPRIMITIVESREQUEST,
     output_type=_LISTPRIMITIVESRESPONSE,
-    options=None,
+    serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
     name='Hello',
     full_name='Core.Hello',
-    index=14,
+    index=15,
     containing_service=None,
     input_type=_HELLOREQUEST,
     output_type=_HELLORESPONSE,
-    options=None,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='SaveSolution',
+    full_name='Core.SaveSolution',
+    index=16,
+    containing_service=None,
+    input_type=_SAVESOLUTIONREQUEST,
+    output_type=_SAVESOLUTIONRESPONSE,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='LoadSolution',
+    full_name='Core.LoadSolution',
+    index=17,
+    containing_service=None,
+    input_type=_LOADSOLUTIONREQUEST,
+    output_type=_LOADSOLUTIONRESPONSE,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='SaveFittedSolution',
+    full_name='Core.SaveFittedSolution',
+    index=18,
+    containing_service=None,
+    input_type=_SAVEFITTEDSOLUTIONREQUEST,
+    output_type=_SAVEFITTEDSOLUTIONRESPONSE,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='LoadFittedSolution',
+    full_name='Core.LoadFittedSolution',
+    index=19,
+    containing_service=None,
+    input_type=_LOADFITTEDSOLUTIONREQUEST,
+    output_type=_LOADFITTEDSOLUTIONRESPONSE,
+    serialized_options=None,
   ),
 ])
 _sym_db.RegisterServiceDescriptor(_CORE)

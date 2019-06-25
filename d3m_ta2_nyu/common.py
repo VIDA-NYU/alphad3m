@@ -9,24 +9,17 @@ import sklearn.metrics
 logger = logging.getLogger(__name__)
 
 
-def _root_mean_squared_error_avg(y_true, y_pred):
-    l2_sum = 0
-    count = 0
-    for t, p in zip(y_true, y_pred):
-        l2_sum += math.sqrt(sklearn.metrics.mean_squared_error(t, p))
-        count += 1
-    return l2_sum / count
-
-
 SCORES_TO_SKLEARN = dict(
     ACCURACY=sklearn.metrics.accuracy_score,
     PRECISION=lambda y_true, y_pred:
-        sklearn.metrics.precision_score(y_true, y_pred, average='micro'),
+              sklearn.metrics.precision_score(y_true, y_pred, average='micro'),
+    OBJECT_DETECTION_AVERAGE_PRECISION=lambda y_true, y_pred:
+              sklearn.metrics.average_precision_score(y_true, y_pred, average='micro'),
     RECALL=lambda y_true, y_pred:
-        sklearn.metrics.recall_score(y_true, y_pred, average='micro'),
+              sklearn.metrics.recall_score(y_true, y_pred, average='micro'),
     F1=lambda y_true, y_pred:
         sklearn.metrics.f1_score(y_true, y_pred,
-                                 average='binary', pos_label='1'),
+                                 average='binary', pos_label=1),
     F1_MICRO=lambda y_true, y_pred:
         sklearn.metrics.f1_score(y_true, y_pred, average='micro'),
     F1_MACRO=lambda y_true, y_pred:
@@ -39,7 +32,6 @@ SCORES_TO_SKLEARN = dict(
     MEAN_SQUARED_ERROR=sklearn.metrics.mean_squared_error,
     ROOT_MEAN_SQUARED_ERROR=lambda y_true, y_pred:
         math.sqrt(sklearn.metrics.mean_squared_error(y_true, y_pred)),
-    ROOT_MEAN_SQUARED_ERROR_AVG=_root_mean_squared_error_avg,
     MEAN_ABSOLUTE_ERROR=sklearn.metrics.mean_absolute_error,
     R_SQUARED=sklearn.metrics.r2_score,
     NORMALIZED_MUTUAL_INFORMATION=sklearn.metrics.normalized_mutual_info_score,
@@ -49,9 +41,9 @@ SCORES_TO_SKLEARN = dict(
 
 SCORES_FROM_SCHEMA = {
     'accuracy': 'ACCURACY',
+    'f1': 'F1',
     'precision': 'PRECISION',
     'recall': 'RECALL',
-    'f1': 'F1',
     'f1Micro': 'F1_MICRO',
     'f1Macro': 'F1_MACRO',
     'rocAuc': 'ROC_AUC',
@@ -59,12 +51,12 @@ SCORES_FROM_SCHEMA = {
     'rocAucMacro': 'ROC_AUC_MACRO',
     'meanSquaredError': 'MEAN_SQUARED_ERROR',
     'rootMeanSquaredError': 'ROOT_MEAN_SQUARED_ERROR',
-    'rootMeanSquaredErrorAvg': 'ROOT_MEAN_SQUARED_ERROR_AVG',
     'meanAbsoluteError': 'MEAN_ABSOLUTE_ERROR',
     'rSquared': 'R_SQUARED',
     'normalizedMutualInformation': 'NORMALIZED_MUTUAL_INFORMATION',
     'jaccardSimilarityScore': 'JACCARD_SIMILARITY_SCORE',
-    # 'precisionAtTopK': None,
+    'objectDetectionAP': 'OBJECT_DETECTION_AVERAGE_PRECISION'
+    # 'precisionAtTopK': 'PRECISION_AT_TOP_K',
 }
 
 SCORES_TO_SCHEMA = {v: k for k, v in SCORES_FROM_SCHEMA.items()}
@@ -72,9 +64,10 @@ SCORES_TO_SCHEMA = {v: k for k, v in SCORES_FROM_SCHEMA.items()}
 # 1 if lower values of that metric indicate a better classifier, -1 otherwise
 SCORES_RANKING_ORDER = dict(
     ACCURACY=-1,
-    PRECISION=-1,
-    RECALL=-1,
     F1=-1,
+    PRECISION=-1,
+    OBJECT_DETECTION_AVERAGE_PRECISION=-1,
+    RECALL=-1,
     F1_MICRO=-1,
     F1_MACRO=-1,
     ROC_AUC=-1,
@@ -82,7 +75,6 @@ SCORES_RANKING_ORDER = dict(
     ROC_AUC_MACRO=-1,
     MEAN_SQUARED_ERROR=1,
     ROOT_MEAN_SQUARED_ERROR=1,
-    ROOT_MEAN_SQUARED_ERROR_AVG=1,
     MEAN_ABSOLUTE_ERROR=1,
     R_SQUARED=-1,
     NORMALIZED_MUTUAL_INFORMATION=-1,
@@ -101,6 +93,10 @@ TASKS_FROM_SCHEMA = {
     'graphMatching': 'GRAPH_MATCHING',
     'timeSeriesForecasting': 'TIME_SERIES_FORECASTING',
     'collaborativeFiltering': 'COLLABORATIVE_FILTERING',
+    'objectDetection': 'OBJECT_DETECTION',
+    'vertexClassification':'VERTEX_CLASSIFICATION',
+    'semiSupervisedClassification': 'SEMISUPERVISED_CLASSIFICATION',
+    'semiSupervisedRegression': 'SEMISUPERVISED_REGRESSION'
 }
 
 TASKS_TO_SCHEMA = {v: k for k, v in TASKS_FROM_SCHEMA.items()}
@@ -113,7 +109,7 @@ SUBTASKS_FROM_SCHEMA = {
     'univariate': 'UNIVARIATE',
     'multivariate': 'MULTIVARIATE',
     'overlaping': 'OVERLAPPING',
-    'nonoverlaping': 'NONOVERLAPPING',
+    'nonOverlapping': 'NONOVERLAPPING',
 }
 
 SUBTASKS_TO_SCHEMA = {v: k for k, v in SUBTASKS_FROM_SCHEMA.items()}
