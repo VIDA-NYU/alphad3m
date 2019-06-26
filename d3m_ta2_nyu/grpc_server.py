@@ -155,7 +155,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         task = TASKS_FROM_SCHEMA[session.problem['about']['taskType']]
 
         self._ta2.build_pipelines(search_id, task, dataset, session.metrics, timeout=timeout,
-                                  top_pipelines=top_pipelines, tune=5)
+                                  top_pipelines=top_pipelines, tune=0)
 
         return pb_core.SearchSolutionsResponse(
             search_id=str(search_id),

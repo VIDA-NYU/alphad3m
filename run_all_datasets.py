@@ -48,7 +48,7 @@ def run_all_datasets():
         search_time = str(datetime.now() - start_time)
         number_solutions = len(solutions)
 
-        if False:#number_solutions > 0:
+        if number_solutions > 0:
             best_time = sorted(solutions.values(), key=lambda x: x[2])[0][2]
             best_solution = sorted(solutions.items(), key=lambda x: x[1][0])[-1][0]
             logger.info('Best pipeline: solution_id=%s' % best_solution)

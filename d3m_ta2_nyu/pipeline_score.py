@@ -95,8 +95,6 @@ def score(pipeline_id, dataset_uri, metrics, problem, scoring_conf, do_rank, do_
     db.add(record_db)
     db.commit()
 
-    return scores[0]
-
 
 def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
     json_pipeline = convert.to_d3m_json(pipeline)
@@ -135,7 +133,7 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
     scores = {}
 
     for _, row in combined_folds.iterrows():
-        if row['fold'] not in results:
+        if row['fold'] not in scores:
             scores[row['fold']] = {}
         scores[row['fold']][row['metric']] = row['value']
 

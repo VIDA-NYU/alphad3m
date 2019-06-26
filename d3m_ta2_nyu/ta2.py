@@ -34,10 +34,10 @@ from d3m_ta2_nyu.workflow.convert import to_d3m_json
 
 
 MAX_RUNNING_PROCESSES = 1
+TUNE_PIPELINES_COUNT = 5
 
-TUNE_PIPELINES_COUNT = 0
 if 'TA2_DEBUG_BE_FAST' in os.environ:
-    TUNE_PIPELINES_COUNT = 0
+    TUNE_PIPELINES_COUNT = 1
 
 
 logger = logging.getLogger(__name__)
@@ -223,51 +223,51 @@ class Session(Observable):
                 return
 
             db = self.DBSession()
+            try:
+                # If we are out of pipelines to score, maybe submit pipelines for
+                # tuning
+                logger.info("Session %s: scoring done", self.id)
 
-            # If we are out of pipelines to score, maybe submit pipelines for
-            # tuning
-            logger.info("Session %s: scoring done", self.id)
+                tune = []
+                if self._tune_when_ready and self.stop_requested:
+                    logger.info("Session stop requested, skipping tuning")
+                elif self._tune_when_ready:
+                    top_pipelines = self.get_top_pipelines(
+                        db, self.metrics[0]['metric'],
+                        self._tune_when_ready)
+                    for pipeline, _ in top_pipelines:
+                        if pipeline.id not in self.tuned_pipelines:
+                            tune.append(pipeline.id)
 
-            tune = []
-            if self._tune_when_ready and self.stop_requested:
-                logger.info("Session stop requested, skipping tuning")
-            elif self._tune_when_ready:
-                top_pipelines = self.get_top_pipelines(
-                    db, self.metrics[0]['metric'],
-                    self._tune_when_ready)
-                for pipeline, _ in top_pipelines:
-                    if pipeline.id not in self.tuned_pipelines:
-                        tune.append(pipeline.id)
+                    if len(tune) > 0:
+                        # Found some pipelines to tune, do that
+                        logger.warning("Found %d pipelines to tune", len(tune))
+                        for pipeline_id in tune:
+                            logger.info("    %s", pipeline_id)
+                            self._ta2._run_queue.put(TuneHyperparamsJob(self, pipeline_id, self.problem))
+                            self.pipelines_tuning.add(pipeline_id)
+                        return
+                    logger.info("Found no pipeline to tune")
+                else:
+                    logger.info("No tuning requested")
 
-                if len(tune) > 0:
-                    # Found some pipelines to tune, do that
-                    logger.warning("Found %d pipelines to tune", len(tune))
-                    for pipeline_id in tune:
-                        logger.info("    %s", pipeline_id)
-                        self._ta2._run_queue.put(TuneHyperparamsJob(self, pipeline_id, self.problem))
-                        self.pipelines_tuning.add(pipeline_id)
-                    return
-                logger.info("Found no pipeline to tune")
-            else:
-                logger.info("No tuning requested")
+                # Session is done (but new pipelines might be added later)
+                self.working = False
+                self.notify('done_searching')
 
-            # Session is done (but new pipelines might be added later)
-            self.working = False
-            self.notify('done_searching')
+                logger.warning("Search done")
+                if self.metrics:
+                    metric = self.metrics[0]['metric']
+                    top_pipelines = self.get_top_pipelines(db, metric)
+                    logger.warning("Found %d pipelines", len(top_pipelines))
 
-            logger.warning("Search done")
-            if self.metrics:
-                metric = self.metrics[0]['metric']
-                top_pipelines = self.get_top_pipelines(db, metric)
-                logger.warning("Found %d pipelines", len(top_pipelines))
-
-                for i, (pipeline, score) in enumerate(top_pipelines):
-                    created = pipeline.created_date - self.start
-                    logger.info("    %d) %s %s=%s origin=%s time=%.2fs",
-                                i + 1, pipeline.id, metric, score,
-                                pipeline.origin, created.total_seconds())
-
-            db.close()
+                    for i, (pipeline, score) in enumerate(top_pipelines):
+                        created = pipeline.created_date - self.start
+                        logger.info("    %d) %s %s=%s origin=%s time=%.2fs",
+                                    i + 1, pipeline.id, metric, score,
+                                    pipeline.origin, created.total_seconds())
+            finally:
+                db.close()
 
     def write_searched_pipeline(self, pipeline_id):
         if not self._searched_pipelines_dir:
@@ -548,7 +548,6 @@ class TuneHyperparamsJob(Job):
         self.pipeline_id = pipeline_id
         self.problem = problem
         self.store_results = store_results
-        self.results = None
 
     def start(self, db_filename, predictions_root, **kwargs):
         self.predictions_root = predictions_root
@@ -560,7 +559,7 @@ class TuneHyperparamsJob(Job):
             subdir = os.path.join(self.predictions_root, str(self.pipeline_id))
             if not os.path.exists(subdir):
                 os.mkdir(subdir)
-            self.results = os.path.join(subdir, 'predictions.csv')
+
         self.msg = Receiver()
 
         self.proc = run_process('d3m_ta2_nyu.pipeline_tune.tune',
@@ -569,7 +568,6 @@ class TuneHyperparamsJob(Job):
                                 metrics=self.session.metrics,
                                 targets=self.session.targets,
                                 problem=self.problem,
-                                results_path=self.results,
                                 db_filename=db_filename)
         self.session.notify('tuning_start',
                             pipeline_id=self.pipeline_id,
@@ -589,7 +587,6 @@ class TuneHyperparamsJob(Job):
                                 job_id=id(self))
             self.session.notify('scoring_success',
                                 pipeline_id=self.tuned_pipeline_id,
-                                predict_result=self.results,
                                 job_id=id(self))
             self.session.pipeline_tuning_done(self.pipeline_id,
                                               self.tuned_pipeline_id)
@@ -721,7 +718,7 @@ class D3mTa2(Observable):
         # Create pipelines, NO TUNING
 
         with session.with_observer_queue() as queue:
-            self.build_pipelines(session.id, task, dataset, session.metrics, tune=0, timeout=timeout)
+            self.build_pipelines(session.id, task, dataset, session.metrics, tune=TUNE_PIPELINES_COUNT, timeout=timeout)
             while queue.get(True)[0] != 'done_searching':
                 pass
 
@@ -866,7 +863,7 @@ class D3mTa2(Observable):
 
         db = self.DBSession()
         pipeline_database = database.Pipeline(origin='Fixed pipeline template', dataset='NA')
-        # TODO Convert D3M pipeline to our database pipeline
+        # TODO: Convert D3M pipeline to our database pipeline format
         db.add(pipeline_database)
         db.commit()
         pipeline_id = pipeline_database.id
@@ -1288,7 +1285,7 @@ class D3mTa2(Observable):
             # Classifier
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
-            #    'd3m.primitives.classification.k_neighbors.SKlearn',
+                'd3m.primitives.classification.k_neighbors.SKlearn',
             ],
         )),
         'REGRESSION': list(itertools.product(

@@ -180,7 +180,7 @@ class ComputeMetafeatures():
         try:
             # TODO Improve the sending of parameters
             outputs = execute(pipeline_id, self.dataset_uri, None, None, None,
-                              db_filename='/output/supporting_files/db.sqlite3')
+                              db_filename='/output/supporting_files/db.sqlite3')  # TODO: Change this static string path
             for key, value in outputs.items():
                 metafeature_results = value.metadata.query(())['data_metafeatures']
                 for metafeature_key, metafeature_value in metafeature_results.items():
