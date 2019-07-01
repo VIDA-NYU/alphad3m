@@ -34,10 +34,10 @@ from d3m_ta2_nyu.workflow.convert import to_d3m_json
 
 
 MAX_RUNNING_PROCESSES = 1
-TUNE_PIPELINES_COUNT = 5
+TUNE_PIPELINES_COUNT = 1
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
-    TUNE_PIPELINES_COUNT = 1
+    TUNE_PIPELINES_COUNT = 0
 
 
 logger = logging.getLogger(__name__)
@@ -903,7 +903,7 @@ class D3mTa2(Observable):
             template_name = task
         if 'TA2_DEBUG_BE_FAST' in os.environ:
             template_name = 'DEBUG_' + task
-        for template in self.TEMPLATES.get(template_name, []):
+        for template in []:#self.TEMPLATES.get(template_name, []):
             logger.info("Creating pipeline from %r", template)
             if isinstance(template, (list, tuple)):
                 func, args = template[0], template[1:]
