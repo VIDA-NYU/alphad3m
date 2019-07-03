@@ -30,6 +30,7 @@ from ta3ta2_api.utils import decode_pipeline_description, encode_pipeline_descri
 from d3m.metadata import pipeline as pipeline_module
 
 logger = logging.getLogger(__name__)
+TUNE_PIPELINES_COUNT = 1
 
 
 def to_timestamp(dt):
@@ -155,7 +156,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         task = TASKS_FROM_SCHEMA[session.problem['about']['taskType']]
 
         self._ta2.build_pipelines(search_id, task, dataset, session.metrics, timeout=timeout,
-                                  top_pipelines=top_pipelines, tune=0)
+                                  top_pipelines=top_pipelines, tune=TUNE_PIPELINES_COUNT)
 
         return pb_core.SearchSolutionsResponse(
             search_id=str(search_id),
