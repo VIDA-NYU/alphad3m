@@ -15,7 +15,7 @@ from client import do_search, do_train, do_test
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
-DATASETS_PATH = '/Users/rlopez/D3M/datasets/seed_datasets_current/'
+DATASETS_PATH = '/Users/rlopez/D3M/datasets/seed_datasets_data_augmentation/'
 D3MINPUTDIR = '/Users/rlopez/D3M/tmp/'
 
 
@@ -24,6 +24,7 @@ def run_all_datasets():
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
     statistics_path = join(dirname(__file__), 'resource/statistics_datasets.csv')
     datasets = sorted([x for x in os.listdir(DATASETS_PATH) if os.path.isdir(join(DATASETS_PATH, x))])
+    #datasets = ['DA_global_terrorism']
     size = len(datasets)
 
     for i, dataset in enumerate(datasets):
@@ -43,7 +44,7 @@ def run_all_datasets():
 
         metric = SCORES_FROM_SCHEMA[problem['inputs']['performanceMetrics'][0]['metric']]
         best_time, score = 'None', 'None'
-        solutions = do_search(core, problem, train_dataset_path, time_bound=3.0, pipelines_limit=10)
+        solutions = do_search(core, problem, train_dataset_path, time_bound=5.0, pipelines_limit=0)
         search_time = str(datetime.now() - start_time)
         number_solutions = len(solutions)
 

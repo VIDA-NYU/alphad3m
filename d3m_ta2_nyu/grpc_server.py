@@ -660,6 +660,11 @@ class CoreService(pb_core_grpc.CoreServicer):
                                                         self.grpc2tasksubtype[problem.problem.task_subtype]
                                                     ]
 
+        if len(problem.data_augmentation) > 0:
+            problem_dict['dataAugmentation'] = [
+                {'domain': [j for j in i.domain], 'keywords': [j for j in i.keywords]} for i in problem.data_augmentation
+            ]
+
         return problem_dict
 
     def _add_step(self, steps, step_descriptions, modules, params, module_to_step, mod):

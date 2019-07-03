@@ -37,13 +37,11 @@ from d3m.container import Dataset
 
 
 MAX_RUNNING_PROCESSES = 1
-
 TUNE_PIPELINES_COUNT = 0
+WITH_DATAMART = True
+
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0
-
-TRAIN_PIPELINES_COUNT = 0
-TRAIN_PIPELINES_COUNT_DEBUG = 5
 
 
 logger = logging.getLogger(__name__)
@@ -1003,17 +1001,20 @@ class D3mTa2(Observable):
             # Force working=True so we get 'done_searching' even if no pipeline
             # gets created
             session.working = True
-        #Search for data augmentation
-        dc = Dataset.load(dataset)
-        dm = datamart_nyu.RESTDatamart('https://datamart.d3m.vida-nyu.org')
-        cursor = dm.search_with_data(
-            query=datamart.DatamartQuery(
-                keywords=session.problem['dataAugmentation'][1]['domain'],
-                variables=[],
-            ),
-            supplied_data=dc,
-        )
-        search_results = cursor.get_next_page()
+        # Search for data augmentation
+        search_results = None
+
+        if WITH_DATAMART:
+            dc = Dataset.load(dataset)
+            dm = datamart_nyu.RESTDatamart('https://datamart.d3m.vida-nyu.org')
+            cursor = dm.search_with_data(
+                query=datamart.DatamartQuery(
+                    keywords=session.problem['dataAugmentation'][0]['domain'],
+                    variables=[],
+                ),
+                supplied_data=dc,
+            )
+            search_results = cursor.get_next_page()[0].serialize()
 
         do_rank = True if top_pipelines > 0 else False
         logger.info("Creating pipelines from templates...")
@@ -1034,7 +1035,7 @@ class D3mTa2(Observable):
             else:
                 tpl_func = template
             try:
-                self._build_pipeline_from_template(session, tpl_func, dataset, search_results[0].serialize(), do_rank)
+                self._build_pipeline_from_template(session, tpl_func, dataset, search_results, do_rank)
             except Exception:
                 logger.exception("Error building pipeline from %r",
                                  template)
@@ -1157,7 +1158,7 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
-    def _build_pipeline_from_template(self, session, template, dataset,search_result, do_rank):
+    def _build_pipeline_from_template(self, session, template, dataset, search_result, do_rank):
         # Create workflow from a template
         pipeline_id = template(self, dataset=dataset,
                                targets=session.targets,
@@ -1213,7 +1214,7 @@ class D3mTa2(Observable):
         logger.info("Wrote executable %s", filename)
 
     def _classification_template(self, imputer, classifier, dataset,
-                                 targets, features,search_result):
+                                 targets, features, search_result):
         db = self.DBSession()
 
         pipeline = database.Pipeline(
@@ -1283,19 +1284,24 @@ class D3mTa2(Observable):
                 name='features', value=pickle.dumps(features),
             ))
 
-            step_aug = make_primitive_module(
-                'd3m.primitives.data_augmentation.datamart_augmentation.Common')
-            connect(input_data, step_aug, from_output='dataset')
-            set_hyperparams(
-                step_aug,
-                search_result=search_result,
-                system_identifier="NYU"
+            if WITH_DATAMART:
+                step_aug = make_primitive_module(
+                    'd3m.primitives.data_augmentation.datamart_augmentation.Common')
+                connect(input_data, step_aug, from_output='dataset')
+                set_hyperparams(
+                    step_aug,
+                    search_result=search_result,
+                    system_identifier="NYU"
+                )
 
-            )
+                step0 = make_primitive_module(
+                    'd3m.primitives.data_transformation.denormalize.Common')
+                connect(step_aug, step0)
 
-            step0 = make_primitive_module(
-                'd3m.primitives.data_transformation.denormalize.Common')
-            connect(step_aug, step0)
+            else:
+                step0 = make_primitive_module(
+                    'd3m.primitives.data_transformation.denormalize.Common')
+                connect(input_data, step0, from_output='dataset')
 
             step1 = make_primitive_module(
                 'd3m.primitives.data_transformation'
@@ -1417,7 +1423,7 @@ class D3mTa2(Observable):
             # Classifier
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
-                'd3m.primitives.classification.k_neighbors.SKlearn',
+            #    'd3m.primitives.classification.k_neighbors.SKlearn',
             ],
         )),
         'REGRESSION': list(itertools.product(
@@ -1442,7 +1448,7 @@ class D3mTa2(Observable):
             # Classifier
             [
                 'd3m.primitives.regression.random_forest.SKlearn',
-                'd3m.primitives.regression.sgd.SKlearn',
+            #    'd3m.primitives.regression.sgd.SKlearn',
             ],
         )),
     }

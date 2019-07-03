@@ -78,6 +78,13 @@ def do_search(core, problem, dataset_path, time_bound=30.0, pipelines_limit=0):
                 )
                 for i in problem['inputs']['data']
             ],
+            data_augmentation=[
+                pb_problem.DataAugmentation(
+                    domain=i.get('domain', []),
+                    keywords=i.get('keywords', []),
+                )
+                for i in problem.get('dataAugmentation', []) if i.get('domain', []) or i.get('keywords', [])
+            ],
         ),
         inputs=[pb_value.Value(
             dataset_uri='file://%s' % dataset_path,
