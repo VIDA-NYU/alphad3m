@@ -37,7 +37,7 @@ MAX_RUNNING_PROCESSES = 1
 TUNE_PIPELINES_COUNT = 1
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
-    TUNE_PIPELINES_COUNT = 0
+    TUNE_PIPELINES_COUNT = 1
 
 
 logger = logging.getLogger(__name__)
@@ -170,7 +170,7 @@ class Session(Observable):
             if new_pipeline_id is not None:
                 self.pipelines.add(new_pipeline_id)
                 self.tuned_pipelines.add(new_pipeline_id)
-                #self.write_searched_pipeline(new_pipeline_id)  # I'm not sure it should be here.
+                self.write_searched_pipeline(new_pipeline_id)  # I'm not sure it should be here.
             self.check_status()
 
     @property
@@ -903,7 +903,7 @@ class D3mTa2(Observable):
             template_name = task
         if 'TA2_DEBUG_BE_FAST' in os.environ:
             template_name = 'DEBUG_' + task
-        for template in []:#self.TEMPLATES.get(template_name, []):
+        for template in self.TEMPLATES.get(template_name, []):
             logger.info("Creating pipeline from %r", template)
             if isinstance(template, (list, tuple)):
                 func, args = template[0], template[1:]
@@ -1285,7 +1285,7 @@ class D3mTa2(Observable):
             # Classifier
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
-                'd3m.primitives.classification.k_neighbors.SKlearn',
+            #    'd3m.primitives.classification.k_neighbors.SKlearn',
             ],
         )),
         'REGRESSION': list(itertools.product(

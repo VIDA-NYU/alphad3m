@@ -24,7 +24,7 @@ def run_all_datasets():
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
     statistics_path = join(dirname(__file__), 'resource/statistics_datasets.csv')
     datasets = sorted([x for x in os.listdir(DATASETS_PATH) if os.path.isdir(join(DATASETS_PATH, x))])
-    datasets = ['185_baseball']
+    datasets = ['1491_one_hundred_plants_margin']
     size = len(datasets)
 
     for i, dataset in enumerate(datasets):
@@ -44,7 +44,7 @@ def run_all_datasets():
 
         metric = SCORES_FROM_SCHEMA[problem['inputs']['performanceMetrics'][0]['metric']]
         best_time, score = 'None', 'None'
-        solutions = do_search(core, problem, train_dataset_path, time_bound=3.0, pipelines_limit=1)
+        solutions = do_search(core, problem, train_dataset_path, time_bound=3.0, pipelines_limit=0)
         search_time = str(datetime.now() - start_time)
         number_solutions = len(solutions)
 

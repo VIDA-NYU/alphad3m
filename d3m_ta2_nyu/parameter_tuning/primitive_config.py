@@ -1,7 +1,7 @@
 import typing
 
 from d3m import index
-from d3m.metadata.hyperparams import Bounded, Enumeration, Uniform, UniformInt, Normal
+from d3m.metadata.hyperparams import Bounded, Enumeration, Uniform, UniformInt, Normal, Union
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.conditions import EqualsCondition, InCondition
 from ConfigSpace.forbidden import ForbiddenEqualsClause, ForbiddenAndConjunction
@@ -13,15 +13,21 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformFloatH
 PRIMITIVES = index.search()
 
 
-def primitive_config(cs, primitive_name):
-    PrimitiveClass = index.get_primitive(primitive_name)
-    HyperparameterClass = typing.get_type_hints(PrimitiveClass.__init__)['hyperparams']
-    if HyperparameterClass:
-        config = HyperparameterClass.configuration
+def get_primitive_config(cs, primitive_name):
+    primitive_class = index.get_primitive(primitive_name)
+    hyperparameter_class = typing.get_type_hints(primitive_class.__init__)['hyperparams']
+    default_hyperparameters = get_default_hyperparameters(primitive_name)
+
+    if hyperparameter_class:
+        config = hyperparameter_class.configuration
         parameter_list = []
         for p in config:
             parameter_name = primitive_name + '|' + p
-            if isinstance(config[p], Bounded):
+            if p in default_hyperparameters and not isinstance(config[p], Union):
+                cs_param = default_hyperparameters[p]
+                cs_param.name = parameter_name
+                parameter_list.append(cs_param)
+            elif isinstance(config[p], Bounded):
                 lower = config[p].lower
                 upper = config[p].upper
                 default = config[p].get_default()
@@ -58,23 +64,8 @@ def primitive_config(cs, primitive_name):
                 default = config[p].get_default()
                 cs_param = CategoricalHyperparameter(parameter_name, values, default_value=default)
                 parameter_list.append(cs_param)
+
         cs.add_hyperparameters(parameter_list)
-
-
-def get_random_hyperparameters(estimator):
-    pass
-
-
-def get_default_hyperparameters(estimator):
-    pass
-
-
-def encode_hyperparameter(estimator,parameter,value):
-    pass
-
-
-def decode_hyperparameter(estimator,parameter,value):
-    pass
 
 
 def is_estimator(name):
@@ -83,6 +74,17 @@ def is_estimator(name):
     klass = index.get_primitive(name)
     family = klass.metadata.to_json_structure()['primitive_family']
     return family == 'CLASSIFICATION' or family == 'REGRESSION'
+
+
+def get_default_hyperparameters(primitive):
+    default_hyperparameters = {}
+
+    if primitive in PRIMITIVES_DEFAULT_HYPERPARAMETERS:
+        default_config = PRIMITIVES_DEFAULT_HYPERPARAMETERS[primitive]()
+        for name in default_config.get_hyperparameter_names():
+            default_hyperparameters[name] = default_config.get_hyperparameter(name)
+
+    return default_hyperparameters
 
 
 # CLASSIFICATION
@@ -111,8 +113,8 @@ def bernoulli_nb():
                                        default_value=1, log=True)
 
     fit_prior = CategoricalHyperparameter(name="fit_prior",
-                                          choices=["True", "False"],
-                                          default_value="True")
+                                          choices=[True, False],
+                                          default_value=True)
 
     cs.add_hyperparameters([alpha, fit_prior])
 
@@ -166,7 +168,7 @@ def extra_trees():
     min_impurity_decrease = UnParametrizedHyperparameter('min_impurity_decrease', 0.0)
 
     bootstrap = CategoricalHyperparameter(
-        "bootstrap", ["True", "False"], default_value="False")
+        "bootstrap", [True, False], default_value=False)
     cs.add_hyperparameters([n_estimators, criterion, max_features,
                             max_depth, min_samples_split, min_samples_leaf,
                             min_weight_fraction_leaf, max_leaf_nodes,
@@ -241,7 +243,7 @@ def linear_svc():
         "penalty", ["l1", "l2"], default_value="l2")
     loss = CategoricalHyperparameter(
         "loss", ["hinge", "squared_hinge"], default_value="squared_hinge")
-    dual = Constant("dual", "False")
+    dual = Constant("dual", False)
     # This is set ad-hoc
     tol = UniformFloatHyperparameter(
         "tol", 1e-5, 1e-1, default_value=1e-4, log=True)
@@ -249,7 +251,7 @@ def linear_svc():
         "C", 0.03125, 32768, log=True, default_value=1.0)
     multi_class = Constant("multi_class", "ovr")
     # These are set ad-hoc
-    fit_intercept = Constant("fit_intercept", "True")
+    fit_intercept = Constant("fit_intercept", True)
     intercept_scaling = Constant("intercept_scaling", 1)
     cs.add_hyperparameters([penalty, loss, dual, tol, C, multi_class,
                             fit_intercept, intercept_scaling])
@@ -259,12 +261,12 @@ def linear_svc():
         ForbiddenEqualsClause(loss, "hinge")
     )
     constant_penalty_and_loss = ForbiddenAndConjunction(
-        ForbiddenEqualsClause(dual, "False"),
+        ForbiddenEqualsClause(dual, False),
         ForbiddenEqualsClause(penalty, "l2"),
         ForbiddenEqualsClause(loss, "hinge")
     )
     penalty_and_dual = ForbiddenAndConjunction(
-        ForbiddenEqualsClause(dual, "False"),
+        ForbiddenEqualsClause(dual, False),
         ForbiddenEqualsClause(penalty, "l1")
     )
     cs.add_forbidden_clause(penalty_and_loss)
@@ -287,8 +289,8 @@ def svc():
     # TODO this is totally ad-hoc
     coef0 = UniformFloatHyperparameter("coef0", -1, 1, default_value=0)
     # probability is no hyperparameter, but an argument to the SVM algo
-    shrinking = CategoricalHyperparameter("shrinking", ["True", "False"],
-                                          default_value="True")
+    shrinking = CategoricalHyperparameter("shrinking", [True, False],
+                                          default_value=True)
     tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, default_value=1e-3,
                                      log=True)
     # cache size is not a hyperparameter, but an argument to the program!
@@ -316,8 +318,8 @@ def multinomial_nb():
                                        default_value=1, log=True)
 
     fit_prior = CategoricalHyperparameter(name="fit_prior",
-                                          choices=["True", "False"],
-                                          default_value="True")
+                                          choices=[True, False],
+                                          default_value=True)
 
     cs.add_hyperparameters([alpha, fit_prior])
 
@@ -326,7 +328,7 @@ def multinomial_nb():
 
 def passive_aggressive():
     C = UniformFloatHyperparameter("C", 1e-5, 10, 1.0, log=True)
-    fit_intercept = UnParametrizedHyperparameter("fit_intercept", "True")
+    fit_intercept = UnParametrizedHyperparameter("fit_intercept", True)
     loss = CategoricalHyperparameter(
         "loss", ["hinge", "squared_hinge"], default_value="hinge"
     )
@@ -374,7 +376,7 @@ def random_forest():
     max_leaf_nodes = UnParametrizedHyperparameter("max_leaf_nodes", "None")
     min_impurity_decrease = UnParametrizedHyperparameter('min_impurity_decrease', 0.0)
     bootstrap = CategoricalHyperparameter(
-        "bootstrap", ["True", "False"], default_value="True")
+        "bootstrap", [True, False], default_value=True)
     cs.add_hyperparameters([n_estimators, criterion, max_features,
                             max_depth, min_samples_split, min_samples_leaf,
                             min_weight_fraction_leaf, max_leaf_nodes,
@@ -395,7 +397,7 @@ def sgd():
         "alpha", 1e-7, 1e-1, log=True, default_value=0.0001)
     l1_ratio = UniformFloatHyperparameter(
         "l1_ratio", 1e-9, 1, log=True, default_value=0.15)
-    fit_intercept = UnParametrizedHyperparameter("fit_intercept", "True")
+    fit_intercept = UnParametrizedHyperparameter("fit_intercept", True)
     tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, log=True,
                                      default_value=1e-4)
     epsilon = UniformFloatHyperparameter(
@@ -408,7 +410,7 @@ def sgd():
     power_t = UniformFloatHyperparameter("power_t", 1e-5, 1,
                                          default_value=0.5)
     average = CategoricalHyperparameter(
-        "average", ["False", "True"], default_value="False")
+        "average", [False, True], default_value=False)
     cs.add_hyperparameters([loss, penalty, alpha, l1_ratio, fit_intercept,
                             tol, epsilon, learning_rate, eta0, power_t,
                             average])
@@ -473,7 +475,7 @@ def ard_regression():
                                                   lower=10 ** 3,
                                                   upper=10 ** 5,
                                                   default_value=10 ** 4)
-    fit_intercept = UnParametrizedHyperparameter("fit_intercept", "True")
+    fit_intercept = UnParametrizedHyperparameter("fit_intercept", True)
 
     cs.add_hyperparameters([n_iter, tol, alpha_1, alpha_2, lambda_1,
                             lambda_2, threshold_lambda, fit_intercept])
@@ -525,7 +527,7 @@ def extra_trees_regression():
     )
 
     bootstrap = CategoricalHyperparameter(
-        "bootstrap", ["True", "False"], default_value="False")
+        "bootstrap", [True, False], default_value=False)
 
     cs.add_hyperparameters([n_estimators, criterion, max_features,
                             max_depth, max_leaf_nodes, min_samples_split,
@@ -606,18 +608,18 @@ def linear_svr_regression():
     # Random Guess
     epsilon = UniformFloatHyperparameter(
         name="epsilon", lower=0.001, upper=1, default_value=0.1, log=True)
-    dual = Constant("dual", "False")
+    dual = Constant("dual", False)
     # These are set ad-hoc
     tol = UniformFloatHyperparameter(
         "tol", 1e-5, 1e-1, default_value=1e-4, log=True)
-    fit_intercept = Constant("fit_intercept", "True")
+    fit_intercept = Constant("fit_intercept", True)
     intercept_scaling = Constant("intercept_scaling", 1)
 
     cs.add_hyperparameters([C, loss, epsilon, dual, tol, fit_intercept,
                             intercept_scaling])
 
     dual_and_loss = ForbiddenAndConjunction(
-        ForbiddenEqualsClause(dual, "False"),
+        ForbiddenEqualsClause(dual, False),
         ForbiddenEqualsClause(loss, "epsilon_insensitive")
     )
     cs.add_forbidden_clause(dual_and_loss)
@@ -647,7 +649,7 @@ def svr_regression():
         name="coef0", lower=-1, upper=1, default_value=0)
     # probability is no hyperparameter, but an argument to the SVM algo
     shrinking = CategoricalHyperparameter(
-        name="shrinking", choices=["True", "False"], default_value="True")
+        name="shrinking", choices=[True, False], default_value=True)
     tol = UniformFloatHyperparameter(
         name="tol", lower=1e-5, upper=1e-1, default_value=1e-3, log=True)
     max_iter = UnParametrizedHyperparameter("max_iter", -1)
@@ -686,7 +688,7 @@ def random_forest_regression():
     min_impurity_decrease = UnParametrizedHyperparameter(
         'min_impurity_decrease', 0.0)
     bootstrap = CategoricalHyperparameter(
-        "bootstrap", ["True", "False"], default_value="True")
+        "bootstrap", [True, False], default_value=True)
 
     cs.add_hyperparameters([n_estimators, criterion, max_features,
                             max_depth, min_samples_split, min_samples_leaf,
@@ -700,7 +702,7 @@ def ridge_regression():
     cs = ConfigurationSpace()
     alpha = UniformFloatHyperparameter(
         "alpha", 10 ** -5, 10., log=True, default_value=1.)
-    fit_intercept = UnParametrizedHyperparameter("fit_intercept", "True")
+    fit_intercept = UnParametrizedHyperparameter("fit_intercept", True)
     tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1,
                                      default_value=1e-3, log=True)
     cs.add_hyperparameters([alpha, fit_intercept, tol])
@@ -722,7 +724,7 @@ def sgd_regression():
     l1_ratio = UniformFloatHyperparameter(
         "l1_ratio", 1e-9, 1., log=True, default_value=0.15)
     fit_intercept = UnParametrizedHyperparameter(
-        "fit_intercept", "True")
+        "fit_intercept", True)
     tol = UniformFloatHyperparameter(
         "tol", 1e-5, 1e-1, default_value=1e-4, log=True)
     epsilon = UniformFloatHyperparameter(
@@ -735,7 +737,7 @@ def sgd_regression():
     power_t = UniformFloatHyperparameter(
         "power_t", 1e-5, 1, default_value=0.25)
     average = CategoricalHyperparameter(
-        "average", ["False", "True"], default_value="False")
+        "average", [False, True], default_value=False)
 
     cs.add_hyperparameters([loss, penalty, alpha, l1_ratio, fit_intercept,
                             tol, epsilon, learning_rate, eta0,
@@ -760,7 +762,7 @@ def sgd_regression():
     return cs
 
 
-PRIMITIVES_SKLEARN = {
+PRIMITIVES_DEFAULT_HYPERPARAMETERS = {
     'd3m.primitives.classification.ada_boost.SKlearn': adaboost,
     'd3m.primitives.classification.bernoulli_naive_bayes.SKlearn': bernoulli_nb,
     'd3m.primitives.classification.decision_tree.SKlearn': decision_tree,
