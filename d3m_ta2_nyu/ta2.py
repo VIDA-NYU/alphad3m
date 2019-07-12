@@ -23,8 +23,8 @@ import threading
 import time
 from uuid import uuid4, UUID
 from d3m_ta2_nyu import __version__
-from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
-    TASKS_FROM_SCHEMA, normalize_score
+from d3m_ta2_nyu.common import SCORES_RANKING_ORDER, \
+    TASKS_FROM_SCHEMA, normalize_score, format_metrics
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
@@ -34,13 +34,10 @@ from d3m_ta2_nyu.workflow.convert import to_d3m_json
 
 
 MAX_RUNNING_PROCESSES = 1
+TUNE_PIPELINES_COUNT = 3
 
-TUNE_PIPELINES_COUNT = 0
 if 'TA2_DEBUG_BE_FAST' in os.environ:
-    TUNE_PIPELINES_COUNT = 0
-
-TRAIN_PIPELINES_COUNT = 0
-TRAIN_PIPELINES_COUNT_DEBUG = 5
+    TUNE_PIPELINES_COUNT = 1
 
 
 logger = logging.getLogger(__name__)
@@ -61,6 +58,8 @@ class Session(Observable):
         self._scored_pipelines_dir = scored_pipelines_dir
         self._ranked_pipelines_dir = ranked_pipelines_dir
         self.metrics = []
+        self.do_rank = False
+        self.timeout_tuning = 0
 
         self._observer = self._ta2.add_observer(self._ta2_event)
 
@@ -85,23 +84,7 @@ class Session(Observable):
 
         # Read metrics from problem
         if self.problem is not None:
-            for metric in self.problem['inputs']['performanceMetrics']:
-                metric_name = metric['metric']
-                try:
-                    metric_name = SCORES_FROM_SCHEMA[metric_name]
-                except KeyError:
-                    logger.error("Unknown metric %r", metric_name)
-                    raise ValueError("Unknown metric %r" % metric_name)
-
-                formatted_metric = {'metric': metric_name}
-
-                if len(metric) > 1:  # Metric has parameters
-                    formatted_metric['params'] = {}
-                    for param in metric.keys():
-                        if param != 'metric':
-                            formatted_metric['params'][param] = metric[param]
-
-                self.metrics.append(formatted_metric)
+            self.metrics = format_metrics(problem)
 
         self._targets = None
         self._features = None
@@ -189,7 +172,8 @@ class Session(Observable):
             if new_pipeline_id is not None:
                 self.pipelines.add(new_pipeline_id)
                 self.tuned_pipelines.add(new_pipeline_id)
-                #self.write_searched_pipeline(new_pipeline_id)  # I'm not sure it should be here.
+                self.write_searched_pipeline(new_pipeline_id)
+                self.write_scored_pipeline(new_pipeline_id)
             self.check_status()
 
     @property
@@ -242,51 +226,51 @@ class Session(Observable):
                 return
 
             db = self.DBSession()
+            try:
+                # If we are out of pipelines to score, maybe submit pipelines for
+                # tuning
+                logger.info("Session %s: scoring done", self.id)
 
-            # If we are out of pipelines to score, maybe submit pipelines for
-            # tuning
-            logger.info("Session %s: scoring done", self.id)
+                tune = []
+                if self._tune_when_ready and self.stop_requested:
+                    logger.info("Session stop requested, skipping tuning")
+                elif self._tune_when_ready:
+                    top_pipelines = self.get_top_pipelines(
+                        db, self.metrics[0]['metric'],
+                        self._tune_when_ready)
+                    for pipeline, _ in top_pipelines:
+                        if pipeline.id not in self.tuned_pipelines:
+                            tune.append(pipeline.id)
 
-            tune = []
-            if self._tune_when_ready and self.stop_requested:
-                logger.info("Session stop requested, skipping tuning")
-            elif self._tune_when_ready:
-                top_pipelines = self.get_top_pipelines(
-                    db, self.metrics[0]['metric'],
-                    self._tune_when_ready)
-                for pipeline, _ in top_pipelines:
-                    if pipeline.id not in self.tuned_pipelines:
-                        tune.append(pipeline.id)
+                    if len(tune) > 0:
+                        # Found some pipelines to tune, do that
+                        logger.warning("Found %d pipelines to tune", len(tune))
+                        for pipeline_id in tune:
+                            logger.info("    %s", pipeline_id)
+                            self._ta2._run_queue.put(TuneHyperparamsJob(self, pipeline_id, self.problem))
+                            self.pipelines_tuning.add(pipeline_id)
+                        return
+                    logger.info("Found no pipeline to tune")
+                else:
+                    logger.info("No tuning requested")
 
-                if len(tune) > 0:
-                    # Found some pipelines to tune, do that
-                    logger.warning("Found %d pipelines to tune", len(tune))
-                    for pipeline_id in tune:
-                        logger.info("    %s", pipeline_id)
-                        self._ta2._run_queue.put(TuneHyperparamsJob(self, pipeline_id, self.problem))
-                        self.pipelines_tuning.add(pipeline_id)
-                    return
-                logger.info("Found no pipeline to tune")
-            else:
-                logger.info("No tuning requested")
+                # Session is done (but new pipelines might be added later)
+                self.working = False
+                self.notify('done_searching')
 
-            # Session is done (but new pipelines might be added later)
-            self.working = False
-            self.notify('done_searching')
+                logger.warning("Search done")
+                if self.metrics:
+                    metric = self.metrics[0]['metric']
+                    top_pipelines = self.get_top_pipelines(db, metric)
+                    logger.warning("Found %d pipelines", len(top_pipelines))
 
-            logger.warning("Search done")
-            if self.metrics:
-                metric = self.metrics[0]['metric']
-                top_pipelines = self.get_top_pipelines(db, metric)
-                logger.warning("Found %d pipelines", len(top_pipelines))
-
-                for i, (pipeline, score) in enumerate(top_pipelines):
-                    created = pipeline.created_date - self.start
-                    logger.info("    %d) %s %s=%s origin=%s time=%.2fs",
-                                i + 1, pipeline.id, metric, score,
-                                pipeline.origin, created.total_seconds())
-
-            db.close()
+                    for i, (pipeline, score) in enumerate(top_pipelines):
+                        created = pipeline.created_date - self.start
+                        logger.info("    %d) %s %s=%s origin=%s time=%.2fs",
+                                    i + 1, pipeline.id, metric, score,
+                                    pipeline.origin, created.total_seconds())
+            finally:
+                db.close()
 
     def write_searched_pipeline(self, pipeline_id):
         if not self._searched_pipelines_dir:
@@ -381,7 +365,7 @@ class Session(Observable):
                                pipeline_id, rank, pipeline.origin)
 
             obj = to_d3m_json(pipeline)
-            #obj['pipeline_rank'] = rank
+
             with open(os.path.join(self._ranked_pipelines_dir, '%s.json' % pipeline_id), 'w') as fout:
                 json.dump(obj, fout, indent=2)
             with open(os.path.join(self._ranked_pipelines_dir, '%s.rank' % pipeline_id), 'w') as fout:
@@ -424,7 +408,8 @@ class Job(object):
 class ScoreJob(Job):
     timeout = 8 * 60
 
-    def __init__(self, ta2, pipeline_id, dataset_uri, metrics, problem, scoring_conf=None, do_rank=False):
+    def __init__(self, ta2, pipeline_id, dataset_uri, metrics, problem, scoring_conf=None, do_sample=False,
+                 do_rank=False):
         Job.__init__(self)
         self.ta2 = ta2
         self.pipeline_id = pipeline_id
@@ -433,6 +418,7 @@ class ScoreJob(Job):
         self.problem = problem
         self.scoring_conf = scoring_conf
         self.do_rank = do_rank
+        self.do_sample = do_sample
 
     def start(self, db_filename, **kwargs):
         self.msg = Receiver()
@@ -443,6 +429,7 @@ class ScoreJob(Job):
                                 problem=self.problem,
                                 scoring_conf=self.scoring_conf,
                                 do_rank=self.do_rank,
+                                do_sample=self.do_sample,
                                 db_filename=db_filename)
         self.started = time.time()
         self.ta2.notify('scoring_start',
@@ -564,7 +551,6 @@ class TuneHyperparamsJob(Job):
         self.pipeline_id = pipeline_id
         self.problem = problem
         self.store_results = store_results
-        self.results = None
 
     def start(self, db_filename, predictions_root, **kwargs):
         self.predictions_root = predictions_root
@@ -576,15 +562,17 @@ class TuneHyperparamsJob(Job):
             subdir = os.path.join(self.predictions_root, str(self.pipeline_id))
             if not os.path.exists(subdir):
                 os.mkdir(subdir)
-            self.results = os.path.join(subdir, 'predictions.csv')
+
         self.msg = Receiver()
+
         self.proc = run_process('d3m_ta2_nyu.pipeline_tune.tune',
                                 'tune', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 metrics=self.session.metrics,
-                                targets=self.session.targets,
                                 problem=self.problem,
-                                results_path=self.results,
+                                do_rank=self.session.do_rank,
+                                timeout=self.session.timeout_tuning,
+                                targets=self.session.targets,
                                 db_filename=db_filename)
         self.session.notify('tuning_start',
                             pipeline_id=self.pipeline_id,
@@ -604,7 +592,6 @@ class TuneHyperparamsJob(Job):
                                 job_id=id(self))
             self.session.notify('scoring_success',
                                 pipeline_id=self.tuned_pipeline_id,
-                                predict_result=self.results,
                                 job_id=id(self))
             self.session.pipeline_tuning_done(self.pipeline_id,
                                               self.tuned_pipeline_id)
@@ -736,8 +723,7 @@ class D3mTa2(Observable):
         # Create pipelines, NO TUNING
 
         with session.with_observer_queue() as queue:
-            self.build_pipelines(session.id, task, dataset, session.metrics,
-                                 tune=0, timeout=timeout)
+            self.build_pipelines(session.id, task, dataset, session.metrics, tune=TUNE_PIPELINES_COUNT, timeout=timeout)
             while queue.get(True)[0] != 'done_searching':
                 pass
 
@@ -748,96 +734,6 @@ class D3mTa2(Observable):
             session.tune_when_ready()
             while queue.get(True)[0] != 'done_searching':
                 pass
-
-    def train_top_pipelines(self, session, limit=20):
-        db = self.DBSession()
-        try:
-            pipelines = session.get_top_pipelines(db, session.metrics[0]['metric'],
-                                                  limit=limit)
-
-            with self.with_observer_queue() as queue:
-                training = {}
-                for pipeline, score in itertools.islice(pipelines, limit):
-                    if pipeline.trained:
-                        continue
-                    # TODO: pass problem/targets?
-                    self._run_queue.put(
-                        TrainJob(self, pipeline.id)
-                    )
-                    training[pipeline.id] = pipeline
-
-                while training:
-                    event, kwargs = queue.get(True)
-                    if event == 'training_success':
-                        pipeline_id = kwargs['pipeline_id']
-                        session.write_exported_pipeline(
-                            pipeline_id,
-                            self.pipelines_exported_root
-                        )
-                        self.write_executable(training.pop(pipeline_id))
-                    elif event == 'training_error':
-                        pipeline_id = kwargs['pipeline_id']
-                        del training[pipeline_id]
-        finally:
-            db.close()
-
-    def search_score_pipeline(self, session_id, pipeline_id, dataset):
-        """Score a single pipeline.
-
-        This is used by the pipeline generator.
-        """
-
-        # Get the session
-        session = self.sessions[session_id]
-        metric = session.metrics[0]['metric']
-        logger.info("Search process scoring single pipeline, metric: %s, "
-                    "dataset: %s", metric, dataset)
-
-        # Add the pipeline to the session, score it
-        with session.with_observer_queue() as queue:
-            session.add_scoring_pipeline(pipeline_id)
-            self._run_queue.put(ScoreJob(self, pipeline_id, dataset,
-                                         session.metrics, session.problem))
-            session.notify('new_pipeline', pipeline_id=pipeline_id)
-            while True:
-                event, kwargs = queue.get(True)
-                if event == 'done_searching':
-                    raise RuntimeError("Never got pipeline results")
-                elif (event == 'scoring_error' and
-                        kwargs['pipeline_id'] == pipeline_id):
-                    return None
-                elif (event == 'scoring_success' and
-                        kwargs['pipeline_id'] == pipeline_id):
-                    break
-
-        db = self.DBSession()
-        try:
-            # Find most recent cross-validation
-            crossval_id = (
-                select([database.CrossValidation.id])
-                .where(database.CrossValidation.pipeline_id == pipeline_id)
-                .order_by(database.CrossValidation.date.desc())
-            ).as_scalar()
-            # Get scores from that cross-validation
-            score = db.query(
-                select([func.avg(database.CrossValidationScore.value)])
-                .where(
-                    database.CrossValidationScore.cross_validation_id ==
-                    crossval_id
-                )
-                .where(database.CrossValidationScore.metric == metric)
-                .as_scalar()
-            )
-            if score is not None:
-                logger.info("Evaluation result: %s -> %r",
-                            metric, score.value)
-                return score
-            else:
-                logger.info("Didn't get the requested metric from "
-                            "cross-validation")
-                return None
-        finally:
-            db.close()
 
     def run_test(self, dataset, problem_path, pipeline_id, results_root):
         """Run a previously trained pipeline.
@@ -972,7 +868,7 @@ class D3mTa2(Observable):
 
         db = self.DBSession()
         pipeline_database = database.Pipeline(origin='Fixed pipeline template', dataset='NA')
-        # TODO Convert D3M pipeline to our database pipeline
+        # TODO: Convert D3M pipeline to our database pipeline format
         db.add(pipeline_database)
         db.commit()
         pipeline_id = pipeline_database.id
@@ -1028,6 +924,9 @@ class D3mTa2(Observable):
         if 'TA2_DEBUG_BE_FAST' not in os.environ:
             self._build_pipelines_from_generator(session, task, dataset, metrics, timeout, do_rank)
 
+        # For tuning
+        session.do_rank = do_rank
+        session.timeout_tuning = 300  # TODO: Do dynamic this value according to TUNE_PIPELINES_COUNT
         session.tune_when_ready(tune)
 
     def _build_pipelines_from_generator(self, session, task, dataset, metrics, timeout, do_rank):
@@ -1103,7 +1002,8 @@ class D3mTa2(Observable):
         with session.with_observer_queue() as queue:
             session.add_scoring_pipeline(pipeline_id)
             logger.info("Created pipeline %s", pipeline_id)
-            self._run_queue.put(ScoreJob(self, pipeline_id, dataset, session.metrics, session.problem, do_rank=do_rank))
+            self._run_queue.put(ScoreJob(self, pipeline_id, dataset, session.metrics, session.problem, do_sample=True,
+                                         do_rank=do_rank))
             session.notify('new_pipeline', pipeline_id=pipeline_id)
 
             while True:
@@ -1154,7 +1054,8 @@ class D3mTa2(Observable):
 
         logger.info("Created pipeline %s", pipeline_id)
 
-        self._run_queue.put(ScoreJob(self, pipeline_id, dataset, session.metrics, session.problem, do_rank=do_rank))
+        self._run_queue.put(ScoreJob(self, pipeline_id, dataset, session.metrics, session.problem, do_sample=True,
+                                     do_rank=do_rank))
         session.notify('new_pipeline', pipeline_id=pipeline_id)
 
     # Runs in a background thread
@@ -1393,6 +1294,7 @@ class D3mTa2(Observable):
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
                 'd3m.primitives.classification.k_neighbors.SKlearn',
+
             ],
         )),
         'REGRESSION': list(itertools.product(

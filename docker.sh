@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Example train: ./docker.sh fast search seed_datasets_current/185_baseball/TRAIN ta2:latest
+# Example search: ./docker.sh fast search seed_datasets_current/185_baseball/TRAIN ta2:latest
 # Example ta2ta3: ./docker.sh ta2ta3 seed_datasets_current/185_baseball/ ta2:latest
 # Example test: ./docker.sh test seed_datasets_current/185_baseball/TEST ta2:latest
 
@@ -12,7 +12,7 @@ LOCAL_STATIC_ROOT="/Users/rlopez/D3M/static"
 set -eu
 
 OPTS=""
-TIMEOUT=3
+TIMEOUT=10
 while true; do
     if [ "$1" = "fast" ]; then
         OPTS="$OPTS -e TA2_DEBUG_BE_FAST=1"

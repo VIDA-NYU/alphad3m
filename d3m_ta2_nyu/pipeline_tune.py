@@ -1,32 +1,24 @@
 import logging
-import numpy
-from sqlalchemy.orm import joinedload
 import sys
 import pickle
-import os
-import shutil
+import d3m_ta2_nyu.proto.core_pb2 as pb_core
+from d3m import index
+from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
-
 from d3m_ta2_nyu.common import SCORES_RANKING_ORDER
-from d3m_ta2_nyu.crossval import cross_validation
+from d3m_ta2_nyu.pipeline_score import evaluate, score, train_test_tabular_split
 from d3m_ta2_nyu.workflow import database
-from d3m_ta2_nyu.parameter_tuning.estimator_config import is_estimator
-from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, \
-    hyperparams_from_cfg
+from d3m_ta2_nyu.parameter_tuning.primitive_config import is_estimator
+from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, hyperparams_from_config
 
 
 logger = logging.getLogger(__name__)
 
-
-FOLDS = 4
-RANDOM = 65682867  # The most random of all numbers
-
-MAX_SAMPLE = 1000
+PRIMITIVES = index.search()
 
 
 @database.with_db
-def tune(pipeline_id, metrics, targets, results_path, msg_queue, db,
-         timeout=600):
+def tune(pipeline_id, metrics, problem, do_rank, timeout, targets, msg_queue, db):
     # Load pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -34,31 +26,9 @@ def tune(pipeline_id, metrics, targets, results_path, msg_queue, db,
         .options(joinedload(database.Pipeline.modules),
                  joinedload(database.Pipeline.connections))
     ).one()
-    dataset = pipeline.dataset
+    dataset_uri = pipeline.dataset
 
-    logger.info("About to tune pipeline, id=%s, dataset=%r",
-                pipeline_id, dataset)
-
-    # Load data
-    dataset = Dataset.load(dataset)
-    logger.info("Loaded dataset")
-
-    for res_id in dataset:
-        if ('https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
-                in dataset.metadata.query([res_id])['semantic_types']):
-            break
-    else:
-        res_id = next(iter(dataset))
-    if (hasattr(dataset[res_id], 'columns') and
-            len(dataset[res_id]) > MAX_SAMPLE):
-        # Sample the dataset to stay reasonably fast
-        logger.info("Sampling down data from %d to %d",
-                    len(dataset[res_id]), MAX_SAMPLE)
-        sample = numpy.concatenate(
-            [numpy.repeat(True, MAX_SAMPLE),
-             numpy.repeat(False, len(dataset[res_id]) - MAX_SAMPLE)])
-        numpy.random.RandomState(seed=RANDOM).shuffle(sample)
-        dataset[res_id] = dataset[res_id][sample]
+    logger.info("About to tune pipeline, id=%s, dataset=%r, timeout=%d secs", pipeline_id, dataset_uri, timeout)
 
     # TODO: tune all modules, not only the estimator
     estimator_module = None
@@ -74,34 +44,36 @@ def tune(pipeline_id, metrics, targets, results_path, msg_queue, db,
                 estimator_module.id,
                 estimator_module.name, estimator_module.package)
 
+    dataset = Dataset.load(dataset_uri)
     tuning = HyperparameterTuning([estimator_module.name])
 
-    def evaluate(hyperparameter_configuration):
-        hy = hyperparams_from_cfg(estimator_module.name,
-                                  hyperparameter_configuration)
+    def evaluate_tune(hyperparameter_configuration):
+        hy = hyperparams_from_config(estimator_module.name, hyperparameter_configuration)
         db.add(database.PipelineParameter(
             pipeline=pipeline,
             module_id=estimator_module.id,
             name='hyperparams',
             value=pickle.dumps(hy),
         ))
-        scores, _ = cross_validation(
-            pipeline, metrics, dataset, targets,
-            lambda i: None,
-            db, FOLDS)
+
+        scoring_conf = {'shuffle': 'true',
+                        'stratified': 'true',
+                        'train_test_ratio': '0.75',
+                        'method': pb_core.EvaluationMethod.Value('HOLDOUT')}
+
+        scores = evaluate(pipeline, train_test_tabular_split, dataset, metrics, problem, scoring_conf)
+        logger.info("Tuning results:\n%s", scores)
 
         # Don't store those runs
         db.rollback()
 
-        return scores[metrics[0]] * SCORES_RANKING_ORDER[metrics[0]]
+        return scores[0][metrics[0]['metric']] * SCORES_RANKING_ORDER[metrics[0]['metric']]
 
     # Run tuning, gets best configuration
-    best_configuration = tuning.tune(evaluate, wallclock=timeout)
+    best_configuration = tuning.tune(evaluate_tune, wallclock=timeout)
 
     # Duplicate pipeline in database
-    new_pipeline = database.duplicate_pipeline(
-        db, pipeline,
-        "Hyperparameter tuning from pipeline %s" % pipeline_id)
+    new_pipeline = database.duplicate_pipeline(db, pipeline, "Hyperparameter tuning from pipeline %s" % pipeline_id)
 
     # TODO: tune all modules, not only the estimator
     estimator_module = None
@@ -109,42 +81,20 @@ def tune(pipeline_id, metrics, targets, results_path, msg_queue, db,
         if is_estimator(module.name):
             estimator_module = module
 
-    hy = hyperparams_from_cfg(estimator_module.name, best_configuration)
+    hy = hyperparams_from_config(estimator_module.name, best_configuration)
+
     db.add(database.PipelineParameter(
         pipeline=new_pipeline,
         module_id=estimator_module.id,
         name='hyperparams',
         value=pickle.dumps(hy),
     ))
-    db.flush()
+    db.commit()
 
     logger.info("Tuning done, generated new pipeline %s", new_pipeline.id)
-    for f in os.listdir('/tmp'):
-        if 'run_1' in f:
-            shutil.rmtree(os.path.join('/tmp', f))
 
-    # Score the new pipeline
-    scores, predictions = cross_validation(
-        new_pipeline, metrics, dataset, targets,
-        lambda i: None,
-        db, FOLDS)
-    logger.info("Scoring done: %s", ", ".join("%s=%s" % s
-                                              for s in scores.items()))
+    score(new_pipeline.id, dataset_uri, metrics, problem, None, do_rank, False, None,
+          db_filename='/output/supporting_files/db.sqlite3')
+    # TODO: Change this static string path
 
-    # Store scores
-    scores = [database.CrossValidationScore(metric=metric,
-                                            value=numpy.mean(values))
-              for metric, values in scores.items()]
-    crossval = database.CrossValidation(pipeline_id=new_pipeline.id,
-                                        scores=scores)
-    db.add(crossval)
-
-    # Store predictions
-    if results_path is not None:
-        logger.info("Storing predictions at %s", results_path)
-        predictions.sort_index().to_csv(results_path)
-    else:
-        logger.info("NOT storing predictions")
-
-    db.commit()
     msg_queue.send(('tuned_pipeline_id', new_pipeline.id))
