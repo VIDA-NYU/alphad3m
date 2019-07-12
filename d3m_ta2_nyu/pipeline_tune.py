@@ -18,7 +18,7 @@ PRIMITIVES = index.search()
 
 
 @database.with_db
-def tune(pipeline_id, metrics, problem, targets, msg_queue, db, timeout=300):
+def tune(pipeline_id, metrics, problem, do_rank, timeout, targets, msg_queue, db):
     # Load pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -28,7 +28,7 @@ def tune(pipeline_id, metrics, problem, targets, msg_queue, db, timeout=300):
     ).one()
     dataset_uri = pipeline.dataset
 
-    logger.info("About to tune pipeline, id=%s, dataset=%r", pipeline_id, dataset_uri)
+    logger.info("About to tune pipeline, id=%s, dataset=%r, timeout=%d secs", pipeline_id, dataset_uri, timeout)
 
     # TODO: tune all modules, not only the estimator
     estimator_module = None
@@ -81,7 +81,6 @@ def tune(pipeline_id, metrics, problem, targets, msg_queue, db, timeout=300):
         if is_estimator(module.name):
             estimator_module = module
 
-    print('>>>>>>>>>>>')
     hy = hyperparams_from_config(estimator_module.name, best_configuration)
 
     db.add(database.PipelineParameter(
@@ -94,7 +93,7 @@ def tune(pipeline_id, metrics, problem, targets, msg_queue, db, timeout=300):
 
     logger.info("Tuning done, generated new pipeline %s", new_pipeline.id)
 
-    score(new_pipeline.id, dataset_uri, metrics, problem, None, False, False, None,
+    score(new_pipeline.id, dataset_uri, metrics, problem, None, do_rank, False, None,
           db_filename='/output/supporting_files/db.sqlite3')
     # TODO: Change this static string path
 

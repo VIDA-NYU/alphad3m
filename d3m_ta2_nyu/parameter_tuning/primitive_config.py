@@ -1,71 +1,94 @@
 import typing
-
+import logging
 from d3m import index
-from d3m.metadata.hyperparams import Bounded, Enumeration, Uniform, UniformInt, Normal, Union
+from d3m.metadata.hyperparams import Bounded, Enumeration, UniformInt, UniformBool, Uniform, Normal, Union, \
+    Constant as ConstantD3M
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.conditions import EqualsCondition, InCondition
 from ConfigSpace.forbidden import ForbiddenEqualsClause, ForbiddenAndConjunction
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformFloatHyperparameter, \
-     UniformIntegerHyperparameter, UnParametrizedHyperparameter, Constant, NormalFloatHyperparameter, \
-    FloatHyperparameter, IntegerHyperparameter
+     UniformIntegerHyperparameter, UnParametrizedHyperparameter, Constant, NormalFloatHyperparameter
 
 
+logger = logging.getLogger(__name__)
 PRIMITIVES = index.search()
 
 
 def get_primitive_config(cs, primitive_name):
     primitive_class = index.get_primitive(primitive_name)
     hyperparameter_class = typing.get_type_hints(primitive_class.__init__)['hyperparams']
-    default_hyperparameters = get_default_hyperparameters(primitive_name)
+    default_config = get_default_configspace(primitive_name)
+    default_hyperparameters = set(default_config.get_hyperparameter_names())
 
     if hyperparameter_class:
         config = hyperparameter_class.configuration
-        parameter_list = []
-        for p in config:
-            parameter_name = primitive_name + '|' + p
-            if p in default_hyperparameters and not isinstance(config[p], Union):
-                cs_param = default_hyperparameters[p]
-                cs_param.name = parameter_name
-                parameter_list.append(cs_param)
-            elif isinstance(config[p], Bounded):
-                lower = config[p].lower
-                upper = config[p].upper
-                default = config[p].get_default()
-                if lower is None:
-                    lower = default
-                if upper is None:
-                    upper = default*2 if default != 0 else 10
+        hyperparameters = []
+        for hp_name in config:
+            new_hp_name = primitive_name + '|' + hp_name
+            if new_hp_name in default_hyperparameters and not isinstance(config[hp_name], Union):
+                new_hp = default_config.get_hyperparameter(new_hp_name)
+            else:
+                new_hp = cast_hyperparameters(config[hp_name], new_hp_name)
 
-                if config[p].structural_type == int:
-                    cs_param = UniformIntegerHyperparameter(parameter_name, lower, upper, default_value=default)
-                else:
-                    cs_param = UniformFloatHyperparameter(parameter_name, lower, upper, default_value=default)
-                parameter_list.append(cs_param)
-            elif isinstance(config[p], Uniform):
-                lower = config[p].lower
-                upper = config[p].upper
-                default = config[p].get_default()
-                cs_param = UniformFloatHyperparameter(parameter_name, lower, upper, default_value=default)
-                parameter_list.append(cs_param)
-            elif isinstance(config[p], UniformInt):
-                lower = config[p].lower
-                upper = config[p].upper
-                default = config[p].get_default()
-                cs_param = UniformIntegerHyperparameter(parameter_name, lower, upper, default_value=default)
-                parameter_list.append(cs_param)
-            elif isinstance(config[p], Normal):
-                lower = config[p].lower
-                upper = config[p].upper
-                default = config[p].get_default()
-                cs_param = NormalFloatHyperparameter(parameter_name, lower, upper, default_value=default)
-                parameter_list.append(cs_param)
-            elif isinstance(config[p], Enumeration):
-                values = config[p].values
-                default = config[p].get_default()
-                cs_param = CategoricalHyperparameter(parameter_name, values, default_value=default)
-                parameter_list.append(cs_param)
+            if new_hp is not None:
+                hyperparameters.append(new_hp)
 
-        cs.add_hyperparameters(parameter_list)
+        cs.add_hyperparameters(hyperparameters)
+
+        for condition in default_config.get_conditions():
+            try:
+                cs.add_condition(condition)
+            except Exception as e:
+                logger.warning('Not possible to add condition', e)
+
+        for forbidden in default_config.get_forbiddens():
+            try:
+                cs.add_forbidden_clause(forbidden)
+            except Exception as e:
+                logger.warning('Not possible to add forbidden clause', e)
+
+
+def cast_hyperparameters(hyperparameter, name):
+    # From D3M hyperparameters to ConfigSpace hyperparameters
+    # TODO: Include 'Union', 'Choice' and  'Set' (D3M hyperparameters)
+    new_hyperparameter = None
+
+    if isinstance(hyperparameter, Bounded):
+        lower = hyperparameter.lower
+        upper = hyperparameter.upper
+        default = hyperparameter.get_default()
+        if lower is None:
+            lower = default
+        if upper is None:
+            upper = default * 2 if default > 0 else 10
+        if hyperparameter.structural_type == int:
+            new_hyperparameter = UniformIntegerHyperparameter(name, lower, upper, default_value=default)
+        else:
+            new_hyperparameter = UniformFloatHyperparameter(name, lower, upper, default_value=default)
+    elif isinstance(hyperparameter, UniformBool):
+        default = hyperparameter.get_default()
+        new_hyperparameter = CategoricalHyperparameter(name, [True, False], default_value=default)
+    elif isinstance(hyperparameter, UniformInt):
+        lower = hyperparameter.lower
+        upper = hyperparameter.upper
+        default = hyperparameter.get_default()
+        new_hyperparameter = UniformIntegerHyperparameter(name, lower, upper, default_value=default)
+    elif isinstance(hyperparameter, Uniform):
+        lower = hyperparameter.lower
+        upper = hyperparameter.upper
+        default = hyperparameter.get_default()
+        new_hyperparameter = UniformFloatHyperparameter(name, lower, upper, default_value=default)
+    elif isinstance(hyperparameter, Normal):
+        default = hyperparameter.get_default()
+        new_hyperparameter = NormalFloatHyperparameter(name, default_value=default)
+    elif isinstance(hyperparameter, Enumeration):
+        values = hyperparameter.values
+        default = hyperparameter.get_default()
+        new_hyperparameter = CategoricalHyperparameter(name, values, default_value=default)
+    elif isinstance(hyperparameter, ConstantD3M):
+        new_hyperparameter = Constant(name, hyperparameter.get_default())
+
+    return new_hyperparameter
 
 
 def is_estimator(name):
@@ -76,15 +99,13 @@ def is_estimator(name):
     return family == 'CLASSIFICATION' or family == 'REGRESSION'
 
 
-def get_default_hyperparameters(primitive):
-    default_hyperparameters = {}
+def get_default_configspace(primitive):
+    default_config = ConfigurationSpace()
 
     if primitive in PRIMITIVES_DEFAULT_HYPERPARAMETERS:
-        default_config = PRIMITIVES_DEFAULT_HYPERPARAMETERS[primitive]()
-        for name in default_config.get_hyperparameter_names():
-            default_hyperparameters[name] = default_config.get_hyperparameter(name)
+        default_config.add_configuration_space(primitive, PRIMITIVES_DEFAULT_HYPERPARAMETERS[primitive](), '|')
 
-    return default_hyperparameters
+    return default_config
 
 
 # CLASSIFICATION

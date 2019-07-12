@@ -34,7 +34,7 @@ from d3m_ta2_nyu.workflow.convert import to_d3m_json
 
 
 MAX_RUNNING_PROCESSES = 1
-TUNE_PIPELINES_COUNT = 1
+TUNE_PIPELINES_COUNT = 3
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 1
@@ -58,6 +58,8 @@ class Session(Observable):
         self._scored_pipelines_dir = scored_pipelines_dir
         self._ranked_pipelines_dir = ranked_pipelines_dir
         self.metrics = []
+        self.do_rank = False
+        self.timeout_tuning = 0
 
         self._observer = self._ta2.add_observer(self._ta2_event)
 
@@ -170,7 +172,8 @@ class Session(Observable):
             if new_pipeline_id is not None:
                 self.pipelines.add(new_pipeline_id)
                 self.tuned_pipelines.add(new_pipeline_id)
-                self.write_searched_pipeline(new_pipeline_id)  # I'm not sure it should be here.
+                self.write_searched_pipeline(new_pipeline_id)
+                self.write_scored_pipeline(new_pipeline_id)
             self.check_status()
 
     @property
@@ -566,8 +569,10 @@ class TuneHyperparamsJob(Job):
                                 'tune', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 metrics=self.session.metrics,
-                                targets=self.session.targets,
                                 problem=self.problem,
+                                do_rank=self.session.do_rank,
+                                timeout=self.session.timeout_tuning,
+                                targets=self.session.targets,
                                 db_filename=db_filename)
         self.session.notify('tuning_start',
                             pipeline_id=self.pipeline_id,
@@ -919,6 +924,9 @@ class D3mTa2(Observable):
         if 'TA2_DEBUG_BE_FAST' not in os.environ:
             self._build_pipelines_from_generator(session, task, dataset, metrics, timeout, do_rank)
 
+        # For tuning
+        session.do_rank = do_rank
+        session.timeout_tuning = 300  # TODO: Do dynamic this value according to TUNE_PIPELINES_COUNT
         session.tune_when_ready(tune)
 
     def _build_pipelines_from_generator(self, session, task, dataset, metrics, timeout, do_rank):
@@ -1285,7 +1293,8 @@ class D3mTa2(Observable):
             # Classifier
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
-            #    'd3m.primitives.classification.k_neighbors.SKlearn',
+                'd3m.primitives.classification.k_neighbors.SKlearn',
+
             ],
         )),
         'REGRESSION': list(itertools.product(

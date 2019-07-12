@@ -3,7 +3,7 @@ import importlib
 import numpy as np
 # Import ConfigSpace and different types of parameters
 from smac.configspace import ConfigurationSpace
-from ConfigSpace.hyperparameters import CategoricalHyperparameter, FloatHyperparameter, IntegerHyperparameter, \
+from ConfigSpace.hyperparameters import IntegerHyperparameter, FloatHyperparameter, CategoricalHyperparameter, \
     OrdinalHyperparameter
 from smac.facade.smac_facade import SMAC
 # Import SMAC-utilities
@@ -12,7 +12,7 @@ from smac.scenario.scenario import Scenario
 from d3m_ta2_nyu.parameter_tuning.primitive_config import get_primitive_config
 from d3m import index
 
-MAX_RUNS = 10
+MAX_RUNS = 100
 
 
 def get_class(name):
@@ -39,10 +39,8 @@ def hyperparams_from_config(name, cfg):
     for key in hyperparameter_config:
         cfg_key = name + '|' + key
         if cfg_key in cfg:
-            print('yes', key, cfg[cfg_key])
             kw_args[key] = cfg[cfg_key]
         else:
-            print('no', key, hyperparameter_config[key].get_default(), type(hyperparameter_config[key]))
             kw_args[key] = hyperparameter_config[key].get_default()
 
     hy = hyperparameter_class(**kw_args)
