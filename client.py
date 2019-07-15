@@ -27,7 +27,7 @@ def do_listprimitives(core):
     core.ListPrimitives(pb_core.ListPrimitivesRequest())
 
 
-def do_search(core, problem, dataset_path, time_bound=30.0, pipelines_limit=0):
+def do_search(core, problem, dataset_path, time_bound=30.0, pipelines_limit=0, template=None):
     version = pb_core.DESCRIPTOR.GetOptions().Extensions[pb_core.protocol_version]
 
     metrics = []

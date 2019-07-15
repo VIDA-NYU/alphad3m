@@ -2,6 +2,7 @@ import logging
 import os
 import pickle
 from d3m_ta2_nyu.workflow import database
+from d3m.metadata.pipeline import PrimitiveStep
 
 
 # Use a headless matplotlib backend
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class D3MPipelineGenerator():
     @staticmethod
-    def make_pipeline_from_strings(primitives, origin, dataset, targets=None, features=None, DBSession=None):
+    def make_pipeline_from_strings(primitives, origin, dataset, search_results, pipeline_template, targets=None, features=None, DBSession=None):
 
         db = DBSession()
 
@@ -86,8 +87,43 @@ class D3MPipelineGenerator():
                 name='features', value=pickle.dumps(features),
             ))
 
-            step0 = make_primitive_module('d3m.primitives.data_transformation.denormalize.Common')
-            connect(input_data, step0, from_output='dataset')
+            prev_step = None
+            if pipeline_template:
+                for pipeline_step in pipeline_template.steps[:-1]:
+                    if isinstance(pipeline_step, PrimitiveStep):
+                        # FIXME: find out the correct way to get primitive path
+                        step = make_primitive_module(str(pipeline_step.primitive))
+                    else:
+                        break
+                    if prev_step:
+                        connect(prev_step, step)
+                    else:
+                        connect(input_data, step, from_output='dataset')
+                    prev_step = step
+            if 'RESULT.'in primitives[0]:
+                step_aug = make_primitive_module(
+                    'd3m.primitives.data_augmentation.datamart_augmentation.Common')
+                if prev_step:
+                    connect(prev_step, step_aug)
+                else:
+                    connect(input_data, step_aug, from_output='dataset')
+                set_hyperparams(
+                    step_aug,
+                    search_result=search_results[int(primitives[0].split('.')[1])],
+                    system_identifier="NYU"
+                )
+
+                step0 = make_primitive_module(
+                    'd3m.primitives.data_transformation.denormalize.Common')
+                connect(step_aug, step0)
+                primitives = primitives[1:]
+            else:
+                step0 = make_primitive_module(
+                    'd3m.primitives.data_transformation.denormalize.Common')
+                if prev_step:
+                    connect(prev_step, step0)
+                else:
+                    connect(input_data, step0, from_output='dataset')
 
             step1 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
             connect(step0, step1)

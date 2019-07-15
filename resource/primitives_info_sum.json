@@ -11,7 +11,6 @@
         "d3m.primitives.classification.gaussian_classification.JHU": 11,
         "d3m.primitives.classification.gaussian_classification.MeanBaseline": 12,
         "d3m.primitives.classification.gaussian_naive_bayes.SKlearn": 13,
-        "d3m.primitives.classification.general_relational_dataset.GeneralRelationalDataset": 14,
         "d3m.primitives.classification.gradient_boosting.SKlearn": 15,
         "d3m.primitives.classification.k_neighbors.SKlearn": 16,
         "d3m.primitives.classification.light_gbm.DataFrameCommon": 17,
@@ -128,11 +127,11 @@
         "d3m.primitives.link_prediction.collaborative_filtering_link_prediction.CollaborativeFilteringLinkPrediction": 275
     },
     "DATA_AUGMENTATION": {
-        "d3m.primitives.data_augmentation.data_conversion.FairnessInProcessing": 57,
-        "d3m.primitives.data_augmentation.data_conversion.FairnessPostProcessing": 58,
-        "d3m.primitives.data_augmentation.datamart_augmentation.Common": 59,
-        "d3m.primitives.data_augmentation.datamart_download.Common": 60,
-        "d3m.primitives.data_augmentation.wikifier.DSBOX": 61
+        "RESULT.0.SKlearn":57,
+        "RESULT.1.SKlearn":58,
+        "RESULT.2.SKlearn":59,
+        "RESULT.3.SKlearn":60,
+        "RESULT.4.SKlearn":61
     },
     "DATA_CLEANING": {
         "d3m.primitives.data_cleaning.cleaning_featurizer.DSBOX": 62,
@@ -168,8 +167,6 @@
         "d3m.primitives.data_transformation.data_cleaning.DistilEnrichDates": 143,
         "d3m.primitives.data_transformation.data_cleaning.DistilReplaceSingletons": 145,
         "d3m.primitives.data_transformation.data_cleaning.DistilTimeSeriesReshaper": 146,
-        "d3m.primitives.data_transformation.dataframe_to_list.Common": 147,
-        "d3m.primitives.data_transformation.dataframe_to_ndarray.Common": 148,
         "d3m.primitives.data_transformation.dataset_to_dataframe.Common": 149,
         "d3m.primitives.data_transformation.datetime_field_compose.DataFrameCommon": 150,
         "d3m.primitives.data_transformation.denormalize.Common": 151,
@@ -194,7 +191,6 @@
         "d3m.primitives.data_transformation.load_graphs.DistilGraphLoader": 171,
         "d3m.primitives.data_transformation.load_single_graph.DistilSingleGraphLoader": 172,
         "d3m.primitives.data_transformation.ndarray_to_dataframe.Common": 174,
-        "d3m.primitives.data_transformation.ndarray_to_list.Common": 175,
         "d3m.primitives.data_transformation.normalize_column_references.Common": 176,
         "d3m.primitives.data_transformation.normalize_graphs.Common": 177,
         "d3m.primitives.data_transformation.one_hot_encoder.DistilOneHotEncoder": 178,

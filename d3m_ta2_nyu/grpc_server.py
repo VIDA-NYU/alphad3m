@@ -96,11 +96,11 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         template = request.template#self._create_pipeline_template()#request.template
 
+
         if template is not None and len(template.steps) > 0:  # isinstance(template, pb_pipeline.PipelineDescription)
             pipeline = decode_pipeline_description(template, pipeline_module.Resolver())
             if pipeline.has_placeholder():
-                # TODO Add support for pipeline templates with placeholder steps
-                logger.error('Pipeline templates with placeholder steps is not supported')
+                template = pipeline
             else:  # Pipeline template fully defined
                 search_id = self._ta2.new_session(None)
 
@@ -108,7 +108,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 if not dataset.startswith('file://'):
                     dataset = 'file://' + dataset
 
-                self._ta2.build_fixed_pipeline(search_id, pipeline)
+                self._ta2.build_fixed_pipeline(search_id, pipeline, dataset)
 
                 return pb_core.SearchSolutionsResponse(search_id=str(search_id),)
 
@@ -133,7 +133,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         session = self._ta2.sessions[search_id]
         task = TASKS_FROM_SCHEMA[session.problem['about']['taskType']]
 
-        self._ta2.build_pipelines(search_id, task, dataset, session.metrics, timeout=timeout,
+        self._ta2.build_pipelines(search_id, task, dataset,template, session.metrics, timeout=timeout,
                                   top_pipelines=top_pipelines, tune=0)  # FIXME: no tuning in TA3 mode
 
         return pb_core.SearchSolutionsResponse(
