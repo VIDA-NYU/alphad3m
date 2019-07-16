@@ -26,7 +26,6 @@ from d3m_ta2_nyu import __version__
 from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_RANKING_ORDER, \
     TASKS_FROM_SCHEMA, normalize_score
 
-from d3m.primitives.data_transformation.denormalize import Common as DenormalizePrimitive
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
@@ -45,8 +44,10 @@ TUNE_PIPELINES_COUNT = 0
 
 
 DATAMART_URL = {
-    'NYU': 'https://datamart.d3m.vida-nyu.org',
-    'ISI': 'http://dsbox02.isi.edu:9001/blazegraph/namespace/datamart3/sparql'
+    'NYU': os.environ['NYU_DATAMART_URL'] if 'NYU_DATAMART_URL' in os.environ
+                                          else 'https://datamart.d3m.vida-nyu.org' ,
+    'ISI': os.environ['ISI_DATAMART_URL'] if 'NYU_DATAMART_URL' in os.environ
+                                          else 'http://dsbox02.isi.edu:9001/blazegraph/namespace/datamart3/sparql'
 }
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
