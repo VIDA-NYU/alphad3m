@@ -508,32 +508,28 @@ class D3MPipelineGenerator():
             step1 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
             connect(step0, step1)
 
-            step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.DataFrameCommon')
+            step2 = make_primitive_module(
+                'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon')
             set_hyperparams(
                 step2,
-                parse_semantic_types=["http://schema.org/Boolean",
-                                "http://schema.org/Integer",
-                                "http://schema.org/Float",
-                                "https://metadata.datadrivendiscovery.org/types/FloatVector",
-                                "http://schema.org/DateTime"
-                                ]
+                semantic_types=[
+                    'https://metadata.datadrivendiscovery.org/types/PrimaryMultiKey',
+                    'https://metadata.datadrivendiscovery.org/types/FileName'
+                ]
             )
             connect(step1, step2)
 
-
-
-
-            step6 = make_primitive_module('d3m.primitives.data_transformation'
-                                          '.extract_columns_by_semantic_types.DataFrameCommon')
+            step6 = make_primitive_module(
+                'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon')
             set_hyperparams(
                 step6,
                 semantic_types=[
                     'https://metadata.datadrivendiscovery.org/types/TrueTarget',
                 ],
             )
-            connect(step2, step6)
+            connect(step1, step6)
 
-            step8 = make_primitive_module('d3m.primitives.object_detection.retina_net.JPLPrimitives')
+            step8 = make_primitive_module('d3m.primitives.feature_extraction.yolo.DSBOX')
             connect(step2, step8)
             connect(step6, step8, to_input='outputs')
 

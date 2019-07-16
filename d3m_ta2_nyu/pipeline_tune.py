@@ -8,7 +8,7 @@ from d3m.container import Dataset
 from d3m_ta2_nyu.common import SCORES_RANKING_ORDER
 from d3m_ta2_nyu.pipeline_score import evaluate, score, train_test_tabular_split
 from d3m_ta2_nyu.workflow import database
-from d3m_ta2_nyu.parameter_tuning.primitive_config import is_estimator
+from d3m_ta2_nyu.parameter_tuning.primitive_config import is_tunable
 from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, hyperparams_from_config
 
 
@@ -26,26 +26,26 @@ def tune(pipeline_id, metrics, problem, do_rank, timeout, targets, msg_queue, db
         .options(joinedload(database.Pipeline.modules),
                  joinedload(database.Pipeline.connections))
     ).one()
-    dataset_uri = pipeline.dataset
+    dataset_uri = pipeline.dataset  # TODO: Read the dataset as parameter of tune method
 
     logger.info("About to tune pipeline, id=%s, dataset=%r, timeout=%d secs", pipeline_id, dataset_uri, timeout)
 
     # TODO: tune all modules, not only the estimator
-    estimator_module = None
+    tunable_module = None
     for module in pipeline.modules:
-        if is_estimator(module.name):
-            estimator_module = module
+        if is_tunable(module.name):
+            tunable_module = module
 
-    if not estimator_module:
+    if not tunable_module:
         logger.info("No module to be tuned for pipeline %s", pipeline_id)
         sys.exit(1)
 
     logger.info("Tuning single module %s %s %s",
-                estimator_module.id,
-                estimator_module.name, estimator_module.package)
+                tunable_module.id,
+                tunable_module.name, tunable_module.package)
 
     dataset = Dataset.load(dataset_uri)
-    tuning = HyperparameterTuning([estimator_module.name])
+    tuning = HyperparameterTuning([tunable_module.name])
 
     def evaluate_tune(hyperparameter_configuration):
         hy = hyperparams_from_config(estimator_module.name, hyperparameter_configuration)
@@ -76,16 +76,16 @@ def tune(pipeline_id, metrics, problem, do_rank, timeout, targets, msg_queue, db
     new_pipeline = database.duplicate_pipeline(db, pipeline, "Hyperparameter tuning from pipeline %s" % pipeline_id)
 
     # TODO: tune all modules, not only the estimator
-    estimator_module = None
+    tunable_module = None
     for module in new_pipeline.modules:
-        if is_estimator(module.name):
-            estimator_module = module
+        if is_tunable(module.name):
+            tunable_module = module
 
-    hy = hyperparams_from_config(estimator_module.name, best_configuration)
+    hy = hyperparams_from_config(tunable_module.name, best_configuration)
 
     db.add(database.PipelineParameter(
         pipeline=new_pipeline,
-        module_id=estimator_module.id,
+        module_id=tunable_module.id,
         name='hyperparams',
         value=pickle.dumps(hy),
     ))

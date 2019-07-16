@@ -91,12 +91,16 @@ def cast_hyperparameters(hyperparameter, name):
     return new_hyperparameter
 
 
-def is_estimator(name):
+def is_tunable(name):
     if name not in PRIMITIVES:
         return False
+    if name in {'d3m.primitives.feature_extraction.yolo.DSBOX'}:
+        return True
+
     klass = index.get_primitive(name)
     family = klass.metadata.to_json_structure()['primitive_family']
-    return family == 'CLASSIFICATION' or family == 'REGRESSION'
+
+    return family in {'CLASSIFICATION', 'REGRESSION', 'TIME_SERIES_CLASSIFICATION', 'TIME_SERIES_FORECASTING'}
 
 
 def get_default_configspace(primitive):

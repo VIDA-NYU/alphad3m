@@ -37,6 +37,7 @@ with pkg_resources.resource_stream(
 
 @database.with_db
 def score(pipeline_id, dataset_uri, metrics, problem, scoring_conf, do_rank, do_sample, msg_queue, db):
+    #do_sample = False
     if scoring_conf is None:
         scoring_conf = {'shuffle': 'true',
                         'stratified': 'false',
@@ -98,6 +99,8 @@ def score(pipeline_id, dataset_uri, metrics, problem, scoring_conf, do_rank, do_
 
 def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
     json_pipeline = convert.to_d3m_json(pipeline)
+    #with open(os.path.join(os.path.dirname(__file__), 'pipeline_tmp.json')) as fin:
+    #    json_pipeline = json.load(fin)
     logger.info("Pipeline to be scored:\n%s",
                 '\n'.join([x['primitive']['python_path'] for x in json_pipeline['steps']]))
 
@@ -114,7 +117,7 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
 
     formatted_metric = format_d3m_metrics(metrics)
 
-    results = d3m.runtime.evaluate(
+    run_scores, run_results = d3m.runtime.evaluate(
         pipeline=d3m_pipeline,
         data_pipeline=data_pipeline,
         scoring_pipeline=scoring,
@@ -124,12 +127,12 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
         metrics=formatted_metric,
         volumes_dir=os.environ.get('D3MSTATICDIR', None),
         context=d3m.metadata.base.Context.TESTING,
-        scratch_dir=os.path.join(os.environ['D3MOUTPUTDIR'], 'pipeline_runs'),
         random_seed=0,
     )
 
-    results[1][0].check_success()
-    combined_folds = d3m.runtime.combine_folds([fold for fold in results[0]])
+    run_results.check_success()
+    #save_pipeline_runs(run_results.pipelines_runs)  # TODO: It should work, but has some bugs
+    combined_folds = d3m.runtime.combine_folds([fold for fold in run_scores])
     scores = {}
 
     for _, row in combined_folds.iterrows():
@@ -195,3 +198,11 @@ def format_d3m_metrics(metrics):
         formatted_metrics.append(formatted_metric)
 
     return formatted_metrics
+
+
+def save_pipeline_runs(pipelines_runs):
+    for pipeline_run in pipelines_runs:
+        save_run_path = os.path.join(os.environ['D3MOUTPUTDIR'], 'pipeline_runs',
+                                     pipeline_run.to_json_structure()['id'] + '.yml')
+        with open(save_run_path, 'w') as fin:
+            pipeline_run.to_yaml(fin, indent=2)

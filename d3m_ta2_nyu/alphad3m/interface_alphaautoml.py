@@ -263,6 +263,10 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         if 'REGRESSION' in task:
             eval_image_pipeline('ALPHAD3M')
             return
+        if 'OBJECT_DETECTION' in task:
+            eval_object_pipeline('ALPHAD3M')
+            return
+
         logger.error('%s Not Supported', task)
         sys.exit(148)
 
@@ -295,10 +299,6 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     if 'TIME_SERIES_FORECASTING' in task:
         eval_timeseries_fore_pipeline('ALPHAD3M')
-        return
-
-    if 'OBJECT_DETECTION' in task:
-        eval_object_pipeline('ALPHAD3M')
         return
 
     def create_input(selected_primitves):
