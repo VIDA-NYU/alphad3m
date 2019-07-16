@@ -1,6 +1,7 @@
 import logging
 import os
 import pickle
+import json
 from d3m_ta2_nyu.workflow import database
 
 
@@ -871,6 +872,58 @@ class D3MPipelineGenerator():
             origin=origin,
             dataset=dataset)
 
+        def get_time_unit(name_col):
+            name = name_col.lower()
+
+            if name.startswith('y'):
+                return 'Y'
+            elif name.startswith('mon'):
+                return 'M'
+            elif name.startswith('w'):
+                return 'W'
+            elif name.startswith('d'):
+                return 'D'
+            elif name.startswith('h'):
+                return 'h'
+            elif name.startswith('min'):
+                return 'm'
+            elif name.startswith('s'):
+                return 's'
+            elif name.startswith('mil'):
+                return 'ms'
+            elif name.startswith('mic'):
+                return 'us'
+            elif name.startswith('n'):
+                return 'ns'
+            elif name.startswith('m'):  # Default form m  is minutes
+                return 'm'
+
+            return name_col
+
+        def extract_hyperparameters(dataset_path):
+            with open(dataset_path) as fin:
+                dataset_json = json.load(fin)
+            hyperparameters = {}
+
+            for resource in dataset_json['dataResources']:
+                filters = []
+                indexes = []
+                for column in resource['columns']:
+                    if 'suggestedGroupingKey' in column['role']:
+                        filters.append(column['colIndex'])
+                    if 'timeIndicator' in column['role'] and column['colType'] in ['integer', 'float']:
+                        hyperparameters['datetime_index_unit'] = get_time_unit(column['colName'])
+                    if 'timeIndicator' in column['role'] and column['colType'] == 'dateTime':
+                        indexes.append(column['colIndex'])
+                        # TODO: Extract datetime_indexes, now there is a bug in the datasetdoc.json with these fields
+
+                if len(filters) > 0:
+                    hyperparameters['filter_index_two'] = filters[0]
+                if len(filters) > 1:
+                    hyperparameters['filter_index_one'] = filters[1]
+
+            return hyperparameters
+
         def make_module(package, version, name):
             pipeline_module = database.PipelineModule(
                 pipeline=pipeline,
@@ -894,12 +947,13 @@ class D3MPipelineGenerator():
                                                from_output_name=from_output,
                                                to_input_name=to_input))
 
-        def set_hyperparams(module, **hyperparams):
+        def set_hyperparams(module, hyperparams):
             db.add(database.PipelineParameter(
                 pipeline=pipeline, module=module,
                 name='hyperparams', value=pickle.dumps(hyperparams),
             ))
 
+        distil_hyperparameters = extract_hyperparameters(dataset[7:])
         try:
             input_data = make_data_module('dataset')
             db.add(database.PipelineParameter(
@@ -918,6 +972,8 @@ class D3MPipelineGenerator():
             connect(step0, step1)
 
             step2 = make_primitive_module('d3m.primitives.time_series_forecasting.arima.Parrot')
+            if len(distil_hyperparameters) > 0:
+                set_hyperparams(step2, distil_hyperparameters)
             connect(step1, step2)
             connect(step1, step2, to_input='outputs')
 
@@ -928,3 +984,5 @@ class D3MPipelineGenerator():
 
         finally:
             db.close()
+
+
