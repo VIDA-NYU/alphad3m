@@ -47,7 +47,7 @@ DATAMART_URL = {
     'NYU': os.environ['NYU_DATAMART_URL'] if 'NYU_DATAMART_URL' in os.environ
                                           else 'https://datamart.d3m.vida-nyu.org' ,
     'ISI': os.environ['ISI_DATAMART_URL'] if 'NYU_DATAMART_URL' in os.environ
-                                          else 'http://dsbox02.isi.edu:9001/blazegraph/namespace/datamart3/sparql'
+                                          else 'http://dsbox02.isi.edu:9000/'
 }
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
@@ -978,7 +978,7 @@ class D3mTa2(Observable):
         self.executor.submit(self._build_fixed_pipeline, session_id, pipeline, dataset,targets, features)
 
     # Runs in a worker thread from executor
-    def _build_fixed_pipeline(self, session_id, d3m_pipeline, dataset, targets, features):
+    def _build_fixed_pipeline(self, session_id, pipeline_template, dataset, targets, features):
         session = self.sessions[session_id]
 
         db = self.DBSession()
@@ -1030,21 +1030,36 @@ class D3mTa2(Observable):
                     pipeline=pipeline_database, module=input_data,
                     name='features', value=pickle.dumps(features),
                 ))
-                prev_step = input_data
-            for pipeline_step in d3m_pipeline.steps:
-                if isinstance(pipeline_step, PrimitiveStep):
-                    # FIXME: find out the correct way to get primitive path
-                    step = make_primitive_module(str(pipeline_step.primitive))
+            prev_step = None
+            prev_steps = {}
+            count_template_steps = 0
+            for pipeline_step in pipeline_template['steps']:
+                if pipeline_step['type'] == 'PRIMITIVE':
+                    step = make_primitive_module(pipeline_step['primitive']['python_path'])
+                    prev_steps['steps.%d.produce' % (count_template_steps)] = step
+                    count_template_steps += 1
+                    if 'hyperparams' in pipeline_step:
+                        hyperparams = {}
+                        for hyper, desc in pipeline_step['hyperparams'].items():
+                            hyperparams[hyper] = desc['data']
+                        set_hyperparams(step, **hyperparams)
                 else:
-                    # FIXME: Currently subpipelines are not supported
-                    raise ValueError("Currently subpipelines are not supported")
+                    # TODO In the future we should be able to handle subpipelines
+                    break
                 if prev_step:
-                    connect(prev_step,step)
+                    for argument, desc in pipeline_step['arguments'].items():
+                        connect(prev_steps[desc['data']], step, to_input=argument)
+                else:
+                    connect(input_data, step, from_output='dataset')
                 prev_step = step
             db.add(pipeline_database)
             db.commit()
             pipeline_id = pipeline_database.id
             logger.info("Created fixed pipeline %s", pipeline_id)
+            from d3m_ta2_nyu.pipeline_execute import execute
+            outputs = execute(pipeline_id, dataset_uri, None, None, None,db_filename='/output/supporting_files/db.sqlite3')
+            print("Execution",outputs)
+            session.notify('new_pipeline', pipeline_id=pipeline_id)
         finally:
             db.close()
 
@@ -1083,13 +1098,16 @@ class D3mTa2(Observable):
             keywords += aug['keywords']
 
         # Search with NYU's Datamart
-        dm = datamart_nyu.RESTDatamart(DATAMART_URL['NYU'])
-        cursor = dm.search_with_data(query=datamart.DatamartQuery(
-            keywords=keywords,
-            variables=[],
-        ), supplied_data=dc)
-
-        next_page = cursor.get_next_page()
+        try:
+            dm = datamart_nyu.RESTDatamart(DATAMART_URL['NYU'])
+            cursor = dm.search_with_data(query=datamart.DatamartQuery(
+                keywords=keywords,
+                variables=[],
+            ), supplied_data=dc)
+            next_page = cursor.get_next_page()
+        except Exception:
+            logger.exception("Error when searching for data to augment")
+            next_page = None
 
         if next_page:
             if len(next_page) > 5:
@@ -1163,7 +1181,7 @@ class D3mTa2(Observable):
             task=task,
             dataset=dataset,
             search_results=search_results,
-            pipeline_template=None,
+            pipeline_template=pipeline_template,
             metrics=metrics,
             problem=session.problem,
             targets=session.targets,
@@ -1402,14 +1420,24 @@ class D3mTa2(Observable):
             ))
             prev_step = None
             if pipeline_template:
-                for pipeline_step in pipeline_template.steps[:-1]:
-                    if isinstance(pipeline_step, PrimitiveStep):
-                        # FIXME: find out the correct way to get primitive path
-                        step = make_primitive_module(str(pipeline_step.primitive))
+                prev_steps = {}
+                count_template_steps = 0
+                for pipeline_step in pipeline_template['steps']:
+                    if pipeline_step['type'] == 'PRIMITIVE':
+                        step = make_primitive_module(pipeline_step['primitive']['python_path'])
+                        prev_steps['steps.%d.produce' % (count_template_steps)] = step
+                        count_template_steps += 1
+                        if 'hyperparams' in pipeline_step:
+                            hyperparams = {}
+                            for hyper, desc in pipeline_step['hyperparams'].items():
+                                hyperparams[hyper] = desc['data']
+                            set_hyperparams(step, **hyperparams)
                     else:
+                        # TODO In the future we should be able to handle subpipelines
                         break
                     if prev_step:
-                        connect(prev_step, step)
+                        for argument, desc in pipeline_step['arguments'].items():
+                            connect(prev_steps[desc['data']], step, to_input=argument)
                     else:
                         connect(input_data, step, from_output='dataset')
                     prev_step = step

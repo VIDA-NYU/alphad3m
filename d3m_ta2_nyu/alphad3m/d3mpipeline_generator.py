@@ -56,6 +56,7 @@ class D3MPipelineGenerator():
                 set_hyperparams(primitive, handle_unknown='ignore')
 
 
+
         try:
             #                          data
             #                            |
@@ -89,14 +90,24 @@ class D3MPipelineGenerator():
 
             prev_step = None
             if pipeline_template:
-                for pipeline_step in pipeline_template.steps[:-1]:
-                    if isinstance(pipeline_step, PrimitiveStep):
-                        # FIXME: find out the correct way to get primitive path
-                        step = make_primitive_module(str(pipeline_step.primitive))
+                prev_steps = {}
+                count_template_steps = 0
+                for pipeline_step in pipeline_template['steps']:
+                    if pipeline_step['type'] == 'PRIMITIVE':
+                        step = make_primitive_module(pipeline_step['primitive']['python_path'])
+                        prev_steps['steps.%d.produce' % (count_template_steps)] = step
+                        count_template_steps += 1
+                        if 'hyperparams' in pipeline_step:
+                            hyperparams = {}
+                            for hyper, desc in pipeline_step['hyperparams'].items():
+                                hyperparams[hyper] = desc['data']
+                            set_hyperparams(step, **hyperparams)
                     else:
+                        # TODO In the future we should be able to handle subpipelines
                         break
                     if prev_step:
-                        connect(prev_step, step)
+                        for argument, desc in pipeline_step['arguments'].items():
+                            connect(prev_steps[desc['data']], step, to_input=argument)
                     else:
                         connect(input_data, step, from_output='dataset')
                     prev_step = step

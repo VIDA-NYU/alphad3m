@@ -100,16 +100,14 @@ class CoreService(pb_core_grpc.CoreServicer):
         if template is not None and len(template.steps) > 0:  # isinstance(template, pb_pipeline.PipelineDescription)
             pipeline = decode_pipeline_description(template, pipeline_module.Resolver())
             if pipeline.has_placeholder():
-                template = pipeline
+                template = pipeline.to_json_structure()
             else:  # Pipeline template fully defined
                 search_id = self._ta2.new_session(None)
-
                 dataset = request.inputs[0].dataset_uri
                 if not dataset.startswith('file://'):
                     dataset = 'file://' + dataset
 
-                self._ta2.build_fixed_pipeline(search_id, pipeline, dataset)
-
+                self._ta2.build_fixed_pipeline(search_id, pipeline.to_json_structure(), dataset)
                 return pb_core.SearchSolutionsResponse(search_id=str(search_id),)
 
         dataset = request.inputs[0].dataset_uri
@@ -756,7 +754,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         import tempfile
         from os.path import dirname, join
 
-        with open(join(dirname(__file__), '../resource/pipelines/random-sample.yml'), 'r') as pipeline_file:
+        with open(join(dirname(__file__), '../resource/pipelines/example_placeholder.yml'), 'r') as pipeline_file:
             pipeline = pipeline_module.Pipeline.from_yaml(
                 pipeline_file,
                 resolver=pipeline_module.Resolver(),
