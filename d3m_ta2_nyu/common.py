@@ -127,3 +127,27 @@ def normalize_score(metric, score, order):
         return 1.0 / (1.0 + math.exp(order_mult * score))
     except ArithmeticError:  # OverflowError can happen with weird scores
         return dict(asc=0.0, desc=1.0)[order]
+
+
+def format_metrics(problem):
+    metrics = []
+
+    for metric in problem['inputs']['performanceMetrics']:
+        metric_name = metric['metric']
+        try:
+            metric_name = SCORES_FROM_SCHEMA[metric_name]
+        except KeyError:
+            logger.error("Unknown metric %r", metric_name)
+            raise ValueError("Unknown metric %r" % metric_name)
+
+        formatted_metric = {'metric': metric_name}
+
+        if len(metric) > 1:  # Metric has parameters
+            formatted_metric['params'] = {}
+            for param in metric.keys():
+                if param != 'metric':
+                    formatted_metric['params'][param] = metric[param]
+
+        metrics.append(formatted_metric)
+
+    return metrics

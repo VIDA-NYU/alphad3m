@@ -110,16 +110,6 @@ def do_search(core, problem, dataset_path, time_bound=30.0, pipelines_limit=0, t
     return solutions
 
 
-def do_describe(core, solutions):
-    for solution in solutions:
-        try:
-            core.DescribeSolution(pb_core.DescribeSolutionRequest(
-                solution_id=solution,
-            ))
-        except Exception:
-            logger.exception("Exception during describe %r", solution)
-
-
 def do_score(core, problem, solutions, dataset_path):
     metrics = []
 
@@ -224,6 +214,16 @@ def do_export(core, fitted):
             ))
         except Exception:
             logger.exception("Exception exporting %r", fitted_solution)
+
+
+def do_describe(core, solutions):
+    for solution in solutions:
+        try:
+            core.DescribeSolution(pb_core.DescribeSolutionRequest(
+                solution_id=solution,
+            ))
+        except Exception:
+            logger.exception("Exception during describe %r", solution)
 
 
 def main():

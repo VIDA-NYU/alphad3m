@@ -81,6 +81,27 @@ class CoreService(pb_core_grpc.CoreServicer):
                          'test_success', 'test_error'):
                 self._requests[job_id].close()
 
+    def Hello(self, request, context):
+        version = pb_core.DESCRIPTOR.GetOptions().Extensions[pb_core.protocol_version]
+        user_agent = "nyu_ta2 %s" % __version__
+
+        return pb_core.HelloResponse(
+            user_agent=user_agent,
+            version=version,
+            allowed_value_types=[pb_value.RAW, pb_value.DATASET_URI, pb_value.CSV_URI],
+            supported_extensions=[]
+        )
+
+    def ListPrimitives(self, request, context):
+        primitives = []
+
+        for primitive in self.installed_primitives:
+            primitives.append(pb_primitive.Primitive(id=primitive['id'], version=primitive['version'],
+                                                     python_path=primitive['python_path'], name=primitive['name'],
+                                                     digest=None))
+
+        return pb_core.ListPrimitivesResponse(primitives=primitives)
+
     def SearchSolutions(self, request, context):
         """Create a `Session` and start generating & scoring pipelines.
         """
@@ -134,7 +155,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         task = TASKS_FROM_SCHEMA[session.problem['about']['taskType']]
 
         self._ta2.build_pipelines(search_id, task, dataset,template, session.metrics, timeout=timeout,
-                                  top_pipelines=top_pipelines, tune=0)  # FIXME: no tuning in TA3 mode
+                                  top_pipelines=top_pipelines)
 
         return pb_core.SearchSolutionsResponse(
             search_id=str(search_id),
@@ -300,11 +321,6 @@ class CoreService(pb_core_grpc.CoreServicer):
                     "metrics=%s",
                     dataset, metrics)
 
-        pipeline = self._ta2.get_workflow(pipeline_id)
-        if pipeline.dataset != dataset:
-            # FIXME: Currently scoring only works with dataset in DB
-            raise error(context, grpc.StatusCode.UNIMPLEMENTED,
-                        "Currently, you can only score on the search dataset")
         problem = None
         for session_id in self._ta2.sessions.keys():
             if pipeline_id in self._ta2.sessions[session_id].pipelines:
@@ -538,27 +554,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         self._ta2.write_executable(pipeline)
         session.write_exported_pipeline(pipeline_id, rank)
         return pb_core.SolutionExportResponse()
-
-    def Hello(self, request, context):
-        version = pb_core.DESCRIPTOR.GetOptions().Extensions[pb_core.protocol_version]
-        user_agent = "nyu_ta2 %s" % __version__
-
-        return pb_core.HelloResponse(
-            user_agent=user_agent,
-            version=version,
-            allowed_value_types=[pb_value.RAW, pb_value.DATASET_URI, pb_value.CSV_URI],
-            supported_extensions=[]
-        )
-
-    def ListPrimitives(self, request, context):
-        primitives = []
-
-        for primitive in self.installed_primitives:
-            primitives.append(pb_primitive.Primitive(id=primitive['id'], version=primitive['version'],
-                                                     python_path=primitive['python_path'], name=primitive['name'],
-                                                     digest=None))
-
-        return pb_core.ListPrimitivesResponse(primitives=primitives)
 
     def DescribeSolution(self, request, context):
         pipeline_id = UUID(hex=request.solution_id)
