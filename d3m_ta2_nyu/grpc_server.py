@@ -109,6 +109,8 @@ class CoreService(pb_core_grpc.CoreServicer):
 
                 self._ta2.build_fixed_pipeline(search_id, pipeline.to_json_structure(), dataset)
                 return pb_core.SearchSolutionsResponse(search_id=str(search_id),)
+        else:
+            template = None
 
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
