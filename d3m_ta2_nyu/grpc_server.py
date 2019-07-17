@@ -203,6 +203,21 @@ class CoreService(pb_core_grpc.CoreServicer):
                 internal_score=float('nan'),
             )
 
+        def msg_fixed_solution(pipeline_id, state=pb_core.RUNNING):
+            progress = session.progress
+
+            return pb_core.GetSearchSolutionsResultsResponse(
+                done_ticks=progress.current,
+                all_ticks=progress.total,
+                progress=pb_core.Progress(
+                    state=state,
+                    status="Solution Created",
+                    start=to_timestamp(session.start),
+                ),
+                solution_id=str(pipeline_id),
+                internal_score=float('nan'),
+            )
+
         with session.with_observer_queue() as queue:
             # Send the solutions that already exist
             for pipeline_id in session.pipelines:
@@ -221,6 +236,9 @@ class CoreService(pb_core_grpc.CoreServicer):
                     break
                 elif event == 'new_pipeline':
                     yield msg_progress("Trying new solution")
+                elif event == 'new_fixed_pipeline':
+                    pipeline_id = kwargs['pipeline_id']
+                    yield msg_fixed_solution(pipeline_id)
                 elif event == 'scoring_success':
                     pipeline_id = kwargs['pipeline_id']
                     msg = msg_solution(pipeline_id)
@@ -381,12 +399,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         if dataset.startswith('/'):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
-
-        pipeline = self._ta2.get_workflow(pipeline_id)
-        if pipeline.dataset != dataset:
-            # FIXME: Currently training only works with dataset in DB
-            raise error(context, grpc.StatusCode.UNIMPLEMENTED,
-                        "Currently, you can only train on the search dataset")
 
         problem = None
         for session_id in self._ta2.sessions.keys():
@@ -756,7 +768,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         import tempfile
         from os.path import dirname, join
 
-        with open(join(dirname(__file__), '../resource/pipelines/example_placeholder.yml'), 'r') as pipeline_file:
+        with open(join(dirname(__file__), '../resource/pipelines/example.yml'), 'r') as pipeline_file:
             pipeline = pipeline_module.Pipeline.from_yaml(
                 pipeline_file,
                 resolver=pipeline_module.Resolver(),

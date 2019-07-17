@@ -24,7 +24,7 @@ def run_all_datasets():
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
     statistics_path = join(dirname(__file__), 'resource/statistics_datasets.csv')
     #datasets = sorted([x for x in os.listdir(DATASETS_PATH) if os.path.isdir(join(DATASETS_PATH, x))])
-    datasets = ['SUPDATA_usps_digit_classification']
+    datasets = ['DA_poverty_estimation']
     size = len(datasets)
 
     for i, dataset in enumerate(datasets):

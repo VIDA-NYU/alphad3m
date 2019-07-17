@@ -979,7 +979,12 @@ class D3mTa2(Observable):
 
     # Runs in a worker thread from executor
     def _build_fixed_pipeline(self, session_id, pipeline_template, dataset, targets, features):
+
         session = self.sessions[session_id]
+        with session.lock:
+            # Force working=True so we get 'done_searching' even if no pipeline
+            # gets created
+            session.working = True
 
         db = self.DBSession()
         if dataset:
@@ -1056,10 +1061,11 @@ class D3mTa2(Observable):
             db.commit()
             pipeline_id = pipeline_database.id
             logger.info("Created fixed pipeline %s", pipeline_id)
-            from d3m_ta2_nyu.pipeline_execute import execute
-            outputs = execute(pipeline_id, dataset_uri, None, None, None,db_filename='/output/supporting_files/db.sqlite3')
-            print("Execution",outputs)
-            session.notify('new_pipeline', pipeline_id=pipeline_id)
+            session.notify('new_fixed_pipeline', pipeline_id=pipeline_id)
+            with session.lock:
+                # Force working=True so we get 'done_searching' even if no pipeline
+                # gets created
+                session.working = False
         finally:
             db.close()
 
