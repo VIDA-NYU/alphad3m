@@ -37,7 +37,9 @@ with pkg_resources.resource_stream(
 
 @database.with_db
 def score(pipeline_id, dataset_uri, metrics, problem, scoring_conf, do_rank, do_sample, msg_queue, db):
-    #do_sample = False
+    if problem['about']['taskType'] in {'timeSeriesForecasting', 'semiSupervisedClassification'}:
+        # There are not primitives to do data sampling for these tasks
+        do_sample = False
     if scoring_conf is None:
         scoring_conf = {'shuffle': 'true',
                         'stratified': 'false',

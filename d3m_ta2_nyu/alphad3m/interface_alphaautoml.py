@@ -240,6 +240,14 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
+    def eval_semisupervised_fore_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = D3MPipelineGenerator.make_semisupervised_pipeline_from_strings(origin, dataset, targets,
+                                                                                      features, DBSession=DBSession)
+        # Evaluate the pipeline
+        msg_queue.send(('eval', pipeline_id))
+        return msg_queue.recv()
+
     dataset_path = os.path.dirname(dataset[7:])
     f = open(os.path.join(dataset_path, 'datasetDoc.json'))
     dataset_doc = json.load(f)
@@ -248,12 +256,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
     for data_res in data_resources:
         data_types.append(data_res['resType'])
 
-    unsupported_problems = ['COLLABORATIVE_FILTERING']
     print('>>>>>>>', data_types, task)
-
-    if task in unsupported_problems:
-        logger.error('%s Not Supported', task)
-        sys.exit(148)
 
     if 'text' in data_types:
         eval_text_pipeline('ALPHAD3M')
@@ -299,6 +302,10 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     if 'TIME_SERIES_FORECASTING' in task:
         eval_timeseries_fore_pipeline('ALPHAD3M')
+        return
+
+    if 'SEMISUPERVISED_CLASSIFICATION' in task:
+        eval_semisupervised_fore_pipeline('ALPHAD3M')
         return
 
     def create_input(selected_primitves):

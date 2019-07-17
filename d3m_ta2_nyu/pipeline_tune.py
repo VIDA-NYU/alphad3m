@@ -48,16 +48,16 @@ def tune(pipeline_id, metrics, problem, do_rank, timeout, targets, msg_queue, db
     tuning = HyperparameterTuning([tunable_module.name])
 
     def evaluate_tune(hyperparameter_configuration):
-        hy = hyperparams_from_config(estimator_module.name, hyperparameter_configuration)
+        hy = hyperparams_from_config(tunable_module.name, hyperparameter_configuration)
         db.add(database.PipelineParameter(
             pipeline=pipeline,
-            module_id=estimator_module.id,
+            module_id=tunable_module.id,
             name='hyperparams',
             value=pickle.dumps(hy),
         ))
 
         scoring_conf = {'shuffle': 'true',
-                        'stratified': 'true',
+                        #'stratified': 'true',
                         'train_test_ratio': '0.75',
                         'method': pb_core.EvaluationMethod.Value('HOLDOUT')}
 

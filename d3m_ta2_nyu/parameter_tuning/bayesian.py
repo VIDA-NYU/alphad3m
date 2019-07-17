@@ -1,4 +1,5 @@
 import typing
+import logging
 import importlib
 import numpy as np
 # Import ConfigSpace and different types of parameters
@@ -13,6 +14,7 @@ from d3m_ta2_nyu.parameter_tuning.primitive_config import get_primitive_config
 from d3m import index
 
 MAX_RUNS = 100
+logger = logging.getLogger(__name__)
 
 
 def get_class(name):
@@ -42,6 +44,7 @@ def hyperparams_from_config(name, cfg):
             kw_args[key] = cfg[cfg_key]
         else:
             kw_args[key] = hyperparameter_config[key].get_default()
+        logger.info('New values for hyperparameter %s=%s', key, kw_args[key])
 
     hy = hyperparameter_class(**kw_args)
 

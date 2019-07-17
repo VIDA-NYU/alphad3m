@@ -95,12 +95,14 @@ def is_tunable(name):
     if name not in PRIMITIVES:
         return False
     if name in {'d3m.primitives.feature_extraction.yolo.DSBOX'}:
+        # This primitive is not in the OBJECT_DETECTION family, so compares it by its name
         return True
 
     klass = index.get_primitive(name)
     family = klass.metadata.to_json_structure()['primitive_family']
 
-    return family in {'CLASSIFICATION', 'REGRESSION', 'TIME_SERIES_CLASSIFICATION', 'TIME_SERIES_FORECASTING'}
+    return family in {'CLASSIFICATION', 'REGRESSION', 'TIME_SERIES_CLASSIFICATION', 'TIME_SERIES_FORECASTING',
+                      'SEMISUPERVISED_CLASSIFICATION', 'COMMUNITY_DETECTION', 'VERTEX_CLASSIFICATION', 'GRAPH_MATCHING'}
 
 
 def get_default_configspace(primitive):
