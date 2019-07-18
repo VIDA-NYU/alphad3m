@@ -34,7 +34,7 @@ from d3m_ta2_nyu.workflow.convert import to_d3m_json
 
 
 MAX_RUNNING_PROCESSES = 1
-TUNE_PIPELINES_COUNT = 3
+TUNE_PIPELINES_COUNT = 1
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 1
@@ -921,12 +921,27 @@ class D3mTa2(Observable):
                 logger.exception("Error building pipeline from %r",
                                  template)
 
+        timeout_search = timeout * 0.7
+        start_time = time.time()
+
         if 'TA2_DEBUG_BE_FAST' not in os.environ:
-            self._build_pipelines_from_generator(session, task, dataset, metrics, timeout, do_rank)
+            self._build_pipelines_from_generator(session, task, dataset, metrics, timeout_search, do_rank)
 
         # For tuning
+        timeout_tuning = time.time() - start_time
+
+        db = self.DBSession()
+        try:
+            found_pipelines = len(session.get_top_pipelines(db, metrics[0]['metric']))
+        except Exception:
+            logger.error('Error getting the number of pipelines')
+            found_pipelines = 1
+        finally:
+            db.close()
+
+        pipelines_to_tune = min(TUNE_PIPELINES_COUNT, found_pipelines)
         session.do_rank = do_rank
-        session.timeout_tuning = 300  # TODO: Do dynamic this value according to TUNE_PIPELINES_COUNT
+        session.timeout_tuning = 300#timeout_tuning/pipelines_to_tune
         session.tune_when_ready(tune)
 
     def _build_pipelines_from_generator(self, session, task, dataset, metrics, timeout, do_rank):

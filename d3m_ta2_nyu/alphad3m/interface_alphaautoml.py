@@ -240,10 +240,18 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    def eval_semisupervised_fore_pipeline(origin):
+    def eval_semisupervised_pipeline(origin):
         # Create the pipeline in the database
         pipeline_id = D3MPipelineGenerator.make_semisupervised_pipeline_from_strings(origin, dataset, targets,
-                                                                                      features, DBSession=DBSession)
+                                                                                     features, DBSession=DBSession)
+        # Evaluate the pipeline
+        msg_queue.send(('eval', pipeline_id))
+        return msg_queue.recv()
+
+    def eval_collaborativefiltering_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = D3MPipelineGenerator.make_collaborativefiltering_pipeline_from_strings(origin, dataset, targets,
+                                                                                        features, DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
@@ -305,7 +313,11 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         return
 
     if 'SEMISUPERVISED_CLASSIFICATION' in task:
-        eval_semisupervised_fore_pipeline('ALPHAD3M')
+        eval_semisupervised_pipeline('ALPHAD3M')
+        return
+
+    if 'COLLABORATIVE_FILTERING' in task:
+        eval_collaborativefiltering_pipeline('ALPHAD3M')
         return
 
     def create_input(selected_primitves):
