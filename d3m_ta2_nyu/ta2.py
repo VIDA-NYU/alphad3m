@@ -43,12 +43,12 @@ MAX_RUNNING_PROCESSES = 1
 
 DATAMART_URL = {
     'NYU': os.environ['NYU_DATAMART_URL'] if 'NYU_DATAMART_URL' in os.environ
-                                          else 'https://datamart.d3m.vida-nyu.org' ,
+                                          else 'https://staging.auctus.vida-nyu.org/' ,
     'ISI': os.environ['ISI_DATAMART_URL'] if 'ISI_DATAMART_URL' in os.environ
                                           else 'http://dsbox02.isi.edu:9000/'
 }
 
-TUNE_PIPELINES_COUNT = 0
+TUNE_PIPELINES_COUNT = 3
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0
@@ -924,7 +924,6 @@ class D3mTa2(Observable):
             ))
 
         try:
-            prev_step = None
             # TODO: Use pipeline input for this
             if dataset:
                 input_data = make_data_module('dataset')
@@ -996,12 +995,9 @@ class D3mTa2(Observable):
         # Search for data augmentation
         search_result_nyu = None
         search_results_nyu = []
-        search_result_isi = None
-        search_results_isi = []
-        
+
         if 'dataAugmentation' in session.problem:
             dc = Dataset.load(dataset)
-
             keywords = []
             for aug in session.problem['dataAugmentation']:
                 keywords += aug['keywords']
@@ -1022,27 +1018,7 @@ class D3mTa2(Observable):
                 if len(next_page) > 5:
                     next_page = next_page[:5]
                 search_results_nyu = [result.serialize() for result in next_page]
-                search_result_nyu = search_results_nyu[0]
-
-
-
-
-            # Search with ISI's Datamart
-            try:
-                dm = Datamart(connection_url=DATAMART_URL['ISI'])
-                cursor = dm.search_with_data(query=None, supplied_data=dc)
-                next_page = cursor.get_next_page()
-            except Exception:
-                logger.exception("Error when searching for data to augment")
-                next_page = None
-
-            if next_page:
-                if len(next_page) > 5:
-                    next_page = next_page[:5]
-                search_results_isi = [result.serialize() for result in next_page]
-                search_result_isi = search_results_isi[0]
-
-
+                search_result_nyu = search_results_nyu[0] if len(search_results_nyu) > 0 else None
 
         do_rank = True if top_pipelines > 0 else False
         logger.info("Creating pipelines from templates...")
@@ -1068,7 +1044,6 @@ class D3mTa2(Observable):
                                                    dataset,
                                                    pipeline_template,
                                                    search_result_nyu,
-                                                   search_result_isi,
                                                    do_rank)
             except Exception:
                 logger.exception("Error building pipeline from %r",
@@ -1203,15 +1178,13 @@ class D3mTa2(Observable):
                                       dataset,
                                       pipeline_template,
                                       search_result_nyu,
-                                      search_result_isi,
                                       do_rank):
         # Create workflow from a template
         pipeline_id = template(self, dataset=dataset,
                                pipeline_template=pipeline_template,
                                targets=session.targets,
                                features=session.features,
-                               search_result_nyu=search_result_nyu,
-                               search_result_isi=search_result_isi)
+                               search_result_nyu=search_result_nyu)
 
         # Add it to the session
         session.add_scoring_pipeline(pipeline_id)
@@ -1263,7 +1236,7 @@ class D3mTa2(Observable):
         logger.info("Wrote executable %s", filename)
 
     def _classification_template(self, datamart_system, imputer, classifier, dataset, pipeline_template,
-                                 targets, features, search_result_nyu, search_result_isi):
+                                 targets, features, search_result_nyu):
         db = self.DBSession()
 
         pipeline = database.Pipeline(
@@ -1355,7 +1328,7 @@ class D3mTa2(Observable):
                     else:
                         connect(input_data, step, from_output='dataset')
                     prev_step = step
-            if (datamart_system == 'NYU' and search_result_nyu) or (datamart_system == 'ISI' and search_result_isi):
+            if (datamart_system == 'NYU' and search_result_nyu):
                 step_aug = make_primitive_module(
                     'd3m.primitives.data_augmentation.datamart_augmentation.Common')
                 if prev_step:
@@ -1364,7 +1337,7 @@ class D3mTa2(Observable):
                     connect(input_data, step_aug, from_output='dataset')
                 set_hyperparams(
                     step_aug,
-                    search_result=search_result_nyu if datamart_system == 'NYU' else search_result_isi,
+                    search_result=search_result_nyu,
                     system_identifier=datamart_system
                 )
 
@@ -1481,8 +1454,7 @@ class D3mTa2(Observable):
             # DATAMART
             [
               'None',
-              'NYU',
-              'ISI',
+              'NYU'
             ],
             # Imputer
             ['d3m.primitives.data_cleaning.imputer.SKlearn'],
@@ -1507,8 +1479,7 @@ class D3mTa2(Observable):
             # DATAMART
             [
                 'None',
-                'NYU',
-                'ISI',
+                'NYU'
             ],
             # Imputer
             ['d3m.primitives.data_cleaning.imputer.SKlearn'],
@@ -1524,8 +1495,7 @@ class D3mTa2(Observable):
             # DATAMART
             [
                 'None',
-                'NYU',
-                'ISI',
+                'NYU'
             ],
             # Imputer
             ['d3m.primitives.data_cleaning.imputer.SKlearn'],
@@ -1545,8 +1515,7 @@ class D3mTa2(Observable):
             # DATAMART
             [
                 'None',
-                'NYU',
-                'ISI',
+                'NYU'
             ],
             # Imputer
             ['d3m.primitives.data_cleaning.imputer.SKlearn'],
