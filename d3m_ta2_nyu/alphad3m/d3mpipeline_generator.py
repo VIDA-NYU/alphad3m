@@ -112,7 +112,17 @@ class D3MPipelineGenerator():
                     else:
                         connect(input_data, step, from_output='dataset')
                     prev_step = step
-            if 'RESULT.'in primitives[0]:
+
+            # Check if ALphaD3M is trying to augment
+            search_result = None
+            if 'RESULT.' in primitives[0]:
+                result_index = int(primitives[0].split('.')[1])
+                if result_index < len(search_results):
+                    search_result = search_results[result_index]
+                primitives = primitives[1:]
+
+            # Check if there is result to augment
+            if search_result:
                 step_aug = make_primitive_module(
                     'd3m.primitives.data_augmentation.datamart_augmentation.Common')
                 if prev_step:
@@ -121,14 +131,13 @@ class D3MPipelineGenerator():
                     connect(input_data, step_aug, from_output='dataset')
                 set_hyperparams(
                     step_aug,
-                    search_result=search_results[int(primitives[0].split('.')[1])],
+                    search_result=search_result,
                     system_identifier="NYU"
                 )
 
                 step0 = make_primitive_module(
                     'd3m.primitives.data_transformation.denormalize.Common')
                 connect(step_aug, step0)
-                primitives = primitives[1:]
             else:
                 step0 = make_primitive_module(
                     'd3m.primitives.data_transformation.denormalize.Common')

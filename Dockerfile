@@ -38,8 +38,6 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
 # Install TA3-TA2 API
 RUN pip3 install https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/archive/01e37db56abf7f9755d87a1d660023425538d6c9/ta3ta2-api-01e37db56abf7f9755d87a1d660023425538d6c9.zip
 
-# Install Datamart API
-RUN pip3 install datamart_nyu
 
 COPY eval.sh /usr/local/bin/eval.sh
 
