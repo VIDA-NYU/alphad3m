@@ -117,21 +117,21 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         template = request.template#self._create_pipeline_template()#request.template
 
+
         if template is not None and len(template.steps) > 0:  # isinstance(template, pb_pipeline.PipelineDescription)
             pipeline = decode_pipeline_description(template, pipeline_module.Resolver())
             if pipeline.has_placeholder():
-                # TODO Add support for pipeline templates with placeholder steps
-                logger.error('Pipeline templates with placeholder steps is not supported')
+                template = pipeline.to_json_structure()
             else:  # Pipeline template fully defined
                 search_id = self._ta2.new_session(None)
-
                 dataset = request.inputs[0].dataset_uri
                 if not dataset.startswith('file://'):
                     dataset = 'file://' + dataset
 
-                self._ta2.build_fixed_pipeline(search_id, pipeline)
-
+                self._ta2.build_fixed_pipeline(search_id, pipeline.to_json_structure(), dataset)
                 return pb_core.SearchSolutionsResponse(search_id=str(search_id),)
+        else:
+            template = None
 
         dataset = request.inputs[0].dataset_uri
         if not dataset.endswith('datasetDoc.json'):
@@ -154,7 +154,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         session = self._ta2.sessions[search_id]
         task = TASKS_FROM_SCHEMA[session.problem['about']['taskType']]
 
-        self._ta2.build_pipelines(search_id, task, dataset, session.metrics, timeout=timeout,
+        self._ta2.build_pipelines(search_id, task, dataset,template, session.metrics, timeout=timeout,
                                   top_pipelines=top_pipelines)
 
         return pb_core.SearchSolutionsResponse(
@@ -224,6 +224,21 @@ class CoreService(pb_core_grpc.CoreServicer):
                 internal_score=float('nan'),
             )
 
+        def msg_fixed_solution(pipeline_id, state=pb_core.RUNNING):
+            progress = session.progress
+
+            return pb_core.GetSearchSolutionsResultsResponse(
+                done_ticks=progress.current,
+                all_ticks=progress.total,
+                progress=pb_core.Progress(
+                    state=state,
+                    status="Solution Created",
+                    start=to_timestamp(session.start),
+                ),
+                solution_id=str(pipeline_id),
+                internal_score=float('nan'),
+            )
+
         with session.with_observer_queue() as queue:
             # Send the solutions that already exist
             for pipeline_id in session.pipelines:
@@ -242,6 +257,9 @@ class CoreService(pb_core_grpc.CoreServicer):
                     break
                 elif event == 'new_pipeline':
                     yield msg_progress("Trying new solution")
+                elif event == 'new_fixed_pipeline':
+                    pipeline_id = kwargs['pipeline_id']
+                    yield msg_fixed_solution(pipeline_id)
                 elif event == 'scoring_success':
                     pipeline_id = kwargs['pipeline_id']
                     msg = msg_solution(pipeline_id)
@@ -397,12 +415,6 @@ class CoreService(pb_core_grpc.CoreServicer):
         if dataset.startswith('/'):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
-
-        pipeline = self._ta2.get_workflow(pipeline_id)
-        if pipeline.dataset != dataset:
-            # FIXME: Currently training only works with dataset in DB
-            raise error(context, grpc.StatusCode.UNIMPLEMENTED,
-                        "Currently, you can only train on the search dataset")
 
         problem = None
         for session_id in self._ta2.sessions.keys():
@@ -655,6 +667,11 @@ class CoreService(pb_core_grpc.CoreServicer):
                                                         self.grpc2tasksubtype[problem.problem.task_subtype]
                                                     ]
 
+        if len(problem.data_augmentation) > 0:
+            problem_dict['dataAugmentation'] = [
+                {'domain': [j for j in i.domain], 'keywords': [j for j in i.keywords]} for i in problem.data_augmentation
+            ]
+
         return problem_dict
 
     def _add_step(self, steps, step_descriptions, modules, params, module_to_step, mod):
@@ -746,7 +763,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         import tempfile
         from os.path import dirname, join
 
-        with open(join(dirname(__file__), '../resource/pipelines/random-sample.yml'), 'r') as pipeline_file:
+        with open(join(dirname(__file__), '../resource/pipelines/example.yml'), 'r') as pipeline_file:
             pipeline = pipeline_module.Pipeline.from_yaml(
                 pipeline_file,
                 resolver=pipeline_module.Resolver(),

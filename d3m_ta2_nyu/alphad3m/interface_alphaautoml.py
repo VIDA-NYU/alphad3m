@@ -44,9 +44,10 @@ ALL_PRIMITIVES, SKLEARN_PRIMITIVES = get_primitives()
 GRAMMAR = {
     'NON_TERMINALS': {
         'S': 1,
-        'DATA_CLEANING':2,
-        'DATA_TRANSFORMATION':3,
-        'ESTIMATORS':4
+        'DATA_AUGMENTATION':2,
+        'DATA_CLEANING':3,
+        'DATA_TRANSFORMATION':4,
+        'ESTIMATORS':5
     },
     'START': 'S->S'
 }
@@ -64,15 +65,18 @@ def get_terminals(non_terminals, primitives, task):
             terminals[terminal] = count
             count += 1
     terminals['E'] = 0
-
     return terminals
 
 
 def get_rules(non_terminals, primitives, task):
     rules = { 'S->ESTIMATORS':1,
-              'S->DATA_CLEANING ESTIMATORS':2,
-              'S->DATA_TRANSFORMATION ESTIMATORS':3,
-              'S->DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 4
+              'S->DATA_AUGMENTATION ESTIMATORS': 2,
+              'S->DATA_CLEANING ESTIMATORS':3,
+              'S->DATA_AUGMENTATION DATA_CLEANING ESTIMATORS': 4,
+              'S->DATA_TRANSFORMATION ESTIMATORS':5,
+              'S->DATA_AUGMENTATION DATA_TRANSFORMATION ESTIMATORS': 6,
+              'S->DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 7,
+              'S->DATA_AUGMENTATION DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 8
     }
     
     rules_lookup = {'S': list(rules.keys())}
@@ -94,10 +98,11 @@ def get_rules(non_terminals, primitives, task):
         terminals = primitives[non_terminal]
 
         for terminal in terminals:
-            rule = non_terminal + '->' + terminal + ' ' + non_terminal
-            rules[rule] = count
-            count += 1
-            rules_lookup[non_terminal].append(rule)
+            if non_terminal != 'DATA_AUGMENTATION':
+                rule = non_terminal + '->' + terminal + ' ' + non_terminal
+                rules[rule] = count
+                count += 1
+                rules_lookup[non_terminal].append(rule)
             rule = non_terminal+'->'+terminal
             rules[rule] = count
             count += 1
@@ -107,7 +112,6 @@ def get_rules(non_terminals, primitives, task):
         rules[rule] = count
         count += 1
         rules_lookup[non_terminal].append(rule)
-        
     return rules, rules_lookup
 
 
@@ -121,7 +125,7 @@ input = {
                        'GRAPH': 2,
                        'IMAGE': 3},
 
-        'PIPELINE_SIZE': 4,
+        'PIPELINE_SIZE': 5,
 
         'ARGS': {
             'numIters': 25,
@@ -145,7 +149,7 @@ process_sklearn = None
 
 
 @database.with_sessionmaker
-def generate(task, dataset, metrics, problem, targets, features, timeout, msg_queue, DBSession):
+def generate(task, dataset,search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue, DBSession):
     import time
     start = time.time()
     # FIXME: don't use 'problem' argument
@@ -153,7 +157,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
 
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_pipeline_from_strings(strings, origin, dataset, targets, features,
+        pipeline_id = D3MPipelineGenerator.make_pipeline_from_strings(strings, origin, dataset,search_results, pipeline_template, targets, features,
                                                                       DBSession=DBSession)
 
         # Evaluate the pipeline
@@ -264,7 +268,6 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
     for data_res in data_resources:
         data_types.append(data_res['resType'])
 
-    print('>>>>>>>', data_types, task)
     function_name = eval_pipeline
 
     if 'text' in data_types:
@@ -363,7 +366,7 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
         c.learn()
 
     def signal_handler(signal, frame):
-        print('Receiving SIGTERM signal')
+        logger.info('Receiving SIGTERM signal')
         #record_bestpipeline(input['DATASET'])
         if process_sklearn.is_alive():
             process_sklearn.terminate()
@@ -378,7 +381,6 @@ def generate(task, dataset, metrics, problem, targets, features, timeout, msg_qu
     if process_sklearn.is_alive():
         process_sklearn.terminate()
         logger.info('Finished evaluation Scikit-learn primitives')
-
     input_all = create_input(ALL_PRIMITIVES)
     game = PipelineGame(input_all, function_name)
     nnet = NNetWrapper(game)
@@ -429,7 +431,7 @@ def main(dataset, problem_path, output_path):
     session = ta2.sessions[session_id]
     msg_queue = Receiver()
 
-    generate(task, dataset, metrics, problem, session.targets, session.features, msg_queue, ta2.DBSession)
+    generate(task, dataset,None,None, metrics, problem, session.targets, session.features, msg_queue, ta2.DBSession)
 
 
 if __name__ == '__main__':

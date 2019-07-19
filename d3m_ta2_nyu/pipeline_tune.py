@@ -1,5 +1,7 @@
 import logging
+import os
 import sys
+import shutil
 import pickle
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
 from d3m import index
@@ -94,6 +96,10 @@ def tune(pipeline_id, metrics, problem, do_rank, timeout, targets, msg_queue, db
     db.commit()
 
     logger.info("Tuning done, generated new pipeline %s", new_pipeline.id)
+
+    for f in os.listdir('/tmp'):
+        if 'run_1' in f:
+            shutil.rmtree(os.path.join('/tmp', f))
 
     score(new_pipeline.id, dataset_uri, metrics, problem, None, do_rank, False, None,
           db_filename='/output/supporting_files/db.sqlite3')

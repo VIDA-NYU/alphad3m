@@ -31,10 +31,23 @@ import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 from d3m_ta2_nyu.utils import Observable, ProgressStatus
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json
+import datamart
+import datamart_nyu
+from datamart_isi.entries import Datamart
+from d3m.container import Dataset
+from d3m.metadata.pipeline import PrimitiveStep
 
 
 MAX_RUNNING_PROCESSES = 1
-TUNE_PIPELINES_COUNT = 0
+
+DATAMART_URL = {
+    'NYU': os.environ['NYU_DATAMART_URL'] if 'NYU_DATAMART_URL' in os.environ
+                                          else 'https://staging.auctus.vida-nyu.org/' ,
+    'ISI': os.environ['ISI_DATAMART_URL'] if 'ISI_DATAMART_URL' in os.environ
+                                          else 'http://dsbox02.isi.edu:9000/'
+}
+
+TUNE_PIPELINES_COUNT = 5
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0
@@ -855,32 +868,112 @@ class D3mTa2(Observable):
         self._run_queue.put(job)
         return id(job)
 
-    def build_pipelines(self, session_id, task, dataset, metrics, targets=None, features=None, timeout=None,
+    def build_pipelines(self, session_id, task, dataset, template, metrics, targets=None, features=None, timeout=None,
                         top_pipelines=0, tune=None):
         if not metrics:
             raise ValueError("no metrics")
-        self.executor.submit(self._build_pipelines, session_id, task, dataset, metrics, targets, features, timeout,
+        self.executor.submit(self._build_pipelines, session_id, task, dataset, template, metrics, targets, features, timeout,
                              top_pipelines, tune)
 
-    def build_fixed_pipeline(self, session_id, pipeline):
-        self.executor.submit(self._build_fixed_pipeline, session_id, pipeline)
+    def build_fixed_pipeline(self, session_id, pipeline, dataset, targets=None, features=None):
+        self.executor.submit(self._build_fixed_pipeline, session_id, pipeline, dataset,targets, features)
 
     # Runs in a worker thread from executor
-    def _build_fixed_pipeline(self, session_id, d3m_pipeline):
+    def _build_fixed_pipeline(self, session_id, pipeline_template, dataset, targets, features):
+
         session = self.sessions[session_id]
+        with session.lock:
+            # Force working=True so we get 'done_searching' even if no pipeline
+            # gets created
+            session.working = True
 
         db = self.DBSession()
-        pipeline_database = database.Pipeline(origin='Fixed pipeline template', dataset='NA')
-        # TODO: Convert D3M pipeline to our database pipeline format
-        db.add(pipeline_database)
-        db.commit()
-        pipeline_id = pipeline_database.id
-        db.close()
 
-        logger.info("Created fixed pipeline %s", pipeline_id)
+        if dataset:
+            dataset_uri = dataset
+        else:
+            dataset_uri = 'NA'
+        pipeline_database = database.Pipeline(origin='Fixed pipeline template', dataset=dataset_uri)
+
+        def make_module(package, version, name):
+            pipeline_module = database.PipelineModule(
+                pipeline=pipeline_database,
+                package=package, version=version, name=name)
+            db.add(pipeline_module)
+            return pipeline_module
+
+        def make_data_module(name):
+            return make_module('data', '0.0', name)
+
+        def make_primitive_module(name):
+            if name[0] == '.':
+                name = 'd3m.primitives' + name
+            return make_module('d3m', '2018.7.10', name)
+
+        def connect(from_module, to_module,
+                    from_output='produce', to_input='inputs'):
+            db.add(database.PipelineConnection(pipeline=pipeline_database,
+                                               from_module=from_module,
+                                               to_module=to_module,
+                                               from_output_name=from_output,
+                                               to_input_name=to_input))
+
+        def set_hyperparams(module, **hyperparams):
+            db.add(database.PipelineParameter(
+                pipeline=pipeline_database, module=module,
+                name='hyperparams', value=pickle.dumps(hyperparams),
+            ))
+
+        try:
+            # TODO: Use pipeline input for this
+            if dataset:
+                input_data = make_data_module('dataset')
+                db.add(database.PipelineParameter(
+                    pipeline=pipeline_database, module=input_data,
+                    name='targets', value=pickle.dumps(targets),
+                ))
+                db.add(database.PipelineParameter(
+                    pipeline=pipeline_database, module=input_data,
+                    name='features', value=pickle.dumps(features),
+                ))
+            prev_step = None
+            prev_steps = {}
+            count_template_steps = 0
+            for pipeline_step in pipeline_template['steps']:
+                if pipeline_step['type'] == 'PRIMITIVE':
+                    step = make_primitive_module(pipeline_step['primitive']['python_path'])
+                    prev_steps['steps.%d.produce' % (count_template_steps)] = step
+                    count_template_steps += 1
+                    if 'hyperparams' in pipeline_step:
+                        hyperparams = {}
+                        for hyper, desc in pipeline_step['hyperparams'].items():
+                            hyperparams[hyper] = desc['data']
+                        set_hyperparams(step, **hyperparams)
+                else:
+                    # TODO In the future we should be able to handle subpipelines
+                    break
+                if prev_step:
+                    for argument, desc in pipeline_step['arguments'].items():
+                        connect(prev_steps[desc['data']], step, to_input=argument)
+                else:
+                    connect(input_data, step, from_output='dataset')
+                prev_step = step
+            db.add(pipeline_database)
+            db.commit()
+            pipeline_id = pipeline_database.id
+            logger.info("Created fixed pipeline %s", pipeline_id)
+            session.notify('new_fixed_pipeline', pipeline_id=pipeline_id)
+            with session.lock:
+                # Force working=True so we get 'done_searching' even if no pipeline
+                # gets created
+                session.working = False
+        finally:
+            db.close()
+
+
 
     # Runs in a worker thread from executor
-    def _build_pipelines(self, session_id, task, dataset, metrics, targets, features, timeout, top_pipelines, tune):
+    def _build_pipelines(self, session_id, task, dataset, pipeline_template, metrics, targets, features, timeout, top_pipelines, tune):
         """Generates pipelines for the session, using the generator process.
         """
         session = self.sessions[session_id]
@@ -900,6 +993,32 @@ class D3mTa2(Observable):
             # gets created
             session.working = True
 
+        # Search for data augmentation
+        search_results = []
+
+        if 'dataAugmentation' in session.problem:
+            dc = Dataset.load(dataset)
+            keywords = []
+            for aug in session.problem['dataAugmentation']:
+                keywords += aug['keywords']
+
+            # Search with NYU's Datamart
+            try:
+                dm = datamart_nyu.RESTDatamart(DATAMART_URL['NYU'])
+                cursor = dm.search_with_data(query=datamart.DatamartQuery(
+                    keywords=keywords,
+                    variables=[],
+                ), supplied_data=dc)
+                next_page = cursor.get_next_page()
+            except Exception:
+                logger.exception("Error when searching for data to augment")
+                next_page = None
+
+            if next_page:
+                if len(next_page) > 5:
+                    next_page = next_page[:5]
+                search_results = [result.serialize() for result in next_page]
+
         do_rank = True if top_pipelines > 0 else False
         logger.info("Creating pipelines from templates...")
         if task in ['GRAPH_MATCHING', 'LINK_PREDICTION', 'VERTEX_NOMINATION', 'OBJECT_DETECTION', 'CLUSTERING',
@@ -911,7 +1030,10 @@ class D3mTa2(Observable):
             template_name = task
         if 'TA2_DEBUG_BE_FAST' in os.environ:
             template_name = 'DEBUG_' + task
-        for template in []:#self.TEMPLATES.get(template_name, []):
+
+        # No Augmentation
+        templates = self.TEMPLATES.get(template_name, [])
+        for template in templates:
             logger.info("Creating pipeline from %r", template)
             if isinstance(template, (list, tuple)):
                 func, args = template[0], template[1:]
@@ -919,22 +1041,47 @@ class D3mTa2(Observable):
             else:
                 tpl_func = template
             try:
-                self._build_pipeline_from_template(session, tpl_func, dataset, do_rank)
+                self._build_pipeline_from_template(session,
+                                                   tpl_func,
+                                                   dataset,
+                                                   pipeline_template,
+                                                   do_rank)
             except Exception:
                 logger.exception("Error building pipeline from %r",
                                  template)
+        if len(search_results) > 0:
+            for search_result in search_results:
+                templates = self.TEMPLATES_AUGMENTATION.get(template_name, [])
+                for template in templates:
+                    logger.info("Creating pipeline from %r", template)
+                    if isinstance(template, (list, tuple)):
+                        func, args = template[0], template[1:]
+                        tpl_func = lambda s, **kw: func(s, *args, **kw)
+                    else:
+                        tpl_func = template
+                    try:
+                        self._build_pipeline_from_template(session,
+                                                           tpl_func,
+                                                           dataset,
+                                                           pipeline_template,
+                                                           do_rank,
+                                                           search_result=search_result)
+                    except Exception:
+                        logger.exception("Error building pipeline from %r",
+                                         template)
+
 
         timeout_search = timeout * 0.7  # TODO: Do it dynamic
         timeout_tuning = timeout * 0.3
         if 'TA2_DEBUG_BE_FAST' not in os.environ:
-            self._build_pipelines_from_generator(session, task, dataset, metrics, timeout_search, do_rank)
+            self._build_pipelines_from_generator(session, task, dataset, search_results, pipeline_template, metrics, timeout_search, do_rank)
 
         # For tuning
         session.do_rank = do_rank
         session.timeout_tuning = timeout_tuning
         session.tune_when_ready(tune)
 
-    def _build_pipelines_from_generator(self, session, task, dataset, metrics, timeout, do_rank):
+    def _build_pipelines_from_generator(self, session, task, dataset, search_results, pipeline_template, metrics, timeout, do_rank):
         logger.info("Starting AlphaD3M process, timeout is %s", timeout)
         msg_queue = Receiver()
         proc = run_process(
@@ -944,6 +1091,8 @@ class D3mTa2(Observable):
             msg_queue,
             task=task,
             dataset=dataset,
+            search_results=search_results,
+            pipeline_template=pipeline_template,
             metrics=metrics,
             problem=session.problem,
             targets=session.targets,
@@ -1048,9 +1197,22 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
-    def _build_pipeline_from_template(self, session, template, dataset, do_rank):
+    def _build_pipeline_from_template(self, session,
+                                      template,
+                                      dataset,
+                                      pipeline_template,
+                                      do_rank,
+                                      search_result=None):
         # Create workflow from a template
-        pipeline_id = template(self, dataset=dataset,
+        if search_result:
+            pipeline_id = template(self, dataset=dataset,
+                                   pipeline_template=pipeline_template,
+                                   targets=session.targets,
+                                   features=session.features,
+                                   search_result=search_result)
+        else:
+            pipeline_id = template(self, dataset=dataset,
+                               pipeline_template=pipeline_template,
                                targets=session.targets,
                                features=session.features)
 
@@ -1103,7 +1265,7 @@ class D3mTa2(Observable):
         os.chmod(filename, st.st_mode | stat.S_IEXEC)
         logger.info("Wrote executable %s", filename)
 
-    def _classification_template(self, imputer, classifier, dataset,
+    def _classification_template(self, imputer, classifier, dataset, pipeline_template,
                                  targets, features):
         db = self.DBSession()
 
@@ -1173,10 +1335,36 @@ class D3mTa2(Observable):
                 pipeline=pipeline, module=input_data,
                 name='features', value=pickle.dumps(features),
             ))
+            prev_step = None
+            if pipeline_template:
+                prev_steps = {}
+                count_template_steps = 0
+                for pipeline_step in pipeline_template['steps']:
+                    if pipeline_step['type'] == 'PRIMITIVE':
+                        step = make_primitive_module(pipeline_step['primitive']['python_path'])
+                        prev_steps['steps.%d.produce' % (count_template_steps)] = step
+                        count_template_steps += 1
+                        if 'hyperparams' in pipeline_step:
+                            hyperparams = {}
+                            for hyper, desc in pipeline_step['hyperparams'].items():
+                                hyperparams[hyper] = desc['data']
+                            set_hyperparams(step, **hyperparams)
+                    else:
+                        # TODO In the future we should be able to handle subpipelines
+                        break
+                    if prev_step:
+                        for argument, desc in pipeline_step['arguments'].items():
+                            connect(prev_steps[desc['data']], step, to_input=argument)
+                    else:
+                        connect(input_data, step, from_output='dataset')
+                    prev_step = step
 
             step0 = make_primitive_module(
                 'd3m.primitives.data_transformation.denormalize.Common')
-            connect(input_data, step0, from_output='dataset')
+            if prev_step:
+                connect(prev_step, step0)
+            else:
+                connect(input_data, step0, from_output='dataset')
 
             step1 = make_primitive_module(
                 'd3m.primitives.data_transformation'
@@ -1270,6 +1458,284 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
+    def _classification_template_augment(self, datamart_system, imputer, classifier, dataset, pipeline_template,
+                                 targets, features, search_result):
+        db = self.DBSession()
+
+        pipeline = database.Pipeline(
+            origin="classification_template(datamart_system=%s, imputer=%s, classifier=%s)" % (datamart_system,
+                imputer, classifier),
+            dataset=dataset)
+
+        def make_module(package, version, name):
+            pipeline_module = database.PipelineModule(
+                pipeline=pipeline,
+                package=package, version=version, name=name)
+            db.add(pipeline_module)
+            return pipeline_module
+
+        def make_data_module(name):
+            return make_module('data', '0.0', name)
+
+        def make_primitive_module(name):
+            if name[0] == '.':
+                name = 'd3m.primitives' + name
+            return make_module('d3m', '2018.7.10', name)
+
+        def connect(from_module, to_module,
+                    from_output='produce', to_input='inputs'):
+            db.add(database.PipelineConnection(pipeline=pipeline,
+                                               from_module=from_module,
+                                               to_module=to_module,
+                                               from_output_name=from_output,
+                                               to_input_name=to_input))
+
+        def set_hyperparams(module, **hyperparams):
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=module,
+                name='hyperparams', value=pickle.dumps(hyperparams),
+            ))
+
+        try:
+            #                          data
+            #                            |
+            #                        Denormalize
+            #                            |
+            #                     DatasetToDataframe
+            #                            |
+            #                        ColumnParser
+            #                       /     |     \
+            #                     /       |       \
+            #                   /         |         \
+            # Extract (attribute)  Extract (target)  |
+            #         |                  |        Extract (target, index)
+            #     [imputer]          CastToType      |
+            #         |                  |           |
+            #    One-hot encoder         |           |
+            #         |                  |           |
+            #     CastToType            /           /
+            #            \            /           /
+            #             [classifier]          /
+            #                       |         /
+            #                   ConstructPredictions
+            # TODO: Use pipeline input for this
+            input_data = make_data_module('dataset')
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=input_data,
+                name='targets', value=pickle.dumps(targets),
+            ))
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=input_data,
+                name='features', value=pickle.dumps(features),
+            ))
+            prev_step = None
+            if pipeline_template:
+                prev_steps = {}
+                count_template_steps = 0
+                for pipeline_step in pipeline_template['steps']:
+                    if pipeline_step['type'] == 'PRIMITIVE':
+                        step = make_primitive_module(pipeline_step['primitive']['python_path'])
+                        prev_steps['steps.%d.produce' % (count_template_steps)] = step
+                        count_template_steps += 1
+                        if 'hyperparams' in pipeline_step:
+                            hyperparams = {}
+                            for hyper, desc in pipeline_step['hyperparams'].items():
+                                hyperparams[hyper] = desc['data']
+                            set_hyperparams(step, **hyperparams)
+                    else:
+                        # TODO In the future we should be able to handle subpipelines
+                        break
+                    if prev_step:
+                        for argument, desc in pipeline_step['arguments'].items():
+                            connect(prev_steps[desc['data']], step, to_input=argument)
+                    else:
+                        connect(input_data, step, from_output='dataset')
+                    prev_step = step
+            step_aug = make_primitive_module(
+                'd3m.primitives.data_augmentation.datamart_augmentation.Common')
+            if prev_step:
+                connect(prev_step, step_aug)
+            else:
+                connect(input_data, step_aug, from_output='dataset')
+            set_hyperparams(
+                step_aug,
+                search_result=search_result,
+                system_identifier=datamart_system
+            )
+
+            step0 = make_primitive_module(
+                'd3m.primitives.data_transformation.denormalize.Common')
+            connect(step_aug, step0)
+
+            step1 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.dataset_to_dataframe.Common')
+            connect(step0, step1)
+
+            step2 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.column_parser.DataFrameCommon')
+            connect(step1, step2)
+
+            step3 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.extract_columns_by_semantic_types.DataFrameCommon')
+            set_hyperparams(
+                step3,
+                semantic_types=[
+                    'https://metadata.datadrivendiscovery.org/types/Attribute',
+                ],
+            )
+            connect(step2, step3)
+
+            step4 = make_primitive_module(imputer)
+            set_hyperparams(
+                step4,
+                strategy='most_frequent'
+            )
+
+            connect(step3, step4)
+
+            step5 = make_primitive_module(
+                'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')
+            set_hyperparams(
+                step5,
+                handle_unknown='ignore'
+            )
+            connect(step4, step5)
+            step6 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.cast_to_type.Common')
+
+            set_hyperparams(
+                step6,
+                type_to_cast='float',
+            )
+
+            connect(step5, step6)
+
+            step7 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.extract_columns_by_semantic_types.DataFrameCommon')
+            set_hyperparams(
+                step7,
+                semantic_types=[
+                    'https://metadata.datadrivendiscovery.org/types/Target',
+                ],
+            )
+            connect(step2, step7)
+
+            step8 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.cast_to_type.Common')
+            connect(step7, step8)
+
+            step9 = make_primitive_module(classifier)
+            connect(step6, step9)
+            connect(step8, step9, to_input='outputs')
+
+            step10 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.extract_columns_by_semantic_types.DataFrameCommon')
+            set_hyperparams(
+                step10,
+                semantic_types=[
+                    'https://metadata.datadrivendiscovery.org/types/Target',
+                    ('https://metadata.datadrivendiscovery.org/types' +
+                     '/PrimaryKey'),
+                ],
+            )
+            connect(step2, step10)
+
+            step11 = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.construct_predictions.DataFrameCommon')
+            connect(step9, step11)
+            connect(step10, step11, to_input='reference')
+
+            db.add(pipeline)
+            db.commit()
+            return pipeline.id
+        finally:
+            db.close()
+
+
+
+    TEMPLATES_AUGMENTATION = {
+        'CLASSIFICATION': list(itertools.product(
+            [_classification_template_augment],
+            # DATAMART
+            [
+              'NYU'
+            ],
+            # Imputer
+            ['d3m.primitives.data_cleaning.imputer.SKlearn'],
+            # Classifier
+            [
+                'd3m.primitives.classification.random_forest.SKlearn',
+                'd3m.primitives.classification.k_neighbors.SKlearn',
+                'd3m.primitives.classification.bernoulli_naive_bayes.SKlearn',
+                'd3m.primitives.classification.decision_tree.SKlearn',
+                'd3m.primitives.classification.gaussian_naive_bayes.SKlearn',
+                'd3m.primitives.classification.gradient_boosting.SKlearn',
+                'd3m.primitives.classification.linear_svc.SKlearn',
+                'd3m.primitives.classification.logistic_regression.SKlearn',
+                'd3m.primitives.classification.multinomial_naive_bayes.SKlearn',
+                'd3m.primitives.classification.passive_aggressive.SKlearn',
+                'd3m.primitives.classification.random_forest.DataFrameCommon',
+                'd3m.primitives.classification.sgd.SKlearn',
+            ],
+        )),
+        'DEBUG_CLASSIFICATION': list(itertools.product(
+            [_classification_template_augment],
+            # DATAMART
+            [
+                'NYU'
+            ],
+            # Imputer
+            ['d3m.primitives.data_cleaning.imputer.SKlearn'],
+            # Classifier
+            [
+                'd3m.primitives.classification.random_forest.SKlearn',
+                'd3m.primitives.classification.k_neighbors.SKlearn',
+
+            ],
+        )),
+        'REGRESSION': list(itertools.product(
+            [_classification_template_augment],
+            # DATAMART
+            [
+                'NYU'
+            ],
+            # Imputer
+            ['d3m.primitives.data_cleaning.imputer.SKlearn'],
+            # Classifier
+            [
+                'd3m.primitives.regression.random_forest.SKlearn',
+                'd3m.primitives.regression.sgd.SKlearn',
+                'd3m.primitives.regression.decision_tree.SKlearn',
+                'd3m.primitives.regression.gaussian_process.SKlearn',
+                'd3m.primitives.regression.gradient_boosting.SKlearn',
+                'd3m.primitives.regression.lasso.SKlearn',
+                'd3m.primitives.regression.passive_aggressive.SKlearn',
+            ],
+        )),
+        'DEBUG_REGRESSION': list(itertools.product(
+            [_classification_template_augment],
+            # DATAMART
+            [
+                'NYU'
+            ],
+            # Imputer
+            ['d3m.primitives.data_cleaning.imputer.SKlearn'],
+            # Classifier
+            [
+                'd3m.primitives.regression.random_forest.SKlearn',
+            #    'd3m.primitives.regression.sgd.SKlearn',
+            ],
+        )),
+    }
+
     TEMPLATES = {
         'CLASSIFICATION': list(itertools.product(
             [_classification_template],
@@ -1324,7 +1790,7 @@ class D3mTa2(Observable):
             # Classifier
             [
                 'd3m.primitives.regression.random_forest.SKlearn',
-                'd3m.primitives.regression.sgd.SKlearn',
+                #    'd3m.primitives.regression.sgd.SKlearn',
             ],
         )),
     }

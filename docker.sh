@@ -5,9 +5,10 @@
 # Example test: ./docker.sh test seed_datasets_current/185_baseball/TEST ta2:latest
 
 # Change this if you're not Remi
-LOCAL_DATA_ROOT="/Users/rlopez/D3M/datasets"
-LOCAL_OUTPUT_ROOT="/Users/rlopez/D3M/tmp"
-LOCAL_STATIC_ROOT="/Users/rlopez/D3M/static"
+LOCAL_DATA_ROOT="/Users/raonilourenco/reps/datasets"
+LOCAL_OUTPUT_ROOT="/Users/raonilourenco/d3m/tmp"
+LOCAL_STATIC_ROOT="/Users/raonilourenco/d3m/static"
+
 
 set -eu
 
@@ -56,6 +57,7 @@ docker run -ti --rm \
     -e D3MRAM=4Gi \
     -e D3MTIMEOUT=$TIMEOUT \
     $OPTS \
+    -v "$PWD/alphaautoml:/usr/src/app/alphaautoml" \
     -v "$PWD/d3m_ta2_nyu:/usr/src/app/d3m_ta2_nyu" \
     -v "$PWD/resource:/usr/src/app/resource" \
     -v "$PWD/tests.py:/usr/src/app/tests.py"\

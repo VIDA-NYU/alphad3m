@@ -1,7 +1,7 @@
 import logging
 import os
 import pickle
-from d3m.container import Dataset
+from d3m.container import Dataset, DataFrame
 from d3m_ta2_nyu.workflow import database
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ def test(pipeline_id, dataset, storage_dir, results_path, msg_queue, db):
     produce_results = runtime.produce(inputs=[dataset])
     produce_results.check_success()
 
-    if results_path is not None:
+    if results_path is not None and isinstance(produce_results.values['outputs.0'],DataFrame):
         logger.info('Storing predictions at %s', results_path)
         produce_results.values['outputs.0'].sort_values(by=['d3mIndex']).to_csv(results_path, index=False)
     else:

@@ -3,6 +3,7 @@ import os
 import pickle
 import json
 from d3m_ta2_nyu.workflow import database
+from d3m.metadata.pipeline import PrimitiveStep
 
 
 # Use a headless matplotlib backend
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class D3MPipelineGenerator():
     @staticmethod
-    def make_pipeline_from_strings(primitives, origin, dataset, targets=None, features=None, DBSession=None):
+    def make_pipeline_from_strings(primitives, origin, dataset, search_results, pipeline_template, targets=None, features=None, DBSession=None):
 
         db = DBSession()
 
@@ -56,6 +57,7 @@ class D3MPipelineGenerator():
                 set_hyperparams(primitive, handle_unknown='ignore')
 
 
+
         try:
             #                          data
             #                            |
@@ -87,8 +89,62 @@ class D3MPipelineGenerator():
                 name='features', value=pickle.dumps(features),
             ))
 
-            step0 = make_primitive_module('d3m.primitives.data_transformation.denormalize.Common')
-            connect(input_data, step0, from_output='dataset')
+            prev_step = None
+            if pipeline_template:
+                prev_steps = {}
+                count_template_steps = 0
+                for pipeline_step in pipeline_template['steps']:
+                    if pipeline_step['type'] == 'PRIMITIVE':
+                        step = make_primitive_module(pipeline_step['primitive']['python_path'])
+                        prev_steps['steps.%d.produce' % (count_template_steps)] = step
+                        count_template_steps += 1
+                        if 'hyperparams' in pipeline_step:
+                            hyperparams = {}
+                            for hyper, desc in pipeline_step['hyperparams'].items():
+                                hyperparams[hyper] = desc['data']
+                            set_hyperparams(step, **hyperparams)
+                    else:
+                        # TODO In the future we should be able to handle subpipelines
+                        break
+                    if prev_step:
+                        for argument, desc in pipeline_step['arguments'].items():
+                            connect(prev_steps[desc['data']], step, to_input=argument)
+                    else:
+                        connect(input_data, step, from_output='dataset')
+                    prev_step = step
+
+            # Check if ALphaD3M is trying to augment
+            search_result = None
+            if 'RESULT.' in primitives[0]:
+                result_index = int(primitives[0].split('.')[1])
+                if result_index < len(search_results):
+                    search_result = search_results[result_index]
+                primitives = primitives[1:]
+
+            # Check if there is result to augment
+            if search_result:
+                step_aug = make_primitive_module(
+                    'd3m.primitives.data_augmentation.datamart_augmentation.Common')
+                if prev_step:
+                    connect(prev_step, step_aug)
+                else:
+                    connect(input_data, step_aug, from_output='dataset')
+                set_hyperparams(
+                    step_aug,
+                    search_result=search_result,
+                    system_identifier="NYU"
+                )
+
+                step0 = make_primitive_module(
+                    'd3m.primitives.data_transformation.denormalize.Common')
+                connect(step_aug, step0)
+            else:
+                step0 = make_primitive_module(
+                    'd3m.primitives.data_transformation.denormalize.Common')
+                if prev_step:
+                    connect(prev_step, step0)
+                else:
+                    connect(input_data, step0, from_output='dataset')
 
             step1 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
             connect(step0, step1)
