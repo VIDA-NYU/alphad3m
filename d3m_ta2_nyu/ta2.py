@@ -34,10 +34,10 @@ from d3m_ta2_nyu.workflow.convert import to_d3m_json
 
 
 MAX_RUNNING_PROCESSES = 1
-TUNE_PIPELINES_COUNT = 1
+TUNE_PIPELINES_COUNT = 0
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
-    TUNE_PIPELINES_COUNT = 1
+    TUNE_PIPELINES_COUNT = 0
 
 
 logger = logging.getLogger(__name__)
@@ -245,9 +245,11 @@ class Session(Observable):
                     if len(tune) > 0:
                         # Found some pipelines to tune, do that
                         logger.warning("Found %d pipelines to tune", len(tune))
+                        timeout_per_pipeline = self.timeout_tuning / len(tune)
                         for pipeline_id in tune:
                             logger.info("    %s", pipeline_id)
-                            self._ta2._run_queue.put(TuneHyperparamsJob(self, pipeline_id, self.problem))
+                            self._ta2._run_queue.put(TuneHyperparamsJob(self, pipeline_id, self.problem,
+                                                                        timeout=timeout_per_pipeline))
                             self.pipelines_tuning.add(pipeline_id)
                         return
                     logger.info("Found no pipeline to tune")
@@ -545,12 +547,13 @@ class TestJob(Job):
 
 
 class TuneHyperparamsJob(Job):
-    def __init__(self, session, pipeline_id, problem, store_results=True):
+    def __init__(self, session, pipeline_id, problem, store_results=True, timeout=60):
         Job.__init__(self)
         self.session = session
         self.pipeline_id = pipeline_id
         self.problem = problem
         self.store_results = store_results
+        self.timeout = timeout
 
     def start(self, db_filename, predictions_root, **kwargs):
         self.predictions_root = predictions_root
@@ -571,7 +574,7 @@ class TuneHyperparamsJob(Job):
                                 metrics=self.session.metrics,
                                 problem=self.problem,
                                 do_rank=self.session.do_rank,
-                                timeout=self.session.timeout_tuning,
+                                timeout=self.timeout,
                                 targets=self.session.targets,
                                 db_filename=db_filename)
         self.session.notify('tuning_start',
@@ -908,7 +911,7 @@ class D3mTa2(Observable):
             template_name = task
         if 'TA2_DEBUG_BE_FAST' in os.environ:
             template_name = 'DEBUG_' + task
-        for template in self.TEMPLATES.get(template_name, []):
+        for template in []:#self.TEMPLATES.get(template_name, []):
             logger.info("Creating pipeline from %r", template)
             if isinstance(template, (list, tuple)):
                 func, args = template[0], template[1:]
@@ -921,27 +924,14 @@ class D3mTa2(Observable):
                 logger.exception("Error building pipeline from %r",
                                  template)
 
-        timeout_search = timeout * 0.7
-        start_time = time.time()
-
+        timeout_search = timeout * 0.7  # TODO: Do it dynamic
+        timeout_tuning = timeout * 0.3
         if 'TA2_DEBUG_BE_FAST' not in os.environ:
             self._build_pipelines_from_generator(session, task, dataset, metrics, timeout_search, do_rank)
 
         # For tuning
-        timeout_tuning = time.time() - start_time
-
-        db = self.DBSession()
-        try:
-            found_pipelines = len(session.get_top_pipelines(db, metrics[0]['metric']))
-        except Exception:
-            logger.error('Error getting the number of pipelines')
-            found_pipelines = 1
-        finally:
-            db.close()
-
-        pipelines_to_tune = min(TUNE_PIPELINES_COUNT, found_pipelines)
         session.do_rank = do_rank
-        session.timeout_tuning = 300#timeout_tuning/pipelines_to_tune
+        session.timeout_tuning = timeout_tuning
         session.tune_when_ready(tune)
 
     def _build_pipelines_from_generator(self, session, task, dataset, metrics, timeout, do_rank):

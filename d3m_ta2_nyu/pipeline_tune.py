@@ -6,7 +6,7 @@ from d3m import index
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from d3m_ta2_nyu.common import SCORES_RANKING_ORDER
-from d3m_ta2_nyu.pipeline_score import evaluate, add_scores_db, train_test_tabular_split, score
+from d3m_ta2_nyu.pipeline_score import evaluate, train_test_tabular_split, score
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.parameter_tuning.primitive_config import is_tunable
 from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, hyperparams_from_config
@@ -19,6 +19,7 @@ PRIMITIVES = index.search()
 
 @database.with_db
 def tune(pipeline_id, metrics, problem, do_rank, timeout, targets, msg_queue, db):
+    timeout = timeout * 0.9  # FIXME: Save 10% of timeout to score the best config
     # Load pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -46,13 +47,8 @@ def tune(pipeline_id, metrics, problem, do_rank, timeout, targets, msg_queue, db
 
     dataset = Dataset.load(dataset_uri)
     tuning = HyperparameterTuning([tunable_module.name])
-    best_score_data = {}
-    best_cost = float('inf')
 
     def evaluate_tune(hyperparameter_configuration):
-        #global best_score_data
-        #global best_cost
-
         hy = hyperparams_from_config(tunable_module.name, hyperparameter_configuration)
         db.add(database.PipelineParameter(
             pipeline=pipeline,
@@ -65,24 +61,15 @@ def tune(pipeline_id, metrics, problem, do_rank, timeout, targets, msg_queue, db
                         #'stratified': 'true',
                         'train_test_ratio': '0.75',
                         'method': pb_core.EvaluationMethod.Value('HOLDOUT')}
-        print('>>>>>>>>>>>>>>>>>>')
-        scores = evaluate(pipeline, train_test_tabular_split, dataset, metrics, problem, scoring_conf)
-        cost = 1 #scores[0][metrics[0]['metric']] * SCORES_RANKING_ORDER[metrics[0]['metric']]
-        logger.info("Tuning results:\n%s", scores)
-        best_score_data = 1
-        best_cost = 1
-        print('>>>>>', best_score_data)
-        print('>>>>>', best_cost)
 
-        if cost < best_cost:
-            print('>>>>> here', cost)
-            best_cost = cost
-            best_score_data = scores
+        scores = evaluate(pipeline, train_test_tabular_split, dataset, metrics, problem, scoring_conf)
+        cost = scores[0][metrics[0]['metric']] * SCORES_RANKING_ORDER[metrics[0]['metric']]
+        logger.info("Tuning results:\n%s", scores)
 
         # Don't store those runs
         db.rollback()
 
-        return scores[0][metrics[0]['metric']] * SCORES_RANKING_ORDER[metrics[0]['metric']]
+        return cost
 
     # Run tuning, gets best configuration
     best_configuration = tuning.tune(evaluate_tune, wallclock=timeout)
@@ -110,10 +97,6 @@ def tune(pipeline_id, metrics, problem, do_rank, timeout, targets, msg_queue, db
 
     score(new_pipeline.id, dataset_uri, metrics, problem, None, do_rank, False, None,
           db_filename='/output/supporting_files/db.sqlite3')
-
-    # TODO Should we rename CrossValidation table?
-    scores_db = add_scores_db(best_score_data, [])
-    record_db = database.CrossValidation(pipeline_id=pipeline_id, scores=scores_db)  # Store scores
-    db.add(record_db)
+    # TODO: Change this static string path
 
     msg_queue.send(('tuned_pipeline_id', new_pipeline.id))

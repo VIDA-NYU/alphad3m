@@ -101,8 +101,6 @@ def score(pipeline_id, dataset_uri, metrics, problem, scoring_conf, do_rank, do_
 
 def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
     json_pipeline = convert.to_d3m_json(pipeline)
-    #with open(os.path.join(os.path.dirname(__file__), 'pipeline_tmp.json')) as fin:
-    #    json_pipeline = json.load(fin)
     logger.info("Pipeline to be scored:\n%s",
                 '\n'.join([x['primitive']['python_path'] for x in json_pipeline['steps']]))
 
