@@ -260,8 +260,6 @@ def generate(task, dataset,search_results, pipeline_template, metrics, problem, 
     for data_res in data_resources:
         data_types.append(data_res['resType'])
 
-    print('>>>>>>>', data_types, task)
-
     if 'text' in data_types:
         eval_text_pipeline('ALPHAD3M')
         return
@@ -359,7 +357,7 @@ def generate(task, dataset,search_results, pipeline_template, metrics, problem, 
         c.learn()
 
     def signal_handler(signal, frame):
-        print('Receiving SIGTERM signal')
+        logger.info('Receiving SIGTERM signal')
         #record_bestpipeline(input['DATASET'])
         if process_sklearn.is_alive():
             process_sklearn.terminate()
