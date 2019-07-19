@@ -15,7 +15,7 @@ from client import do_search, do_train, do_test
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
-DATASETS_PATH = '/Users/raonilourenco/reps/datasets/seed_datasets_data_augmentation/'
+DATASETS_PATH = '/Users/raonilourenco/reps/datasets/seed_datasets_current/'
 D3MINPUTDIR = '/Users/raonilourenco/d3m//tmp/'
 
 
@@ -24,7 +24,7 @@ def run_all_datasets():
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
     statistics_path = join(dirname(__file__), 'resource/statistics_datasets.csv')
     datasets = sorted([x for x in os.listdir(DATASETS_PATH) if os.path.isdir(join(DATASETS_PATH, x))])
-    datasets = ['LL1_TXT_CLS_apple_products_sentiment']
+    datasets = ['30_personae']
     size = len(datasets)
 
     for i, dataset in enumerate(datasets):
