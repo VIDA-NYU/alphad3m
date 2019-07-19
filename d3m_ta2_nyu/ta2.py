@@ -41,9 +41,9 @@ from d3m.metadata.pipeline import PrimitiveStep
 MAX_RUNNING_PROCESSES = 1
 
 DATAMART_URL = {
-    'NYU': os.environ['NYU_DATAMART_URL'] if 'NYU_DATAMART_URL' in os.environ
-                                          else 'https://staging.auctus.vida-nyu.org/' ,
-    'ISI': os.environ['ISI_DATAMART_URL'] if 'ISI_DATAMART_URL' in os.environ
+    'NYU': os.environ['DATAMART_URL_NYU'] if 'DATAMART_URL_NYU' in os.environ
+                                          else 'https://datamart.d3m.vida-nyu.org/' ,
+    'ISI': os.environ['DATAMART_URL_ISI'] if 'DATAMART_URL_ISI' in os.environ
                                           else 'http://dsbox02.isi.edu:9000/'
 }
 
