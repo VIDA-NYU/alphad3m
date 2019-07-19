@@ -208,7 +208,7 @@ class D3MPipelineGenerator():
                 db.close()
 
     @staticmethod
-    def make_text_pipeline_from_strings(origin, dataset, targets=None, features=None, DBSession=None):
+    def make_text_pipeline_from_strings(primitives, origin, dataset, targets=None, features=None, DBSession=None):
         db = DBSession()
 
         pipeline = database.Pipeline(
@@ -292,7 +292,7 @@ class D3MPipelineGenerator():
             step7 = make_primitive_module('d3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn')
             connect(step4, step7)
 
-            step8 = make_primitive_module('d3m.primitives.classification.random_forest.SKlearn')
+            step8 = make_primitive_module(primitives[-1])
             connect(step7, step8)
             connect(step6, step8, to_input='outputs')
 
@@ -308,7 +308,7 @@ class D3MPipelineGenerator():
             db.close()
 
     @staticmethod
-    def make_image_pipeline_from_strings(origin, dataset, targets=None, features=None, DBSession=None):
+    def make_image_pipeline_from_strings(primitives, origin, dataset, targets=None, features=None, DBSession=None):
         db = DBSession()
 
         pipeline = database.Pipeline(
@@ -383,7 +383,7 @@ class D3MPipelineGenerator():
             step7 = make_primitive_module('d3m.primitives.data_transformation.ndarray_to_dataframe.Common')
             connect(step6, step7)
 
-            step8 = make_primitive_module('d3m.primitives.regression.linear_svr.SKlearn')
+            step8 = make_primitive_module(primitives[-1])
             connect(step7, step8)
             connect(step4, step8, to_input='outputs')
 
@@ -753,6 +753,12 @@ class D3MPipelineGenerator():
                                                from_output_name=from_output,
                                                to_input_name=to_input))
 
+        def set_hyperparams(module, **hyperparams):
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=module,
+                name='hyperparams', value=pickle.dumps(hyperparams),
+            ))
+
         try:
 
             input_data = make_data_module('dataset')
@@ -764,11 +770,17 @@ class D3MPipelineGenerator():
                 pipeline=pipeline, module=input_data,
                 name='features', value=pickle.dumps(features),
             ))
-            step0 = make_primitive_module('d3m.primitives.data_transformation.load_single_graph.DistilSingleGraphLoader')
+            step0 = make_primitive_module(
+                'd3m.primitives.data_transformation.load_single_graph.DistilSingleGraphLoader')
             connect(input_data, step0, from_output='dataset')
+
             step1 = make_primitive_module('d3m.primitives.data_transformation.link_prediction.DistilLinkPrediction')
+            set_hyperparams(
+                step1,
+                metric='accuracy',
+            )
             connect(step0, step1)
-            connect(step0, step1, to_input='reference')
+            connect(step0, step1, to_input='outputs', from_output='produce_target')
 
             db.add(pipeline)
             db.commit()
@@ -1115,4 +1127,87 @@ class D3MPipelineGenerator():
         finally:
             db.close()
 
+    @staticmethod
+    def make_collaborativefiltering_pipeline_from_strings(origin, dataset, targets=None, features=None, DBSession=None):
+
+        db = DBSession()
+
+        pipeline = database.Pipeline(
+            origin=origin,
+            dataset=dataset)
+
+        def make_module(package, version, name):
+            pipeline_module = database.PipelineModule(
+                pipeline=pipeline,
+                package=package, version=version, name=name)
+            db.add(pipeline_module)
+            return pipeline_module
+
+        def make_data_module(name):
+            return make_module('data', '0.0', name)
+
+        def make_primitive_module(name):
+            if name[0] == '.':
+                name = 'd3m.primitives' + name
+            return make_module('d3m', '2018.7.10', name)
+
+        def connect(from_module, to_module,
+                    from_output='produce', to_input='inputs'):
+            db.add(database.PipelineConnection(pipeline=pipeline,
+                                               from_module=from_module,
+                                               to_module=to_module,
+                                               from_output_name=from_output,
+                                               to_input_name=to_input))
+
+        def set_hyperparams(module, **hyperparams):
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=module,
+                name='hyperparams', value=pickle.dumps(hyperparams),
+            ))
+
+        def extract_hyperparameters(dataset_path):
+            with open(dataset_path) as fin:
+                dataset_json = json.load(fin)
+
+            for resource in dataset_json['dataResources']:
+                if 'columns' in resource:
+                    for column in resource['columns']:
+                        if 'suggestedTarget' in column['role']:
+                            return column['colName']
+
+        column_target = extract_hyperparameters(dataset[7:])
+
+        try:
+
+            input_data = make_data_module('dataset')
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=input_data,
+                name='targets', value=pickle.dumps(targets),
+            ))
+            db.add(database.PipelineParameter(
+                pipeline=pipeline, module=input_data,
+                name='features', value=pickle.dumps(features),
+            ))
+
+            step0 = make_primitive_module(
+                'd3m.primitives.data_transformation.collaborative_filtering_parser.CollaborativeFilteringParser')
+            connect(input_data, step0, from_output='dataset')
+
+            step1 = make_primitive_module('d3m.primitives.data_transformation.graph_transformer.GraphTransformer')
+            connect(step0, step1)
+
+            step2 = make_primitive_module('d3m.primitives.link_prediction.link_prediction.LinkPrediction')
+            set_hyperparams(
+                step2,
+                prediction_column=column_target,
+            )
+            connect(step1, step2)
+
+            db.add(pipeline)
+            db.commit()
+            logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
+            return pipeline.id
+
+        finally:
+            db.close()
 

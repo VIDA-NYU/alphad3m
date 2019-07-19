@@ -102,7 +102,8 @@ def is_tunable(name):
     family = klass.metadata.to_json_structure()['primitive_family']
 
     return family in {'CLASSIFICATION', 'REGRESSION', 'TIME_SERIES_CLASSIFICATION', 'TIME_SERIES_FORECASTING',
-                      'SEMISUPERVISED_CLASSIFICATION', 'COMMUNITY_DETECTION', 'VERTEX_CLASSIFICATION', 'GRAPH_MATCHING'}
+                      'SEMISUPERVISED_CLASSIFICATION', 'COMMUNITY_DETECTION', 'VERTEX_CLASSIFICATION', 'GRAPH_MATCHING',
+                      'LINK_PREDICTION'}
 
 
 def get_default_configspace(primitive):

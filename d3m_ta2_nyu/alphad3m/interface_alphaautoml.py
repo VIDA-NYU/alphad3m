@@ -164,17 +164,17 @@ def generate(task, dataset,search_results, pipeline_template, metrics, problem, 
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    def eval_text_pipeline(origin):
+    def eval_text_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_text_pipeline_from_strings(origin, dataset, targets, features,
+        pipeline_id = D3MPipelineGenerator.make_text_pipeline_from_strings(strings, origin, dataset, targets, features,
                                                                            DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    def eval_image_pipeline(origin):
+    def eval_image_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_image_pipeline_from_strings(origin, dataset, targets, features,
+        pipeline_id = D3MPipelineGenerator.make_image_pipeline_from_strings(strings, origin, dataset, targets, features,
                                                                             DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
@@ -244,10 +244,18 @@ def generate(task, dataset,search_results, pipeline_template, metrics, problem, 
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    def eval_semisupervised_fore_pipeline(origin):
+    def eval_semisupervised_pipeline(origin):
         # Create the pipeline in the database
         pipeline_id = D3MPipelineGenerator.make_semisupervised_pipeline_from_strings(origin, dataset, targets,
-                                                                                      features, DBSession=DBSession)
+                                                                                     features, DBSession=DBSession)
+        # Evaluate the pipeline
+        msg_queue.send(('eval', pipeline_id))
+        return msg_queue.recv()
+
+    def eval_collaborativefiltering_pipeline(origin):
+        # Create the pipeline in the database
+        pipeline_id = D3MPipelineGenerator.make_collaborativefiltering_pipeline_from_strings(origin, dataset, targets,
+                                                                                        features, DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
@@ -260,20 +268,17 @@ def generate(task, dataset,search_results, pipeline_template, metrics, problem, 
     for data_res in data_resources:
         data_types.append(data_res['resType'])
 
+    function_name = eval_pipeline
+
     if 'text' in data_types:
-        eval_text_pipeline('ALPHAD3M')
-        return
+        function_name = eval_text_pipeline
 
     if 'image' in data_types:
-        if 'REGRESSION' in task:
-            eval_image_pipeline('ALPHAD3M')
-            return
+        if 'REGRESSION' in task or 'CLASSIFICATION' in task:
+            function_name = eval_image_pipeline
         if 'OBJECT_DETECTION' in task:
             eval_object_pipeline('ALPHAD3M')
             return
-
-        logger.error('%s Not Supported', task)
-        sys.exit(148)
 
     if 'audio' in data_types:
         eval_audio_pipeline('ALPHAD3M')
@@ -307,7 +312,11 @@ def generate(task, dataset,search_results, pipeline_template, metrics, problem, 
         return
 
     if 'SEMISUPERVISED_CLASSIFICATION' in task:
-        eval_semisupervised_fore_pipeline('ALPHAD3M')
+        eval_semisupervised_pipeline('ALPHAD3M')
+        return
+
+    if 'COLLABORATIVE_FILTERING' in task:
+        eval_collaborativefiltering_pipeline('ALPHAD3M')
         return
 
     def create_input(selected_primitves):
@@ -351,7 +360,7 @@ def generate(task, dataset,search_results, pipeline_template, metrics, problem, 
 
     def run_sklearn_primitives():
         logger.info('Starting evaluation Scikit-learn primitives, timeout is %s', timeout_sklearn)
-        game = PipelineGame(input_sklearn, eval_pipeline)
+        game = PipelineGame(input_sklearn, function_name)
         nnet = NNetWrapper(game)
         c = Coach(game, nnet, input_sklearn['ARGS'])
         c.learn()
@@ -373,7 +382,7 @@ def generate(task, dataset,search_results, pipeline_template, metrics, problem, 
         process_sklearn.terminate()
         logger.info('Finished evaluation Scikit-learn primitives')
     input_all = create_input(ALL_PRIMITIVES)
-    game = PipelineGame(input_all, eval_pipeline)
+    game = PipelineGame(input_all, function_name)
     nnet = NNetWrapper(game)
 
     if input['ARGS'].get('load_model'):

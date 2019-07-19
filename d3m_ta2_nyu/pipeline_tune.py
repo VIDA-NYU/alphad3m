@@ -6,7 +6,7 @@ from d3m import index
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from d3m_ta2_nyu.common import SCORES_RANKING_ORDER
-from d3m_ta2_nyu.pipeline_score import evaluate, score, train_test_tabular_split
+from d3m_ta2_nyu.pipeline_score import evaluate, train_test_tabular_split, score
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.parameter_tuning.primitive_config import is_tunable
 from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, hyperparams_from_config
@@ -19,6 +19,7 @@ PRIMITIVES = index.search()
 
 @database.with_db
 def tune(pipeline_id, metrics, problem, do_rank, timeout, targets, msg_queue, db):
+    timeout = timeout * 0.9  # FIXME: Save 10% of timeout to score the best config
     # Load pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -62,12 +63,13 @@ def tune(pipeline_id, metrics, problem, do_rank, timeout, targets, msg_queue, db
                         'method': pb_core.EvaluationMethod.Value('HOLDOUT')}
 
         scores = evaluate(pipeline, train_test_tabular_split, dataset, metrics, problem, scoring_conf)
+        cost = scores[0][metrics[0]['metric']] * SCORES_RANKING_ORDER[metrics[0]['metric']]
         logger.info("Tuning results:\n%s", scores)
 
         # Don't store those runs
         db.rollback()
 
-        return scores[0][metrics[0]['metric']] * SCORES_RANKING_ORDER[metrics[0]['metric']]
+        return cost
 
     # Run tuning, gets best configuration
     best_configuration = tuning.tune(evaluate_tune, wallclock=timeout)

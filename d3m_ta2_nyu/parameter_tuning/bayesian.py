@@ -72,7 +72,7 @@ class HyperparameterTuning(object):
 
     def tune(self, runner, wallclock):
         # Scenario object
-        cutoff = wallclock / (self.runcount / 2)  # Allow long pipelines to try to execute half of the iterations limit
+        cutoff = wallclock / (self.runcount / 10)  # Allow long pipelines to try to execute one fourth of the iterations limit
         scenario = Scenario({"run_obj": "quality",  # We optimize quality (alternatively runtime)
                              "runcount-limit": self.runcount,  # Maximum function evaluations
                              "wallclock-limit": wallclock,
