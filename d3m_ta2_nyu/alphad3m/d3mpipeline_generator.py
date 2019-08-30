@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 class D3MPipelineGenerator():
     @staticmethod
     def make_pipeline_from_strings(primitives, origin, dataset, search_results, pipeline_template, targets=None, features=None, DBSession=None):
+        print('>>>>> primitives', primitives)
 
         db = DBSession()
 
@@ -188,6 +189,9 @@ class D3MPipelineGenerator():
                 ],
             )
             connect(step2, step6)
+
+            if 'feature_selection' in step.name:  # FIXME: Use the primitive family
+                connect(step6, step, to_input='outputs')
 
             step7 = make_primitive_module('d3m.primitives.data_transformation.cast_to_type.Common')
             connect(step6, step7)

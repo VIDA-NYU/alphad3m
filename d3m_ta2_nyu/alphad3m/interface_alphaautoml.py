@@ -44,10 +44,11 @@ ALL_PRIMITIVES, SKLEARN_PRIMITIVES = get_primitives()
 GRAMMAR = {
     'NON_TERMINALS': {
         'S': 1,
-        'DATA_AUGMENTATION':2,
-        'DATA_CLEANING':3,
-        'DATA_TRANSFORMATION':4,
-        'ESTIMATORS':5
+        'DATA_AUGMENTATION': 2,
+        'DATA_CLEANING': 3,
+        'DATA_TRANSFORMATION': 4,
+        'FEATURE_SELECTION': 5,
+        'ESTIMATORS': 6
     },
     'START': 'S->S'
 }
@@ -69,7 +70,7 @@ def get_terminals(non_terminals, primitives, task):
 
 
 def get_rules(non_terminals, primitives, task):
-    rules = { 'S->ESTIMATORS':1,
+    '''rules = { 'S->ESTIMATORS':1,
               'S->DATA_AUGMENTATION ESTIMATORS': 2,
               'S->DATA_CLEANING ESTIMATORS':3,
               'S->DATA_AUGMENTATION DATA_CLEANING ESTIMATORS': 4,
@@ -77,8 +78,18 @@ def get_rules(non_terminals, primitives, task):
               'S->DATA_AUGMENTATION DATA_TRANSFORMATION ESTIMATORS': 6,
               'S->DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 7,
               'S->DATA_AUGMENTATION DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 8
+    }'''
+
+    rules = {#'S->ESTIMATORS': 1,
+             #'S->DATA_CLEANING ESTIMATORS': 2,
+             #'S->DATA_TRANSFORMATION ESTIMATORS': 3,
+             #'S->DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 4,
+             'S->FEATURE_SELECTION ESTIMATORS': 1,
+             'S->DATA_CLEANING FEATURE_SELECTION ESTIMATORS': 2,
+             'S->DATA_TRANSFORMATION FEATURE_SELECTION ESTIMATORS': 3,
+             'S->DATA_CLEANING DATA_TRANSFORMATION FEATURE_SELECTION ESTIMATORS': 4
     }
-    
+
     rules_lookup = {'S': list(rules.keys())}
     count = len(rules)+1
     for non_terminal in non_terminals:
@@ -112,6 +123,9 @@ def get_rules(non_terminals, primitives, task):
         rules[rule] = count
         count += 1
         rules_lookup[non_terminal].append(rule)
+
+    #print(rules)
+    #print(rules_lookup)
     return rules, rules_lookup
 
 

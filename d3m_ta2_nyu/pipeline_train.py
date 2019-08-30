@@ -38,6 +38,7 @@ def train(pipeline_id, dataset, problem, storage_dir, results_path, msg_queue, d
     d3m_pipeline = d3m.metadata.pipeline.Pipeline.from_json_structure(
         convert.to_d3m_json(pipeline),
     )
+
     d3m_problem = None
     if problem is not None:
         # Convert problem description to core package format
@@ -57,7 +58,7 @@ def train(pipeline_id, dataset, problem, storage_dir, results_path, msg_queue, d
     fit_results = runtime.fit(inputs=[dataset])
     fit_results.check_success()
 
-    if results_path is not None and isinstance(fit_results.values['outputs.0'],DataFrame):
+    if results_path is not None and isinstance(fit_results.values['outputs.0'], DataFrame):
         logger.info('Storing fit results at %s', results_path)
         fit_results.values['outputs.0'].sort_values(by=['d3mIndex']).to_csv(results_path, index=False)
     else:

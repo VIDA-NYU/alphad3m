@@ -37,6 +37,7 @@ with pkg_resources.resource_stream(
 
 @database.with_db
 def score(pipeline_id, dataset_uri, metrics, problem, scoring_conf, do_rank, do_sample, msg_queue, db):
+    do_sample = False
     if problem['about']['taskType'] in {'timeSeriesForecasting', 'semiSupervisedClassification'}:
         # There are not primitives to do data sampling for these tasks
         do_sample = False
@@ -101,6 +102,7 @@ def score(pipeline_id, dataset_uri, metrics, problem, scoring_conf, do_rank, do_
 
 def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
     json_pipeline = convert.to_d3m_json(pipeline)
+
     logger.info("Pipeline to be scored:\n%s",
                 '\n'.join([x['primitive']['python_path'] for x in json_pipeline['steps']]))
 

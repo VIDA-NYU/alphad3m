@@ -47,7 +47,7 @@ DATAMART_URL = {
                                           else 'http://dsbox02.isi.edu:9000/'
 }
 
-TUNE_PIPELINES_COUNT = 5
+TUNE_PIPELINES_COUNT = 0
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0
@@ -876,7 +876,7 @@ class D3mTa2(Observable):
                              top_pipelines, tune)
 
     def build_fixed_pipeline(self, session_id, pipeline, dataset, targets=None, features=None):
-        self.executor.submit(self._build_fixed_pipeline, session_id, pipeline, dataset,targets, features)
+        self.executor.submit(self._build_fixed_pipeline, session_id, pipeline, dataset, targets, features)
 
     # Runs in a worker thread from executor
     def _build_fixed_pipeline(self, session_id, pipeline_template, dataset, targets, features):
@@ -1395,13 +1395,37 @@ class D3mTa2(Observable):
 
             connect(step3, step4)
 
+            ######### Feature Selection #########
+            '''stepx = make_primitive_module(
+                'd3m.primitives.data_transformation'
+                '.extract_columns_by_semantic_types.DataFrameCommon')
+            set_hyperparams(
+                stepx,
+                semantic_types=[
+                    'https://metadata.datadrivendiscovery.org/types/Target',
+                ],
+            )
+            connect(step2, stepx)
+
+            step_fe = make_primitive_module('d3m.primitives.feature_selection.variance_threshold.SKlearn')
+            set_hyperparams(
+                step_fe,
+                use_semantic_types=True
+            )
+
+            connect(step4, step_fe)
+            connect(stepx, step_fe, to_input='outputs')'''
+            ########## ---------------- #########
+
             step5 = make_primitive_module(
                 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')
             set_hyperparams(
                 step5,
                 handle_unknown='ignore'
             )
+            #connect(step_fe, step5)
             connect(step4, step5)
+
             step6 = make_primitive_module(
                 'd3m.primitives.data_transformation'
                 '.cast_to_type.Common')
@@ -1731,7 +1755,7 @@ class D3mTa2(Observable):
             # Classifier
             [
                 'd3m.primitives.regression.random_forest.SKlearn',
-            #    'd3m.primitives.regression.sgd.SKlearn',
+                'd3m.primitives.regression.sgd.SKlearn',
             ],
         )),
     }
@@ -1790,7 +1814,7 @@ class D3mTa2(Observable):
             # Classifier
             [
                 'd3m.primitives.regression.random_forest.SKlearn',
-                #    'd3m.primitives.regression.sgd.SKlearn',
+                'd3m.primitives.regression.sgd.SKlearn',
             ],
         )),
     }
