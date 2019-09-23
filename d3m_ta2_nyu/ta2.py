@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import pickle
+import numpy
 from queue import Empty, Queue
 from sqlalchemy import select
 from sqlalchemy.orm import aliased, joinedload, lazyload
@@ -28,6 +29,7 @@ from d3m_ta2_nyu.common import SCORES_RANKING_ORDER, \
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
+import d3m_ta2_nyu.proto.core_pb2 as pb_core
 from d3m_ta2_nyu.utils import Observable, ProgressStatus
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json
@@ -39,6 +41,8 @@ from d3m.metadata.pipeline import PrimitiveStep
 
 
 MAX_RUNNING_PROCESSES = 1
+SAMPLE_SIZE = 200
+RANDOM_SEED = 65682867
 
 DATAMART_URL = {
     'NYU': os.environ['DATAMART_URL_NYU'] if 'DATAMART_URL_NYU' in os.environ
@@ -423,28 +427,27 @@ class Job(object):
 class ScoreJob(Job):
     timeout = 8 * 60
 
-    def __init__(self, ta2, pipeline_id, dataset_uri, metrics, problem, scoring_conf=None, do_sample=False,
-                 do_rank=False):
+    def __init__(self, ta2, pipeline_id, dataset_uri, dataset, metrics, problem, scoring_conf, do_rank=False):
         Job.__init__(self)
         self.ta2 = ta2
         self.pipeline_id = pipeline_id
         self.dataset_uri = dataset_uri
+        self.dataset = dataset
         self.metrics = metrics
         self.problem = problem
         self.scoring_conf = scoring_conf
         self.do_rank = do_rank
-        self.do_sample = do_sample
 
     def start(self, db_filename, **kwargs):
         self.msg = Receiver()
         self.proc = run_process('d3m_ta2_nyu.pipeline_score.score', 'score', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 dataset_uri=self.dataset_uri,
+                                dataset=self.dataset,
                                 metrics=self.metrics,
                                 problem=self.problem,
                                 scoring_conf=self.scoring_conf,
                                 do_rank=self.do_rank,
-                                do_sample=self.do_sample,
                                 db_filename=db_filename)
         self.started = time.time()
         self.ta2.notify('scoring_start',
@@ -853,8 +856,9 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
-    def score_pipeline(self, pipeline_id, metrics, dataset, problem, scoring_conf):
-        job = ScoreJob(self, pipeline_id, dataset, metrics, problem, scoring_conf)
+    def score_pipeline(self, pipeline_id, metrics, dataset_uri, problem, scoring_conf):
+        dataset = Dataset.load(dataset_uri)
+        job = ScoreJob(self, pipeline_id, dataset_uri, dataset, metrics, problem, scoring_conf)
         self._run_queue.put(job)
         return id(job)
 
@@ -970,10 +974,8 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
-
-
     # Runs in a worker thread from executor
-    def _build_pipelines(self, session_id, task, dataset, pipeline_template, metrics, targets, features, timeout, top_pipelines, tune):
+    def _build_pipelines(self, session_id, task, dataset_uri, pipeline_template, metrics, targets, features, timeout, top_pipelines, tune):
         """Generates pipelines for the session, using the generator process.
         """
         session = self.sessions[session_id]
@@ -995,9 +997,10 @@ class D3mTa2(Observable):
 
         # Search for data augmentation
         search_results = []
+        sample_dataset = self._get_sample(dataset_uri, session.problem)
 
         if 'dataAugmentation' in session.problem:
-            dc = Dataset.load(dataset)
+            dc = Dataset.load(dataset_uri)
             keywords = []
             for aug in session.problem['dataAugmentation']:
                 keywords += aug['keywords']
@@ -1043,7 +1046,8 @@ class D3mTa2(Observable):
             try:
                 self._build_pipeline_from_template(session,
                                                    tpl_func,
-                                                   dataset,
+                                                   dataset_uri,
+                                                   sample_dataset,
                                                    pipeline_template,
                                                    do_rank)
             except Exception:
@@ -1062,7 +1066,8 @@ class D3mTa2(Observable):
                     try:
                         self._build_pipeline_from_template(session,
                                                            tpl_func,
-                                                           dataset,
+                                                           dataset_uri,
+                                                           sample_dataset,
                                                            pipeline_template,
                                                            do_rank,
                                                            search_result=search_result)
@@ -1074,23 +1079,22 @@ class D3mTa2(Observable):
         timeout_search = timeout * 0.7  # TODO: Do it dynamic
         timeout_tuning = timeout * 0.3
         if 'TA2_DEBUG_BE_FAST' not in os.environ:
-            self._build_pipelines_from_generator(session, task, dataset, search_results, pipeline_template, metrics, timeout_search, do_rank)
+            self._build_pipelines_from_generator(session, task, dataset_uri, sample_dataset, search_results, pipeline_template, metrics, timeout_search, do_rank)
 
         # For tuning
         session.do_rank = do_rank
         session.timeout_tuning = timeout_tuning
         session.tune_when_ready(tune)
 
-    def _build_pipelines_from_generator(self, session, task, dataset, search_results, pipeline_template, metrics, timeout, do_rank):
+    def _build_pipelines_from_generator(self, session, task, dataset_uri, dataset, search_results, pipeline_template, metrics, timeout, do_rank):
         logger.info("Starting AlphaD3M process, timeout is %s", timeout)
         msg_queue = Receiver()
         proc = run_process(
-            'd3m_ta2_nyu.alphad3m'
-            '.interface_alphaautoml.generate',
+            'd3m_ta2_nyu.alphad3m.interface_alphaautoml.generate',
             'alphad3m',
             msg_queue,
             task=task,
-            dataset=dataset,
+            dataset=dataset_uri,
             search_results=search_results,
             pipeline_template=pipeline_template,
             metrics=metrics,
@@ -1103,6 +1107,7 @@ class D3mTa2(Observable):
 
         start = time.time()
         stopped = False
+
 
         # Now we wait for pipelines to be sent over the pipe
         while proc.poll() is None:
@@ -1131,7 +1136,7 @@ class D3mTa2(Observable):
                 pipeline_id, = args
                 logger.info("Got pipeline %s from generator process",
                             pipeline_id)
-                score = self.run_pipeline(session, dataset, pipeline_id, do_rank)
+                score = self.run_pipeline(session, dataset_uri, dataset, pipeline_id, do_rank)
 
                 logger.info("Sending score to generator process")
                 try:  # Fixme, just to avoid Broken pipe error
@@ -1145,19 +1150,22 @@ class D3mTa2(Observable):
 
         logger.warning("Generator process exited with %r", proc.returncode)
 
-    def run_pipeline(self, session, dataset, pipeline_id, do_rank):
+    def run_pipeline(self, session, dataset_uri, dataset, pipeline_id, do_rank):
 
         """Score a single pipeline.
 
         This is used by the pipeline synthesis code.
         """
-
+        scoring_conf = {'shuffle': 'true',
+                        'stratified': 'false',
+                        'train_test_ratio': '0.75',
+                        'method': pb_core.EvaluationMethod.Value('HOLDOUT')}
         # Add the pipeline to the session, score it
         with session.with_observer_queue() as queue:
             session.add_scoring_pipeline(pipeline_id)
             logger.info("Created pipeline %s", pipeline_id)
-            self._run_queue.put(ScoreJob(self, pipeline_id, dataset, session.metrics, session.problem, do_sample=True,
-                                         do_rank=do_rank))
+            self._run_queue.put(ScoreJob(self, pipeline_id, dataset_uri, dataset, session.metrics, session.problem,
+                                         scoring_conf, do_rank=do_rank))
             session.notify('new_pipeline', pipeline_id=pipeline_id)
 
             while True:
@@ -1197,21 +1205,47 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
+    def _get_sample(self, dataset_uri, problem):
+        dataset = Dataset.load(dataset_uri)
+        try:
+            if problem['about']['taskType'] in {'timeSeriesForecasting', 'semiSupervisedClassification'}:
+                # There are not primitives to do data sampling for these tasks
+                return dataset
+
+            for res_id in dataset:
+                if ('https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
+                        in dataset.metadata.query([res_id])['semantic_types']):
+                    break
+
+            if hasattr(dataset[res_id], 'columns') and len(dataset[res_id]) > SAMPLE_SIZE:
+                # Sample the dataset to stay reasonably fast
+                logger.info('Sampling down data from %d to %d', len(dataset[res_id]), SAMPLE_SIZE)
+                sample = numpy.concatenate([numpy.repeat(True, SAMPLE_SIZE),
+                                            numpy.repeat(False, len(dataset[res_id]) - SAMPLE_SIZE)])
+
+                numpy.random.RandomState(seed=RANDOM_SEED).shuffle(sample)
+                dataset[res_id] = dataset[res_id][sample]
+        except:
+            logger.error('Error sampling in datatset %s', dataset_uri)
+
+        return dataset
+
     def _build_pipeline_from_template(self, session,
                                       template,
+                                      dataset_uri,
                                       dataset,
                                       pipeline_template,
                                       do_rank,
                                       search_result=None):
         # Create workflow from a template
         if search_result:
-            pipeline_id = template(self, dataset=dataset,
+            pipeline_id = template(self, dataset=dataset_uri,
                                    pipeline_template=pipeline_template,
                                    targets=session.targets,
                                    features=session.features,
                                    search_result=search_result)
         else:
-            pipeline_id = template(self, dataset=dataset,
+            pipeline_id = template(self, dataset=dataset_uri,
                                pipeline_template=pipeline_template,
                                targets=session.targets,
                                features=session.features)
@@ -1220,9 +1254,13 @@ class D3mTa2(Observable):
         session.add_scoring_pipeline(pipeline_id)
 
         logger.info("Created pipeline %s", pipeline_id)
+        scoring_conf = {'shuffle': 'true',
+                        'stratified': 'false',
+                        'train_test_ratio': '0.75',
+                        'method': pb_core.EvaluationMethod.Value('HOLDOUT')}
 
-        self._run_queue.put(ScoreJob(self, pipeline_id, dataset, session.metrics, session.problem, do_sample=True,
-                                     do_rank=do_rank))
+        self._run_queue.put(ScoreJob(self, pipeline_id, dataset_uri, dataset, session.metrics, session.problem,
+                                     scoring_conf,  do_rank=do_rank))
         session.notify('new_pipeline', pipeline_id=pipeline_id)
 
     # Runs in a background thread
@@ -1396,7 +1434,7 @@ class D3mTa2(Observable):
             connect(step3, step4)
 
             ######### Feature Selection #########
-            '''stepx = make_primitive_module(
+            stepx = make_primitive_module(
                 'd3m.primitives.data_transformation'
                 '.extract_columns_by_semantic_types.DataFrameCommon')
             set_hyperparams(
@@ -1407,14 +1445,20 @@ class D3mTa2(Observable):
             )
             connect(step2, stepx)
 
-            step_fe = make_primitive_module('d3m.primitives.feature_selection.variance_threshold.SKlearn')
+            #step_fe = make_primitive_module('d3m.primitives.feature_selection.variance_threshold.SKlearn')
+            #set_hyperparams(
+            #    step_fe,
+            #    use_semantic_types=True
+            #)
+            step_fe = make_primitive_module('d3m.primitives.feature_selection.joint_mutual_information.AutoRPI')
             set_hyperparams(
                 step_fe,
-                use_semantic_types=True
+                method='pseudoBayesian',
+                nbins=2,
             )
 
             connect(step4, step_fe)
-            connect(stepx, step_fe, to_input='outputs')'''
+            connect(stepx, step_fe, to_input='outputs')
             ########## ---------------- #########
 
             step5 = make_primitive_module(
@@ -1423,8 +1467,8 @@ class D3mTa2(Observable):
                 step5,
                 handle_unknown='ignore'
             )
-            #connect(step_fe, step5)
-            connect(step4, step5)
+            connect(step_fe, step5)
+            #connect(step4, step5)
 
             step6 = make_primitive_module(
                 'd3m.primitives.data_transformation'

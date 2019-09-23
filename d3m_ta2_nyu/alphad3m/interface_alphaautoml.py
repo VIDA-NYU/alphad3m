@@ -80,14 +80,14 @@ def get_rules(non_terminals, primitives, task):
               'S->DATA_AUGMENTATION DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 8
     }'''
 
-    rules = {#'S->ESTIMATORS': 1,
-             #'S->DATA_CLEANING ESTIMATORS': 2,
-             #'S->DATA_TRANSFORMATION ESTIMATORS': 3,
-             #'S->DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 4,
-             'S->FEATURE_SELECTION ESTIMATORS': 1,
-             'S->DATA_CLEANING FEATURE_SELECTION ESTIMATORS': 2,
-             'S->DATA_TRANSFORMATION FEATURE_SELECTION ESTIMATORS': 3,
-             'S->DATA_CLEANING DATA_TRANSFORMATION FEATURE_SELECTION ESTIMATORS': 4
+    rules = {'S->ESTIMATORS': 1,
+             'S->DATA_CLEANING ESTIMATORS': 2,
+             'S->DATA_TRANSFORMATION ESTIMATORS': 3,
+             'S->DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 4,
+             #'S->FEATURE_SELECTION ESTIMATORS': 1,
+             #'S->DATA_CLEANING FEATURE_SELECTION ESTIMATORS': 2,
+             #'S->DATA_TRANSFORMATION FEATURE_SELECTION ESTIMATORS': 3,
+             #'S->DATA_CLEANING DATA_TRANSFORMATION FEATURE_SELECTION ESTIMATORS': 1
     }
 
     rules_lookup = {'S': list(rules.keys())}
@@ -163,7 +163,7 @@ process_sklearn = None
 
 
 @database.with_sessionmaker
-def generate(task, dataset,search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue, DBSession):
+def generate(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue, DBSession):
     import time
     start = time.time()
     # FIXME: don't use 'problem' argument
@@ -387,14 +387,14 @@ def generate(task, dataset,search_results, pipeline_template, metrics, problem, 
         sys.exit(0)
     # TODO Not use multiprocessing to prioritize sklearn primitives
     signal.signal(signal.SIGTERM, signal_handler)
-    process_sklearn = multiprocessing.Process(target=run_sklearn_primitives)
+    '''process_sklearn = multiprocessing.Process(target=run_sklearn_primitives)
     process_sklearn.daemon = True
     process_sklearn.start()
     process_sklearn.join(timeout_sklearn)
 
     if process_sklearn.is_alive():
         process_sklearn.terminate()
-        logger.info('Finished evaluation Scikit-learn primitives')
+        logger.info('Finished evaluation Scikit-learn primitives')'''
     input_all = create_input(ALL_PRIMITIVES)
     game = PipelineGame(input_all, function_name)
     nnet = NNetWrapper(game)

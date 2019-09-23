@@ -57,7 +57,7 @@ def run_all_datasets():
 
         task = get_task(problem)
         best_time, score = 'None', 'None'
-        solutions = do_search(core, problem, train_dataset_path, time_bound=30.0, pipelines_limit=0,
+        solutions = do_search(core, problem, train_dataset_path, time_bound=600.0, pipelines_limit=0,
                               pipeline_template=pipeline_template)
         search_time = str(datetime.now() - start_time)
         number_solutions = len(solutions)

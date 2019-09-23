@@ -1,5 +1,4 @@
 import logging
-import numpy
 import json
 import os
 import pkg_resources
@@ -16,8 +15,6 @@ from d3m.metadata.problem import Problem
 
 logger = logging.getLogger(__name__)
 
-SAMPLE_SIZE = 100
-RANDOM_SEED = 65682867
 
 with pkg_resources.resource_stream(
         'd3m_ta2_nyu',
@@ -36,17 +33,7 @@ with pkg_resources.resource_stream(
 
 
 @database.with_db
-def score(pipeline_id, dataset_uri, metrics, problem, scoring_conf, do_rank, do_sample, msg_queue, db):
-    do_sample = False
-    if problem['about']['taskType'] in {'timeSeriesForecasting', 'semiSupervisedClassification'}:
-        # There are not primitives to do data sampling for these tasks
-        do_sample = False
-    if scoring_conf is None:
-        scoring_conf = {'shuffle': 'true',
-                        'stratified': 'false',
-                        'train_test_ratio': '0.75',
-                        'method': pb_core.EvaluationMethod.Value('HOLDOUT')}
-
+def score(pipeline_id, dataset_uri, dataset, metrics, problem, scoring_conf, do_rank, msg_queue, db):
     # Get pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -57,27 +44,19 @@ def score(pipeline_id, dataset_uri, metrics, problem, scoring_conf, do_rank, do_
 
     logger.info('About to score pipeline, id=%s, metrics=%s, dataset=%r', pipeline_id, metrics, dataset_uri)
 
-    # Load data
-    dataset = Dataset.load(dataset_uri)
-    logger.info('Loaded dataset')
-
-    if do_sample:
-        dataset = get_sample(dataset)
-
-    evaluation_method = scoring_conf['method']
-    scores_db = []
     scores = {}
+    scores_db = []
 
-    if evaluation_method == pb_core.EvaluationMethod.Value('K_FOLD'):
+    if scoring_conf['method'] == pb_core.EvaluationMethod.Value('K_FOLD'):
         scoring_conf['number_of_folds'] = scoring_conf.pop('folds')
         scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_conf)
         logger.info("Cross-validation results:\n%s", scores)
 
-    elif evaluation_method == pb_core.EvaluationMethod.Value('HOLDOUT'):
+    elif scoring_conf['method'] == pb_core.EvaluationMethod.Value('HOLDOUT'):
         scores = evaluate(pipeline, train_test_tabular_split, dataset, metrics, problem, scoring_conf)
         logger.info("Holdout results:\n%s", scores)
 
-    elif evaluation_method == pb_core.EvaluationMethod.Value('RANKING'):
+    elif scoring_conf['method'] == pb_core.EvaluationMethod.Value('RANKING'):
         metrics = format_metrics(problem)
         scores = evaluate(pipeline, train_test_tabular_split, dataset, metrics, problem, scoring_conf)
         scores = create_new_metric(scores)
@@ -87,8 +66,8 @@ def score(pipeline_id, dataset_uri, metrics, problem, scoring_conf, do_rank, do_
 
     if do_rank and len(scores) > 0:  # Need to rank too
         logger.info("Calculating RANK in search solution for pipeline %s", pipeline_id)
-        dataset = Dataset.load(dataset_uri)  # load complete dataset
-        scores = evaluate(pipeline, train_test_tabular_split, dataset, metrics, problem, scoring_conf)
+        entire_dataset = Dataset.load(dataset['uri'])  # load complete dataset
+        scores = evaluate(pipeline, train_test_tabular_split, entire_dataset, metrics, problem, scoring_conf)
         logger.info("Ranking-D3M (whole dataset) results:\n%s", scores)
         scores = create_new_metric(scores)
         logger.info("Ranking-D3M (whole dataset) new metric results:\n%s", scores)
@@ -106,7 +85,7 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
     logger.info("Pipeline to be scored:\n%s",
                 '\n'.join([x['primitive']['python_path'] for x in json_pipeline['steps']]))
 
-    d3m_pipeline = d3m.metadata.pipeline.Pipeline.from_json_structure(json_pipeline, )
+    d3m_pipeline = Pipeline.from_json_structure(json_pipeline, )
 
     # Convert problem description to core package format
     # FIXME: There isn't a way to parse from JSON data, so write it to a file
@@ -143,25 +122,6 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
         scores[row['fold']][row['metric']] = row['value']
 
     return scores
-
-
-def get_sample(dataset):
-    for res_id in dataset:
-        if ('https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
-                in dataset.metadata.query([res_id])['semantic_types']):
-            break
-    else:
-        res_id = next(iter(dataset))
-    if hasattr(dataset[res_id], 'columns') and len(dataset[res_id]) > SAMPLE_SIZE:
-        # Sample the dataset to stay reasonably fast
-        logger.info('Sampling down data from %d to %d', len(dataset[res_id]), SAMPLE_SIZE)
-        sample = numpy.concatenate([numpy.repeat(True, SAMPLE_SIZE),
-                                    numpy.repeat(False, len(dataset[res_id]) - SAMPLE_SIZE)])
-
-        numpy.random.RandomState(seed=RANDOM_SEED).shuffle(sample)
-        dataset[res_id] = dataset[res_id][sample]
-
-    return dataset
 
 
 def create_new_metric(scores):

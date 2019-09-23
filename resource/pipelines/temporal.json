@@ -184,7 +184,7 @@
             "semantic_types":{
                "type":"VALUE",
                "data":[
-                  "https://metadata.datadrivendiscovery.org/types/Target"
+                  "https://metadata.datadrivendiscovery.org/types/SuggestedTarget"
                ]
             }
          }
