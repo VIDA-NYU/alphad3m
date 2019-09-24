@@ -548,9 +548,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         rank = request.rank
         if rank < 0.0:
             rank = None
-        pipeline = self._ta2.get_workflow(pipeline_id)
 
-        self._ta2.write_executable(pipeline)
         session.write_exported_pipeline(pipeline_id, rank)
         return pb_core.SolutionExportResponse()
 
