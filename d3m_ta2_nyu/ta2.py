@@ -969,6 +969,7 @@ class D3mTa2(Observable):
             logger.info("Created fixed pipeline %s", pipeline_id)
             session.notify('new_fixed_pipeline', pipeline_id=pipeline_id)
             with session.lock:
+                session.pipelines.add(pipeline_id)
                 # Force working=True so we get 'done_searching' even if no pipeline
                 # gets created
                 session.working = False
