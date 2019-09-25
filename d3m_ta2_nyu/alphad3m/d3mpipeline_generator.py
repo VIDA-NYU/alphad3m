@@ -1411,6 +1411,14 @@ class D3MPipelineGenerator():
             connect(step7, step8)
 
             step9 = make_primitive_module(classifier)
+            if classifier == 'd3m.primitives.regression.gradient_boosting.SKlearn':
+                set_hyperparams(
+                    step7,
+                    semantic_types=[
+                        'https://metadata.datadrivendiscovery.org/types/Target',
+                    ],
+                )
+
             connect(step6, step9)
             connect(step8, step9, to_input='outputs')
 
@@ -1445,8 +1453,7 @@ class D3MPipelineGenerator():
         db = DBSession()
 
         pipeline = database.Pipeline(
-            origin="template(datamart_system=%s, imputer=%s, classifier=%s)" % (datamart_system,
-                imputer, classifier),
+            origin="template(datamart_system=%s, imputer=%s, classifier=%s)" % (datamart_system, imputer, classifier),
             dataset=dataset)
 
         def make_module(package, version, name):
@@ -1659,7 +1666,6 @@ class D3MPipelineGenerator():
                 'd3m.primitives.classification.logistic_regression.SKlearn',
                 'd3m.primitives.classification.multinomial_naive_bayes.SKlearn',
                 'd3m.primitives.classification.passive_aggressive.SKlearn',
-                'd3m.primitives.classification.random_forest.DataFrameCommon',
                 'd3m.primitives.classification.sgd.SKlearn',
             ],
         )),
@@ -1720,7 +1726,6 @@ class D3MPipelineGenerator():
                 'd3m.primitives.classification.logistic_regression.SKlearn',
                 'd3m.primitives.classification.multinomial_naive_bayes.SKlearn',
                 'd3m.primitives.classification.passive_aggressive.SKlearn',
-                'd3m.primitives.classification.random_forest.DataFrameCommon',
                 'd3m.primitives.classification.sgd.SKlearn',
             ],
         )),

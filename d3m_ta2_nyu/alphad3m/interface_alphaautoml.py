@@ -70,7 +70,7 @@ def get_terminals(non_terminals, primitives, task):
 
 
 def get_rules(non_terminals, primitives, task):
-    '''rules = { 'S->ESTIMATORS':1,
+    rules = { 'S->ESTIMATORS':1,
               'S->DATA_AUGMENTATION ESTIMATORS': 2,
               'S->DATA_CLEANING ESTIMATORS':3,
               'S->DATA_AUGMENTATION DATA_CLEANING ESTIMATORS': 4,
@@ -78,9 +78,9 @@ def get_rules(non_terminals, primitives, task):
               'S->DATA_AUGMENTATION DATA_TRANSFORMATION ESTIMATORS': 6,
               'S->DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 7,
               'S->DATA_AUGMENTATION DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 8
-    }'''
+    }
 
-    rules = {'S->ESTIMATORS': 1,
+    '''rules = {'S->ESTIMATORS': 1,
              'S->DATA_CLEANING ESTIMATORS': 2,
              'S->DATA_TRANSFORMATION ESTIMATORS': 3,
              'S->DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 4,
@@ -88,7 +88,7 @@ def get_rules(non_terminals, primitives, task):
              #'S->DATA_CLEANING FEATURE_SELECTION ESTIMATORS': 2,
              #'S->DATA_TRANSFORMATION FEATURE_SELECTION ESTIMATORS': 3,
              #'S->DATA_CLEANING DATA_TRANSFORMATION FEATURE_SELECTION ESTIMATORS': 1
-    }
+    }'''
 
     rules_lookup = {'S': list(rules.keys())}
     count = len(rules)+1
@@ -162,8 +162,8 @@ input = {
 process_sklearn = None
 
 
-def generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout,
-                  msg_queue, DBSession):
+def generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
+                          timeout, msg_queue, DBSession):
     logger.info("Creating pipelines from templates...")
 
     if task in ['GRAPH_MATCHING', 'LINK_PREDICTION', 'VERTEX_NOMINATION', 'OBJECT_DETECTION', 'CLUSTERING',
@@ -179,21 +179,28 @@ def generate_by_templates(task, dataset, search_results, pipeline_template, metr
     # No Augmentation
     templates = D3MPipelineGenerator.TEMPLATES.get(template_name, [])
     for imputer, classifier in templates:
-        pipeline_id = D3MPipelineGenerator.make_template(imputer, classifier, dataset, pipeline_template, targets, features, DBSession=DBSession)
-        msg_queue.send(('eval', pipeline_id))
+        pipeline_id = D3MPipelineGenerator.make_template(imputer, classifier, dataset, pipeline_template, targets,
+                                                         features, DBSession=DBSession)
+        #msg_queue.send(('eval', pipeline_id))
         #yield msg_queue.recv()
+        send(msg_queue, pipeline_id)
 
     # Augmentation
-    if search_results and  len(search_results) > 0:
+    if search_results and len(search_results) > 0:
         for search_result in search_results:
             templates = D3MPipelineGenerator.TEMPLATES_AUGMENTATION.get(template_name, [])
             for datamart, imputer, classifier in templates:
                 pipeline_id, D3MPipelineGenerator.make_template_augment(datamart, imputer, classifier, dataset,
                                                                         pipeline_template, targets, features,
                                                                         search_result, DBSession=DBSession)
-                msg_queue.send(('eval', pipeline_id))
+                #msg_queue.send(('eval', pipeline_id))
                 #yield msg_queue.recv()
+                send(msg_queue, pipeline_id)
 
+
+def send(msg_queue, pipeline_id):
+    msg_queue.send(('eval', pipeline_id))
+    return msg_queue.recv()
 
 @database.with_sessionmaker
 def generate(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue, DBSession):
@@ -423,7 +430,7 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
         sys.exit(0)
     # TODO Not use multiprocessing to prioritize sklearn primitives
     signal.signal(signal.SIGTERM, signal_handler)
-    #'''
+
     process_sklearn = multiprocessing.Process(target=run_sklearn_primitives)
     process_sklearn.daemon = True
     process_sklearn.start()
@@ -432,7 +439,7 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     if process_sklearn.is_alive():
         process_sklearn.terminate()
         logger.info('Finished evaluation Scikit-learn primitives')
-    #'''
+    #'
     input_all = create_input(ALL_PRIMITIVES)
     game = PipelineGame(input_all, function_name)
     nnet = NNetWrapper(game)
@@ -450,8 +457,6 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     record_bestpipeline(input['DATASET'])
 
     sys.exit(0)
-
-
 
 
 def main(dataset, problem_path, output_path):

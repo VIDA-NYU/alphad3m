@@ -33,6 +33,7 @@ import d3m_ta2_nyu.proto.core_pb2 as pb_core
 from d3m_ta2_nyu.utils import Observable, ProgressStatus
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json
+from sklearn.model_selection import train_test_split
 import datamart
 import datamart_nyu
 from datamart_isi.entries import Datamart
@@ -40,8 +41,8 @@ from d3m.container import Dataset
 from d3m.metadata.pipeline import PrimitiveStep
 
 
-MAX_RUNNING_PROCESSES = 1
-SAMPLE_SIZE = 200
+MAX_RUNNING_PROCESSES = 10
+SAMPLE_SIZE = 0.10 # ratio
 RANDOM_SEED = 65682867
 
 DATAMART_URL = {
@@ -997,7 +998,7 @@ class D3mTa2(Observable):
 
         # Search for data augmentation
         search_results = []
-        sample_dataset = self._get_sample(dataset_uri, session.problem)
+        sample_dataset = None#self._get_sample(dataset_uri, session.problem)
 
         if 'dataAugmentation' in session.problem:
             dc = Dataset.load(dataset_uri)
@@ -1024,7 +1025,7 @@ class D3mTa2(Observable):
 
         do_rank = True if top_pipelines > 0 else False
 
-        timeout_search = timeout * 0.7  # TODO: Do it dynamic
+        timeout_search = timeout# * 0.7  # TODO: Do it dynamic
         timeout_tuning = timeout * 0.3
         if 'TA2_DEBUG_BE_FAST' not in os.environ:
             self._build_pipelines_from_generator(session, task, dataset_uri, sample_dataset, search_results, pipeline_template, metrics, timeout_search, do_rank)
@@ -1153,26 +1154,29 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
-    def _get_sample(self, dataset_uri, problem):
+    def _get_sample(self, dataset_uri, problem, task):
         dataset = Dataset.load(dataset_uri)
-        try:
-            if problem['about']['taskType'] in {'timeSeriesForecasting', 'semiSupervisedClassification'}:
-                # There are not primitives to do data sampling for these tasks
-                return dataset
 
+        if problem['about']['taskType'] in {'timeSeriesForecasting', 'semiSupervisedClassification'}:
+            # There are not primitives to do data sampling for these tasks
+            return dataset
+        try:
+            target_name = problem['inputs']['data'][0]['targets'][0]['colName']
             for res_id in dataset:
                 if ('https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
                         in dataset.metadata.query([res_id])['semantic_types']):
                     break
 
-            if hasattr(dataset[res_id], 'columns') and len(dataset[res_id]) > SAMPLE_SIZE:
-                # Sample the dataset to stay reasonably fast
-                logger.info('Sampling down data from %d to %d', len(dataset[res_id]), SAMPLE_SIZE)
-                sample = numpy.concatenate([numpy.repeat(True, SAMPLE_SIZE),
-                                            numpy.repeat(False, len(dataset[res_id]) - SAMPLE_SIZE)])
-
-                numpy.random.RandomState(seed=RANDOM_SEED).shuffle(sample)
-                dataset[res_id] = dataset[res_id][sample]
+            if hasattr(dataset[res_id], 'columns') and len(dataset[res_id]) > 100:  # minimum size for sampling
+                original_size = len(dataset[res_id])
+                labels = dataset[res_id].get(target_name)
+                stratified_labels = None
+                if problem['about']['taskType'] == 'classification':
+                    stratified_labels = labels
+                x_train, x_test, y_train, y_test = train_test_split(dataset[res_id], labels, test_size=SAMPLE_SIZE,
+                                                                    random_state=RANDOM_SEED, stratify=stratified_labels)
+                dataset[res_id] = x_test
+                logger.info('Sampling down data from %d to %d', original_size, len(dataset[res_id]))
         except:
             logger.error('Error sampling in datatset %s', dataset_uri)
 
