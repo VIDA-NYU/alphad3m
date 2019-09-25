@@ -117,12 +117,18 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         template = request.template
 
+
+
+
         if template is not None and len(template.steps) > 0:  # isinstance(template, pb_pipeline.PipelineDescription)
             pipeline = decode_pipeline_description(template, pipeline_module.Resolver())
             if pipeline.has_placeholder():
                 template = pipeline.to_json_structure()
             else:  # Pipeline template fully defined
-                search_id = self._ta2.new_session(None)
+                problem = None
+                if request.problem:
+                    problem = self._convert_problem(context, request.problem)
+                search_id = self._ta2.new_session(problem)
                 dataset = request.inputs[0].dataset_uri
                 if not dataset.startswith('file://'):
                     dataset = 'file://' + dataset
@@ -140,6 +146,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             dataset = 'file://' + dataset
 
         problem = self._convert_problem(context, request.problem)
+
         top_pipelines = request.rank_solutions_limit
         timeout = request.time_bound_search
         if timeout < 0.000001:
