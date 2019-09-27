@@ -181,8 +181,7 @@ def generate_by_templates(task, dataset, search_results, pipeline_template, metr
     for imputer, classifier in templates:
         pipeline_id = D3MPipelineGenerator.make_template(imputer, classifier, dataset, pipeline_template, targets,
                                                          features, DBSession=DBSession)
-        #msg_queue.send(('eval', pipeline_id))
-        #yield msg_queue.recv()
+
         send(msg_queue, pipeline_id)
 
     # Augmentation
@@ -190,11 +189,10 @@ def generate_by_templates(task, dataset, search_results, pipeline_template, metr
         for search_result in search_results:
             templates = D3MPipelineGenerator.TEMPLATES_AUGMENTATION.get(template_name, [])
             for datamart, imputer, classifier in templates:
-                pipeline_id, D3MPipelineGenerator.make_template_augment(datamart, imputer, classifier, dataset,
+                pipeline_id = D3MPipelineGenerator.make_template_augment(datamart, imputer, classifier, dataset,
                                                                         pipeline_template, targets, features,
                                                                         search_result, DBSession=DBSession)
-                #msg_queue.send(('eval', pipeline_id))
-                #yield msg_queue.recv()
+
                 send(msg_queue, pipeline_id)
 
 

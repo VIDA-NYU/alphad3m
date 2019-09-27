@@ -2,7 +2,6 @@
 
 # Example search: ./docker.sh fast search seed_datasets_current/185_baseball/TRAIN ta2:latest
 # Example ta2ta3: ./docker.sh ta2ta3 seed_datasets_current/185_baseball/ ta2:latest
-# Example test: ./docker.sh test seed_datasets_current/185_baseball/TEST ta2:latest
 
 # You should have defined these enviroment variables: $LOCAL_INPUT_ROOT, $LOCAL_OUTPUT_ROOT and $LOCAL_STATIC_ROOT
 
@@ -29,11 +28,6 @@ case "$1" in
         MODE=ta2ta3
         INPUT="$2"
         shift 2
-    ;;
-    test)
-        MODE=test
-        INPUT="$2"
-        set -- "$3" bash -c "cd /output/executables; for i in *; do D3MTESTOPT=/output/executables/\$i eval.sh; done"
     ;;
     *)
         echo "Usage:\n  $(basename $0) search seed_datasets_current/185_baseball/TRAIN <image>" >&2

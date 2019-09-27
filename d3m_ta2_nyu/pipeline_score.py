@@ -12,12 +12,9 @@ from d3m_ta2_nyu.workflow import database, convert
 from d3m_ta2_nyu.common import normalize_score, format_metrics
 from d3m.metadata.pipeline import Pipeline
 from d3m.metadata.problem import Problem
-from sklearn.model_selection import train_test_split
 
 logger = logging.getLogger(__name__)
 
-SAMPLE_SIZE = 200
-RANDOM_SEED = 65682867
 
 with pkg_resources.resource_stream(
         'd3m_ta2_nyu',
@@ -36,9 +33,11 @@ with pkg_resources.resource_stream(
 
 
 @database.with_db
-def score(pipeline_id, dataset_uri, dataset, metrics, problem, scoring_conf, do_rank, msg_queue, db):
-    if dataset is None:  # come from search
-        dataset = get_sample(dataset_uri, problem)
+def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_conf, do_rank, msg_queue, db):
+    if sample_dataset_uri:
+        dataset = Dataset.load(sample_dataset_uri)  # Come from search
+    else:
+        dataset = Dataset.load(dataset_uri)
     # Get pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -71,7 +70,7 @@ def score(pipeline_id, dataset_uri, dataset, metrics, problem, scoring_conf, do_
 
     if do_rank and len(scores) > 0:  # Need to rank too
         logger.info("Calculating RANK in search solution for pipeline %s", pipeline_id)
-        entire_dataset = Dataset.load(dataset['uri'])  # load complete dataset
+        entire_dataset = Dataset.load(dataset_uri)  # load complete dataset
         scores = evaluate(pipeline, train_test_tabular_split, entire_dataset, metrics, problem, scoring_conf)
         logger.info("Ranking-D3M (whole dataset) results:\n%s", scores)
         scores = create_new_metric(scores)
@@ -173,33 +172,3 @@ def save_pipeline_runs(pipelines_runs):
                                      pipeline_run.to_json_structure()['id'] + '.yml')
         with open(save_run_path, 'w') as fin:
             pipeline_run.to_yaml(fin, indent=2)
-
-
-def get_sample(dataset_uri, problem):
-        dataset = Dataset.load(dataset_uri)
-
-        if problem['about']['taskType'] in {'timeSeriesForecasting', 'semiSupervisedClassification', 'graphMatching'}:
-            # There are not primitives to do data sampling for these tasks
-            return dataset
-        try:
-            target_name = problem['inputs']['data'][0]['targets'][0]['colName']
-            for res_id in dataset:
-                if ('https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
-                        in dataset.metadata.query([res_id])['semantic_types']):
-                    break
-
-            if hasattr(dataset[res_id], 'columns') and len(dataset[res_id]) > SAMPLE_SIZE:
-                original_size = len(dataset[res_id])
-                ratio = SAMPLE_SIZE / original_size
-                labels = dataset[res_id].get(target_name)
-                stratified_labels = None
-                if problem['about']['taskType'] == 'classification':
-                    stratified_labels = labels
-                x_train, x_test, y_train, y_test = train_test_split(dataset[res_id], labels, test_size=ratio,
-                                                                    random_state=RANDOM_SEED, stratify=stratified_labels)
-                dataset[res_id] = x_test
-                logger.info('Sampling down data from %d to %d', original_size, len(dataset[res_id]))
-        except:
-            logger.error('Error sampling in datatset %s', dataset_uri)
-
-        return dataset

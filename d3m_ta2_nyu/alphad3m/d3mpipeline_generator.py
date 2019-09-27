@@ -1411,13 +1411,9 @@ class D3MPipelineGenerator():
             connect(step7, step8)
 
             step9 = make_primitive_module(classifier)
-            if classifier == 'd3m.primitives.regression.gradient_boosting.SKlearn':
-                set_hyperparams(
-                    step7,
-                    semantic_types=[
-                        'https://metadata.datadrivendiscovery.org/types/Target',
-                    ],
-                )
+            if classifier in {'d3m.primitives.classification.gradient_boosting.SKlearn',
+                              'd3m.primitives.regression.gradient_boosting.SKlear'}:
+                set_hyperparams(step9, n_estimators=10)
 
             connect(step6, step9)
             connect(step8, step9, to_input='outputs')
