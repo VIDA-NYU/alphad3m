@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class D3MPipelineGenerator():
     @staticmethod
     def make_pipeline_from_strings(primitives, origin, dataset, search_results, pipeline_template, targets=None, features=None, DBSession=None):
-        print('>>>>> primitives', primitives)
+        print('>>>>> primitives', primitives, '\n\n')
 
         db = DBSession()
 

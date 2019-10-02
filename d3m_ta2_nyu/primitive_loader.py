@@ -113,7 +113,7 @@ class D3MPrimitiveLoader():
                     family = D3MPrimitiveLoader.get_family(name)
                 except:
                     logger.error('No information about primitive %s', name)
-                    family = 'None'
+                    family = 'N/A'
                 if family in primitives:
                     primitives[family][name] = count
                 else:

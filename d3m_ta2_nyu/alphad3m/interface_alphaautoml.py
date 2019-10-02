@@ -13,7 +13,7 @@ from d3m_ta2_nyu.multiprocessing import Receiver
 from d3m_ta2_nyu.primitive_loader import D3MPrimitiveLoader
 from alphaAutoMLEdit.Coach import Coach
 from alphaAutoMLEdit.pipeline.PipelineGame import PipelineGame
-from alphaAutoMLEdit.pipeline.pytorch.NNet import NNetWrapper
+from alphaAutoMLEdit.pipeline.NNet import NNetWrapper
 from .d3mpipeline_generator import D3MPipelineGenerator
 from d3m_ta2_nyu.metafeature.metafeature_extractor import ComputeMetafeatures
 
@@ -66,11 +66,12 @@ def get_terminals(non_terminals, primitives, task):
             terminals[terminal] = count
             count += 1
     terminals['E'] = 0
+    print('terminals', terminals)
     return terminals
 
 
 def get_rules(non_terminals, primitives, task):
-    rules = { 'S->ESTIMATORS':1,
+    '''rules = { 'S->ESTIMATORS':1,
               'S->DATA_AUGMENTATION ESTIMATORS': 2,
               'S->DATA_CLEANING ESTIMATORS':3,
               'S->DATA_AUGMENTATION DATA_CLEANING ESTIMATORS': 4,
@@ -78,17 +79,11 @@ def get_rules(non_terminals, primitives, task):
               'S->DATA_AUGMENTATION DATA_TRANSFORMATION ESTIMATORS': 6,
               'S->DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 7,
               'S->DATA_AUGMENTATION DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 8
-    }
-
-    '''rules = {'S->ESTIMATORS': 1,
-             'S->DATA_CLEANING ESTIMATORS': 2,
-             'S->DATA_TRANSFORMATION ESTIMATORS': 3,
-             'S->DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 4,
-             #'S->FEATURE_SELECTION ESTIMATORS': 1,
-             #'S->DATA_CLEANING FEATURE_SELECTION ESTIMATORS': 2,
-             #'S->DATA_TRANSFORMATION FEATURE_SELECTION ESTIMATORS': 3,
-             #'S->DATA_CLEANING DATA_TRANSFORMATION FEATURE_SELECTION ESTIMATORS': 1
     }'''
+
+    rules = {
+             'S->DATA_CLEANING ESTIMATORS': 1,
+    }
 
     rules_lookup = {'S': list(rules.keys())}
     count = len(rules)+1
@@ -124,8 +119,8 @@ def get_rules(non_terminals, primitives, task):
         count += 1
         rules_lookup[non_terminal].append(rule)
 
-    #print(rules)
-    #print(rules_lookup)
+    print(rules)
+    print(rules_lookup)
     return rules, rules_lookup
 
 
@@ -202,7 +197,7 @@ def send(msg_queue, pipeline_id):
 
 @database.with_sessionmaker
 def generate(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue, DBSession):
-    generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue, DBSession)
+    #generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue, DBSession)
 
 
     import time
@@ -437,7 +432,7 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     if process_sklearn.is_alive():
         process_sklearn.terminate()
         logger.info('Finished evaluation Scikit-learn primitives')
-    #'
+
     input_all = create_input(ALL_PRIMITIVES)
     game = PipelineGame(input_all, function_name)
     nnet = NNetWrapper(game)
@@ -456,43 +451,3 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
 
     sys.exit(0)
 
-
-def main(dataset, problem_path, output_path):
-    setup_logging()
-
-    import tempfile
-    from d3m_ta2_nyu.ta2 import D3mTa2
-
-    pipelines = {}
-    if os.path.isfile('pipelines.txt'):
-        with open('pipelines.txt') as f:
-            pipelines_list = [line.strip() for line in f.readlines()]
-            for pipeline in pipelines_list:
-                fields = pipeline.split(' ')
-                pipelines[fields[0]] = fields[1].split(',')
-
-    with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
-        problem = json.load(fp)
-    task = problem['about']['taskType']
-    
-    metrics = []
-    for metric in problem['inputs']['performanceMetrics']:
-        metrics.append(metric['metric'])
-
-    storage = tempfile.mkdtemp(prefix='d3m_pipeline_eval_')
-    ta2 = D3mTa2(storage_root=storage,
-        pipelines_considered_root=os.path.join(storage, 'pipelines_considered'),
-        executables_root=os.path.join(storage, 'executables'))
-
-    session_id = ta2.new_session(args['problem'])
-    session = ta2.sessions[session_id]
-    msg_queue = Receiver()
-
-    generate(task, dataset,None,None, metrics, problem, session.targets, session.features, msg_queue, ta2.DBSession)
-
-
-if __name__ == '__main__':
-    if len(sys.argv) > 3:
-        output_path = sys.argv[3]
-
-    main(sys.argv[1], sys.argv[2], output_path)

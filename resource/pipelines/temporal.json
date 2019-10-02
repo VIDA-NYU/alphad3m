@@ -1,27 +1,27 @@
 {
-   "id":"53336e96-c87f-4d0e-be5a-035d7ad52426",
+   "id":"11f03cc7-b3f5-48cc-92a9-77f5869a65e2",
    "schema":"https://metadata.datadrivendiscovery.org/schemas/v0/pipeline.json",
-   "created":"2019-06-20T21:09:24Z",
+   "created":"2019-06-08T01:02:42.095258Z",
    "inputs":[
       {
-         "name":"input dataset"
+         "name":"inputs"
       }
    ],
    "outputs":[
       {
-         "data":"steps.9.produce",
-         "name":"predictions"
+         "data":"steps.8.produce",
+         "name":"output predictions"
       }
    ],
    "steps":[
       {
          "type":"PRIMITIVE",
          "primitive":{
-            "id":"f31f8c1f-d1c5-43e5-a4b2-2ae4a761ef2e",
-            "version":"0.2.0",
-            "python_path":"d3m.primitives.data_transformation.denormalize.Common",
-            "name":"Denormalize datasets",
-            "digest":"00ae7955cc0abce2a3ddee96247209f3395009ae6553c7ce8caa577e402754db"
+            "id":"4b42ce1e-9b98-4a25-b68e-fad13311eb65",
+            "version":"0.3.0",
+            "python_path":"d3m.primitives.data_transformation.dataset_to_dataframe.Common",
+            "name":"Extract a DataFrame from a Dataset",
+            "digest":"a141e6821de7ae586968b0986237745a5510850e6940cf946db9d50d3828b030"
          },
          "arguments":{
             "inputs":{
@@ -38,11 +38,11 @@
       {
          "type":"PRIMITIVE",
          "primitive":{
-            "id":"4b42ce1e-9b98-4a25-b68e-fad13311eb65",
-            "version":"0.3.0",
-            "python_path":"d3m.primitives.data_transformation.dataset_to_dataframe.Common",
-            "name":"Extract a DataFrame from a Dataset",
-            "digest":"0d46a2c5bc374e305682dc4f1c322518c07638153a8365034a513ea46960802b"
+            "id":"3002bc5b-fa47-4a3d-882e-a8b5f3d756aa",
+            "version":"0.1.0",
+            "python_path":"d3m.primitives.data_transformation.remove_semantic_types.DataFrameCommon",
+            "name":"Remove semantic types from columns",
+            "digest":"ff48930a123697994f8b606b8a353c7e60aaf21738f4fd1a2611d8d1eb4a349a"
          },
          "arguments":{
             "inputs":{
@@ -54,7 +54,21 @@
             {
                "id":"produce"
             }
-         ]
+         ],
+         "hyperparams":{
+            "columns":{
+               "type":"VALUE",
+               "data":[
+                  1
+               ]
+            },
+            "semantic_types":{
+               "type":"VALUE",
+               "data":[
+                  "https://metadata.datadrivendiscovery.org/types/Attribute"
+               ]
+            }
+         }
       },
       {
          "type":"PRIMITIVE",
@@ -63,7 +77,7 @@
             "version":"0.5.0",
             "python_path":"d3m.primitives.data_transformation.column_parser.DataFrameCommon",
             "name":"Parses strings into their types",
-            "digest":"312cacc014497dd674e34765f6eb54430e594c591e760da0383c87844753d2ce"
+            "digest":"d95eb0ea8a5e6f9abc0965a97e9c4f5d8f74a3df591c11c4145faea3e581cd06"
          },
          "arguments":{
             "inputs":{
@@ -81,10 +95,10 @@
          "type":"PRIMITIVE",
          "primitive":{
             "id":"4503a4c6-42f7-45a1-a1d4-ed69699cf5e1",
-            "version":"0.2.0",
+            "version":"0.3.0",
             "python_path":"d3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon",
             "name":"Extracts columns by semantic type",
-            "digest":"297a4943484bcd532650d5727e23b3d11ca702688d7b64dfb5df8bf1282eaa47"
+            "digest":"2dda31ef0452060bc55070204c5328927e2b2537a03afa6333607e3e4828ab26"
          },
          "arguments":{
             "inputs":{
@@ -109,65 +123,11 @@
       {
          "type":"PRIMITIVE",
          "primitive":{
-            "id":"d016df89-de62-3c53-87ed-c06bb6a23cde",
-            "version":"2019.4.4",
-            "python_path":"d3m.primitives.data_cleaning.imputer.SKlearn",
-            "name":"sklearn.impute.SimpleImputer",
-            "digest":"9878fdeb255c5b4fb2beaf053e68b2913e3d7b1c26e40c530c1cb4fe562fde26"
-         },
-         "arguments":{
-            "inputs":{
-               "type":"CONTAINER",
-               "data":"steps.3.produce"
-            }
-         },
-         "outputs":[
-            {
-               "id":"produce"
-            }
-         ],
-         "hyperparams":{
-            "strategy":{
-               "type":"VALUE",
-               "data":"most_frequent"
-            }
-         }
-      },
-      {
-         "type":"PRIMITIVE",
-         "primitive":{
-            "id":"eb5fe752-f22a-4090-948b-aafcef203bf5",
-            "version":"0.2.0",
-            "python_path":"d3m.primitives.data_transformation.cast_to_type.Common",
-            "name":"Casts DataFrame",
-            "digest":"76b218647569c7d6b24e459bb88b81fd3344a7b9c05dc9d866d393b92f4e65ff"
-         },
-         "arguments":{
-            "inputs":{
-               "type":"CONTAINER",
-               "data":"steps.4.produce"
-            }
-         },
-         "outputs":[
-            {
-               "id":"produce"
-            }
-         ],
-         "hyperparams":{
-            "type_to_cast":{
-               "type":"VALUE",
-               "data":"float"
-            }
-         }
-      },
-      {
-         "type":"PRIMITIVE",
-         "primitive":{
             "id":"4503a4c6-42f7-45a1-a1d4-ed69699cf5e1",
-            "version":"0.2.0",
+            "version":"0.3.0",
             "python_path":"d3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon",
             "name":"Extracts columns by semantic type",
-            "digest":"297a4943484bcd532650d5727e23b3d11ca702688d7b64dfb5df8bf1282eaa47"
+            "digest":"2dda31ef0452060bc55070204c5328927e2b2537a03afa6333607e3e4828ab26"
          },
          "arguments":{
             "inputs":{
@@ -192,48 +152,95 @@
       {
          "type":"PRIMITIVE",
          "primitive":{
-            "id":"eb5fe752-f22a-4090-948b-aafcef203bf5",
-            "version":"0.2.0",
-            "python_path":"d3m.primitives.data_transformation.cast_to_type.Common",
-            "name":"Casts DataFrame",
-            "digest":"76b218647569c7d6b24e459bb88b81fd3344a7b9c05dc9d866d393b92f4e65ff"
+            "id":"4d46e77b-9c29-4631-b382-02333e928f10",
+            "version":"v2019.6",
+            "python_path":"d3m.primitives.feature_selection.joint_mutual_information.AutoRPI",
+            "name":"JMIplus_auto feature selector",
+            "digest":"3e89211d9d2dce722fc98361237f5f0cbba224af49dc65898c022b51b3fa9271"
          },
          "arguments":{
             "inputs":{
                "type":"CONTAINER",
-               "data":"steps.6.produce"
+               "data":"steps.3.produce"
+            },
+            "outputs":{
+               "type":"CONTAINER",
+               "data":"steps.4.produce"
             }
          },
          "outputs":[
             {
                "id":"produce"
             }
-         ]
+         ],
+         "hyperparams":{
+            "method":{
+               "type":"VALUE",
+               "data":"pseudoBayesian"
+            },
+            "nbins":{
+               "type":"VALUE",
+               "data":2
+            }
+         }
       },
       {
          "type":"PRIMITIVE",
          "primitive":{
-            "id":"1dd82833-5692-39cb-84fb-2455683075f3",
-            "version":"2019.4.4",
-            "python_path":"d3m.primitives.classification.random_forest.SKlearn",
-            "name":"sklearn.ensemble.forest.RandomForestClassifier",
-            "digest":"1e95597335ea675f941f08c916e586a414c0405a2ea0e3da0a0e3b1ee47ba761"
+            "id":"d016df89-de62-3c53-87ed-c06bb6a23cde",
+            "version":"2019.6.7",
+            "python_path":"d3m.primitives.data_cleaning.imputer.SKlearn",
+            "name":"sklearn.impute.SimpleImputer",
+            "digest":"d6902b0ef72b4cd6fc5f79054f7a534404c708e1244e94a2713a9dd525c78eed"
          },
          "arguments":{
             "inputs":{
                "type":"CONTAINER",
                "data":"steps.5.produce"
-            },
-            "outputs":{
-               "type":"CONTAINER",
-               "data":"steps.7.produce"
             }
          },
          "outputs":[
             {
                "id":"produce"
             }
-         ]
+         ],
+         "hyperparams":{
+            "strategy":{
+               "type":"VALUE",
+               "data":"most_frequent"
+            }
+         }
+      },
+      {
+         "type":"PRIMITIVE",
+         "primitive":{
+            "id":"c8a28f02-ef4a-35a8-87f1-cf79980f5c3e",
+            "version":"2019.6.7",
+            "python_path":"d3m.primitives.classification.extra_trees.SKlearn",
+            "name":"sklearn.ensemble.forest.ExtraTreesClassifier",
+            "digest":"bd28b291e285b3fc94410899197b87f535124c08a4ed00ca0af6eaa302c908c6"
+         },
+         "arguments":{
+            "inputs":{
+               "type":"CONTAINER",
+               "data":"steps.6.produce"
+            },
+            "outputs":{
+               "type":"CONTAINER",
+               "data":"steps.4.produce"
+            }
+         },
+         "outputs":[
+            {
+               "id":"produce"
+            }
+         ],
+         "hyperparams":{
+            "n_estimators":{
+               "type":"VALUE",
+               "data":20
+            }
+         }
       },
       {
          "type":"PRIMITIVE",
@@ -242,16 +249,16 @@
             "version":"0.3.0",
             "python_path":"d3m.primitives.data_transformation.construct_predictions.DataFrameCommon",
             "name":"Construct pipeline predictions output",
-            "digest":"cfb2d595652c4ae0d24e67d4cb8e4916c9f3c2753eaccc2935263d054b3682fa"
+            "digest":"96382129c2d9e87a2c0ab0b477b410947e5644d4dfae24e905d16a72d32dc41b"
          },
          "arguments":{
             "inputs":{
                "type":"CONTAINER",
-               "data":"steps.8.produce"
+               "data":"steps.7.produce"
             },
             "reference":{
                "type":"CONTAINER",
-               "data":"steps.2.produce"
+               "data":"steps.0.produce"
             }
          },
          "outputs":[
@@ -262,10 +269,8 @@
       }
    ],
    "source":{
-      "name":"nyu"
+      "name":"RPI"
    },
-   "name":"53336e96-c87f-4d0e-be5a-035d7ad52426",
-   "description":"AlphaZero eval",
-   "digest":"6abc955819d6bb12182fc756e8db124c2f07a124f8f7f9f562d9f68add606195",
-   "_ingest_timestamp":"2019-06-20 22:16:07.825754"
+   "digest":"398bf336e6b28cf42171ddd74df3935b7686ad7fc7187d244ff1ccce642b096a",
+   "_ingest_timestamp":"2019-06-27 00:31:49.470247"
 }
