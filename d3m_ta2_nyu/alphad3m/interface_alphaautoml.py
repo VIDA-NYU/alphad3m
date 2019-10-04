@@ -9,8 +9,8 @@ import multiprocessing
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
 from d3m_ta2_nyu.workflow import database
-from d3m_ta2_nyu.multiprocessing import Receiver
 from d3m_ta2_nyu.primitive_loader import D3MPrimitiveLoader
+from d3m_ta2_nyu.grammar_loader import format_grammar
 from alphaAutoMLEdit.Coach import Coach
 from alphaAutoMLEdit.pipeline.PipelineGame import PipelineGame
 from alphaAutoMLEdit.pipeline.NNet import NNetWrapper
@@ -28,7 +28,7 @@ def setup_logging():
     
 def get_primitives():
     sklearn_primitives = {}
-    all_primitives = D3MPrimitiveLoader.get_primitives_info_summarized()
+    all_primitives = D3MPrimitiveLoader.get_primitives_by_type()
 
     for group in list(all_primitives.keys()):
         sklearn_primitives[group] = {}
@@ -40,89 +40,6 @@ def get_primitives():
 
 
 ALL_PRIMITIVES, SKLEARN_PRIMITIVES = get_primitives()
-
-GRAMMAR = {
-    'NON_TERMINALS': {
-        'S': 1,
-        'DATA_AUGMENTATION': 2,
-        'DATA_CLEANING': 3,
-        'DATA_TRANSFORMATION': 4,
-        'FEATURE_SELECTION': 5,
-        'ESTIMATORS': 6
-    },
-    'START': 'S->S'
-}
-
-
-def get_terminals(non_terminals, primitives, task):
-    terminals = {}
-    count = len(GRAMMAR['NON_TERMINALS'])+1
-    for non_terminal in non_terminals:
-        if non_terminal == 'S':
-            continue
-        if non_terminal == 'ESTIMATORS':
-            non_terminal = task.upper()
-        for terminal in primitives[non_terminal]:
-            terminals[terminal] = count
-            count += 1
-    terminals['E'] = 0
-    print('terminals', terminals)
-    return terminals
-
-
-def get_rules(non_terminals, primitives, task):
-    '''rules = { 'S->ESTIMATORS':1,
-              'S->DATA_AUGMENTATION ESTIMATORS': 2,
-              'S->DATA_CLEANING ESTIMATORS':3,
-              'S->DATA_AUGMENTATION DATA_CLEANING ESTIMATORS': 4,
-              'S->DATA_TRANSFORMATION ESTIMATORS':5,
-              'S->DATA_AUGMENTATION DATA_TRANSFORMATION ESTIMATORS': 6,
-              'S->DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 7,
-              'S->DATA_AUGMENTATION DATA_CLEANING DATA_TRANSFORMATION ESTIMATORS': 8
-    }'''
-
-    rules = {
-             'S->DATA_CLEANING ESTIMATORS': 1,
-    }
-
-    rules_lookup = {'S': list(rules.keys())}
-    count = len(rules)+1
-    for non_terminal in non_terminals:
-        if non_terminal == 'S':
-            continue
-
-        rules_lookup[non_terminal] = []
-        if non_terminal == 'ESTIMATORS':
-            terminals = primitives[task.upper()]
-            for terminal in terminals:
-                rule = non_terminal+'->'+terminal
-                rules[rule] = count
-                count += 1
-                rules_lookup[non_terminal].append(rule)
-            continue
-
-        terminals = primitives[non_terminal]
-
-        for terminal in terminals:
-            if non_terminal != 'DATA_AUGMENTATION':
-                rule = non_terminal + '->' + terminal + ' ' + non_terminal
-                rules[rule] = count
-                count += 1
-                rules_lookup[non_terminal].append(rule)
-            rule = non_terminal+'->'+terminal
-            rules[rule] = count
-            count += 1
-            rules_lookup[non_terminal].append(rule)
-
-        rule = non_terminal+'->E'
-        rules[rule] = count
-        count += 1
-        rules_lookup[non_terminal].append(rule)
-
-    print(rules)
-    print(rules_lookup)
-    return rules, rules_lookup
-
 
 input = {
         'PROBLEM_TYPES': {'CLASSIFICATION': 1,
@@ -197,8 +114,7 @@ def send(msg_queue, pipeline_id):
 
 @database.with_sessionmaker
 def generate(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue, DBSession):
-    #generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue, DBSession)
-
+    generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue, DBSession)
 
     import time
     start = time.time()
@@ -370,12 +286,8 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
         return
 
     def create_input(selected_primitves):
-        GRAMMAR['TERMINALS'] = get_terminals(GRAMMAR['NON_TERMINALS'], selected_primitves, task)
-        r, l = get_rules(GRAMMAR['NON_TERMINALS'], selected_primitves, task)
-
-        GRAMMAR['RULES'] = r
-        GRAMMAR['RULES_LOOKUP'] = l
-
+        task_name = task + '_TASK'
+        GRAMMAR = format_grammar(task_name, selected_primitves)
         input['GRAMMAR'] = GRAMMAR
         input['PROBLEM'] = task
         input['DATA_TYPE'] = 'TABULAR'

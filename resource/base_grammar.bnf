@@ -1,7 +1,8 @@
 S -> CLASSIFICATION_TASK | REGRESSION_TASK
-CLASSIFICATION_TASK -> DATA_CLEANING DATA_TRANSFORMATION CLASSIFICATION
+CLASSIFICATION_TASK -> DATA_CLEANING DATA_TRANSFORMATION CLASSIFICATION | DATA_CLEANING FEATURE_SELECTION CLASSIFICATION
 REGRESSION_TASK -> DATA_CLEANING DATA_TRANSFORMATION REGRESSION
-DATA_CLEANING -> DATA_CLEANING 'primitive_datacleaning'| 'primitive_datacleaning'
-DATA_TRANSFORMATION -> DATA_TRANSFORMATION 'primitive_datatransformation'| 'primitive_datatransformation'
+DATA_CLEANING -> DATA_CLEANING 'primitive_datacleaning'| 'primitive_datacleaning' | 'E'
+DATA_TRANSFORMATION -> DATA_TRANSFORMATION 'primitive_datatransformation'| 'primitive_datatransformation' | 'E'
+FEATURE_SELECTION -> 'primitive_featureselection'
 CLASSIFICATION -> 'primitive_classification'
 REGRESSION -> 'primitive_regression'

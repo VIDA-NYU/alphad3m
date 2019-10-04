@@ -12,53 +12,38 @@ os.environ['MPLBACKEND'] = 'Agg'
 logger = logging.getLogger(__name__)
 
 
+def make_pipeline_module(db, pipeline, name, package='d3m', version='2019.10.10'):
+    pipeline_module = database.PipelineModule(pipeline=pipeline, package=package, version=version, name=name)
+    db.add(pipeline_module)
+    return pipeline_module
+
+
+def connect(db, pipeline, from_module, to_module, from_output='produce', to_input='inputs'):
+    db.add(database.PipelineConnection(pipeline=pipeline,
+                                       from_module=from_module,
+                                       to_module=to_module,
+                                       from_output_name=from_output,
+                                       to_input_name=to_input))
+
+
+def set_hyperparams(db, pipeline, module, **hyperparams):
+    db.add(database.PipelineParameter(
+        pipeline=pipeline, module=module,
+        name='hyperparams', value=pickle.dumps(hyperparams),
+    ))
+
+
 class D3MPipelineGenerator():
     @staticmethod
     def make_pipeline_from_strings(primitives, origin, dataset, search_results, pipeline_template, targets=None, features=None, DBSession=None):
-        print('>>>>> primitives', primitives, '\n\n')
-
         db = DBSession()
-
-        pipeline = database.Pipeline(
-            origin=origin,
-            dataset=dataset)
-
-        def make_module(package, version, name):
-            pipeline_module = database.PipelineModule(
-                pipeline=pipeline,
-                package=package, version=version, name=name)
-            db.add(pipeline_module)
-            return pipeline_module
-
-        def make_data_module(name):
-            return make_module('data', '0.0', name)
-
-        def make_primitive_module(name):
-            if name[0] == '.':
-                name = 'd3m.primitives' + name
-            return make_module('d3m', '2018.7.10', name)
-
-        def connect(from_module, to_module,
-                    from_output='produce', to_input='inputs'):
-            db.add(database.PipelineConnection(pipeline=pipeline,
-                                               from_module=from_module,
-                                               to_module=to_module,
-                                               from_output_name=from_output,
-                                               to_input_name=to_input))
-
-        def set_hyperparams(module, **hyperparams):
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=module,
-                name='hyperparams', value=pickle.dumps(hyperparams),
-            ))
+        pipeline = database.Pipeline(origin=origin, dataset=dataset)
 
         def change_default_hyperparams(primitive_name, primitive):
             if primitive_name == 'd3m.primitives.data_cleaning.imputer.SKlearn':
-                set_hyperparams(primitive, strategy='most_frequent')
+                set_hyperparams(db, pipeline, primitive, strategy='most_frequent')
             elif primitive_name == 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn':
-                set_hyperparams(primitive, handle_unknown='ignore')
-
-
+                set_hyperparams(db, pipeline, primitive, handle_unknown='ignore')
 
         try:
             #                          data
@@ -73,15 +58,15 @@ class D3MPipelineGenerator():
             #                   /         |         \
             # Extract (attribute)  Extract (target)  |
             #         |               |              |
-            #    <preprocess>     CastToType         |
+            #  [preprocessors]        |              |
             #         |               |              |
-            #     CastToType          |             /
+            #          \              |             /
             #            \            /           /
             #             [classifier]          /
             #                       |         /
             #                   ConstructPredictions
             # TODO: Use pipeline input for this
-            input_data = make_data_module('dataset')
+            input_data = make_pipeline_module(db, pipeline, 'dataset', 'data', '0.0')
             db.add(database.PipelineParameter(
                 pipeline=pipeline, module=input_data,
                 name='targets', value=pickle.dumps(targets),
@@ -97,22 +82,22 @@ class D3MPipelineGenerator():
                 count_template_steps = 0
                 for pipeline_step in pipeline_template['steps']:
                     if pipeline_step['type'] == 'PRIMITIVE':
-                        step = make_primitive_module(pipeline_step['primitive']['python_path'])
+                        step = make_pipeline_module(db, pipeline, pipeline_step['primitive']['python_path'])
                         prev_steps['steps.%d.produce' % (count_template_steps)] = step
                         count_template_steps += 1
                         if 'hyperparams' in pipeline_step:
                             hyperparams = {}
                             for hyper, desc in pipeline_step['hyperparams'].items():
                                 hyperparams[hyper] = desc['data']
-                            set_hyperparams(step, **hyperparams)
+                            set_hyperparams(db, pipeline, step, **hyperparams)
                     else:
                         # TODO In the future we should be able to handle subpipelines
                         break
                     if prev_step:
                         for argument, desc in pipeline_step['arguments'].items():
-                            connect(prev_steps[desc['data']], step, to_input=argument)
+                            connect(db, pipeline, prev_steps[desc['data']], step, to_input=argument)
                     else:
-                        connect(input_data, step, from_output='dataset')
+                        connect(db, pipeline, input_data, step, from_output='dataset')
                     prev_step = step
 
             # Check if ALphaD3M is trying to augment
@@ -125,85 +110,70 @@ class D3MPipelineGenerator():
 
             # Check if there is result to augment
             if search_result:
-                step_aug = make_primitive_module(
-                    'd3m.primitives.data_augmentation.datamart_augmentation.Common')
+                step_aug = make_pipeline_module(db, pipeline,
+                                                'd3m.primitives.data_augmentation.datamart_augmentation.Common')
                 if prev_step:
-                    connect(prev_step, step_aug)
+                    connect(db, pipeline, prev_step, step_aug)
                 else:
-                    connect(input_data, step_aug, from_output='dataset')
+                    connect(db, pipeline, input_data, step_aug, from_output='dataset')
                 set_hyperparams(
                     step_aug,
                     search_result=search_result,
                     system_identifier="NYU"
                 )
 
-                step0 = make_primitive_module(
-                    'd3m.primitives.data_transformation.denormalize.Common')
-                connect(step_aug, step0)
+                step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
+                connect(db, pipeline, step_aug, step0)
             else:
-                step0 = make_primitive_module(
-                    'd3m.primitives.data_transformation.denormalize.Common')
+                step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
                 if prev_step:
-                    connect(prev_step, step0)
+                    connect(db, pipeline, prev_step, step0)
                 else:
-                    connect(input_data, step0, from_output='dataset')
+                    connect(db, pipeline, input_data, step0, from_output='dataset')
 
-            step1 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
-            connect(step0, step1)
+            step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
+            connect(db, pipeline, step0, step1)
 
-            step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.DataFrameCommon')
-            connect(step1, step2)
+            step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'column_parser.DataFrameCommon')
+            connect(db, pipeline, step1, step2)
 
-            step3 = make_primitive_module('d3m.primitives.data_transformation'
-                                          '.extract_columns_by_semantic_types.DataFrameCommon')
-            set_hyperparams(
-                step3,
-                semantic_types=[
-                    'https://metadata.datadrivendiscovery.org/types/Attribute',
-                ],
-            )
-            connect(step2, step3)
+            step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'extract_columns_by_semantic_types.DataFrameCommon')
+            set_hyperparams(db, pipeline, step3,
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute']
+                            )
+
+            connect(db, pipeline, step2, step3)
 
             step = prev_step = step3
             preprocessors = primitives[:-1]
             classifier = primitives[-1]
 
             for preprocessor in preprocessors:
-                step = make_primitive_module(preprocessor)
+                step = make_pipeline_module(db, pipeline, preprocessor)
                 change_default_hyperparams(preprocessor, step)
-                connect(prev_step, step)
+                connect(db, pipeline, prev_step, step)
                 prev_step = step
 
-            step5 = make_primitive_module('d3m.primitives.data_transformation.cast_to_type.Common')
-            connect(step, step5)
-            set_hyperparams(
-                step5,
-                type_to_cast='float',
-            )
-
-            step6 = make_primitive_module('d3m.primitives.data_transformation'
-                                          '.extract_columns_by_semantic_types.DataFrameCommon')
-            set_hyperparams(
-                step6,
-                semantic_types=[
-                    'https://metadata.datadrivendiscovery.org/types/TrueTarget',
-                ],
-            )
-            connect(step2, step6)
+            step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'extract_columns_by_semantic_types.DataFrameCommon')
+            set_hyperparams(db, pipeline, step4,
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
+                            )
+            connect(db, pipeline, step2, step4)
 
             if 'feature_selection' in step.name:  # FIXME: Use the primitive family
-                connect(step6, step, to_input='outputs')
+                connect(db, pipeline, step4, step, to_input='outputs')
 
-            step7 = make_primitive_module('d3m.primitives.data_transformation.cast_to_type.Common')
-            connect(step6, step7)
+            step5 = make_pipeline_module(db, pipeline, classifier)
+            connect(db, pipeline, step, step5)
+            connect(db, pipeline, step4, step5, to_input='outputs')
 
-            step8 = make_primitive_module(classifier)
-            connect(step5, step8)
-            connect(step7, step8, to_input='outputs')
-
-            step9 = make_primitive_module('d3m.primitives.data_transformation.construct_predictions.DataFrameCommon')
-            connect(step8, step9)
-            connect(step2, step9, to_input='reference')
+            step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'construct_predictions.DataFrameCommon')
+            connect(db, pipeline, step5, step6)
+            connect(db, pipeline, step2, step6, to_input='reference')
 
             db.add(pipeline)
             db.commit()
@@ -215,10 +185,7 @@ class D3MPipelineGenerator():
     @staticmethod
     def make_text_pipeline_from_strings(primitives, origin, dataset, targets=None, features=None, DBSession=None):
         db = DBSession()
-
-        pipeline = database.Pipeline(
-            origin=origin,
-            dataset=dataset)
+        pipeline = database.Pipeline(origin=origin, dataset=dataset)
 
         def make_module(package, version, name):
             pipeline_module = database.PipelineModule(
@@ -1219,40 +1186,8 @@ class D3MPipelineGenerator():
     @staticmethod
     def make_template(imputer, classifier, dataset, pipeline_template, targets, features, DBSession=None):
         db = DBSession()
-
-        pipeline = database.Pipeline(
-            origin="template(imputer=%s, classifier=%s)" % (
-                imputer, classifier),
-            dataset=dataset)
-
-        def make_module(package, version, name):
-            pipeline_module = database.PipelineModule(
-                pipeline=pipeline,
-                package=package, version=version, name=name)
-            db.add(pipeline_module)
-            return pipeline_module
-
-        def make_data_module(name):
-            return make_module('data', '0.0', name)
-
-        def make_primitive_module(name):
-            if name[0] == '.':
-                name = 'd3m.primitives' + name
-            return make_module('d3m', '2018.7.10', name)
-
-        def connect(from_module, to_module,
-                    from_output='produce', to_input='inputs'):
-            db.add(database.PipelineConnection(pipeline=pipeline,
-                                               from_module=from_module,
-                                               to_module=to_module,
-                                               from_output_name=from_output,
-                                               to_input_name=to_input))
-
-        def set_hyperparams(module, **hyperparams):
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=module,
-                name='hyperparams', value=pickle.dumps(hyperparams),
-            ))
+        pipeline = database.Pipeline(origin="template(imputer=%s, classifier=%s)" % (imputer, classifier),
+                                     dataset=dataset)
 
         try:
             #                          data
@@ -1267,17 +1202,17 @@ class D3MPipelineGenerator():
             #                   /         |         \
             # Extract (attribute)  Extract (target)  |
             #         |                  |        Extract (target, index)
-            #     [imputer]          CastToType      |
+            #     [imputer]              |           |
             #         |                  |           |
             #    One-hot encoder         |           |
             #         |                  |           |
-            #     CastToType            /           /
+            #          \                /           /
             #            \            /           /
             #             [classifier]          /
             #                       |         /
             #                   ConstructPredictions
             # TODO: Use pipeline input for this
-            input_data = make_data_module('dataset')
+            input_data = make_pipeline_module(db, pipeline, 'dataset', 'data', '0.0')
             db.add(database.PipelineParameter(
                 pipeline=pipeline, module=input_data,
                 name='targets', value=pickle.dumps(targets),
@@ -1292,59 +1227,48 @@ class D3MPipelineGenerator():
                 count_template_steps = 0
                 for pipeline_step in pipeline_template['steps']:
                     if pipeline_step['type'] == 'PRIMITIVE':
-                        step = make_primitive_module(pipeline_step['primitive']['python_path'])
+                        step = make_pipeline_module(db, pipeline, pipeline_step['primitive']['python_path'])
                         prev_steps['steps.%d.produce' % (count_template_steps)] = step
                         count_template_steps += 1
                         if 'hyperparams' in pipeline_step:
                             hyperparams = {}
                             for hyper, desc in pipeline_step['hyperparams'].items():
                                 hyperparams[hyper] = desc['data']
-                            set_hyperparams(step, **hyperparams)
+                            set_hyperparams(db, pipeline, step, **hyperparams)
                     else:
                         # TODO In the future we should be able to handle subpipelines
                         break
                     if prev_step:
                         for argument, desc in pipeline_step['arguments'].items():
-                            connect(prev_steps[desc['data']], step, to_input=argument)
+                            connect(db, pipeline, prev_steps[desc['data']], step, to_input=argument)
                     else:
-                        connect(input_data, step, from_output='dataset')
+                        connect(db, pipeline, input_data, step, from_output='dataset')
                     prev_step = step
 
-            step0 = make_primitive_module(
-                'd3m.primitives.data_transformation.denormalize.Common')
+            step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
             if prev_step:
-                connect(prev_step, step0)
+                connect(db, pipeline, prev_step, step0)
             else:
-                connect(input_data, step0, from_output='dataset')
+                connect(db, pipeline, input_data, step0, from_output='dataset')
 
-            step1 = make_primitive_module(
-                'd3m.primitives.data_transformation'
-                '.dataset_to_dataframe.Common')
-            connect(step0, step1)
+            step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
+            connect(db, pipeline, step0, step1)
 
-            step2 = make_primitive_module(
-                'd3m.primitives.data_transformation'
-                '.column_parser.DataFrameCommon')
-            connect(step1, step2)
+            step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'column_parser.DataFrameCommon')
+            connect(db, pipeline, step1, step2)
 
-            step3 = make_primitive_module(
-                'd3m.primitives.data_transformation'
-                '.extract_columns_by_semantic_types.DataFrameCommon')
-            set_hyperparams(
-                step3,
-                semantic_types=[
-                    'https://metadata.datadrivendiscovery.org/types/Attribute',
-                ],
-            )
-            connect(step2, step3)
+            step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'extract_columns_by_semantic_types.DataFrameCommon')
+            set_hyperparams(db, pipeline, step3,
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute']
+                            )
+            connect(db, pipeline, step2, step3)
 
-            step4 = make_primitive_module(imputer)
-            set_hyperparams(
-                step4,
-                strategy='most_frequent'
-            )
+            step4 = make_pipeline_module(db, pipeline, imputer)
+            set_hyperparams(db, pipeline, step4, strategy='most_frequent')
 
-            connect(step3, step4)
+            connect(db, pipeline, step3, step4)
 
             ######### Feature Selection #########
             '''stepx = make_primitive_module(
@@ -1356,7 +1280,7 @@ class D3MPipelineGenerator():
                     'https://metadata.datadrivendiscovery.org/types/Target',
                 ],
             )
-            connect(step2, stepx)
+            connect(db, pipeline, step2, stepx)
 
             #step_fe = make_primitive_module('d3m.primitives.feature_selection.variance_threshold.SKlearn')
             #set_hyperparams(
@@ -1370,72 +1294,40 @@ class D3MPipelineGenerator():
                 nbins=2,
             )
 
-            connect(step4, step_fe)
-            connect(stepx, step_fe, to_input='outputs')'''
+            connect(db, pipeline, step4, step_fe)
+            connect(db, pipeline, stepx, step_fe, to_input='outputs')'''
             ########## ---------------- #########
 
-            step5 = make_primitive_module(
-                'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')
-            set_hyperparams(
-                step5,
-                handle_unknown='ignore'
-            )
-            #connect(step_fe, step5)
-            connect(step4, step5)
+            step5 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')
+            set_hyperparams(db, pipeline, step5, handle_unknown='ignore')
+            #connect(db, pipeline, step_fe, step5)
+            connect(db, pipeline, step4, step5)
 
-            step6 = make_primitive_module(
-                'd3m.primitives.data_transformation'
-                '.cast_to_type.Common')
+            step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'extract_columns_by_semantic_types.DataFrameCommon')
+            set_hyperparams(db, pipeline, step6,
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/Target']
+                            )
+            connect(db, pipeline, step2, step6)
 
-            set_hyperparams(
-                step6,
-                type_to_cast='float',
-            )
+            step7 = make_pipeline_module(db, pipeline, classifier)
 
-            connect(step5, step6)
+            connect(db, pipeline, step5, step7)
+            connect(db, pipeline, step6, step7, to_input='outputs')
 
-            step7 = make_primitive_module(
-                'd3m.primitives.data_transformation'
-                '.extract_columns_by_semantic_types.DataFrameCommon')
-            set_hyperparams(
-                step7,
-                semantic_types=[
-                    'https://metadata.datadrivendiscovery.org/types/Target',
-                ],
-            )
-            connect(step2, step7)
+            step8 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'extract_columns_by_semantic_types.DataFrameCommon')
+            set_hyperparams(db, pipeline, step8,
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/Target',
+                                            'https://metadata.datadrivendiscovery.org/types/PrimaryKey'
+                                            ]
+                            )
+            connect(db, pipeline, step2, step8)
 
-            step8 = make_primitive_module(
-                'd3m.primitives.data_transformation'
-                '.cast_to_type.Common')
-            connect(step7, step8)
-
-            step9 = make_primitive_module(classifier)
-            if classifier in {'d3m.primitives.classification.gradient_boosting.SKlearn',
-                              'd3m.primitives.regression.gradient_boosting.SKlear'}:
-                set_hyperparams(step9, n_estimators=10)
-
-            connect(step6, step9)
-            connect(step8, step9, to_input='outputs')
-
-            step10 = make_primitive_module(
-                'd3m.primitives.data_transformation'
-                '.extract_columns_by_semantic_types.DataFrameCommon')
-            set_hyperparams(
-                step10,
-                semantic_types=[
-                    'https://metadata.datadrivendiscovery.org/types/Target',
-                    ('https://metadata.datadrivendiscovery.org/types' +
-                     '/PrimaryKey'),
-                ],
-            )
-            connect(step2, step10)
-
-            step11 = make_primitive_module(
-                'd3m.primitives.data_transformation'
-                '.construct_predictions.DataFrameCommon')
-            connect(step9, step11)
-            connect(step10, step11, to_input='reference')
+            step9 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'construct_predictions.DataFrameCommon')
+            connect(db, pipeline, step7, step9)
+            connect(db, pipeline, step8, step9, to_input='reference')
 
             db.add(pipeline)
             db.commit()
@@ -1494,11 +1386,11 @@ class D3MPipelineGenerator():
             #                   /         |         \
             # Extract (attribute)  Extract (target)  |
             #         |                  |        Extract (target, index)
-            #     [imputer]          CastToType      |
+            #     [imputer]              |           |
             #         |                  |           |
             #    One-hot encoder         |           |
             #         |                  |           |
-            #     CastToType            /           /
+            #          \                /           /
             #            \            /           /
             #             [classifier]          /
             #                       |         /
@@ -1588,55 +1480,40 @@ class D3MPipelineGenerator():
                 handle_unknown='ignore'
             )
             connect(step4, step5)
+
             step6 = make_primitive_module(
-                'd3m.primitives.data_transformation'
-                '.cast_to_type.Common')
-
-            set_hyperparams(
-                step6,
-                type_to_cast='float',
-            )
-
-            connect(step5, step6)
-
-            step7 = make_primitive_module(
                 'd3m.primitives.data_transformation'
                 '.extract_columns_by_semantic_types.DataFrameCommon')
             set_hyperparams(
-                step7,
+                step6,
                 semantic_types=[
                     'https://metadata.datadrivendiscovery.org/types/Target',
                 ],
             )
-            connect(step2, step7)
+            connect(step2, step6)
+
+            step7 = make_primitive_module(classifier)
+            connect(step5, step7)
+            connect(step6, step7, to_input='outputs')
 
             step8 = make_primitive_module(
                 'd3m.primitives.data_transformation'
-                '.cast_to_type.Common')
-            connect(step7, step8)
-
-            step9 = make_primitive_module(classifier)
-            connect(step6, step9)
-            connect(step8, step9, to_input='outputs')
-
-            step10 = make_primitive_module(
-                'd3m.primitives.data_transformation'
                 '.extract_columns_by_semantic_types.DataFrameCommon')
             set_hyperparams(
-                step10,
+                step8,
                 semantic_types=[
                     'https://metadata.datadrivendiscovery.org/types/Target',
                     ('https://metadata.datadrivendiscovery.org/types' +
                      '/PrimaryKey'),
                 ],
             )
-            connect(step2, step10)
+            connect(step2, step8)
 
-            step11 = make_primitive_module(
+            step9 = make_primitive_module(
                 'd3m.primitives.data_transformation'
                 '.construct_predictions.DataFrameCommon')
-            connect(step9, step11)
-            connect(step10, step11, to_input='reference')
+            connect(step7, step9)
+            connect(step8, step9, to_input='reference')
 
             db.add(pipeline)
             db.commit()
