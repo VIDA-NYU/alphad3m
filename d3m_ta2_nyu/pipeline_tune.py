@@ -29,7 +29,7 @@ def tune(pipeline_id, metrics, problem, do_rank, timeout, targets, msg_queue, db
         .options(joinedload(database.Pipeline.modules),
                  joinedload(database.Pipeline.connections))
     ).one()
-    dataset_uri = pipeline.dataset  # TODO: Read the dataset as parameter of tune method
+    dataset_uri = pipeline.dataset  # TODO: Read the dataset as parameter of the method
 
     logger.info("About to tune pipeline, id=%s, dataset=%r, timeout=%d secs", pipeline_id, dataset_uri, timeout)
 

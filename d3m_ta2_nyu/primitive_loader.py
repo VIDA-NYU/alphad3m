@@ -8,8 +8,8 @@ from d3m import index
 logger = logging.getLogger(__name__)
 
 
-PRIMITIVES_INFO_COM_PATH = os.path.join(os.path.dirname(__file__), '../resource/primitives_info_com.json')
-PRIMITIVES_INFO_SUM_PATH = os.path.join(os.path.dirname(__file__), '../resource/primitives_info_sum.json')
+PRIMITIVES_BY_NAME_PATH = os.path.join(os.path.dirname(__file__), '../resource/primitives_by_name.json')
+PRIMITIVES_BY_TYPE_PATH = os.path.join(os.path.dirname(__file__), '../resource/primitives_by_type.json')
 
 
 black_list = {
@@ -94,13 +94,13 @@ class D3MPrimitiveLoader():
         return list(D3MPrimitiveLoader.INSTALLED_PRIMITIVES.keys())
 
     @staticmethod
-    def get_primitives_info_summarized():
+    def get_primitives_by_type():
         """
         Returns a dictionary grouping primitive names by family and associating each primitive to a distinct number
         """
 
-        if os.path.isfile(PRIMITIVES_INFO_SUM_PATH):
-            with open(PRIMITIVES_INFO_SUM_PATH) as fin:
+        if os.path.isfile(PRIMITIVES_BY_TYPE_PATH):
+            with open(PRIMITIVES_BY_TYPE_PATH) as fin:
                 primitives = json.load(fin)
             logger.info('Loading primitives info from file')
         else:
@@ -113,7 +113,7 @@ class D3MPrimitiveLoader():
                     family = D3MPrimitiveLoader.get_family(name)
                 except:
                     logger.error('No information about primitive %s', name)
-                    family = 'None'
+                    family = 'N/A'
                 if family in primitives:
                     primitives[family][name] = count
                 else:
@@ -121,16 +121,16 @@ class D3MPrimitiveLoader():
                     primitives[family][name] = count
                 count += 1
 
-            with open(PRIMITIVES_INFO_SUM_PATH, 'w') as fout:
+            with open(PRIMITIVES_BY_TYPE_PATH, 'w') as fout:
                 json.dump(primitives, fout, indent=4)
             logger.info('Loading primitives info from D3M index')
 
         return primitives
 
     @staticmethod
-    def get_primitives_info_complete():
-        if os.path.isfile(PRIMITIVES_INFO_COM_PATH):
-            with open(PRIMITIVES_INFO_COM_PATH) as fin:
+    def get_primitives_by_name():
+        if os.path.isfile(PRIMITIVES_BY_NAME_PATH):
+            with open(PRIMITIVES_BY_NAME_PATH) as fin:
                 primitives = json.load(fin)
             logger.info('Loading primitives info from file')
         else:
@@ -158,7 +158,7 @@ class D3MPrimitiveLoader():
                         continue
                 primitives.append(primitive)
 
-            with open(PRIMITIVES_INFO_COM_PATH, 'w') as fout:
+            with open(PRIMITIVES_BY_NAME_PATH, 'w') as fout:
                 json.dump(primitives, fout, indent=4)
             logger.info('Loading primitives info from D3M index')
 

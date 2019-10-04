@@ -72,21 +72,3 @@ def main_serve():
                  executables_root=executables_root)
     ta2.run_server(port)
 
-
-def main_test():
-    setup_logging()
-
-    storage_root = None
-    predictions_root = None
-
-    if 'D3MOUTPUTDIR' in os.environ:
-        storage_root = os.path.join(os.environ['D3MOUTPUTDIR'], 'supporting_files')
-        predictions_root = os.path.join(os.environ['D3MOUTPUTDIR'], 'predictions')
-
-    logger.info('Config loaded from environment variables D3MOUTPUTDIR=%r',
-                os.environ.get('D3MOUTPUTDIR'))
-    ta2 = D3mTa2(storage_root=storage_root)
-    ta2.run_test(dataset='file://%s' % '/input/dataset_TEST/datasetDoc.json',
-                 problem_path='/input/problem_TEST',
-                 pipeline_id=uuid.UUID(hex=sys.argv[1]),
-                 results_root=os.path.join(predictions_root, sys.argv[1]))

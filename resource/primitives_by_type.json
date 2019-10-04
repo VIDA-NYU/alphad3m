@@ -179,7 +179,7 @@
         "d3m.primitives.link_prediction.link_prediction.LinkPrediction": 233,
         "d3m.primitives.link_prediction.rank_classification.JHU": 234
     },
-    "None": {
+    "N/A": {
         "d3m.primitives.data_transformation.missing_indicator.DistilMissingIndicator": 139
     },
     "GRAPH_MATCHING": {

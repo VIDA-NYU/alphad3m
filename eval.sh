@@ -17,9 +17,6 @@ in
     ta2|ta2ta3)
         exec ta2_serve 45042
     ;;
-    test)
-        exec "$D3MTESTOPT" "$D3MINPUTDIR/test_config.json"
-    ;;
     *)
         echo "\$D3MRUN is not set" >&2
         exit 1

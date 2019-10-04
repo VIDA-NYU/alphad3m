@@ -19,11 +19,11 @@ SCORES_TO_SKLEARN = dict(
               sklearn.metrics.recall_score(y_true, y_pred, average='micro'),
     F1=lambda y_true, y_pred:
         sklearn.metrics.f1_score(y_true, y_pred,
-                                 average='binary', pos_label=1),
+                                 average='binary', pos_label='1'),
     F1_MICRO=lambda y_true, y_pred:
         sklearn.metrics.f1_score(y_true, y_pred, average='micro'),
     F1_MACRO=lambda y_true, y_pred:
-        sklearn.metrics.f1_score(y_true, y_pred, average='macro'),
+        sklearn.metrics.f1_score(y_true, y_pred, average=None),
     ROC_AUC=sklearn.metrics.roc_auc_score,
     ROC_AUC_MICRO=lambda y_true, y_pred:
         sklearn.metrics.roc_auc_score(y_true, y_pred, average='micro'),

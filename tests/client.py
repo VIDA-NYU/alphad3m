@@ -27,7 +27,7 @@ def do_listprimitives(core):
     core.ListPrimitives(pb_core.ListPrimitivesRequest())
 
 
-def do_search(core, problem, dataset_path, time_bound=30.0, pipelines_limit=0, template=None):
+def do_search(core, problem, dataset_path, time_bound=30.0, pipelines_limit=0, pipeline_template=None):
     version = pb_core.DESCRIPTOR.GetOptions().Extensions[pb_core.protocol_version]
 
     metrics = []
@@ -86,6 +86,7 @@ def do_search(core, problem, dataset_path, time_bound=30.0, pipelines_limit=0, t
                 for i in problem.get('dataAugmentation', []) if i.get('domain', []) or i.get('keywords', [])
             ],
         ),
+        template=pipeline_template,
         inputs=[pb_value.Value(
             dataset_uri='file://%s' % dataset_path,
         )],

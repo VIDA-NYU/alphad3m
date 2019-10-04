@@ -65,7 +65,7 @@ class CoreService(pb_core_grpc.CoreServicer):
     grpc2tasksubtype = {k: v for v, k in pb_problem.TaskSubtype.items()
                         if k != pb_problem.TASK_TYPE_UNDEFINED}
 
-    installed_primitives = D3MPrimitiveLoader.get_primitives_info_complete()
+    installed_primitives = D3MPrimitiveLoader.get_primitives_by_name()
 
     def __init__(self, ta2):
         self._ta2 = ta2
@@ -115,7 +115,9 @@ class CoreService(pb_core_grpc.CoreServicer):
             logger.error("TA3 is using a different protocol version: %r "
                          "(us: %r)", request.version, expected_version)
 
-        template = request.template#self._create_pipeline_template()#request.template
+        template = request.template
+
+
 
 
         if template is not None and len(template.steps) > 0:  # isinstance(template, pb_pipeline.PipelineDescription)
@@ -123,7 +125,10 @@ class CoreService(pb_core_grpc.CoreServicer):
             if pipeline.has_placeholder():
                 template = pipeline.to_json_structure()
             else:  # Pipeline template fully defined
-                search_id = self._ta2.new_session(None)
+                problem = None
+                if request.problem:
+                    problem = self._convert_problem(context, request.problem)
+                search_id = self._ta2.new_session(problem)
                 dataset = request.inputs[0].dataset_uri
                 if not dataset.startswith('file://'):
                     dataset = 'file://' + dataset
@@ -141,6 +146,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             dataset = 'file://' + dataset
 
         problem = self._convert_problem(context, request.problem)
+
         top_pipelines = request.rank_solutions_limit
         timeout = request.time_bound_search
         if timeout < 0.000001:
@@ -154,7 +160,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         session = self._ta2.sessions[search_id]
         task = TASKS_FROM_SCHEMA[session.problem['about']['taskType']]
 
-        self._ta2.build_pipelines(search_id, task, dataset,template, session.metrics, timeout=timeout,
+        self._ta2.build_pipelines(search_id, task, dataset, template, session.metrics, timeout=timeout,
                                   top_pipelines=top_pipelines)
 
         return pb_core.SearchSolutionsResponse(
@@ -549,9 +555,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         rank = request.rank
         if rank < 0.0:
             rank = None
-        pipeline = self._ta2.get_workflow(pipeline_id)
 
-        self._ta2.write_executable(pipeline)
         session.write_exported_pipeline(pipeline_id, rank)
         return pb_core.SolutionExportResponse()
 
@@ -757,24 +761,5 @@ class CoreService(pb_core_grpc.CoreServicer):
         step_nb = 'steps.%d' % len(steps)
         steps.append(step)
         module_to_step[mod.id] = step_nb
+
         return step_nb
-
-    def _create_pipeline_template(self):
-        import tempfile
-        from os.path import dirname, join
-
-        with open(join(dirname(__file__), '../resource/pipelines/example.yml'), 'r') as pipeline_file:
-            pipeline = pipeline_module.Pipeline.from_yaml(
-                pipeline_file,
-                resolver=pipeline_module.Resolver(),
-                strict_digest=True,
-            )
-
-        with tempfile.TemporaryDirectory() as scratch_dir:
-            pipeline_message = encode_pipeline_description(
-                pipeline,
-                [pb_value.RAW, pb_value.CSV_URI],
-                scratch_dir
-            )
-
-        return pipeline_message

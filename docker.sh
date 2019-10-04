@@ -2,13 +2,8 @@
 
 # Example search: ./docker.sh fast search seed_datasets_current/185_baseball/TRAIN ta2:latest
 # Example ta2ta3: ./docker.sh ta2ta3 seed_datasets_current/185_baseball/ ta2:latest
-# Example test: ./docker.sh test seed_datasets_current/185_baseball/TEST ta2:latest
 
-# Change this if you're not Remi
-LOCAL_DATA_ROOT="/Users/raonilourenco/reps/datasets"
-LOCAL_OUTPUT_ROOT="/Users/raonilourenco/d3m/tmp"
-LOCAL_STATIC_ROOT="/Users/raonilourenco/d3m/static"
-
+# You should have defined these enviroment variables: $LOCAL_INPUT_ROOT, $LOCAL_OUTPUT_ROOT and $LOCAL_STATIC_ROOT
 
 set -eu
 
@@ -34,11 +29,6 @@ case "$1" in
         INPUT="$2"
         shift 2
     ;;
-    test)
-        MODE=test
-        INPUT="$2"
-        set -- "$3" bash -c "cd /output/executables; for i in *; do D3MTESTOPT=/output/executables/\$i eval.sh; done"
-    ;;
     *)
         echo "Usage:\n  $(basename $0) search seed_datasets_current/185_baseball/TRAIN <image>" >&2
         echo "  $(basename $0) ta2ta3 seed_datasets_current/185_baseball/TRAIN <image>" >&2
@@ -60,9 +50,10 @@ docker run -ti --rm \
     -v "$PWD/alphaautoml:/usr/src/app/alphaautoml" \
     -v "$PWD/d3m_ta2_nyu:/usr/src/app/d3m_ta2_nyu" \
     -v "$PWD/resource:/usr/src/app/resource" \
+    -v "$PWD/tests:/usr/src/app/tests"\
     -v "$PWD/tests.py:/usr/src/app/tests.py"\
     -v "$PWD/eval.sh:/usr/local/bin/eval.sh"\
-    -v "$LOCAL_DATA_ROOT/${INPUT}:/input" \
+    -v "$LOCAL_INPUT_ROOT/${INPUT}:/input" \
     -v "$LOCAL_OUTPUT_ROOT:/output" \
     -v "$LOCAL_STATIC_ROOT:/static" \
     --name ta2_container \

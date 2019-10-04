@@ -7,25 +7,33 @@ import pandas as pd
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 from datetime import datetime
 from os.path import dirname, join
+from d3m.metadata.pipeline import Pipeline
 from d3m_ta2_nyu.grpc_logger import LoggingStub
 from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, SCORES_TO_SKLEARN
-from client import do_search, do_train, do_test
+from ta3ta2_api.utils import encode_pipeline_description, ValueType
+from client import do_search, do_train, do_test, do_export
 
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
-DATASETS_PATH = '/Users/raonilourenco/reps/datasets/seed_datasets_current/'
-D3MINPUTDIR = '/Users/raonilourenco/d3m//tmp/'
+
+D3MINPUTDIR = os.environ.get('D3MINPUTDIR')
+D3MOUTPUTDIR = os.environ.get('D3MOUTPUTDIR')
 
 
 def run_all_datasets():
     channel = grpc.insecure_channel('localhost:45042')
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
-    statistics_path = join(dirname(__file__), 'resource/statistics_datasets.csv')
-    datasets = sorted([x for x in os.listdir(DATASETS_PATH) if os.path.isdir(join(DATASETS_PATH, x))])
-    datasets = ['30_personae']
+    statistics_path = join(dirname(__file__), '../resource/statistics_datasets.csv')
+    datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
+    datasets = ['185_baseball']
     size = len(datasets)
+    use_template = False
+    pipeline_template = None
+
+    if use_template:
+        pipeline_template = load_template()
 
     for i, dataset in enumerate(datasets):
         logger.info('Processing dataset "%s" (%d/%d)' % (dataset, i+1, size))
@@ -33,18 +41,24 @@ def run_all_datasets():
 
         train_dataset_path = '/input/%s/TRAIN/dataset_TRAIN/datasetDoc.json' % dataset
         test_dataset_path = '/input/%s/TEST/dataset_TEST/datasetDoc.json' % dataset
-        problem_path = join(DATASETS_PATH, dataset, 'TRAIN/problem_TRAIN/problemDoc.json')
+        problem_path = join(D3MINPUTDIR, dataset, 'TRAIN/problem_TRAIN/problemDoc.json')
 
         if not os.path.isfile(problem_path):
-            logger.error('The problem file of dataset %s doesnt exist in the format expected', dataset)
+            logger.error('Problem file (%s) doesnt exist', problem_path)
             continue
 
         with open(problem_path) as fin:
             problem = json.load(fin)
 
-        metric = SCORES_FROM_SCHEMA[problem['inputs']['performanceMetrics'][0]['metric']]
+        try:
+            metric = SCORES_FROM_SCHEMA[problem['inputs']['performanceMetrics'][0]['metric']]
+        except KeyError as e:
+            logger.error('Metric %s doesnt exist', e)
+
+        task = get_task(problem)
         best_time, score = 'None', 'None'
-        solutions = do_search(core, problem, train_dataset_path, time_bound=5.0, pipelines_limit=0)
+        solutions = do_search(core, problem, train_dataset_path, time_bound=10.0, pipelines_limit=0,
+                              pipeline_template=pipeline_template)
         search_time = str(datetime.now() - start_time)
         number_solutions = len(solutions)
 
@@ -57,8 +71,8 @@ def run_all_datasets():
             tested_solution = do_test(core, fitted_solution, test_dataset_path)
 
             if len(tested_solution) > 0:
-                true_file_path = join(DATASETS_PATH, dataset, '%s_dataset/tables/learningData.csv' % dataset)
-                pred_file_path = join(D3MINPUTDIR, 'predictions', os.path.basename(list(tested_solution.values())[0]))
+                true_file_path = join(D3MINPUTDIR, dataset, '%s_dataset/tables/learningData.csv' % dataset)
+                pred_file_path = join(D3MOUTPUTDIR, 'predictions', os.path.basename(list(tested_solution.values())[0]))
                 try:
                     labels, predictions = get_ytrue_ypred(true_file_path, pred_file_path)
                     score = calculate_performance(metric, labels, predictions)
@@ -67,7 +81,9 @@ def run_all_datasets():
                     logger.error('Error calculating test score')
                     logger.error(e)
 
-        row = [dataset, number_solutions, best_time, search_time, score]
+            #do_export(core, fitted_solution)
+
+        row = [dataset, number_solutions, best_time, search_time, score, metric, task]
         save_row(statistics_path, row)
 
 
@@ -81,16 +97,34 @@ def get_ytrue_ypred(true_file_path, pred_file_path):
     return labels[col_label].values, predictions[col_label].values
 
 
+def get_task(problem):
+    task_type = problem['about']['taskType'].upper()
+    if 'taskSubType' in problem['about']:
+        task_type = task_type + '_' + problem['about']['taskSubType'].upper()
+
+    return task_type
+
+
 def calculate_performance(metric, labels, predictions):
     score = SCORES_TO_SKLEARN[metric](labels, predictions)
 
-    return score
+    return score.mean()
 
 
 def save_row(file_path, row):
     with open(file_path, 'a') as fout:
         writer = csv.writer(fout, delimiter='\t')
         writer.writerow(row)
+
+
+def load_template():
+    with open(os.path.join(os.path.dirname(__file__), '../resource/pipelines/temporal.json')) as fin:
+        json_pipeline = json.load(fin)
+
+    d3m_pipeline = Pipeline.from_json_structure(json_pipeline, )
+    grpc_pipeline = encode_pipeline_description(d3m_pipeline, [ValueType.RAW], '/tmp')
+
+    return grpc_pipeline
 
 
 if __name__ == '__main__':
