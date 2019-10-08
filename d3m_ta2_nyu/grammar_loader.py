@@ -1,13 +1,15 @@
 import os
+import logging
 from nltk.grammar import Production, Nonterminal, CFG, is_terminal
 
-
+logger = logging.getLogger(__name__)
 BASE_GRAMMAR_PATH = os.path.join(os.path.dirname(__file__), '../resource/base_grammar.bnf')
 COMPLETE_GRAMMAR_PATH = os.path.join(os.path.dirname(__file__), '../resource/complete_grammar.bnf')
 TASK_GRAMMAR_PATH = os.path.join(os.path.dirname(__file__), '../resource/task_grammar.bnf')
 
 
 def load_grammar(grammar_path):
+    logger.info('Loading grammar in %s' % grammar_path)
     with open(grammar_path) as fin:
         grammar_string = fin.read()
 
@@ -25,8 +27,7 @@ def create_completegrammar(primitives):
             new_rhs_list = []
             for token in production.rhs():
                 if isinstance(token, str) and token.startswith('primitive_'):
-                    primitive_names = [x for x in primitives[primitive_type] if x.endswith('.SKlearn')]
-                    new_rhs_list = [new_rhs + (pn,) for pn in primitive_names]
+                    new_rhs_list = [new_rhs + (pn,) for pn in primitives[primitive_type]]
                 else:
                     new_rhs += (token,)
             if len(new_rhs_list) == 0:
@@ -45,16 +46,27 @@ def create_completegrammar(primitives):
 
 
 def create_taskgrammar(grammar, task, filters=[]):
+    logger.info('Creating specific grammar for task %s' % task)
+    productions = grammar.productions(Nonterminal(task))
     start_token = Nonterminal('S')
     new_productions = []
 
-    for initial_production in grammar.productions(Nonterminal(task)):
-        new_productions.append(Production(start_token, initial_production.rhs()))
+    if len(productions) == 0:
+        logger.warning('Task %s doesnt exist in the grammar, using default NA_TASK' % task)
+        productions = grammar.productions(Nonterminal('NA_TASK'))
 
-    for initial_production in grammar.productions(Nonterminal(task)):
-        for production in grammar.productions():
-            if production.lhs() in initial_production.rhs() and production not in new_productions:
-                # TODO: filter productions, e.g. augmentation
+    for start_production in productions:
+        first_token = start_production.rhs()[0]
+        if first_token.symbol().endswith('_TASK'):
+            for new_start_production in grammar.productions(first_token):
+                new_productions.append(Production(start_token, new_start_production.rhs()))
+        else:
+            new_productions.append(Production(start_token, start_production.rhs()))
+
+    for production in grammar.productions():
+        # TODO: filter productions, e.g. augmentation
+        for new_production in new_productions:
+            if production.lhs() in new_production.rhs() and production not in new_productions:
                 new_productions.append(production)
 
     task_grammar = CFG(start_token, new_productions)
@@ -72,6 +84,7 @@ def format_grammar(task, primitives):
     formatted_grammar['START'] = grammar.start().symbol()
     terminals = []
 
+    logger.info('Formating grammar to style of pipeline game')
     for production in grammar.productions():
         non_terminal = production.lhs().symbol()
         production_str = str(production).replace('\'', '')
