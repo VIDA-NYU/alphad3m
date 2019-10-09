@@ -820,42 +820,10 @@ class D3MPipelineGenerator():
     @staticmethod
     def make_timeseries_class_pipeline_from_strings(origin, dataset, targets=None, features=None, DBSession=None):
         db = DBSession()
-
-        pipeline = database.Pipeline(
-            origin=origin,
-            dataset=dataset)
-
-        def make_module(package, version, name):
-            pipeline_module = database.PipelineModule(
-                pipeline=pipeline,
-                package=package, version=version, name=name)
-            db.add(pipeline_module)
-            return pipeline_module
-
-        def make_data_module(name):
-            return make_module('data', '0.0', name)
-
-        def make_primitive_module(name):
-            if name[0] == '.':
-                name = 'd3m.primitives' + name
-            return make_module('d3m', '2018.7.10', name)
-
-        def connect(from_module, to_module,
-                    from_output='produce', to_input='inputs'):
-            db.add(database.PipelineConnection(pipeline=pipeline,
-                                               from_module=from_module,
-                                               to_module=to_module,
-                                               from_output_name=from_output,
-                                               to_input_name=to_input))
-
-        def set_hyperparams(module, **hyperparams):
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=module,
-                name='hyperparams', value=pickle.dumps(hyperparams),
-            ))
+        pipeline = database.Pipeline(origin=origin, dataset=dataset)
 
         try:
-            input_data = make_data_module('dataset')
+            input_data = make_pipeline_module(db, pipeline, 'dataset', 'data', '0.0')
             db.add(database.PipelineParameter(
                 pipeline=pipeline, module=input_data,
                 name='targets', value=pickle.dumps(targets),
@@ -865,12 +833,12 @@ class D3MPipelineGenerator():
                 name='features', value=pickle.dumps(features),
             ))
 
-            step0 = make_primitive_module('d3m.primitives.data_transformation.denormalize.Common')
-            connect(input_data, step0, from_output='dataset')
+            step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
+            connect(db, pipeline, input_data, step0, from_output='dataset')
 
-            step1 = make_primitive_module('d3m.primitives.time_series_classification.k_neighbors.Kanine')
-            connect(step0, step1)
-            connect(step0, step1, to_input='outputs')
+            step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.time_series_classification.k_neighbors.Kanine')
+            connect(db, pipeline, step0, step1)
+            connect(db, pipeline, step0, step1, to_input='outputs')
 
             db.add(pipeline)
             db.commit()
@@ -883,10 +851,7 @@ class D3MPipelineGenerator():
     @staticmethod
     def make_timeseries_fore_pipeline_from_strings(origin, dataset, targets=None, features=None, DBSession=None):
         db = DBSession()
-
-        pipeline = database.Pipeline(
-            origin=origin,
-            dataset=dataset)
+        pipeline = database.Pipeline(origin=origin, dataset=dataset)
 
         def get_time_unit(name_col):
             name = name_col.lower()
@@ -940,29 +905,6 @@ class D3MPipelineGenerator():
 
             return hyperparameters
 
-        def make_module(package, version, name):
-            pipeline_module = database.PipelineModule(
-                pipeline=pipeline,
-                package=package, version=version, name=name)
-            db.add(pipeline_module)
-            return pipeline_module
-
-        def make_data_module(name):
-            return make_module('data', '0.0', name)
-
-        def make_primitive_module(name):
-            if name[0] == '.':
-                name = 'd3m.primitives' + name
-            return make_module('d3m', '2018.7.10', name)
-
-        def connect(from_module, to_module,
-                    from_output='produce', to_input='inputs'):
-            db.add(database.PipelineConnection(pipeline=pipeline,
-                                               from_module=from_module,
-                                               to_module=to_module,
-                                               from_output_name=from_output,
-                                               to_input_name=to_input))
-
         def set_hyperparams(module, hyperparams):
             db.add(database.PipelineParameter(
                 pipeline=pipeline, module=module,
@@ -971,7 +913,7 @@ class D3MPipelineGenerator():
 
         distil_hyperparameters = extract_hyperparameters(dataset[7:])
         try:
-            input_data = make_data_module('dataset')
+            input_data = make_pipeline_module(db, pipeline, 'dataset', 'data', '0.0')
             db.add(database.PipelineParameter(
                 pipeline=pipeline, module=input_data,
                 name='targets', value=pickle.dumps(targets),
@@ -981,17 +923,17 @@ class D3MPipelineGenerator():
                 name='features', value=pickle.dumps(features),
             ))
 
-            step0 = make_primitive_module('d3m.primitives.data_transformation.denormalize.Common')
-            connect(input_data, step0, from_output='dataset')
+            step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
+            connect(db, pipeline, input_data, step0, from_output='dataset')
 
-            step1 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
-            connect(step0, step1)
+            step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
+            connect(db, pipeline, step0, step1)
 
-            step2 = make_primitive_module('d3m.primitives.time_series_forecasting.arima.Parrot')
+            step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.time_series_forecasting.arima.Parrot')
             if len(distil_hyperparameters) > 0:
                 set_hyperparams(step2, distil_hyperparameters)
-            connect(step1, step2)
-            connect(step1, step2, to_input='outputs')
+            connect(db, pipeline, step1, step2)
+            connect(db, pipeline, step1, step2, to_input='outputs')
 
             db.add(pipeline)
             db.commit()

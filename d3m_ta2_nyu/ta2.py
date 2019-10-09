@@ -934,6 +934,7 @@ class D3mTa2(Observable):
             db.commit()
             pipeline_id = pipeline_database.id
             logger.info("Created fixed pipeline %s", pipeline_id)
+            session.write_searched_pipeline(pipeline_id)
 
             session.notify('new_fixed_pipeline', pipeline_id=pipeline_id)
             with session.lock:

@@ -19,12 +19,6 @@ from d3m_ta2_nyu.metafeature.metafeature_extractor import ComputeMetafeatures
 
 logger = logging.getLogger(__name__)
 
-
-def setup_logging():
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s:%(levelname)s:TA2:%(name)s:%(message)s')
-
     
 def get_primitives():
     sklearn_primitives = {}
@@ -336,14 +330,14 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     # TODO Not use multiprocessing to prioritize sklearn primitives
     signal.signal(signal.SIGTERM, signal_handler)
 
-    process_sklearn = multiprocessing.Process(target=run_sklearn_primitives)
+    '''process_sklearn = multiprocessing.Process(target=run_sklearn_primitives)
     process_sklearn.daemon = True
     process_sklearn.start()
     process_sklearn.join(timeout_sklearn)
 
     if process_sklearn.is_alive():
         process_sklearn.terminate()
-        logger.info('Finished evaluation Scikit-learn primitives')
+        logger.info('Finished evaluation Scikit-learn primitives')'''
 
     input_all = create_input(ALL_PRIMITIVES)
     game = PipelineGame(input_all, function_name)

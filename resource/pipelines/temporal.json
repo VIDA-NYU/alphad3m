@@ -1,27 +1,27 @@
 {
-   "id":"11f03cc7-b3f5-48cc-92a9-77f5869a65e2",
+   "id":"99101a6e-01c0-4eac-821b-480795ae528f",
    "schema":"https://metadata.datadrivendiscovery.org/schemas/v0/pipeline.json",
-   "created":"2019-06-08T01:02:42.095258Z",
+   "created":"2019-08-06T09:29:15Z",
    "inputs":[
       {
-         "name":"inputs"
+         "name":"input dataset"
       }
    ],
    "outputs":[
       {
          "data":"steps.8.produce",
-         "name":"output predictions"
+         "name":"predictions"
       }
    ],
    "steps":[
       {
          "type":"PRIMITIVE",
          "primitive":{
-            "id":"4b42ce1e-9b98-4a25-b68e-fad13311eb65",
-            "version":"0.3.0",
-            "python_path":"d3m.primitives.data_transformation.dataset_to_dataframe.Common",
-            "name":"Extract a DataFrame from a Dataset",
-            "digest":"a141e6821de7ae586968b0986237745a5510850e6940cf946db9d50d3828b030"
+            "id":"f31f8c1f-d1c5-43e5-a4b2-2ae4a761ef2e",
+            "version":"0.2.0",
+            "python_path":"d3m.primitives.data_transformation.denormalize.Common",
+            "name":"Denormalize datasets",
+            "digest":"6a80776d244347f0d29f4358df1cd0286c25f67e03a7e2ee517c6e853e6a9d1f"
          },
          "arguments":{
             "inputs":{
@@ -38,11 +38,11 @@
       {
          "type":"PRIMITIVE",
          "primitive":{
-            "id":"3002bc5b-fa47-4a3d-882e-a8b5f3d756aa",
-            "version":"0.1.0",
-            "python_path":"d3m.primitives.data_transformation.remove_semantic_types.DataFrameCommon",
-            "name":"Remove semantic types from columns",
-            "digest":"ff48930a123697994f8b606b8a353c7e60aaf21738f4fd1a2611d8d1eb4a349a"
+            "id":"4b42ce1e-9b98-4a25-b68e-fad13311eb65",
+            "version":"0.3.0",
+            "python_path":"d3m.primitives.data_transformation.dataset_to_dataframe.Common",
+            "name":"Extract a DataFrame from a Dataset",
+            "digest":"a141e6821de7ae586968b0986237745a5510850e6940cf946db9d50d3828b030"
          },
          "arguments":{
             "inputs":{
@@ -54,21 +54,7 @@
             {
                "id":"produce"
             }
-         ],
-         "hyperparams":{
-            "columns":{
-               "type":"VALUE",
-               "data":[
-                  1
-               ]
-            },
-            "semantic_types":{
-               "type":"VALUE",
-               "data":[
-                  "https://metadata.datadrivendiscovery.org/types/Attribute"
-               ]
-            }
-         }
+         ]
       },
       {
          "type":"PRIMITIVE",
@@ -123,6 +109,33 @@
       {
          "type":"PRIMITIVE",
          "primitive":{
+            "id":"eb5fe752-f22a-4090-948b-aafcef203bf5",
+            "version":"0.2.0",
+            "python_path":"d3m.primitives.data_transformation.cast_to_type.Common",
+            "name":"Casts DataFrame",
+            "digest":"77c856d0585115a9b083492c6c7816ca1b5c86345a68e790197f9d161c8d4a6f"
+         },
+         "arguments":{
+            "inputs":{
+               "type":"CONTAINER",
+               "data":"steps.3.produce"
+            }
+         },
+         "outputs":[
+            {
+               "id":"produce"
+            }
+         ],
+         "hyperparams":{
+            "type_to_cast":{
+               "type":"VALUE",
+               "data":"float"
+            }
+         }
+      },
+      {
+         "type":"PRIMITIVE",
+         "primitive":{
             "id":"4503a4c6-42f7-45a1-a1d4-ed69699cf5e1",
             "version":"0.3.0",
             "python_path":"d3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon",
@@ -144,7 +157,7 @@
             "semantic_types":{
                "type":"VALUE",
                "data":[
-                  "https://metadata.datadrivendiscovery.org/types/SuggestedTarget"
+                  "https://metadata.datadrivendiscovery.org/types/TrueTarget"
                ]
             }
          }
@@ -152,46 +165,11 @@
       {
          "type":"PRIMITIVE",
          "primitive":{
-            "id":"4d46e77b-9c29-4631-b382-02333e928f10",
-            "version":"v2019.6",
-            "python_path":"d3m.primitives.feature_selection.joint_mutual_information.AutoRPI",
-            "name":"JMIplus_auto feature selector",
-            "digest":"3e89211d9d2dce722fc98361237f5f0cbba224af49dc65898c022b51b3fa9271"
-         },
-         "arguments":{
-            "inputs":{
-               "type":"CONTAINER",
-               "data":"steps.3.produce"
-            },
-            "outputs":{
-               "type":"CONTAINER",
-               "data":"steps.4.produce"
-            }
-         },
-         "outputs":[
-            {
-               "id":"produce"
-            }
-         ],
-         "hyperparams":{
-            "method":{
-               "type":"VALUE",
-               "data":"pseudoBayesian"
-            },
-            "nbins":{
-               "type":"VALUE",
-               "data":2
-            }
-         }
-      },
-      {
-         "type":"PRIMITIVE",
-         "primitive":{
-            "id":"d016df89-de62-3c53-87ed-c06bb6a23cde",
-            "version":"2019.6.7",
-            "python_path":"d3m.primitives.data_cleaning.imputer.SKlearn",
-            "name":"sklearn.impute.SimpleImputer",
-            "digest":"d6902b0ef72b4cd6fc5f79054f7a534404c708e1244e94a2713a9dd525c78eed"
+            "id":"eb5fe752-f22a-4090-948b-aafcef203bf5",
+            "version":"0.2.0",
+            "python_path":"d3m.primitives.data_transformation.cast_to_type.Common",
+            "name":"Casts DataFrame",
+            "digest":"77c856d0585115a9b083492c6c7816ca1b5c86345a68e790197f9d161c8d4a6f"
          },
          "arguments":{
             "inputs":{
@@ -203,44 +181,32 @@
             {
                "id":"produce"
             }
-         ],
-         "hyperparams":{
-            "strategy":{
-               "type":"VALUE",
-               "data":"most_frequent"
-            }
-         }
+         ]
       },
       {
          "type":"PRIMITIVE",
          "primitive":{
-            "id":"c8a28f02-ef4a-35a8-87f1-cf79980f5c3e",
-            "version":"2019.6.7",
-            "python_path":"d3m.primitives.classification.extra_trees.SKlearn",
-            "name":"sklearn.ensemble.forest.ExtraTreesClassifier",
-            "digest":"bd28b291e285b3fc94410899197b87f535124c08a4ed00ca0af6eaa302c908c6"
+            "id":"fe0841b7-6e70-4bc3-a56c-0670a95ebc6a",
+            "version":"0.1.0",
+            "python_path":"d3m.primitives.classification.xgboost_gbtree.DataFrameCommon",
+            "name":"XGBoost GBTree classifier",
+            "digest":"92c2ba639ead09cba5626c5e81f4e57a55e4bccb25cfc5d16d0c945a936a104d"
          },
          "arguments":{
             "inputs":{
                "type":"CONTAINER",
-               "data":"steps.6.produce"
+               "data":"steps.4.produce"
             },
             "outputs":{
                "type":"CONTAINER",
-               "data":"steps.4.produce"
+               "data":"steps.6.produce"
             }
          },
          "outputs":[
             {
                "id":"produce"
             }
-         ],
-         "hyperparams":{
-            "n_estimators":{
-               "type":"VALUE",
-               "data":20
-            }
-         }
+         ]
       },
       {
          "type":"PRIMITIVE",
@@ -258,7 +224,7 @@
             },
             "reference":{
                "type":"CONTAINER",
-               "data":"steps.0.produce"
+               "data":"steps.2.produce"
             }
          },
          "outputs":[
@@ -269,8 +235,11 @@
       }
    ],
    "source":{
-      "name":"RPI"
+      "name":"nyu"
    },
-   "digest":"398bf336e6b28cf42171ddd74df3935b7686ad7fc7187d244ff1ccce642b096a",
-   "_ingest_timestamp":"2019-06-27 00:31:49.470247"
+   "name":"99101a6e-01c0-4eac-821b-480795ae528f",
+   "description":"AlphaZero eval",
+   "digest":"583b18418b39e93a9d41c3b2f3279b2afcac032a69cc757785d26710881d45b2",
+   "_submitter":"dmc",
+   "_ingest_timestamp":"2019-08-06 10:47:46.704018"
 }
