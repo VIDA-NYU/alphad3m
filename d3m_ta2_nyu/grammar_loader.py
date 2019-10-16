@@ -52,7 +52,7 @@ def create_taskgrammar(grammar, task, filters=[]):
     new_productions = []
 
     if len(productions) == 0:
-        logger.warning('Task %s doesnt exist in the grammar, using default NA_TASK' % task)
+
         productions = grammar.productions(Nonterminal('NA_TASK'))
 
     for start_production in productions:

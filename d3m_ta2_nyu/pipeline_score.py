@@ -60,18 +60,20 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
         scores = evaluate(pipeline, train_test_tabular_split, dataset, metrics, problem, scoring_conf)
         logger.info("Holdout results:\n%s", scores)
 
-    elif scoring_conf['method'] == pb_core.EvaluationMethod.Value('RANKING'):
+    elif scoring_conf['method'] == pb_core.EvaluationMethod.Value('RANKING'):  # For TA2 only evaluation
+        scoring_conf['number_of_folds'] = '4'
         metrics = format_metrics(problem)
-        scores = evaluate(pipeline, train_test_tabular_split, dataset, metrics, problem, scoring_conf)
+        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_conf)
         scores = create_new_metric(scores)
         logger.info("Ranking-D3M results:\n%s", scores)
 
     scores_db = add_scores_db(scores, scores_db)
 
-    if do_rank and len(scores) > 0:  # Need to rank too
+    if do_rank and len(scores) > 0:  # Need to rank too during the search
         logger.info("Calculating RANK in search solution for pipeline %s", pipeline_id)
         entire_dataset = Dataset.load(dataset_uri)  # load complete dataset
-        scores = evaluate(pipeline, train_test_tabular_split, entire_dataset, metrics, problem, scoring_conf)
+        scoring_conf['number_of_folds'] = '4'
+        scores = evaluate(pipeline, kfold_tabular_split, entire_dataset, metrics, problem, scoring_conf)
         logger.info("Ranking-D3M (whole dataset) results:\n%s", scores)
         scores = create_new_metric(scores)
         logger.info("Ranking-D3M (whole dataset) new metric results:\n%s", scores)

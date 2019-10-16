@@ -26,9 +26,9 @@ def run_all_datasets():
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
     statistics_path = join(dirname(__file__), '../resource/statistics_datasets.csv')
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['185_baseball']
+    datasets = ['LL1_736_stock_market']
     size = len(datasets)
-    use_template = True
+    use_template = False
     pipeline_template = None
 
     if use_template:
@@ -40,12 +40,15 @@ def run_all_datasets():
 
         dataset_train_path = join(D3MINPUTDIR, dataset, 'TRAIN/dataset_TRAIN/datasetDoc.json')
         dataset_test_path = join(D3MINPUTDIR, dataset, 'TEST/dataset_TEST/datasetDoc.json')
-        dataset_score_path = join(D3MINPUTDIR, dataset, 'SCORE/dataset_TEST/datasetDoc.json')
+        dataset_score_path = join(D3MINPUTDIR, dataset, 'SCORE/dataset_SCORE/datasetDoc.json')
         problem_path = join(D3MINPUTDIR, dataset, 'TRAIN/problem_TRAIN/problemDoc.json')
 
         if not os.path.isfile(problem_path):
             logger.error('Problem file (%s) doesnt exist', problem_path)
             continue
+
+        if not os.path.isfile(dataset_score_path):
+            dataset_score_path = join(D3MINPUTDIR, dataset, 'SCORE/dataset_TEST/datasetDoc.json')
 
         with open(problem_path) as fin:
             problem = json.load(fin)
@@ -76,7 +79,9 @@ def run_all_datasets():
                 '--input', dataset_train_path,
                 '--test-input', dataset_test_path,
                 '--score-input', dataset_score_path,
-                '--scores', score_pipeline_path]
+                '--scores', score_pipeline_path
+                #'--output-run', os.path.join('/output/pipeline_runs/run.yaml')
+                ]
             try:
                 subprocess.call(command)
                 df = pd.read_csv(score_pipeline_path)

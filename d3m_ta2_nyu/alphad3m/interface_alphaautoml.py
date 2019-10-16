@@ -14,7 +14,7 @@ from d3m_ta2_nyu.grammar_loader import format_grammar
 from alphaAutoMLEdit.Coach import Coach
 from alphaAutoMLEdit.pipeline.PipelineGame import PipelineGame
 from alphaAutoMLEdit.pipeline.NNet import NNetWrapper
-from .d3mpipeline_generator import D3MPipelineGenerator
+from .d3mpipeline_generator import D3MPipelineGenerator, D3MPipelineGenerator_TimeseriesClass, D3MPipelineGenerator_TimeseriesFore
 from d3m_ta2_nyu.metafeature.metafeature_extractor import ComputeMetafeatures
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,8 @@ input = {
         'PROBLEM_TYPES': {'CLASSIFICATION': 1,
                           'REGRESSION': 2,
                           'TIME_SERIES_FORECASTING': 3,
-                          'CLUSTERING': 4},
+                          'CLUSTERING': 4,
+                          'TIME_SERIES_CLASSIFICATION': 5},
 
         'DATA_TYPES': {'TABULAR': 1,
                        'GRAPH': 2,
@@ -108,16 +109,18 @@ def send(msg_queue, pipeline_id):
 
 @database.with_sessionmaker
 def generate(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue, DBSession):
-    generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue, DBSession)
+    #generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue, DBSession)
 
     import time
     start = time.time()
     # FIXME: don't use 'problem' argument
     compute_metafeatures = ComputeMetafeatures(dataset, targets, features, DBSession)
+    obj = D3MPipelineGenerator()
 
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_pipeline_from_strings(strings, origin, dataset,search_results, pipeline_template, targets, features,
+        pipeline_id = obj.make_pipeline_from_strings(strings, origin, dataset, search_results,
+                                                                      pipeline_template, targets, features,
                                                                       DBSession=DBSession)
 
         # Evaluate the pipeline
@@ -188,22 +191,6 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    def eval_timeseries_class_pipeline(origin):
-        # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_timeseries_class_pipeline_from_strings(origin, dataset, targets,
-                                                                                       features, DBSession=DBSession)
-        # Evaluate the pipeline
-        msg_queue.send(('eval', pipeline_id))
-        return msg_queue.recv()
-
-    def eval_timeseries_fore_pipeline(origin):
-        # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_timeseries_fore_pipeline_from_strings(origin, dataset, targets,
-                                                                                      features, DBSession=DBSession)
-        # Evaluate the pipeline
-        msg_queue.send(('eval', pipeline_id))
-        return msg_queue.recv()
-
     def eval_semisupervised_pipeline(origin):
         # Create the pipeline in the database
         pipeline_id = D3MPipelineGenerator.make_semisupervised_pipeline_from_strings(origin, dataset, targets,
@@ -230,54 +217,42 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
 
     function_name = eval_pipeline
 
-    if 'text' in data_types:
-        function_name = eval_text_pipeline
-
-    if 'image' in data_types:
-        if 'REGRESSION' in task or 'CLASSIFICATION' in task:
-            function_name = eval_image_pipeline
-        if 'OBJECT_DETECTION' in task:
-            eval_object_pipeline('ALPHAD3M')
-            return
-
-    if 'audio' in data_types:
-        eval_audio_pipeline('ALPHAD3M')
-        return
-
-    if 'graph' in data_types or 'edgeList' in data_types:
-        if 'GRAPH_MATCHING' in task:
-            eval_graphmatch_pipeline('ALPHAD3M')
-            return
-        elif 'COMMUNITY_DETECTION' in task:
-            eval_communitydetection_pipeline('ALPHAD3M')
-            return
-        elif 'LINK_PREDICTION' in task:
-            eval_linkprediction_pipeline('ALPHAD3M')
-            return
-        elif 'VERTEX_NOMINATION' in task or 'VERTEX_CLASSIFICATION' in task:
-            eval_vertexnomination_pipeline('ALPHAD3M')
-            return
-        logger.error('%s Not Supported', task)
-        sys.exit(148)
-
-    if 'timeseries' in data_types:
-        if 'CLASSIFICATION' in task:
-            eval_timeseries_class_pipeline('ALPHAD3M')
-            return
-        logger.error('%s Not Supported', task)
-        sys.exit(148)
-
-    if 'TIME_SERIES_FORECASTING' in task:
-        eval_timeseries_fore_pipeline('ALPHAD3M')
-        return
-
-    if 'SEMISUPERVISED_CLASSIFICATION' in task:
-        eval_semisupervised_pipeline('ALPHAD3M')
-        return
-
     if 'COLLABORATIVE_FILTERING' in task:
         eval_collaborativefiltering_pipeline('ALPHAD3M')
         return
+    elif 'OBJECT_DETECTION' in task:
+        eval_object_pipeline('ALPHAD3M')
+        return
+    elif 'GRAPH_MATCHING' in task:
+        eval_graphmatch_pipeline('ALPHAD3M')
+        return
+    elif 'SEMISUPERVISED_CLASSIFICATION' in task:
+        eval_semisupervised_pipeline('ALPHAD3M')
+        return
+    elif 'COMMUNITY_DETECTION' in task:
+        eval_communitydetection_pipeline('ALPHAD3M')
+        return
+    elif 'LINK_PREDICTION' in task:
+        eval_linkprediction_pipeline('ALPHAD3M')
+        return
+    elif 'VERTEX_NOMINATION' in task or 'VERTEX_CLASSIFICATION' in task:
+        eval_vertexnomination_pipeline('ALPHAD3M')
+        return
+    elif 'TIME_SERIES_FORECASTING' in task:
+        obj = D3MPipelineGenerator_TimeseriesFore()
+    elif 'timeseries' in data_types and 'CLASSIFICATION' in task:
+        task = 'TIME_SERIES_CLASSIFICATION'
+        obj = D3MPipelineGenerator_TimeseriesClass()
+    elif 'image' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
+        function_name = eval_image_pipeline
+    elif 'text' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
+        function_name = eval_text_pipeline
+    elif 'audio' in data_types:
+        eval_audio_pipeline('ALPHAD3M')
+        return
+    else:
+        logger.warning('Task %s doesnt exist in the grammar, using default NA_TASK' % task)
+        task = 'NA_TASK'
 
     def create_input(selected_primitves):
         task_name = task + '_TASK'
@@ -330,14 +305,14 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     # TODO Not use multiprocessing to prioritize sklearn primitives
     signal.signal(signal.SIGTERM, signal_handler)
 
-    '''process_sklearn = multiprocessing.Process(target=run_sklearn_primitives)
+    process_sklearn = multiprocessing.Process(target=run_sklearn_primitives)
     process_sklearn.daemon = True
     process_sklearn.start()
     process_sklearn.join(timeout_sklearn)
 
     if process_sklearn.is_alive():
         process_sklearn.terminate()
-        logger.info('Finished evaluation Scikit-learn primitives')'''
+        logger.info('Finished evaluation Scikit-learn primitives')
 
     input_all = create_input(ALL_PRIMITIVES)
     game = PipelineGame(input_all, function_name)

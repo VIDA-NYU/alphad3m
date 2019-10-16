@@ -1080,7 +1080,8 @@ class D3mTa2(Observable):
         scoring_conf = {'shuffle': 'true',
                         'stratified': 'true' if task == 'CLASSIFICATION' else 'false',
                         'train_test_ratio': '0.75',
-                        'method': pb_core.EvaluationMethod.Value('HOLDOUT')}
+                        'method': pb_core.EvaluationMethod.Value('K_FOLD'), #HOLDOUT
+                        'folds': '2'}
         # Add the pipeline to the session, score it
         with session.with_observer_queue() as queue:
             session.add_scoring_pipeline(pipeline_id)
@@ -1109,25 +1110,28 @@ class D3mTa2(Observable):
                     .order_by(database.CrossValidation.date.desc())
             ).as_scalar()
             # Get scores from that cross-validation
-            scores = (
-                db.query(database.CrossValidationScore)
-                    .filter(database.CrossValidationScore.cross_validation_id ==
-                            crossval_id)
+            scores = db.query(
+                select([func.avg(database.CrossValidationScore.value),
+                        database.CrossValidationScore.metric])
+                    .where(
+                    database.CrossValidationScore.cross_validation_id ==
+                    crossval_id
+                )
+                    .group_by(database.CrossValidationScore.metric)
             ).all()
-            metric = session.metrics[0]['metric']
-            for score in scores:
-                if score.metric == metric:
-                    logger.info("Evaluation result: %s -> %r",
-                                metric, score.value)
-                    return score.value
-            logger.info("Didn't get the requested metric from "
-                        "cross-validation")
+
+            first_metric = session.metrics[0]['metric']
+            for value, metric in scores:
+                if metric == first_metric:
+                    logger.info("Evaluation result: %s -> %r", metric, value)
+                    return value
+            logger.info("Didn't get the requested metric from cross-validation")
             return None
         finally:
             db.close()
 
     def _get_sample_uri(self, dataset_uri, problem):
-        if problem['about']['taskType'] in {'timeSeriesForecasting', 'semiSupervisedClassification'}:
+        if problem['about']['taskType'] in {'semiSupervisedClassification'}: #timeSeriesForecasting
             return None  # There are not primitives to do data sampling for these tasks
 
         dataset = Dataset.load(dataset_uri)

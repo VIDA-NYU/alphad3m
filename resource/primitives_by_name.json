@@ -277,7 +277,7 @@
         "name": "Tree-Augmented Naive Bayes Classifier",
         "version": "v2019.6",
         "python_path": "d3m.primitives.classification.tree_augmented_naive_bayes.BayesianInfRPI",
-        "digest": "ba3140b87566cef64df50dd6657b9e5aab1acbd840f9dd85517b72b4d25bdd17"
+        "digest": "a369babed84a75850b98c928959d157aab1f6c690b27060d3aba34a30cd7f6dc"
     },
     {
         "id": "dca25a46-7a5f-48d9-ac9b-d14d4d671b0b",
@@ -1341,7 +1341,7 @@
         "name": "JMIplus_auto feature selector",
         "version": "v2019.6",
         "python_path": "d3m.primitives.feature_selection.joint_mutual_information.AutoRPI",
-        "digest": "3e89211d9d2dce722fc98361237f5f0cbba224af49dc65898c022b51b3fa9271"
+        "digest": "1c54d0e9dc930cccff21fc5bcc2a5d5ba2cc61f55637ea30355b87bfb3c2d212"
     },
     {
         "id": "04573880-d64f-4791-8932-52b7c3877639",
@@ -1362,7 +1362,7 @@
         "name": "S2TMBplus feature selector",
         "version": "v2019.6",
         "python_path": "d3m.primitives.feature_selection.score_based_markov_blanket.RPI",
-        "digest": "83c3362849a6f1597106fbbd0be6a966bc40ab83fd4bf17e284cabbb3a7c31aa"
+        "digest": "be451bc239089931fd85a6464e97f09ecddecd8ce95f93a8ee4051cc64e1ca62"
     },
     {
         "id": "09a4cffa-a59f-30ac-b78f-101c35b3f7c6",
@@ -1383,7 +1383,7 @@
         "name": "STMBplus_auto feature selector",
         "version": "v2019.6",
         "python_path": "d3m.primitives.feature_selection.simultaneous_markov_blanket.AutoRPI",
-        "digest": "f75ffbdb8899082eb190bcd211aec1b303dd7d27228a26d450c34c603fa051f7"
+        "digest": "62254bc2d10df79e69fb619ac39e4d370c57a67bfe5b5da841d29fe805682a99"
     },
     {
         "id": "980c43c7-ab2a-3dc9-943b-db08a7c25cb6",
