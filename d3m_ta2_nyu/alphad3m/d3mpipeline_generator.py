@@ -1508,7 +1508,5 @@ class D3MPipelineGenerator_TimeseriesFore():
                                                DBSession=DBSession)
                 return pipeline_id
 
-
-
         finally:
             db.close()

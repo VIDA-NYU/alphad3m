@@ -66,8 +66,6 @@ input = {
         }
     }
 
-process_sklearn = None
-
 
 def generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
                           timeout, msg_queue, DBSession):
@@ -250,14 +248,10 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     elif 'audio' in data_types:
         eval_audio_pipeline('ALPHAD3M')
         return
-    else:
-        logger.warning('Task %s doesnt exist in the grammar, using default NA_TASK' % task)
-        task = 'NA_TASK'
 
     def create_input(selected_primitves):
         task_name = task + '_TASK'
-        GRAMMAR = format_grammar(task_name, selected_primitves)
-        input['GRAMMAR'] = GRAMMAR
+        input['GRAMMAR'] = format_grammar(task_name, selected_primitves)
         input['PROBLEM'] = task
         input['DATA_TYPE'] = 'TABULAR'
         input['METRIC'] = metrics[0]['metric']
@@ -285,34 +279,12 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
                 game.steps) + ' ' + str((eval_times[evaluations[0][0]] - start) / 60.0) + ' ' + str(
                 (end - start) / 60.0) + '\n')
 
-    global process_sklearn
-    input_sklearn = create_input(SKLEARN_PRIMITIVES)
-    timeout_sklearn = int(timeout * 0.4)
-
-    def run_sklearn_primitives():
-        logger.info('Starting evaluation Scikit-learn primitives, timeout is %s', timeout_sklearn)
-        game = PipelineGame(input_sklearn, function_name)
-        nnet = NNetWrapper(game)
-        c = Coach(game, nnet, input_sklearn['ARGS'])
-        c.learn()
-
     def signal_handler(signal, frame):
         logger.info('Receiving SIGTERM signal')
         #record_bestpipeline(input['DATASET'])
-        if process_sklearn.is_alive():
-            process_sklearn.terminate()
         sys.exit(0)
-    # TODO Not use multiprocessing to prioritize sklearn primitives
+
     signal.signal(signal.SIGTERM, signal_handler)
-
-    process_sklearn = multiprocessing.Process(target=run_sklearn_primitives)
-    process_sklearn.daemon = True
-    process_sklearn.start()
-    process_sklearn.join(timeout_sklearn)
-
-    if process_sklearn.is_alive():
-        process_sklearn.terminate()
-        logger.info('Finished evaluation Scikit-learn primitives')
 
     input_all = create_input(ALL_PRIMITIVES)
     game = PipelineGame(input_all, function_name)

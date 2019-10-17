@@ -1,6 +1,6 @@
 import os
 import logging
-from nltk.grammar import Production, Nonterminal, CFG, is_terminal
+from nltk.grammar import Production, Nonterminal, CFG, is_terminal, is_nonterminal
 
 logger = logging.getLogger(__name__)
 BASE_GRAMMAR_PATH = os.path.join(os.path.dirname(__file__), '../resource/base_grammar.bnf')
@@ -25,9 +25,10 @@ def create_completegrammar(primitives):
         if primitive_type in primitives:
             new_rhs = tuple()
             new_rhs_list = []
+            sorted_primitives = sorted(primitives[primitive_type], key=lambda x: x.endswith('SKlearn'), reverse=True)
             for token in production.rhs():
                 if isinstance(token, str) and token.startswith('primitive_'):
-                    new_rhs_list = [new_rhs + (pn,) for pn in primitives[primitive_type]]
+                    new_rhs_list = [new_rhs + (pn,) for pn in sorted_primitives]
                 else:
                     new_rhs += (token,)
             if len(new_rhs_list) == 0:
@@ -52,12 +53,12 @@ def create_taskgrammar(grammar, task, filters=[]):
     new_productions = []
 
     if len(productions) == 0:
-
+        logger.warning('Task %s doesnt exist in the grammar, using default NA_TASK' % task)
         productions = grammar.productions(Nonterminal('NA_TASK'))
 
     for start_production in productions:
         first_token = start_production.rhs()[0]
-        if first_token.symbol().endswith('_TASK'):
+        if is_nonterminal(first_token) and first_token.symbol().endswith('_TASK'):
             for new_start_production in grammar.productions(first_token):
                 new_productions.append(Production(start_token, new_start_production.rhs()))
         else:
