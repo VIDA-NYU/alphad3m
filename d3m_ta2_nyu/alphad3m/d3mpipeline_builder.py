@@ -51,12 +51,14 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive):
         set_hyperparams(db, pipeline, primitive, strategy='most_frequent')
     elif primitive_name == 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn':
         set_hyperparams(db, pipeline, primitive, handle_unknown='ignore')
+    elif primitive_name == 'd3m.primitives.learner.collaborative_filtering_link_prediction.DistilCollaborativeFiltering':
+        set_hyperparams(db, pipeline, primitive, metric='meanAbsoluteError')
 
 
-class D3MPipelineGenerator():
+class BaseBuilder:
 
-    def make_pipeline_from_strings(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
-                                   features=None, DBSession=None):
+    def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
+                         features=None, DBSession=None):
         db = DBSession()
         pipeline = database.Pipeline(origin=origin, dataset=dataset)
         try:
@@ -148,7 +150,7 @@ class D3MPipelineGenerator():
 
             step = prev_step = step3
             preprocessors = primitives[:-1]
-            classifier = primitives[-1]
+            estimator = primitives[-1]
 
             for preprocessor in preprocessors:
                 step = make_pipeline_module(db, pipeline, preprocessor)
@@ -166,7 +168,8 @@ class D3MPipelineGenerator():
             if 'feature_selection' in step.name:  # FIXME: Use the primitive family
                 connect(db, pipeline, step4, step, to_input='outputs')
 
-            step5 = make_pipeline_module(db, pipeline, classifier)
+            step5 = make_pipeline_module(db, pipeline, estimator)
+            change_default_hyperparams(db, pipeline, estimator, step5)
             connect(db, pipeline, step, step5)
             connect(db, pipeline, step4, step5, to_input='outputs')
 
@@ -571,248 +574,9 @@ class D3MPipelineGenerator():
             db.close()
 
     @staticmethod
-    def make_vertexnomination_pipeline_from_strings(origin, dataset, targets=None, features=None, DBSession=None):
+    def make_template(imputer, estimator, dataset, pipeline_template, targets, features, DBSession=None):
         db = DBSession()
-
-        pipeline = database.Pipeline(
-            origin=origin,
-            dataset=dataset)
-
-        def make_module(package, version, name):
-            pipeline_module = database.PipelineModule(
-                pipeline=pipeline,
-                package=package, version=version, name=name)
-            db.add(pipeline_module)
-            return pipeline_module
-
-        def make_data_module(name):
-            return make_module('data', '0.0', name)
-
-        def make_primitive_module(name):
-            if name[0] == '.':
-                name = 'd3m.primitives' + name
-            return make_module('d3m', '2018.7.10', name)
-
-        def connect(from_module, to_module,
-                    from_output='produce', to_input='inputs'):
-            db.add(database.PipelineConnection(pipeline=pipeline,
-                                               from_module=from_module,
-                                               to_module=to_module,
-                                               from_output_name=from_output,
-                                               to_input_name=to_input))
-
-        try:
-
-            input_data = make_data_module('dataset')
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=input_data,
-                name='targets', value=pickle.dumps(targets),
-            ))
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=input_data,
-                name='features', value=pickle.dumps(features),
-            ))
-
-            step0 = make_primitive_module(
-                'd3m.primitives.data_transformation.vertex_classification_parser.VertexClassificationParser')
-            connect(input_data, step0, from_output='dataset')
-
-            step1 = make_primitive_module('d3m.primitives.classification.vertex_nomination.VertexClassification')
-            connect(step0, step1)
-            db.add(pipeline)
-            db.commit()
-            logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
-            return pipeline.id
-        finally:
-            db.close()
-
-
-    @staticmethod
-    def make_semisupervised_pipeline_from_strings(origin, dataset, targets=None, features=None, DBSession=None):
-
-        db = DBSession()
-
-        pipeline = database.Pipeline(
-            origin=origin,
-            dataset=dataset)
-
-        def make_module(package, version, name):
-            pipeline_module = database.PipelineModule(
-                pipeline=pipeline,
-                package=package, version=version, name=name)
-            db.add(pipeline_module)
-            return pipeline_module
-
-        def make_data_module(name):
-            return make_module('data', '0.0', name)
-
-        def make_primitive_module(name):
-            if name[0] == '.':
-                name = 'd3m.primitives' + name
-            return make_module('d3m', '2018.7.10', name)
-
-        def connect(from_module, to_module,
-                    from_output='produce', to_input='inputs'):
-            db.add(database.PipelineConnection(pipeline=pipeline,
-                                               from_module=from_module,
-                                               to_module=to_module,
-                                               from_output_name=from_output,
-                                               to_input_name=to_input))
-
-        def set_hyperparams(module, **hyperparams):
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=module,
-                name='hyperparams', value=pickle.dumps(hyperparams),
-            ))
-
-        try:
-
-            input_data = make_data_module('dataset')
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=input_data,
-                name='targets', value=pickle.dumps(targets),
-            ))
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=input_data,
-                name='features', value=pickle.dumps(features),
-            ))
-
-            #step0 = make_primitive_module('d3m.primitives.data_transformation.denormalize.Common')
-            #connect(input_data, step0, from_output='dataset')
-
-            step1 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
-            #connect(step0, step1)
-            connect(input_data, step1, from_output='dataset')
-
-            step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.DataFrameCommon')
-            connect(step1, step2)
-
-            step3 = make_primitive_module(
-                'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon')
-            set_hyperparams(
-                step3,
-                semantic_types=[
-                    'https://metadata.datadrivendiscovery.org/types/Attribute',
-                ],
-            )
-            connect(step2, step3)
-
-            step4 = make_primitive_module('d3m.primitives.data_cleaning.imputer.SKlearn')
-            connect(step3, step4)
-
-            step5 = make_primitive_module(
-                'd3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon')
-            set_hyperparams(
-                step5,
-                semantic_types=[
-                    'https://metadata.datadrivendiscovery.org/types/TrueTarget',
-                ],
-            )
-            connect(step2, step5)
-
-            step6 = make_primitive_module('d3m.primitives.semisupervised_classification.iterative_labeling.AutonBox')
-            connect(step4, step6)
-            connect(step5, step6, to_input='outputs')
-
-            step7 = make_primitive_module('d3m.primitives.data_transformation.construct_predictions.DataFrameCommon')
-            connect(step6, step7)
-            connect(step2, step7, to_input='reference')
-
-            db.add(pipeline)
-            db.commit()
-            logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
-            return pipeline.id
-        finally:
-            db.close()
-
-    @staticmethod
-    def make_collaborativefiltering_pipeline_from_strings(origin, dataset, targets=None, features=None, DBSession=None):
-
-        db = DBSession()
-
-        pipeline = database.Pipeline(
-            origin=origin,
-            dataset=dataset)
-
-        def make_module(package, version, name):
-            pipeline_module = database.PipelineModule(
-                pipeline=pipeline,
-                package=package, version=version, name=name)
-            db.add(pipeline_module)
-            return pipeline_module
-
-        def make_data_module(name):
-            return make_module('data', '0.0', name)
-
-        def make_primitive_module(name):
-            if name[0] == '.':
-                name = 'd3m.primitives' + name
-            return make_module('d3m', '2018.7.10', name)
-
-        def connect(from_module, to_module,
-                    from_output='produce', to_input='inputs'):
-            db.add(database.PipelineConnection(pipeline=pipeline,
-                                               from_module=from_module,
-                                               to_module=to_module,
-                                               from_output_name=from_output,
-                                               to_input_name=to_input))
-
-        def set_hyperparams(module, **hyperparams):
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=module,
-                name='hyperparams', value=pickle.dumps(hyperparams),
-            ))
-
-        def extract_hyperparameters(dataset_path):
-            with open(dataset_path) as fin:
-                dataset_json = json.load(fin)
-
-            for resource in dataset_json['dataResources']:
-                if 'columns' in resource:
-                    for column in resource['columns']:
-                        if 'suggestedTarget' in column['role']:
-                            return column['colName']
-
-        column_target = extract_hyperparameters(dataset[7:])
-
-        try:
-
-            input_data = make_data_module('dataset')
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=input_data,
-                name='targets', value=pickle.dumps(targets),
-            ))
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=input_data,
-                name='features', value=pickle.dumps(features),
-            ))
-
-            step0 = make_primitive_module(
-                'd3m.primitives.data_transformation.collaborative_filtering_parser.CollaborativeFilteringParser')
-            connect(input_data, step0, from_output='dataset')
-
-            step1 = make_primitive_module('d3m.primitives.data_transformation.graph_transformer.GraphTransformer')
-            connect(step0, step1)
-
-            step2 = make_primitive_module('d3m.primitives.link_prediction.link_prediction.LinkPrediction')
-            set_hyperparams(
-                step2,
-                prediction_column=column_target,
-            )
-            connect(step1, step2)
-
-            db.add(pipeline)
-            db.commit()
-            logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
-            return pipeline.id
-
-        finally:
-            db.close()
-
-    @staticmethod
-    def make_template(imputer, classifier, dataset, pipeline_template, targets, features, DBSession=None):
-        db = DBSession()
-        pipeline = database.Pipeline(origin="template(imputer=%s, classifier=%s)" % (imputer, classifier),
+        pipeline = database.Pipeline(origin="template(imputer=%s, estimator=%s)" % (imputer, estimator),
                                      dataset=dataset)
 
         try:
@@ -834,7 +598,7 @@ class D3MPipelineGenerator():
             #         |                  |           |
             #          \                /           /
             #            \            /           /
-            #             [classifier]          /
+            #             [estimator]          /
             #                       |         /
             #                   ConstructPredictions
             # TODO: Use pipeline input for this
@@ -899,7 +663,7 @@ class D3MPipelineGenerator():
                             )
             connect(db, pipeline, step2, step6)
 
-            step7 = make_pipeline_module(db, pipeline, classifier)
+            step7 = make_pipeline_module(db, pipeline, estimator)
             connect(db, pipeline, step5, step7)
             connect(db, pipeline, step6, step7, to_input='outputs')
 
@@ -924,11 +688,11 @@ class D3MPipelineGenerator():
             db.close()
 
     @staticmethod
-    def make_template_augment(datamart_system, imputer, classifier, dataset, pipeline_template, targets,
+    def make_template_augment(datamart_system, imputer, estimator, dataset, pipeline_template, targets,
                               features, search_result, DBSession=None):
         db = DBSession()
         pipeline = database.Pipeline(
-            origin="template(datamart_system=%s, imputer=%s, classifier=%s)" % (datamart_system, imputer, classifier),
+            origin="template(datamart_system=%s, imputer=%s, estimator=%s)" % (datamart_system, imputer, estimator),
             dataset=dataset)
 
         try:
@@ -950,7 +714,7 @@ class D3MPipelineGenerator():
             #         |                  |           |
             #          \                /           /
             #            \            /           /
-            #             [classifier]          /
+            #             [estimator]          /
             #                       |         /
             #                   ConstructPredictions
             # TODO: Use pipeline input for this
@@ -1021,7 +785,7 @@ class D3MPipelineGenerator():
             )
             connect(db, pipeline, step2, step6)
 
-            step7 = make_pipeline_module(db, pipeline, classifier)
+            step7 = make_pipeline_module(db, pipeline, estimator)
             connect(db, pipeline, step5, step7)
             connect(db, pipeline, step6, step7, to_input='outputs')
 
@@ -1161,10 +925,10 @@ class D3MPipelineGenerator():
     }
 
 
-class D3MPipelineGenerator_TimeseriesClass():
+class TimeseriesClassificationBuilder(BaseBuilder):
 
-    def make_pipeline_from_strings(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
-                                   features=None, DBSession=None):
+    def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
+                         features=None, DBSession=None):
         db = DBSession()
         pipeline = database.Pipeline(origin=origin, dataset=dataset)
 
@@ -1233,10 +997,10 @@ class D3MPipelineGenerator_TimeseriesClass():
             db.close()
 
 
-class D3MPipelineGenerator_TimeseriesFore():
+class TimeseriesForecastingBuilder(BaseBuilder):
 
-    def make_pipeline_from_strings(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
-                                   features=None, DBSession=None):
+    def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
+                         features=None, DBSession=None):
         db = DBSession()
         pipeline = database.Pipeline(origin=origin, dataset=dataset)
 
@@ -1313,20 +1077,18 @@ class D3MPipelineGenerator_TimeseriesFore():
                 logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
                 return pipeline.id
             else:
-                obj = D3MPipelineGenerator()
-                pipeline_id = obj.make_pipeline_from_strings(primitives, origin, dataset, search_results,
-                                               pipeline_template, targets, features,
-                                               DBSession=DBSession)
+                pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
+                                                       targets, features, DBSession=DBSession)
                 return pipeline_id
 
         finally:
             db.close()
 
 
-class D3MPipelineGenerator_CommunityDetection():
+class CommunityDetectionBuilder(BaseBuilder):
 
-    def make_pipeline_from_strings(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
-                                   features=None, DBSession=None):
+    def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
+                         features=None, DBSession=None):
         db = DBSession()
         pipeline = database.Pipeline(origin=origin, dataset=dataset)
 
@@ -1345,18 +1107,16 @@ class D3MPipelineGenerator_CommunityDetection():
                 logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
                 return pipeline.id
             else:
-                obj = D3MPipelineGenerator()
-                pipeline_id = obj.make_pipeline_from_strings(primitives, origin, dataset, search_results,
-                                                             pipeline_template, targets, features,
-                                                             DBSession=DBSession)
+                pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
+                                                       targets, features, DBSession=DBSession)
                 return pipeline_id
         finally:
             db.close()
 
 
-class D3MPipelineGenerator_LinkPrediction():
-    def make_pipeline_from_strings(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
-                                   features=None, DBSession=None):
+class LinkPredictionBuilder(BaseBuilder):
+    def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
+                         features=None, DBSession=None):
         db = DBSession()
         pipeline = database.Pipeline(origin=origin, dataset=dataset)
 
@@ -1378,45 +1138,72 @@ class D3MPipelineGenerator_LinkPrediction():
                 logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
                 return pipeline.id
             else:
-                obj = D3MPipelineGenerator()
-                pipeline_id = obj.make_pipeline_from_strings(primitives, origin, dataset, search_results,
-                                                             pipeline_template, targets, features,
-                                                             DBSession=DBSession)
+                pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
+                                                       targets, features, DBSession=DBSession)
                 return pipeline_id
         finally:
             db.close()
 
 
-class D3MPipelineGenerator_LinkPrediction():
-    def make_pipeline_from_strings(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
-                                   features=None, DBSession=None):
+class GraphMatchingBuilder(BaseBuilder):
+    def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
+                         features=None, DBSession=None):
         db = DBSession()
-
-        pipeline = database.Pipeline(
-            origin=origin,
-            dataset=dataset)
-
-
+        pipeline = database.Pipeline(origin=origin, dataset=dataset)
 
         try:
-
-            input_data = make_data_module('dataset')
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=input_data,
-                name='targets', value=pickle.dumps(targets),
-            ))
-            db.add(database.PipelineParameter(
-                pipeline=pipeline, module=input_data,
-                name='features', value=pickle.dumps(features),
-            ))
-
-            step0 = make_primitive_module('d3m.primitives.graph_matching.seeded_graph_matching.JHU')
-            connect(input_data, step0, from_output='dataset')
-
-            db.add(pipeline)
-            db.commit()
-            logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
-            return pipeline.id
+            if len(primitives) == 1:  # Not working since we dont produce more than one item in outputs
+                input_data = make_data_module(db, pipeline, targets, features)
+                step0 = make_pipeline_module(db, pipeline, primitives[0])
+                connect(db, pipeline, input_data, step0, from_output='dataset')
+                db.add(pipeline)
+                db.commit()
+                logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
+                return pipeline.id
+            else:
+                pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
+                                                       targets, features, DBSession=DBSession)
+                return pipeline_id
         finally:
             db.close()
 
+
+class CollaborativeFilteringBuilder(BaseBuilder):
+
+    def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
+                         features=None, DBSession=None):
+        pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template, targets,
+                                               features, DBSession=DBSession)
+        return pipeline_id
+
+
+class SemisupervisedClassificationBuilder(BaseBuilder):
+
+    def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
+                         features=None, DBSession=None):
+        pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template, targets,
+                                               features, DBSession=DBSession)
+        return pipeline_id
+
+
+class VertexNominationBuilder(BaseBuilder):
+    def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
+                         features=None, DBSession=None):
+        db = DBSession()
+        pipeline = database.Pipeline(origin=origin, dataset=dataset)
+
+        try:
+            if len(primitives) == 1:  # Not working since we dont produce more than one item in outputs
+                input_data = make_data_module(db, pipeline, targets, features)
+                step0 = make_pipeline_module(db, pipeline, primitives[0])
+                connect(db, pipeline, input_data, step0, from_output='dataset')
+                db.add(pipeline)
+                db.commit()
+                logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
+                return pipeline.id
+            else:
+                pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
+                                                       targets, features, DBSession=DBSession)
+                return pipeline_id
+        finally:
+            db.close()

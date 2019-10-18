@@ -2,13 +2,28 @@ S -> CLASSIFICATION_TASK
 S -> REGRESSION_TASK
 S -> TIME_SERIES_CLASSIFICATION_TASK
 S -> TIME_SERIES_FORECASTING_TASK
+S -> COMMUNITY_DETECTION_TASK
+S -> GRAPH_MATCHING_TASK
+S -> COLLABORATIVE_FILTERING_TASK
+S -> VERTEX_NOMINATION_TASK
+S -> LINK_PREDICTION_TASK
+S -> SEMISUPERVISED_CLASSIFICATION_TASK
 S -> NA_TASK
 CLASSIFICATION_TASK -> DATA_CLEANING DATA_TRANSFORMATION CLASSIFICATION
 CLASSIFICATION_TASK -> DATA_CLEANING FEATURE_SELECTION CLASSIFICATION
 REGRESSION_TASK -> DATA_CLEANING DATA_TRANSFORMATION REGRESSION
 TIME_SERIES_CLASSIFICATION_TASK -> 'd3m.primitives.data_preprocessing.time_series_to_list.DSBOX' 'd3m.primitives.feature_extraction.random_projection_timeseries_featurization.DSBOX' CLASSIFICATION
 TIME_SERIES_CLASSIFICATION_TASK -> TIME_SERIES_CLASSIFICATION
-TIME_SERIES_FORECASTING_TASK -> 'd3m.primitives.data_cleaning.imputer.SKlearn' FEATURE_SELECTION REGRESSION
+TIME_SERIES_FORECASTING_TASK -> DATA_CLEANING DATA_TRANSFORMATION REGRESSION
+COMMUNITY_DETECTION_TASK -> COMMUNITY_DETECTION
+COMMUNITY_DETECTION_TASK -> CLASSIFICATION
+GRAPH_MATCHING_TASK -> GRAPH_MATCHING
+GRAPH_MATCHING_TASK -> CLASSIFICATION
+COLLABORATIVE_FILTERING_TASK -> COLLABORATIVE_FILTERING
+VERTEX_NOMINATION_TASK -> VERTEX_NOMINATION
+LINK_PREDICTION_TASK -> LINK_PREDICTION
+LINK_PREDICTION_TASK -> CLASSIFICATION
+SEMISUPERVISED_CLASSIFICATION_TASK -> DATA_CLEANING FEATURE_SELECTION SEMISUPERVISED_CLASSIFICATION
 NA_TASK -> CLASSIFICATION_TASK
 NA_TASK -> REGRESSION_TASK
 DATA_CLEANING -> DATA_CLEANING 'd3m.primitives.data_cleaning.imputer.SKlearn'
@@ -232,3 +247,20 @@ TIME_SERIES_FORECASTING -> 'd3m.primitives.time_series_forecasting.arima.Parrot'
 TIME_SERIES_FORECASTING -> 'd3m.primitives.time_series_forecasting.rnn_time_series.DSBOX'
 TIME_SERIES_FORECASTING -> 'd3m.primitives.time_series_forecasting.time_series_to_list.RelationalTimeseries'
 TIME_SERIES_FORECASTING -> 'd3m.primitives.time_series_forecasting.vector_autoregression.VAR'
+COMMUNITY_DETECTION -> 'd3m.primitives.classification.community_detection.CommunityDetection'
+COMMUNITY_DETECTION -> 'd3m.primitives.community_detection.community_detection_parser.CommunityDetectionParser'
+COMMUNITY_DETECTION -> 'd3m.primitives.data_transformation.community_detection.DistilCommunityDetection'
+GRAPH_MATCHING -> 'd3m.primitives.data_transformation.seeded_graph_matcher.DistilSeededGraphMatcher'
+GRAPH_MATCHING -> 'd3m.primitives.graph_matching.seeded_graph_matching.JHU'
+GRAPH_MATCHING -> 'd3m.primitives.link_prediction.graph_matching_link_prediction.GraphMatchingLinkPrediction'
+COLLABORATIVE_FILTERING -> 'd3m.primitives.collaborative_filtering.high_rank_imputer.Cornell'
+COLLABORATIVE_FILTERING -> 'd3m.primitives.learner.collaborative_filtering_link_prediction.DistilCollaborativeFiltering'
+COLLABORATIVE_FILTERING -> 'd3m.primitives.link_prediction.collaborative_filtering_link_prediction.CollaborativeFilteringLinkPrediction'
+VERTEX_NOMINATION -> 'd3m.primitives.data_transformation.vertex_nomination.DistilVertexNomination'
+VERTEX_NOMINATION -> 'd3m.primitives.vertex_nomination.spectral_graph_clustering.JHU'
+VERTEX_NOMINATION -> 'd3m.primitives.vertex_nomination.spectral_vertex_nomination.JHU'
+LINK_PREDICTION -> 'd3m.primitives.data_transformation.link_prediction.DistilLinkPrediction'
+LINK_PREDICTION -> 'd3m.primitives.link_prediction.data_conversion.JHU'
+LINK_PREDICTION -> 'd3m.primitives.link_prediction.link_prediction.LinkPrediction'
+LINK_PREDICTION -> 'd3m.primitives.link_prediction.rank_classification.JHU'
+SEMISUPERVISED_CLASSIFICATION -> 'd3m.primitives.semisupervised_classification.iterative_labeling.AutonBox'

@@ -88,8 +88,8 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
 def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
     json_pipeline = convert.to_d3m_json(pipeline)
 
-    logger.info("Pipeline to be scored:\n%s",
-                '\n'.join([x['primitive']['python_path'] for x in json_pipeline['steps']]))
+    logger.info("Pipeline to be scored:\n\t%s",
+                '\n\t'.join([x['primitive']['python_path'] for x in json_pipeline['steps']]))
 
     d3m_pipeline = Pipeline.from_json_structure(json_pipeline, )
 

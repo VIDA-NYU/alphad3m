@@ -14,7 +14,7 @@ from d3m_ta2_nyu.grammar_loader import format_grammar
 from alphaAutoMLEdit.Coach import Coach
 from alphaAutoMLEdit.pipeline.PipelineGame import PipelineGame
 from alphaAutoMLEdit.pipeline.NNet import NNetWrapper
-from .d3mpipeline_generator import D3MPipelineGenerator, D3MPipelineGenerator_TimeseriesClass, D3MPipelineGenerator_TimeseriesFore
+from .d3mpipeline_builder import *
 from d3m_ta2_nyu.metafeature.metafeature_extractor import ComputeMetafeatures
 
 logger = logging.getLogger(__name__)
@@ -38,9 +38,16 @@ ALL_PRIMITIVES, SKLEARN_PRIMITIVES = get_primitives()
 input = {
         'PROBLEM_TYPES': {'CLASSIFICATION': 1,
                           'REGRESSION': 2,
-                          'TIME_SERIES_FORECASTING': 3,
-                          'CLUSTERING': 4,
-                          'TIME_SERIES_CLASSIFICATION': 5},
+                          'CLUSTERING': 3,
+                          'TIME_SERIES_FORECASTING': 4,
+                          'TIME_SERIES_CLASSIFICATION': 5,
+                          'COMMUNITY_DETECTION': 6,
+                          'GRAPH_MATCHING': 7,
+                          'COLLABORATIVE_FILTERING': 8,
+                          'LINK_PREDICTION': 9,
+                          'VERTEX_NOMINATION': 10,
+                          'SEMISUPERVISED_CLASSIFICATION': 11
+                          },
 
         'DATA_TYPES': {'TABULAR': 1,
                        'GRAPH': 2,
@@ -71,8 +78,8 @@ def generate_by_templates(task, dataset, search_results, pipeline_template, metr
                           timeout, msg_queue, DBSession):
     logger.info("Creating pipelines from templates...")
 
-    if task in ['GRAPH_MATCHING', 'LINK_PREDICTION', 'VERTEX_NOMINATION', 'OBJECT_DETECTION', 'CLUSTERING',
-                'SEMISUPERVISED_CLASSIFICATION']:
+    if task in ['GRAPH_MATCHING', 'LINK_PREDICTION', 'VERTEX_NOMINATION', 'VERTEX_CLASSIFICATION',
+                'OBJECT_DETECTION', 'CLUSTERING', 'SEMISUPERVISED_CLASSIFICATION', 'COMMUNITY_DETECTION']:
         template_name = 'CLASSIFICATION'
     elif task in ['TIME_SERIES_FORECASTING', 'COLLABORATIVE_FILTERING']:
         template_name = 'REGRESSION'
@@ -82,22 +89,20 @@ def generate_by_templates(task, dataset, search_results, pipeline_template, metr
         template_name = 'DEBUG_' + task
 
     # No Augmentation
-    templates = D3MPipelineGenerator.TEMPLATES.get(template_name, [])
+    templates = BaseBuilder.TEMPLATES.get(template_name, [])
     for imputer, classifier in templates:
-        pipeline_id = D3MPipelineGenerator.make_template(imputer, classifier, dataset, pipeline_template, targets,
+        pipeline_id = BaseBuilder.make_template(imputer, classifier, dataset, pipeline_template, targets,
                                                          features, DBSession=DBSession)
-
         send(msg_queue, pipeline_id)
 
     # Augmentation
     if search_results and len(search_results) > 0:
         for search_result in search_results:
-            templates = D3MPipelineGenerator.TEMPLATES_AUGMENTATION.get(template_name, [])
+            templates = BaseBuilder.TEMPLATES_AUGMENTATION.get(template_name, [])
             for datamart, imputer, classifier in templates:
-                pipeline_id = D3MPipelineGenerator.make_template_augment(datamart, imputer, classifier, dataset,
+                pipeline_id = BaseBuilder.make_template_augment(datamart, imputer, classifier, dataset,
                                                                         pipeline_template, targets, features,
                                                                         search_result, DBSession=DBSession)
-
                 send(msg_queue, pipeline_id)
 
 
@@ -105,19 +110,20 @@ def send(msg_queue, pipeline_id):
     msg_queue.send(('eval', pipeline_id))
     return msg_queue.recv()
 
+
 @database.with_sessionmaker
-def generate(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue, DBSession):
-    #generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue, DBSession)
+def generate(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue,
+             DBSession):
+    #generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
+    #                      timeout, msg_queue, DBSession)
 
     import time
     start = time.time()
-    # FIXME: don't use 'problem' argument
-    compute_metafeatures = ComputeMetafeatures(dataset, targets, features, DBSession)
-    obj = D3MPipelineGenerator()
+    builder = BaseBuilder()
 
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = obj.make_pipeline_from_strings(strings, origin, dataset, search_results,
+        pipeline_id = builder.make_d3mpipeline(strings, origin, dataset, search_results,
                                                                       pipeline_template, targets, features,
                                                                       DBSession=DBSession)
 
@@ -127,7 +133,7 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
 
     def eval_text_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_text_pipeline_from_strings(strings, origin, dataset, targets, features,
+        pipeline_id = BaseBuilder.make_text_pipeline_from_strings(strings, origin, dataset, targets, features,
                                                                            DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
@@ -135,7 +141,7 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
 
     def eval_image_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_image_pipeline_from_strings(strings, origin, dataset, targets, features,
+        pipeline_id = BaseBuilder.make_image_pipeline_from_strings(strings, origin, dataset, targets, features,
                                                                             DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
@@ -143,7 +149,7 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
 
     def eval_audio_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_audio_pipeline_from_strings(origin, dataset, targets, features,
+        pipeline_id = BaseBuilder.make_audio_pipeline_from_strings(origin, dataset, targets, features,
                                                                             DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
@@ -151,56 +157,8 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
 
     def eval_object_pipeline(origin):
         # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_objectdetection_pipeline_from_strings(origin, dataset, targets,
+        pipeline_id = BaseBuilder.make_objectdetection_pipeline_from_strings(origin, dataset, targets,
                                                                                       features, DBSession=DBSession)
-        # Evaluate the pipeline
-        msg_queue.send(('eval', pipeline_id))
-        return msg_queue.recv()
-
-    def eval_graphmatch_pipeline(origin):
-        # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_graphmatching_pipeline_from_strings(origin, dataset, targets, features,
-                                                                                    DBSession=DBSession)
-        # Evaluate the pipeline
-        msg_queue.send(('eval', pipeline_id))
-        return msg_queue.recv()
-
-    def eval_communitydetection_pipeline(origin):
-        # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_communitydetection_pipeline_from_strings(origin, dataset, targets,
-                                                                                         features, DBSession=DBSession)
-        # Evaluate the pipeline
-        msg_queue.send(('eval', pipeline_id))
-        return msg_queue.recv()
-
-    def eval_linkprediction_pipeline(origin):
-        # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_linkprediction_pipeline_from_strings(origin, dataset, targets, features,
-                                                                                     DBSession=DBSession)
-        # Evaluate the pipeline
-        msg_queue.send(('eval', pipeline_id))
-        return msg_queue.recv()
-
-    def eval_vertexnomination_pipeline(origin):
-        # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_vertexnomination_pipeline_from_strings(origin, dataset, targets,
-                                                                                       features, DBSession=DBSession)
-        # Evaluate the pipeline
-        msg_queue.send(('eval', pipeline_id))
-        return msg_queue.recv()
-
-    def eval_semisupervised_pipeline(origin):
-        # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_semisupervised_pipeline_from_strings(origin, dataset, targets,
-                                                                                     features, DBSession=DBSession)
-        # Evaluate the pipeline
-        msg_queue.send(('eval', pipeline_id))
-        return msg_queue.recv()
-
-    def eval_collaborativefiltering_pipeline(origin):
-        # Create the pipeline in the database
-        pipeline_id = D3MPipelineGenerator.make_collaborativefiltering_pipeline_from_strings(origin, dataset, targets,
-                                                                                        features, DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
@@ -216,31 +174,26 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     function_name = eval_pipeline
 
     if 'COLLABORATIVE_FILTERING' in task:
-        eval_collaborativefiltering_pipeline('ALPHAD3M')
-        return
+        builder = CollaborativeFilteringBuilder()
     elif 'OBJECT_DETECTION' in task:
         eval_object_pipeline('ALPHAD3M')
         return
     elif 'GRAPH_MATCHING' in task:
-        eval_graphmatch_pipeline('ALPHAD3M')
-        return
+        builder = GraphMatchingBuilder()
     elif 'SEMISUPERVISED_CLASSIFICATION' in task:
-        eval_semisupervised_pipeline('ALPHAD3M')
-        return
+        builder = SemisupervisedClassificationBuilder()
     elif 'COMMUNITY_DETECTION' in task:
-        eval_communitydetection_pipeline('ALPHAD3M')
-        return
+        builder = CommunityDetectionBuilder()
     elif 'LINK_PREDICTION' in task:
-        eval_linkprediction_pipeline('ALPHAD3M')
-        return
+        builder = LinkPredictionBuilder()
     elif 'VERTEX_NOMINATION' in task or 'VERTEX_CLASSIFICATION' in task:
-        eval_vertexnomination_pipeline('ALPHAD3M')
-        return
+        task = 'VERTEX_NOMINATION'
+        builder = VertexNominationBuilder()
     elif 'TIME_SERIES_FORECASTING' in task:
-        obj = D3MPipelineGenerator_TimeseriesFore()
+        builder = TimeseriesForecastingBuilder()
     elif 'timeseries' in data_types and 'CLASSIFICATION' in task:
         task = 'TIME_SERIES_CLASSIFICATION'
-        obj = D3MPipelineGenerator_TimeseriesClass()
+        builder = TimeseriesClassificationBuilder()
     elif 'image' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
         function_name = eval_image_pipeline
     elif 'text' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
@@ -251,11 +204,12 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
 
     def create_input(selected_primitves):
         task_name = task + '_TASK'
+        metafeatures_extractor = ComputeMetafeatures(dataset, targets, features, DBSession)
         input['GRAMMAR'] = format_grammar(task_name, selected_primitves)
         input['PROBLEM'] = task
         input['DATA_TYPE'] = 'TABULAR'
         input['METRIC'] = metrics[0]['metric']
-        input['DATASET_METAFEATURES'] = compute_metafeatures.compute_metafeatures('AlphaD3M_compute_metafeatures')
+        input['DATASET_METAFEATURES'] = metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
         input['DATASET'] = dataset_doc['about']['datasetName']
         input['ARGS']['stepsfile'] = os.path.join('/output', input['DATASET'] + '_pipeline_steps.txt')
 
