@@ -26,7 +26,7 @@ def run_all_datasets():
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
     statistics_path = join(dirname(__file__), '../resource/statistics_datasets.csv')
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['LL1_736_population_spawn_simpler']
+    datasets = ['LL1_net_nomination_seed']
     size = len(datasets)
     use_template = False
     pipeline_template = None
@@ -55,7 +55,7 @@ def run_all_datasets():
 
         task = get_task(problem)
         best_time, score, metric = 'None', 'None', 'None'
-        pipelines = do_search(core, problem, dataset_train_path, time_bound=10.0, pipelines_limit=0,
+        pipelines = do_search(core, problem, dataset_train_path, time_bound=5.0, pipelines_limit=0,
                               pipeline_template=pipeline_template)
         search_time = str(datetime.now() - start_time)
         number_pipelines = len(pipelines)
