@@ -1131,7 +1131,7 @@ class D3mTa2(Observable):
             db.close()
 
     def _get_sample_uri(self, dataset_uri, problem):
-        if problem['about']['taskType'] in {'semiSupervisedClassification'}: #timeSeriesForecasting
+        if problem['about']['taskType'] in {'semiSupervisedClassification', 'objectDetection'}: #timeSeriesForecasting
             return None  # There are not primitives to do data sampling for these tasks
 
         dataset = Dataset.load(dataset_uri)

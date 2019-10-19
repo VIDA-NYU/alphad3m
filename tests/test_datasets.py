@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 D3MINPUTDIR = os.environ.get('D3MINPUTDIR')
 D3MOUTPUTDIR = os.environ.get('D3MOUTPUTDIR')
+D3MSTATICDIR = os.environ.get('D3MSTATICDIR')
 
 
 def run_all_datasets():
@@ -26,7 +27,7 @@ def run_all_datasets():
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
     statistics_path = join(dirname(__file__), '../resource/statistics_datasets.csv')
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['LL1_net_nomination_seed']
+    datasets = ['LL1_penn_fudan_pedestrian']
     size = len(datasets)
     use_template = False
     pipeline_template = None
@@ -70,7 +71,7 @@ def run_all_datasets():
             command = [
                 'python3', '-m', 'd3m', '--strict-resolving', '--strict-digest',
                 'runtime',
-                '--volumes', '"${D3MSTATICDIR}"',
+                '--volumes', D3MSTATICDIR,
                 '--context', 'EVALUATION',
                 '--random-seed', '0',
                 'fit-score',

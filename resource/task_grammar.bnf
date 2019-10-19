@@ -1,4 +1,1 @@
-S -> VERTEX_NOMINATION
-VERTEX_NOMINATION -> 'd3m.primitives.data_transformation.vertex_nomination.DistilVertexNomination'
-VERTEX_NOMINATION -> 'd3m.primitives.vertex_nomination.spectral_graph_clustering.JHU'
-VERTEX_NOMINATION -> 'd3m.primitives.vertex_nomination.spectral_vertex_nomination.JHU'
+S -> 'd3m.primitives.feature_extraction.yolo.DSBOX'

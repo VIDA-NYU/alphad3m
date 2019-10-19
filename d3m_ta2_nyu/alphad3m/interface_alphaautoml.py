@@ -46,7 +46,8 @@ input = {
                           'COLLABORATIVE_FILTERING': 8,
                           'LINK_PREDICTION': 9,
                           'VERTEX_NOMINATION': 10,
-                          'SEMISUPERVISED_CLASSIFICATION': 11
+                          'OBJECT_DETECTION': 11,
+                          'SEMISUPERVISED_CLASSIFICATION': 12
                           },
 
         'DATA_TYPES': {'TABULAR': 1,
@@ -155,14 +156,6 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
 
-    def eval_object_pipeline(origin):
-        # Create the pipeline in the database
-        pipeline_id = BaseBuilder.make_objectdetection_pipeline_from_strings(origin, dataset, targets,
-                                                                                      features, DBSession=DBSession)
-        # Evaluate the pipeline
-        msg_queue.send(('eval', pipeline_id))
-        return msg_queue.recv()
-
     dataset_path = os.path.dirname(dataset[7:])
     f = open(os.path.join(dataset_path, 'datasetDoc.json'))
     dataset_doc = json.load(f)
@@ -176,8 +169,7 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     if 'COLLABORATIVE_FILTERING' in task:
         builder = CollaborativeFilteringBuilder()
     elif 'OBJECT_DETECTION' in task:
-        eval_object_pipeline('ALPHAD3M')
-        return
+        builder = ObjectDetectionBuilder()
     elif 'GRAPH_MATCHING' in task:
         builder = GraphMatchingBuilder()
     elif 'SEMISUPERVISED_CLASSIFICATION' in task:
@@ -186,14 +178,14 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
         builder = CommunityDetectionBuilder()
     elif 'LINK_PREDICTION' in task:
         builder = LinkPredictionBuilder()
-    elif 'VERTEX_NOMINATION' in task or 'VERTEX_CLASSIFICATION' in task:
-        task = 'VERTEX_NOMINATION'
-        builder = VertexNominationBuilder()
     elif 'TIME_SERIES_FORECASTING' in task:
         builder = TimeseriesForecastingBuilder()
     elif 'timeseries' in data_types and 'CLASSIFICATION' in task:
         task = 'TIME_SERIES_CLASSIFICATION'
         builder = TimeseriesClassificationBuilder()
+    elif 'VERTEX_NOMINATION' in task or 'VERTEX_CLASSIFICATION' in task:
+        task = 'VERTEX_NOMINATION'
+        builder = VertexNominationBuilder()
     elif 'image' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
         function_name = eval_image_pipeline
     elif 'text' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
