@@ -4,8 +4,8 @@ from nltk.grammar import Production, Nonterminal, CFG, is_terminal, is_nontermin
 
 logger = logging.getLogger(__name__)
 BASE_GRAMMAR_PATH = os.path.join(os.path.dirname(__file__), '../resource/base_grammar.bnf')
-COMPLETE_GRAMMAR_PATH = os.path.join(os.path.dirname(__file__), '../resource/complete_grammar.bnf')
-TASK_GRAMMAR_PATH = os.path.join(os.path.dirname(__file__), '../resource/task_grammar.bnf')
+COMPLETE_GRAMMAR_PATH = os.path.join(os.environ.get('D3MOUTPUTDIR'), 'complete_grammar.bnf')
+TASK_GRAMMAR_PATH = os.path.join(os.environ.get('D3MOUTPUTDIR'), 'task_grammar.bnf')
 
 
 def load_grammar(grammar_path):

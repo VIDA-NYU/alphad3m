@@ -539,6 +539,18 @@ class BaseBuilder:
     }
 
 
+class ClusteringBuilder(BaseBuilder):
+    pass
+
+
+class SemisupervisedClassificationBuilder(BaseBuilder):
+    pass
+
+
+class CollaborativeFilteringBuilder(BaseBuilder):
+    pass
+
+
 class TimeseriesClassificationBuilder(BaseBuilder):
 
     def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
@@ -773,14 +785,6 @@ class GraphMatchingBuilder(BaseBuilder):
             db.close()
 
 
-class CollaborativeFilteringBuilder(BaseBuilder):
-    pass
-
-
-class SemisupervisedClassificationBuilder(BaseBuilder):
-    pass
-
-
 class VertexNominationBuilder(BaseBuilder):
     def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
                          features=None, DBSession=None):
@@ -860,55 +864,53 @@ class AudioBuilder(BaseBuilder):
         pipeline = database.Pipeline(origin=origin, dataset=dataset)
 
         try:
-            primitives_audio = ['d3m.primitives.data_preprocessing.channel_averager.BBN',
-                                'd3m.primitives.data_preprocessing.signal_dither.BBN',
-                                'd3m.primitives.time_series_segmentation.signal_framer.BBN',
-                                'd3m.primitives.feature_extraction.signal_mfcc.BBN',
-                                'd3m.primitives.time_series_segmentation.uniform_segmentation.BBN',
-                                'd3m.primitives.data_transformation.segment_curve_fitter.BBN',
-                                'd3m.primitives.clustering.cluster_curve_fitting_kmeans.BBN',
-                                'd3m.primitives.time_series_segmentation.signal_framer.BBN',
-                                'd3m.primitives.data_transformation.sequence_to_bag_of_tokens.BBN',
-                                'd3m.primitives.feature_extraction.tfidf_vectorizer.BBN']
-
             input_data = make_data_module(db, pipeline, targets, features)
-            step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.targets_reader.BBN')
+
+            step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
             connect(db, pipeline, input_data, step0, from_output='dataset')
 
-            step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.audio_reader.BBN')
-            connect(db, pipeline, input_data, step1, from_output='dataset')
+            step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
+            connect(db, pipeline, step0, step1)
 
-            step = prev_step = step1
+            step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'column_parser.DataFrameCommon')
+            connect(db, pipeline, step1, step2)
 
-            check_clustered = False
-            for preprocessor in primitives_audio:
+            step3 = make_pipeline_module(db, pipeline, primitives[0])
+            connect(db, pipeline, input_data, step3, from_output='dataset')
+
+            step = prev_step = step3
+            preprocessors = primitives[1:-1]
+            estimator = primitives[-1]
+
+            for preprocessor in preprocessors:
                 step = make_pipeline_module(db, pipeline, preprocessor)
-                if 'signal_mfcc' in preprocessor:
-                    set_hyperparams(db, pipeline, step, num_ceps=3)
-                elif 'cluster_curve_fitting_kmeans' in preprocessor:
-                    set_hyperparams(db, pipeline,step, n_clusters=512)
-                    check_clustered = True
-                elif 'signal_framer' in preprocessor and check_clustered:
-                    set_hyperparams(db, pipeline, step, frame_length_s=1.0, frame_shift_s=1.0)
-                elif 'tfidf_vectorizer' in preprocessor:
-                    set_hyperparams(db, pipeline, step, sublinear_tf=True)
+                change_default_hyperparams(db, pipeline, preprocessor, step)
                 connect(db, pipeline, prev_step, step)
                 prev_step = step
 
-            step2 = make_pipeline_module(db, pipeline, primitives[0])
-            connect(db, pipeline, step, step2)
-            connect(db, pipeline, step0, step2, to_input='outputs')
+            step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'extract_columns_by_semantic_types.DataFrameCommon')
+            set_hyperparams(db, pipeline, step4,
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
+                            )
+            connect(db, pipeline, step2, step4)
 
-            step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
-            connect(db, pipeline, input_data, step3, from_output='dataset')
+            if 'feature_selection' in step.name:  # FIXME: Use the primitive family
+                connect(db, pipeline, step4, step, to_input='outputs')
 
-            step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
-            connect(db, pipeline, step3, step4)
+            step5 = make_pipeline_module(db, pipeline, estimator)
+            change_default_hyperparams(db, pipeline, estimator, step5)
+            connect(db, pipeline, step, step5)
+            connect(db, pipeline, step4, step5, to_input='outputs')
 
-            step5 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+            step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'construct_predictions.DataFrameCommon')
-            connect(db, pipeline, step2, step5)
-            connect(db, pipeline, step4, step5, to_input='reference')
+            connect(db, pipeline, step5, step6)
+            connect(db, pipeline, step2, step6, to_input='reference')
+
+            db.add(pipeline)
+            db.commit()
 
             db.add(pipeline)
             db.commit()

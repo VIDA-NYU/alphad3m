@@ -86,8 +86,8 @@ def generate_by_templates(task, dataset, search_results, pipeline_template, metr
                           timeout, msg_queue, DBSession):
     logger.info("Creating pipelines from templates...")
 
-    if task in ['GRAPH_MATCHING', 'LINK_PREDICTION', 'VERTEX_NOMINATION', 'VERTEX_CLASSIFICATION',
-                'OBJECT_DETECTION', 'CLUSTERING', 'SEMISUPERVISED_CLASSIFICATION', 'COMMUNITY_DETECTION']:
+    if task in ['TIME_SERIES_CLASSIFICATION', 'GRAPH_MATCHING', 'LINK_PREDICTION', 'VERTEX_NOMINATION', 'CLUSTERING',
+                'SEMISUPERVISED_CLASSIFICATION', 'OBJECT_DETECTION', 'VERTEX_CLASSIFICATION', 'COMMUNITY_DETECTION']:
         template_name = 'CLASSIFICATION'
     elif task in ['TIME_SERIES_FORECASTING', 'COLLABORATIVE_FILTERING']:
         template_name = 'REGRESSION'
@@ -145,7 +145,11 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     for data_res in data_resources:
         data_types.append(data_res['resType'])
 
-    if 'COLLABORATIVE_FILTERING' in task:
+    if 'CLUSTERING' in task:
+        builder = ClusteringBuilder()
+    if 'SEMISUPERVISED_CLASSIFICATION' in task:
+        builder = SemisupervisedClassificationBuilder()
+    elif 'COLLABORATIVE_FILTERING' in task:
         builder = CollaborativeFilteringBuilder()
     elif 'COMMUNITY_DETECTION' in task:
         builder = CommunityDetectionBuilder()
@@ -155,8 +159,6 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
         builder = ObjectDetectionBuilder()
     elif 'GRAPH_MATCHING' in task:
         builder = GraphMatchingBuilder()
-    elif 'SEMISUPERVISED_CLASSIFICATION' in task:
-        builder = SemisupervisedClassificationBuilder()
     elif 'TIME_SERIES_FORECASTING' in task:
         builder = TimeseriesForecastingBuilder()
     elif 'timeseries' in data_types and 'CLASSIFICATION' in task:
@@ -170,7 +172,7 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     elif 'text' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
         task = 'TEXT_' + task
     elif 'audio' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
-        builder =  AudioBuilder()
+        builder = AudioBuilder()
         task = 'AUDIO_' + task
     else:
         logger.warning('Task %s doesnt exist in the grammar, using default NA_TASK' % task)
@@ -231,4 +233,3 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     record_bestpipeline(input['DATASET'])
 
     sys.exit(0)
-
