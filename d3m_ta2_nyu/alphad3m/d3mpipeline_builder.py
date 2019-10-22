@@ -422,6 +422,24 @@ class BaseBuilder:
         finally:
             db.close()
 
+    @staticmethod
+    def make_meanbaseline(origin, dataset, DBSession):
+        db = DBSession()
+        pipeline = database.Pipeline(origin=origin, dataset=dataset)
+
+        try:
+            input_data = make_data_module(db, pipeline, 'targets', 'features')
+            step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.classification.'
+                                                       'gaussian_classification.MeanBaseline')
+            connect(db, pipeline, input_data, step0, from_output='dataset')
+            db.add(pipeline)
+            db.commit()
+            logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
+            return pipeline.id
+
+        finally:
+            db.close()
+
     TEMPLATES_AUGMENTATION = {
         'CLASSIFICATION': list(itertools.product(
             # DATAMART

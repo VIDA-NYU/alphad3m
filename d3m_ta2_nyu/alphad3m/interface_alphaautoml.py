@@ -54,7 +54,7 @@ input = {
                           'TEXT_REGRESSION': 16,
                           'IMAGE_REGRESSION': 17,
                           'AUDIO_REGRESSION': 18,
-                          'NA_TASK': 19
+                          'NA': 19
                           },
 
         'DATA_TYPES': {'TABULAR': 1,
@@ -113,6 +113,10 @@ def generate_by_templates(task, dataset, search_results, pipeline_template, metr
                                                                         search_result, DBSession=DBSession)
                 send(msg_queue, pipeline_id)
 
+    # MeanBaseline pipeline
+    pipeline_id = BaseBuilder.make_meanbaseline('MeanBaseline', dataset, DBSession)
+    send(msg_queue, pipeline_id)
+
 
 def send(msg_queue, pipeline_id):
     msg_queue.send(('eval', pipeline_id))
@@ -122,12 +126,12 @@ def send(msg_queue, pipeline_id):
 @database.with_sessionmaker
 def generate(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue,
              DBSession):
-    #generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
-    #                      timeout, msg_queue, DBSession)
+    generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
+                          timeout, msg_queue, DBSession)
 
     import time
     start = time.time()
-    builder = BaseBuilder()
+    builder = None
 
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
@@ -146,11 +150,11 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
         data_types.append(data_res['resType'])
 
     if 'CLUSTERING' in task:
-        builder = ClusteringBuilder()
+        builder = BaseBuilder()
     if 'SEMISUPERVISED_CLASSIFICATION' in task:
-        builder = SemisupervisedClassificationBuilder()
+        builder = BaseBuilder()
     elif 'COLLABORATIVE_FILTERING' in task:
-        builder = CollaborativeFilteringBuilder()
+        builder = BaseBuilder()
     elif 'COMMUNITY_DETECTION' in task:
         builder = CommunityDetectionBuilder()
     elif 'LINK_PREDICTION' in task:
@@ -167,16 +171,21 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     elif 'VERTEX_NOMINATION' in task or 'VERTEX_CLASSIFICATION' in task:
         task = 'VERTEX_NOMINATION'
         builder = VertexNominationBuilder()
-    elif 'image' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
-        task = 'IMAGE_' + task
     elif 'text' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
         task = 'TEXT_' + task
+        builder = BaseBuilder()
+    elif 'image' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
+        task = 'IMAGE_' + task
+        builder = BaseBuilder()
     elif 'audio' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
-        builder = AudioBuilder()
         task = 'AUDIO_' + task
+        builder = AudioBuilder()
+    elif 'CLASSIFICATION' in task or 'REGRESSION' in task:
+        builder = BaseBuilder()
     else:
         logger.warning('Task %s doesnt exist in the grammar, using default NA_TASK' % task)
-        task = 'NA_TASK'
+        task = 'NA'
+        builder = BaseBuilder()
 
     def create_input(selected_primitves):
         task_name = task + '_TASK'
