@@ -47,7 +47,14 @@ input = {
                           'LINK_PREDICTION': 9,
                           'VERTEX_NOMINATION': 10,
                           'OBJECT_DETECTION': 11,
-                          'SEMISUPERVISED_CLASSIFICATION': 12
+                          'SEMISUPERVISED_CLASSIFICATION': 12,
+                          'TEXT_CLASSIFICATION': 13,
+                          'IMAGE_CLASSIFICATION': 14,
+                          'AUDIO_CLASSIFICATION': 15,
+                          'TEXT_REGRESSION': 16,
+                          'IMAGE_REGRESSION': 17,
+                          'AUDIO_REGRESSION': 18,
+                          'NA_TASK': 19
                           },
 
         'DATA_TYPES': {'TABULAR': 1,
@@ -124,34 +131,8 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
 
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = builder.make_d3mpipeline(strings, origin, dataset, search_results,
-                                                                      pipeline_template, targets, features,
-                                                                      DBSession=DBSession)
-
-        # Evaluate the pipeline
-        msg_queue.send(('eval', pipeline_id))
-        return msg_queue.recv()
-
-    def eval_text_pipeline(strings, origin):
-        # Create the pipeline in the database
-        pipeline_id = BaseBuilder.make_text_pipeline_from_strings(strings, origin, dataset, targets, features,
-                                                                           DBSession=DBSession)
-        # Evaluate the pipeline
-        msg_queue.send(('eval', pipeline_id))
-        return msg_queue.recv()
-
-    def eval_image_pipeline(strings, origin):
-        # Create the pipeline in the database
-        pipeline_id = BaseBuilder.make_image_pipeline_from_strings(strings, origin, dataset, targets, features,
-                                                                            DBSession=DBSession)
-        # Evaluate the pipeline
-        msg_queue.send(('eval', pipeline_id))
-        return msg_queue.recv()
-
-    def eval_audio_pipeline(origin):
-        # Create the pipeline in the database
-        pipeline_id = BaseBuilder.make_audio_pipeline_from_strings(origin, dataset, targets, features,
-                                                                            DBSession=DBSession)
+        pipeline_id = builder.make_d3mpipeline(strings, origin, dataset, search_results, pipeline_template, targets,
+                                               features, DBSession=DBSession)
         # Evaluate the pipeline
         msg_queue.send(('eval', pipeline_id))
         return msg_queue.recv()
@@ -164,20 +145,18 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     for data_res in data_resources:
         data_types.append(data_res['resType'])
 
-    function_name = eval_pipeline
-
     if 'COLLABORATIVE_FILTERING' in task:
         builder = CollaborativeFilteringBuilder()
+    elif 'COMMUNITY_DETECTION' in task:
+        builder = CommunityDetectionBuilder()
+    elif 'LINK_PREDICTION' in task:
+        builder = LinkPredictionBuilder()
     elif 'OBJECT_DETECTION' in task:
         builder = ObjectDetectionBuilder()
     elif 'GRAPH_MATCHING' in task:
         builder = GraphMatchingBuilder()
     elif 'SEMISUPERVISED_CLASSIFICATION' in task:
         builder = SemisupervisedClassificationBuilder()
-    elif 'COMMUNITY_DETECTION' in task:
-        builder = CommunityDetectionBuilder()
-    elif 'LINK_PREDICTION' in task:
-        builder = LinkPredictionBuilder()
     elif 'TIME_SERIES_FORECASTING' in task:
         builder = TimeseriesForecastingBuilder()
     elif 'timeseries' in data_types and 'CLASSIFICATION' in task:
@@ -187,12 +166,15 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
         task = 'VERTEX_NOMINATION'
         builder = VertexNominationBuilder()
     elif 'image' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
-        function_name = eval_image_pipeline
+        task = 'IMAGE_' + task
     elif 'text' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
-        function_name = eval_text_pipeline
-    elif 'audio' in data_types:
-        eval_audio_pipeline('ALPHAD3M')
-        return
+        task = 'TEXT_' + task
+    elif 'audio' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
+        builder =  AudioBuilder()
+        task = 'AUDIO_' + task
+    else:
+        logger.warning('Task %s doesnt exist in the grammar, using default NA_TASK' % task)
+        task = 'NA_TASK'
 
     def create_input(selected_primitves):
         task_name = task + '_TASK'
@@ -213,7 +195,7 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
         eval_dict = game.evaluations
         eval_times = game.eval_times
         for key, value in eval_dict.items():
-            if value == float('inf') and not 'error' in game.metric.lower():
+            if value == float('inf') and 'error' not in game.metric.lower():
                 eval_dict[key] = 0
         evaluations = sorted(eval_dict.items(), key=operator.itemgetter(1))
         if 'error' not in game.metric.lower():
@@ -233,7 +215,7 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     signal.signal(signal.SIGTERM, signal_handler)
 
     input_all = create_input(ALL_PRIMITIVES)
-    game = PipelineGame(input_all, function_name)
+    game = PipelineGame(input_all, eval_pipeline)
     nnet = NNetWrapper(game)
 
     if input['ARGS'].get('load_model'):
