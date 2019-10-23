@@ -119,11 +119,11 @@
         "d3m.primitives.link_prediction.collaborative_filtering_link_prediction.CollaborativeFilteringLinkPrediction": 230
     },
     "DATA_AUGMENTATION": {
-        "RESULT.0.SKlearn": 57,
-        "RESULT.1.SKlearn": 58,
-        "RESULT.2.SKlearn": 59,
-        "RESULT.3.SKlearn": 60,
-        "RESULT.4.SKlearn": 61
+        "d3m.primitives.data_augmentation.data_conversion.FairnessInProcessing": 57,
+        "d3m.primitives.data_augmentation.data_conversion.FairnessPostProcessing": 58,
+        "d3m.primitives.data_augmentation.datamart_augmentation.Common": 59,
+        "d3m.primitives.data_augmentation.datamart_download.Common": 60,
+        "d3m.primitives.data_augmentation.wikifier.DSBOX": 61
     },
     "DATA_CLEANING": {
         "d3m.primitives.data_cleaning.cleaning_featurizer.DSBOX": 62,
