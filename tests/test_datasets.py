@@ -27,7 +27,7 @@ def run_all_datasets():
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
     statistics_path = join(dirname(__file__), '../resource/statistics_datasets.csv')
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['uu3_world_development_indicators_raw']
+    datasets = ['uu10_posts_3']
     size = len(datasets)
     use_template = False
     pipeline_template = None
