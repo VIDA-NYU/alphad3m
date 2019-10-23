@@ -557,18 +557,6 @@ class BaseBuilder:
     }
 
 
-class ClusteringBuilder(BaseBuilder):
-    pass
-
-
-class SemisupervisedClassificationBuilder(BaseBuilder):
-    pass
-
-
-class CollaborativeFilteringBuilder(BaseBuilder):
-    pass
-
-
 class TimeseriesClassificationBuilder(BaseBuilder):
 
     def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
