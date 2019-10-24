@@ -94,7 +94,7 @@ TASKS_FROM_SCHEMA = {
     'timeSeriesForecasting': 'TIME_SERIES_FORECASTING',
     'collaborativeFiltering': 'COLLABORATIVE_FILTERING',
     'objectDetection': 'OBJECT_DETECTION',
-    'vertexClassification':'VERTEX_CLASSIFICATION',
+    'vertexClassification': 'VERTEX_CLASSIFICATION',
     'semiSupervisedClassification': 'SEMISUPERVISED_CLASSIFICATION',
     'semiSupervisedRegression': 'SEMISUPERVISED_REGRESSION'
 }

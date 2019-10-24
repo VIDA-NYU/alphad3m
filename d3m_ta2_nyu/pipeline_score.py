@@ -61,23 +61,26 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
         logger.info("Holdout results:\n%s", scores)
 
     elif scoring_conf['method'] == pb_core.EvaluationMethod.Value('RANKING'):  # For TA2 only evaluation
-        scoring_conf['number_of_folds'] = '4'
+        scoring_conf['number_of_folds'] = '2'
         metrics = format_metrics(problem)
         scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_conf)
         scores = create_new_metric(scores)
         logger.info("Ranking-D3M results:\n%s", scores)
 
-    scores_db = add_scores_db(scores, scores_db)
-
-    if do_rank and len(scores) > 0:  # Need to rank too during the search
-        logger.info("Calculating RANK in search solution for pipeline %s", pipeline_id)
-        entire_dataset = Dataset.load(dataset_uri)  # load complete dataset
-        scoring_conf['number_of_folds'] = '4'
-        scores = evaluate(pipeline, kfold_tabular_split, entire_dataset, metrics, problem, scoring_conf)
-        logger.info("Ranking-D3M (whole dataset) results:\n%s", scores)
-        scores = create_new_metric(scores)
-        logger.info("Ranking-D3M (whole dataset) new metric results:\n%s", scores)
-        scores_db = add_scores_db(scores, scores_db)
+    if len(scores) > 0:  # It's a valid pipeline
+        if do_rank:  # Need to rank too during the search
+            logger.info("Calculating RANK in search solution for pipeline %s", pipeline_id)
+            if sample_dataset_uri is not None:
+                entire_dataset = Dataset.load(dataset_uri)  # load complete dataset
+                scoring_conf['number_of_folds'] = '4'
+                scores = evaluate(pipeline, kfold_tabular_split, entire_dataset, metrics, problem, scoring_conf)
+            logger.info("Ranking-D3M (whole dataset) results:\n%s", scores)
+            scores_db = add_scores_db(scores, scores_db)
+            scores = create_new_metric(scores)
+            logger.info("Ranking-D3M (whole dataset) new metric results:\n%s", scores)
+            scores_db = add_scores_db(scores, scores_db)
+        else:
+            scores_db = add_scores_db(scores, scores_db)
 
     # TODO Should we rename CrossValidation table?
     record_db = database.CrossValidation(pipeline_id=pipeline_id, scores=scores_db)  # Store scores
