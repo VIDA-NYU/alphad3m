@@ -3,6 +3,7 @@ import csv
 import json
 import grpc
 import logging
+import subprocess
 import pandas as pd
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 from datetime import datetime
@@ -12,7 +13,7 @@ from d3m_ta2_nyu.grpc_logger import LoggingStub
 from d3m_ta2_nyu.common import normalize_score
 from ta3ta2_api.utils import encode_pipeline_description, ValueType
 from client import do_search, do_train, do_test, do_export
-import subprocess
+
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
@@ -28,7 +29,6 @@ def run_all_datasets():
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
     statistics_path = join(dirname(__file__), '../resource/statistics_datasets.csv')
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['299_libras_move']
     size = len(datasets)
     use_template = False
     pipeline_template = None
@@ -58,7 +58,7 @@ def run_all_datasets():
 
         task = get_task(problem)
         best_time, best_score, best_id, metric = 'None', 'None', 'None', 'None'
-        pipelines = do_search(core, problem, dataset_train_path, time_bound=1.0, pipelines_limit=0,
+        pipelines = do_search(core, problem, dataset_train_path, time_bound=10.0, pipelines_limit=0,
                               pipeline_template=pipeline_template)
         search_time = str(datetime.now() - start_time)
         number_pipelines = len(pipelines)
