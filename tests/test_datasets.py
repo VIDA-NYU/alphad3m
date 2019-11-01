@@ -29,6 +29,7 @@ def run_all_datasets():
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
     statistics_path = join(dirname(__file__), '../resource/statistics_datasets.csv')
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
+    datasets = ['185_baseball']
     size = len(datasets)
     use_template = False
     pipeline_template = None
@@ -90,7 +91,7 @@ def run_all_datasets():
                 try:
                     subprocess.call(command)
                     df = pd.read_csv(score_pipeline_path)
-                    score = df['value'][0]
+                    score = round(df['value'][0], 6)
                     metric = df['metric'][0]
                     new_score = normalize_score(metric, score, 'asc')
                     performance_top_pipelines[top_pipeline_id] = (score, new_score)

@@ -64,10 +64,11 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
         scoring_conf['number_of_folds'] = '4'
         metrics = format_metrics(problem)
         scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_conf)
+        logger.info("Ranking-D3M results:\n%s", scores)
         if not do_rank:
             scores_db = add_scores_db(scores, scores_db)
         scores = create_new_metric(scores)
-        logger.info("Ranking-D3M results:\n%s", scores)
+        logger.info("Ranking-D3M new metric results:\n%s", scores)
 
     if len(scores) > 0:  # It's a valid pipeline
         if do_rank:  # Need to rank too during the search

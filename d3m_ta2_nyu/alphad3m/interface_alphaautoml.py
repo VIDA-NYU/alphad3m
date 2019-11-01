@@ -1,14 +1,11 @@
 import signal
-import json
 import os
 import sys
 import operator
 import logging
-import multiprocessing
 
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
-from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.primitive_loader import D3MPrimitiveLoader
 from d3m_ta2_nyu.grammar_loader import format_grammar
 from alphaAutoMLEdit.Coach import Coach
@@ -220,7 +217,7 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
 
     def signal_handler(signal, frame):
         logger.info('Receiving SIGTERM signal')
-        #record_bestpipeline(input['DATASET'])
+        record_bestpipeline(input['DATASET'])
         sys.exit(0)
 
     signal.signal(signal.SIGTERM, signal_handler)

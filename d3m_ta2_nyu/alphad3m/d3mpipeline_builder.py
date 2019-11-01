@@ -57,6 +57,14 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive):
         set_hyperparams(db, pipeline, primitive, return_result='new')
 
 
+def need_d3mindex(primitives):
+    for primitive in primitives:
+        if primitive in {'d3m.primitives.data_preprocessing.dataframe_to_tensor.DSBOX',
+                         'd3m.primitives.data_preprocessing.time_series_to_list.DSBOX'}:
+            return True
+    return False
+
+
 class BaseBuilder:
 
     def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
@@ -142,15 +150,18 @@ class BaseBuilder:
                                                        'column_parser.DataFrameCommon')
             connect(db, pipeline, step1, step2)
 
-            step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'extract_columns_by_semantic_types.DataFrameCommon')
-            set_hyperparams(db, pipeline, step3,
-                            semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute']
-                            )
+            if not need_d3mindex(primitives):
+                step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'extract_columns_by_semantic_types.DataFrameCommon')
 
-            connect(db, pipeline, step2, step3)
+                set_hyperparams(db, pipeline, step3,
+                                semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute']
+                                )
+                connect(db, pipeline, step2, step3)
+                step = prev_step = step3
+            else:  # Some primitives need the 'd3mIndex', so we can't filter out it selecting only the attributes
+                step = prev_step = step2
 
-            step = prev_step = step3
             preprocessors = primitives[:-1]
             estimator = primitives[-1]
 
@@ -575,41 +586,9 @@ class TimeseriesClassificationBuilder(BaseBuilder):
                 connect(db, pipeline, step0, step1)
                 connect(db, pipeline, step0, step1, to_input='outputs')
             else:
-                step1 = make_pipeline_module(db, pipeline,
-                                             'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
-                connect(db, pipeline, step0, step1)
-
-                step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'column_parser.DataFrameCommon')
-                connect(db, pipeline, step1, step2)
-
-                step = prev_step = step2
-                preprocessors = primitives[:-1]
-                classifier = primitives[-1]
-
-                for preprocessor in preprocessors:
-                    step = make_pipeline_module(db, pipeline, preprocessor)
-                    connect(db, pipeline, prev_step, step)
-                    prev_step = step
-
-                step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'extract_columns_by_semantic_types.DataFrameCommon')
-                set_hyperparams(db, pipeline, step4,
-                                semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
-                                )
-                connect(db, pipeline, step2, step4)
-
-                if 'feature_selection' in step.name:  # FIXME: Use the primitive family
-                    connect(db, pipeline, step4, step, to_input='outputs')
-
-                step5 = make_pipeline_module(db, pipeline, classifier)
-                connect(db, pipeline, step, step5)
-                connect(db, pipeline, step4, step5, to_input='outputs')
-
-                step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'construct_predictions.DataFrameCommon')
-                connect(db, pipeline, step5, step6)
-                connect(db, pipeline, step2, step6, to_input='reference')
+                pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
+                                                       targets, features, DBSession=DBSession)
+                return pipeline_id
 
             db.add(pipeline)
             db.commit()
@@ -687,7 +666,8 @@ class TimeseriesForecastingBuilder(BaseBuilder):
                 step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
                 connect(db, pipeline, input_data, step0, from_output='dataset')
 
-                step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
+                step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_'
+                                                           'transformation.dataset_to_dataframe.Common')
                 connect(db, pipeline, step0, step1)
 
                 step2 = make_pipeline_module(db, pipeline, primitives[0])
@@ -744,7 +724,7 @@ class LinkPredictionBuilder(BaseBuilder):
         pipeline = database.Pipeline(origin=origin, dataset=dataset)
 
         try:
-            if len(primitives) == 1:  # Not working since we dont produce more than one item in outputs
+            if len(primitives) == 1:  # Not working since we dont produce more than one item in outputs: produce_target
                 input_data = make_data_module(db, pipeline, targets, features)
 
                 step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
