@@ -1,5 +1,6 @@
 import os
 import logging
+import itertools
 from nltk.grammar import Production, Nonterminal, CFG, is_terminal, is_nonterminal
 
 logger = logging.getLogger(__name__)
@@ -23,17 +24,14 @@ def create_completegrammar(primitives):
     for production in base_grammar.productions():
         primitive_type = production.lhs().symbol()
         if primitive_type in primitives:
-            new_rhs = tuple()
             new_rhs_list = []
             sorted_primitives = sorted(primitives[primitive_type], key=lambda x: x.endswith('SKlearn'), reverse=True)
             for token in production.rhs():
                 if isinstance(token, str) and token.startswith('primitive_'):
-                    new_rhs_list = [new_rhs + (pn,) for pn in sorted_primitives]
+                    new_rhs_list.append(sorted_primitives)
                 else:
-                    new_rhs += (token,)
-            if len(new_rhs_list) == 0:
-                new_rhs_list = [production.rhs()]
-            for new_rhs in new_rhs_list:
+                    new_rhs_list.append([token])
+            for new_rhs in itertools.product(*new_rhs_list):
                 new_productions.append(Production(production.lhs(), new_rhs))
         else:
             new_productions.append(production)
