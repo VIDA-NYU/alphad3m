@@ -5,11 +5,49 @@ import pickle
 import itertools
 
 from d3m_ta2_nyu.workflow import database
+from d3m import index
+from d3m.container import Dataset, DataFrame, ndarray, matrix, List
+
 
 
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
 logger = logging.getLogger(__name__)
+
+CONTAINER_CAST = {
+    Dataset:{
+        DataFrame:'d3m.primitives.data_transformation.dataset_to_dataframe.Common',
+        ndarray: ('d3m.primitives.data_transformation.dataset_to_dataframe.Common'
+                  '|d3m.primitives.data_transformation.dataframe_to_ndarray.Common'),
+        matrix: "",
+        List: ('d3m.primitives.data_transformation.dataset_to_dataframe.Common'
+                  '|d3m.primitives.data_transformation.dataframe_to_list.Common')
+    },
+    DataFrame: {
+        Dataset: "",
+        ndarray: 'd3m.primitives.data_transformation.dataframe_to_ndarray.Common',
+        matrix: "",
+        List: 'd3m.primitives.data_transformation.dataframe_to_list.Common'
+    },
+    ndarray: {
+        Dataset: "",
+        DataFrame: 'd3m.primitives.data_transformation.ndarray_to_dataframe.Common',
+        matrix: "",
+        List: 'd3m.primitives.data_transformation.ndarray_to_list.Common'
+    },
+    matrix: {
+        Dataset: "",
+        DataFrame: "",
+        ndarray: "",
+        List: ""
+    },
+    List: {
+        Dataset: "",
+        DataFrame: 'd3m.primitives.data_transformation.list_to_dataframe.Common',
+        ndarray: 'd3m.primitives.data_transformation.list_to_ndarray.Common',
+        matrix: ""
+    }
+}
 
 
 def make_pipeline_module(db, pipeline, name, package='d3m', version='2019.10.10'):
@@ -32,11 +70,37 @@ def make_data_module(db, pipeline, targets, features):
 
 
 def connect(db, pipeline, from_module, to_module, from_output='produce', to_input='inputs'):
+    if not from_module.name.startswith('dataset'):
+        from_module_primitive = index.get_primitive(from_module.name)
+        from_module_output = from_module_primitive.metadata.query()['primitive_code']['class_type_arguments'][
+            'Outputs']
+    else:
+        from_module_output = Dataset
+
+    to_module_primitive = index.get_primitive(to_module.name)
+    to_module_input = to_module_primitive.metadata.query()['primitive_code']['class_type_arguments'][
+        'Inputs']
+
+    if from_module_output != to_module_input:
+        cast_module_steps = CONTAINER_CAST[from_module_output][to_module_input]
+        if cast_module_steps:
+            for cast_step in cast_module_steps.split('|'):
+                cast_module = make_pipeline_module(db, pipeline,cast_step)
+                db.add(database.PipelineConnection(pipeline=pipeline,
+                                                   from_module=from_module,
+                                                   to_module=cast_module,
+                                                   from_output_name=from_output,
+                                                   to_input_name=to_input))
+                from_module = cast_module
+        else:
+            raise TypeError('Incompatible connection types: %s and %s'%(str(from_module_output),str(to_module_input)))
+
     db.add(database.PipelineConnection(pipeline=pipeline,
                                        from_module=from_module,
                                        to_module=to_module,
                                        from_output_name=from_output,
                                        to_input_name=to_input))
+
 
 
 def set_hyperparams(db, pipeline, module, **hyperparams):
@@ -184,6 +248,8 @@ class BaseBuilder:
             db.commit()
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
+        except:
+            return None
         finally:
                 db.close()
 
@@ -298,6 +364,8 @@ class BaseBuilder:
             db.add(pipeline)
             db.commit()
             return pipeline.id
+        except:
+            return None
         finally:
             db.close()
 
@@ -419,6 +487,8 @@ class BaseBuilder:
             db.add(pipeline)
             db.commit()
             return pipeline.id
+        except:
+            return None
         finally:
             db.close()
 
@@ -436,7 +506,8 @@ class BaseBuilder:
             db.commit()
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
-
+        except:
+            return None
         finally:
             db.close()
 
@@ -615,7 +686,9 @@ class TimeseriesClassificationBuilder(BaseBuilder):
             db.commit()
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
-
+        except Exception as e:
+            logger.error(e)
+            return None
         finally:
             db.close()
 
@@ -703,7 +776,8 @@ class TimeseriesForecastingBuilder(BaseBuilder):
                 pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
                                                        targets, features, DBSession=DBSession)
                 return pipeline_id
-
+        except:
+            return None
         finally:
             db.close()
 
@@ -733,6 +807,8 @@ class CommunityDetectionBuilder(BaseBuilder):
                 pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
                                                        targets, features, DBSession=DBSession)
                 return pipeline_id
+        except:
+            return None
         finally:
             db.close()
 
@@ -764,6 +840,8 @@ class LinkPredictionBuilder(BaseBuilder):
                 pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
                                                        targets, features, DBSession=DBSession)
                 return pipeline_id
+        except:
+            return None
         finally:
             db.close()
 
@@ -787,6 +865,8 @@ class GraphMatchingBuilder(BaseBuilder):
                 pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
                                                        targets, features, DBSession=DBSession)
                 return pipeline_id
+        except:
+            return None
         finally:
             db.close()
 
@@ -810,6 +890,8 @@ class VertexNominationBuilder(BaseBuilder):
                 pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
                                                        targets, features, DBSession=DBSession)
                 return pipeline_id
+        except:
+            return None
         finally:
             db.close()
 
@@ -858,6 +940,8 @@ class ObjectDetectionBuilder(BaseBuilder):
             db.commit()
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
+        except:
+            return None
         finally:
             db.close()
 
@@ -922,5 +1006,7 @@ class AudioBuilder(BaseBuilder):
             db.commit()
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
+        except:
+            return None
         finally:
             db.close()

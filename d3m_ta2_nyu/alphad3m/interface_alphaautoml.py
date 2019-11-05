@@ -137,9 +137,12 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
         # Create the pipeline in the database
         pipeline_id = builder.make_d3mpipeline(strings, origin, dataset, search_results, pipeline_template, targets,
                                                features, DBSession=DBSession)
-        # Evaluate the pipeline
-        msg_queue.send(('eval', pipeline_id))
-        return msg_queue.recv()
+        # Evaluate the pipeline if syntax is correct:
+        if pipeline_id:
+            msg_queue.send(('eval', pipeline_id))
+            return msg_queue.recv()
+        else:
+            return None
 
     dataset_path = os.path.dirname(dataset[7:])
     f = open(os.path.join(dataset_path, 'datasetDoc.json'))
