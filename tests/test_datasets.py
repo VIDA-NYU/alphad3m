@@ -106,7 +106,7 @@ def evaluate_pipelines(datasets, top=5):
                 'python3', '-m', 'd3m', '--strict-resolving', '--strict-digest',
                 'runtime',
                 '--volumes', D3MSTATICDIR,
-                '--context', 'EVALUATION',
+                '--context', 'TESTING',
                 '--random-seed', '0',
                 'fit-score',
                 '--pipeline', top_pipeline_path,

@@ -3,10 +3,11 @@ import logging
 import json
 import tempfile
 import pickle
+
 import d3m.runtime
 import d3m.metadata.base
 from sqlalchemy.orm import joinedload
-from d3m.container import Dataset, DataFrame
+from d3m.container import Dataset
 from d3m.metadata import base as metadata_base
 from d3m.metadata.problem import Problem
 from d3m_ta2_nyu.workflow import database, convert
@@ -50,19 +51,18 @@ def train(pipeline_id, dataset, problem, storage_dir, results_path, msg_queue, d
                 json.dump(problem, fin)
             d3m_problem = Problem.load('file://' + tmp_path)
 
-    runtime = d3m.runtime.Runtime(pipeline=d3m_pipeline, problem_description=d3m_problem,
-                                  context=metadata_base.Context.TESTING,
-                                  volumes_dir=os.environ.get('D3MSTATICDIR', None))
+    fitted_pipeline, predictions, result = d3m.runtime.fit(d3m_pipeline, d3m_problem, [dataset],
+                                                           context=metadata_base.Context.TESTING,
+                                                           volumes_dir=os.environ.get('D3MSTATICDIR', None),
+                                                           random_seed=0)
 
-    # Fitting pipeline on input dataset.
-    fit_results = runtime.fit(inputs=[dataset])
-    fit_results.check_success()
+    result.check_success()
 
-    if results_path is not None and isinstance(fit_results.values['outputs.0'], DataFrame):
+    if results_path is not None:
         logger.info('Storing fit results at %s', results_path)
-        fit_results.values['outputs.0'].sort_values(by=['d3mIndex']).to_csv(results_path, index=False)
+        predictions.to_csv(results_path)
     else:
         logger.info('NOT storing fit results')
 
-    with open(os.path.join(storage_dir, 'fitted_solution_%s.pkl' % pipeline_id), 'wb') as fout:
-        pickle.dump(runtime, fout)
+    with open(os.path.join(storage_dir, 'fitted_pipeline_%s.pkl' % pipeline_id), 'wb') as fout:
+        pickle.dump(fitted_pipeline, fout)

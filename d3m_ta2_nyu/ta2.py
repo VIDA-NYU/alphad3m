@@ -39,7 +39,7 @@ from d3m.container import Dataset
 
 
 MAX_RUNNING_PROCESSES = 1
-SAMPLE_SIZE = 200
+SAMPLE_SIZE = 400
 RANDOM_SEED = 42
 
 DATAMART_URL = {
@@ -1131,8 +1131,10 @@ class D3mTa2(Observable):
             db.close()
 
     def _get_sample_uri(self, dataset_uri, problem):
+        logger.info('About to sample dataset %s', dataset_uri)
         if problem['about']['taskType'] in {'semiSupervisedClassification', 'objectDetection'}: #timeSeriesForecasting
-            return None  # There are not primitives to do data sampling for these tasks
+            logger.info('Not doing sampling for task %s', problem['about']['taskType'])
+            return None
 
         dataset = Dataset.load(dataset_uri)
         dataset_sample_folder = 'file://%s/dataset_sample/' % os.environ.get('D3MOUTPUTDIR')
@@ -1161,6 +1163,9 @@ class D3mTa2(Observable):
                 logger.info('Sampling down data from %d to %d', original_size, len(dataset[res_id]))
                 dataset.save(dataset_sample_folder + 'datasetDoc.json')
                 dataset_sample_uri = dataset_sample_folder + 'datasetDoc.json'
+            else:
+                logger.info('Not doing sampling for small dataset (size = %d)', original_size)
+
         except:
             logger.error('Error sampling in datatset, using whole dataset %s', dataset_uri)
 
