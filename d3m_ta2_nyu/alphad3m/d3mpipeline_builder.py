@@ -81,6 +81,12 @@ def connect(db, pipeline, from_module, to_module, from_output='produce', to_inpu
     to_module_input = to_module_primitive.metadata.query()['primitive_code']['class_type_arguments'][
         'Inputs']
 
+    arguments = to_module_primitive.metadata.query()['primitive_code']['arguments']
+
+    if to_input not in arguments:
+         raise NameError('Argument %s not found in %s' % (to_input, to_module.name))
+
+
     if from_module_output != to_module_input:
         cast_module_steps = CONTAINER_CAST[from_module_output][to_module_input]
         if cast_module_steps:
@@ -259,7 +265,8 @@ class BaseBuilder:
             db.commit()
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
-        except:
+        except Exception as e:
+            logger.error(e)
             return None
         finally:
                 db.close()

@@ -34,6 +34,7 @@ with pkg_resources.resource_stream(
 
 @database.with_db
 def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_conf, do_rank, msg_queue, db):
+    scoring_conf['method'] = pb_core.EvaluationMethod.Value('RANKING')
     if sample_dataset_uri:
         dataset = Dataset.load(sample_dataset_uri)  # Come from search
     else:
