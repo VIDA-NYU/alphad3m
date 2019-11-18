@@ -117,9 +117,6 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         template = request.template
 
-
-
-
         if template is not None and len(template.steps) > 0:  # isinstance(template, pb_pipeline.PipelineDescription)
             pipeline = decode_pipeline_description(template, pipeline_module.Resolver())
             if pipeline.has_placeholder():

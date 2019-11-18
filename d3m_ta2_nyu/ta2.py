@@ -49,7 +49,7 @@ DATAMART_URL = {
                                           else 'http://dsbox02.isi.edu:9000/'
 }
 
-TUNE_PIPELINES_COUNT = 0
+TUNE_PIPELINES_COUNT = 5
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0
@@ -103,6 +103,8 @@ class Session(Observable):
 
         self._targets = None
         self._features = None
+        self.dataset_uri = None
+        self.sample_dataset_uri = None
 
     @property
     def problem_id(self):
@@ -589,6 +591,8 @@ class TuneHyperparamsJob(Job):
                                 metrics=self.session.metrics,
                                 problem=self.problem,
                                 do_rank=self.session.do_rank,
+                                dataset_uri=self.session.dataset_uri,
+                                sample_dataset_uri=self.session.sample_dataset_uri,
                                 timeout=self.timeout,
                                 targets=self.session.targets,
                                 db_filename=db_filename)
@@ -842,6 +846,7 @@ class D3mTa2(Observable):
                         top_pipelines=0, tune=None):
         if not metrics:
             raise ValueError("no metrics")
+
         self.executor.submit(self._build_pipelines, session_id, task, dataset, template, metrics, targets, features, timeout,
                              top_pipelines, tune)
 
@@ -1002,6 +1007,8 @@ class D3mTa2(Observable):
                                                  pipeline_template, metrics, timeout_search, do_rank)
 
         # For tuning
+        session.dataset_uri = dataset_uri
+        session.sample_dataset_uri = sample_dataset_uri
         session.do_rank = do_rank
         session.timeout_tuning = timeout_tuning
         session.tune_when_ready(tune)
@@ -1080,7 +1087,7 @@ class D3mTa2(Observable):
         scoring_conf = {'shuffle': 'true',
                         'stratified': 'true' if task == 'CLASSIFICATION' else 'false',
                         'train_test_ratio': '0.75',
-                        'method': pb_core.EvaluationMethod.Value('K_FOLD'), #HOLDOUT
+                        'method': pb_core.EvaluationMethod.Value('K_FOLD'),
                         'folds': '2'}
         # Add the pipeline to the session, score it
         with session.with_observer_queue() as queue:
@@ -1132,7 +1139,7 @@ class D3mTa2(Observable):
 
     def _get_sample_uri(self, dataset_uri, problem):
         logger.info('About to sample dataset %s', dataset_uri)
-        if problem['about']['taskType'] in {'semiSupervisedClassification', 'objectDetection'}: #timeSeriesForecasting
+        if problem['about']['taskType'] in {'semiSupervisedClassification', 'objectDetection'}:  # timeSeriesForecasting
             logger.info('Not doing sampling for task %s', problem['about']['taskType'])
             return None
 
@@ -1149,6 +1156,8 @@ class D3mTa2(Observable):
                 if ('https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
                         in dataset.metadata.query([res_id])['semantic_types']):
                     break
+            else:
+                res_id = next(iter(dataset))
 
             original_size = len(dataset[res_id])
             if hasattr(dataset[res_id], 'columns') and original_size > SAMPLE_SIZE:
@@ -1165,9 +1174,9 @@ class D3mTa2(Observable):
                 dataset_sample_uri = dataset_sample_folder + 'datasetDoc.json'
             else:
                 logger.info('Not doing sampling for small dataset (size = %d)', original_size)
-
-        except:
+        except Exception as e:
             logger.error('Error sampling in datatset, using whole dataset %s', dataset_uri)
+            logger.error(e)
 
         return dataset_sample_uri
 

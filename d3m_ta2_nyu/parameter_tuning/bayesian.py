@@ -44,7 +44,7 @@ def hyperparams_from_config(name, cfg):
             kw_args[key] = cfg[cfg_key]
         else:
             kw_args[key] = hyperparameter_config[key].get_default()
-        logger.info('New values for hyperparameter %s=%s', key, kw_args[key])
+        logger.info('New values for hyperparameter %s=%s', cfg_key, kw_args[key])
 
     hy = hyperparameter_class(**kw_args)
 

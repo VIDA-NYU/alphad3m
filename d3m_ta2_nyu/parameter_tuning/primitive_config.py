@@ -53,40 +53,43 @@ def cast_hyperparameters(hyperparameter, name):
     # TODO: Include 'Union', 'Choice' and  'Set' (D3M hyperparameters)
     new_hyperparameter = None
 
-    if isinstance(hyperparameter, Bounded):
-        lower = hyperparameter.lower
-        upper = hyperparameter.upper
-        default = hyperparameter.get_default()
-        if lower is None:
-            lower = default
-        if upper is None:
-            upper = default * 2 if default > 0 else 10
-        if hyperparameter.structural_type == int:
+    try:
+        if isinstance(hyperparameter, Bounded):
+            lower = hyperparameter.lower
+            upper = hyperparameter.upper
+            default = hyperparameter.get_default()
+            if lower is None:
+                lower = default
+            if upper is None:
+                upper = default * 2 if default > 0 else 10
+            if hyperparameter.structural_type == int:
+                new_hyperparameter = UniformIntegerHyperparameter(name, lower, upper, default_value=default)
+            else:
+                new_hyperparameter = UniformFloatHyperparameter(name, lower, upper, default_value=default)
+        elif isinstance(hyperparameter, UniformBool):
+            default = hyperparameter.get_default()
+            new_hyperparameter = CategoricalHyperparameter(name, [True, False], default_value=default)
+        elif isinstance(hyperparameter, UniformInt):
+            lower = hyperparameter.lower
+            upper = hyperparameter.upper
+            default = hyperparameter.get_default()
             new_hyperparameter = UniformIntegerHyperparameter(name, lower, upper, default_value=default)
-        else:
+        elif isinstance(hyperparameter, Uniform):
+            lower = hyperparameter.lower
+            upper = hyperparameter.upper
+            default = hyperparameter.get_default()
             new_hyperparameter = UniformFloatHyperparameter(name, lower, upper, default_value=default)
-    elif isinstance(hyperparameter, UniformBool):
-        default = hyperparameter.get_default()
-        new_hyperparameter = CategoricalHyperparameter(name, [True, False], default_value=default)
-    elif isinstance(hyperparameter, UniformInt):
-        lower = hyperparameter.lower
-        upper = hyperparameter.upper
-        default = hyperparameter.get_default()
-        new_hyperparameter = UniformIntegerHyperparameter(name, lower, upper, default_value=default)
-    elif isinstance(hyperparameter, Uniform):
-        lower = hyperparameter.lower
-        upper = hyperparameter.upper
-        default = hyperparameter.get_default()
-        new_hyperparameter = UniformFloatHyperparameter(name, lower, upper, default_value=default)
-    elif isinstance(hyperparameter, Normal):
-        default = hyperparameter.get_default()
-        new_hyperparameter = NormalFloatHyperparameter(name, default_value=default)
-    elif isinstance(hyperparameter, Enumeration):
-        values = hyperparameter.values
-        default = hyperparameter.get_default()
-        new_hyperparameter = CategoricalHyperparameter(name, values, default_value=default)
-    elif isinstance(hyperparameter, ConstantD3M):
-        new_hyperparameter = Constant(name, hyperparameter.get_default())
+        elif isinstance(hyperparameter, Normal):
+            default = hyperparameter.get_default()
+            new_hyperparameter = NormalFloatHyperparameter(name, default_value=default)
+        elif isinstance(hyperparameter, Enumeration):
+            values = hyperparameter.values
+            default = hyperparameter.get_default()
+            new_hyperparameter = CategoricalHyperparameter(name, values, default_value=default)
+        elif isinstance(hyperparameter, ConstantD3M):
+            new_hyperparameter = Constant(name, hyperparameter.get_default())
+    except Exception as e:
+        logger.error(e)
 
     return new_hyperparameter
 
@@ -103,14 +106,14 @@ def is_tunable(name):
 
     return family in {'CLASSIFICATION', 'REGRESSION', 'TIME_SERIES_CLASSIFICATION', 'TIME_SERIES_FORECASTING',
                       'SEMISUPERVISED_CLASSIFICATION', 'COMMUNITY_DETECTION', 'VERTEX_CLASSIFICATION', 'GRAPH_MATCHING',
-                      'LINK_PREDICTION'}
+                      'LINK_PREDICTION', 'FEATURE_SELECTION'}
 
 
 def get_default_configspace(primitive):
     default_config = ConfigurationSpace()
 
     if primitive in PRIMITIVES_DEFAULT_HYPERPARAMETERS:
-        default_config.add_configuration_space(primitive, PRIMITIVES_DEFAULT_HYPERPARAMETERS[primitive](), '|')
+            default_config.add_configuration_space(primitive, PRIMITIVES_DEFAULT_HYPERPARAMETERS[primitive](), '|')
 
     return default_config
 
@@ -271,7 +274,7 @@ def linear_svc():
         "penalty", ["l1", "l2"], default_value="l2")
     loss = CategoricalHyperparameter(
         "loss", ["hinge", "squared_hinge"], default_value="squared_hinge")
-    dual = Constant("dual", False)
+    dual = Constant("dual", "False")
     # This is set ad-hoc
     tol = UniformFloatHyperparameter(
         "tol", 1e-5, 1e-1, default_value=1e-4, log=True)
@@ -279,7 +282,7 @@ def linear_svc():
         "C", 0.03125, 32768, log=True, default_value=1.0)
     multi_class = Constant("multi_class", "ovr")
     # These are set ad-hoc
-    fit_intercept = Constant("fit_intercept", True)
+    fit_intercept = Constant("fit_intercept", "True")
     intercept_scaling = Constant("intercept_scaling", 1)
     cs.add_hyperparameters([penalty, loss, dual, tol, C, multi_class,
                             fit_intercept, intercept_scaling])
@@ -636,11 +639,11 @@ def linear_svr_regression():
     # Random Guess
     epsilon = UniformFloatHyperparameter(
         name="epsilon", lower=0.001, upper=1, default_value=0.1, log=True)
-    dual = Constant("dual", False)
+    dual = Constant("dual", "False")
     # These are set ad-hoc
     tol = UniformFloatHyperparameter(
         "tol", 1e-5, 1e-1, default_value=1e-4, log=True)
-    fit_intercept = Constant("fit_intercept", True)
+    fit_intercept = Constant("fit_intercept", "True")
     intercept_scaling = Constant("intercept_scaling", 1)
 
     cs.add_hyperparameters([C, loss, epsilon, dual, tol, fit_intercept,

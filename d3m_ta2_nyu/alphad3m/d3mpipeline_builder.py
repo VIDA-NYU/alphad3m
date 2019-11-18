@@ -102,7 +102,6 @@ def connect(db, pipeline, from_module, to_module, from_output='produce', to_inpu
                                        to_input_name=to_input))
 
 
-
 def set_hyperparams(db, pipeline, module, **hyperparams):
     db.add(database.PipelineParameter(
         pipeline=pipeline, module=module,
@@ -214,18 +213,24 @@ class BaseBuilder:
                                                        'column_parser.DataFrameCommon')
             connect(db, pipeline, step1, step2)
 
-            if not need_d3mindex(primitives):
-                step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'extract_columns_by_semantic_types.DataFrameCommon')
+            step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'extract_columns_by_semantic_types.DataFrameCommon')
 
-                set_hyperparams(db, pipeline, step3,
-                                semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute']
-                                )
-                connect(db, pipeline, step2, step3)
-                step = prev_step = step3
-            else:  # Some primitives need the 'd3mIndex', so we can't filter out it selecting only the attributes
-                step = prev_step = step2
+            semantic_type_list = ['https://metadata.datadrivendiscovery.org/types/Attribute']
+            if need_d3mindex(primitives):  # Some primitives need the 'd3mIndex', so we can't filter out it
+                semantic_type_list.append('https://metadata.datadrivendiscovery.org/types/PrimaryKey')
 
+            set_hyperparams(db, pipeline, step3, semantic_types=semantic_type_list)
+            connect(db, pipeline, step2, step3)
+
+            step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'extract_columns_by_semantic_types.DataFrameCommon')
+            set_hyperparams(db, pipeline, step4,
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
+                            )
+            connect(db, pipeline, step2, step4)
+
+            step = prev_step = step3
             preprocessors = primitives[:-1]
             estimator = primitives[-1]
 
@@ -235,15 +240,8 @@ class BaseBuilder:
                 connect(db, pipeline, prev_step, step)
                 prev_step = step
 
-            step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'extract_columns_by_semantic_types.DataFrameCommon')
-            set_hyperparams(db, pipeline, step4,
-                            semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
-                            )
-            connect(db, pipeline, step2, step4)
-
-            if 'feature_selection' in step.name:  # FIXME: Use the primitive family
-                connect(db, pipeline, step4, step, to_input='outputs')
+                if 'feature_selection' in step.name:  # FIXME: Use the primitive family
+                    connect(db, pipeline, step4, step, to_input='outputs')
 
             step5 = make_pipeline_module(db, pipeline, estimator)
             change_default_hyperparams(db, pipeline, estimator, step5)

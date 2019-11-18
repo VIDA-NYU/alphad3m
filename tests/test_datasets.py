@@ -61,16 +61,18 @@ def search_pipelines(datasets, use_template=False):
         if number_pipelines > 0:
             best_time = sorted(pipelines.values(), key=lambda x: x[2])[0][2]
             sorted_pipelines = sorted(pipelines.items(), key=lambda x: x[1][0], reverse=True)
-            best_score = decode_value(sorted_pipelines[0][1][1][0].scores[0].value)['value']
             all_scores = []
 
             for pipeline_id, (_, pipeline, _) in sorted_pipelines:
-                pipeline_score = decode_value(pipeline[0].scores[0].value)['value']
+                if use_template:  # FIXME: Pipeline score is not calculate when working with fully defined pipeline
+                    pipeline_score = 1.0
+                else:
+                    pipeline_score = decode_value(pipeline[0].scores[0].value)['value']
                 all_scores.append({'id': pipeline_id, 'score': pipeline_score})
 
             result['pipelines'] = number_pipelines
             result['best_time'] = best_time
-            result['best_score'] = best_score
+            result['best_score'] = all_scores[0]['score']
             result['all_scores'] = all_scores
 
         search_results[dataset] = result
