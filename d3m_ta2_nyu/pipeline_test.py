@@ -1,8 +1,6 @@
 import logging
 import os
-import pickle
 import subprocess
-from d3m.container import Dataset
 from d3m_ta2_nyu.workflow import database
 
 logger = logging.getLogger(__name__)
@@ -26,7 +24,7 @@ def test(pipeline_id, dataset, storage_dir, results_path, msg_queue, db):
         subprocess.call(command)
         logger.info('Storing produce results at %s', results_path)
     except Exception as e:
-        logger.error('Error produce pipeline %s', pipeline_id)
+        logger.error('Error calling produce method for pipeline %s', pipeline_id)
         logger.error(e)
 
 
