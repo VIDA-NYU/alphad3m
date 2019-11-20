@@ -49,7 +49,7 @@ DATAMART_URL = {
                                           else 'http://dsbox02.isi.edu:9000/'
 }
 
-TUNE_PIPELINES_COUNT = 0
+TUNE_PIPELINES_COUNT =
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0
