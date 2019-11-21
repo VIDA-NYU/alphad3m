@@ -96,7 +96,7 @@ def connect(db, pipeline, from_module, to_module, from_output='produce', to_inpu
                                                    from_module=from_module,
                                                    to_module=cast_module,
                                                    from_output_name=from_output,
-                                                   to_input_name=to_input))
+                                                   to_input_name='inputs'))
                 from_module = cast_module
         else:
             raise TypeError('Incompatible connection types: %s and %s'%(str(from_module_output),str(to_module_input)))
@@ -246,7 +246,8 @@ class BaseBuilder:
                 connect(db, pipeline, prev_step, step)
                 prev_step = step
 
-                if 'feature_selection' in step.name:  # FIXME: Use the primitive family
+                to_module_primitive = index.get_primitive(preprocessor)
+                if 'outputs' in to_module_primitive.metadata.query()['primitive_code']['arguments']:
                     connect(db, pipeline, step4, step, to_input='outputs')
 
             step5 = make_pipeline_module(db, pipeline, estimator)
