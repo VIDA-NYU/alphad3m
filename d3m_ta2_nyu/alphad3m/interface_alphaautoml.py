@@ -80,7 +80,7 @@ input = {
 
 
 def generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
-                          timeout, msg_queue, DBSession):
+                          feature_types, timeout, msg_queue, DBSession):
     logger.info("Creating pipelines from templates...")
 
     if task in ['TIME_SERIES_CLASSIFICATION', 'GRAPH_MATCHING', 'LINK_PREDICTION', 'VERTEX_NOMINATION', 'CLUSTERING',
@@ -96,8 +96,8 @@ def generate_by_templates(task, dataset, search_results, pipeline_template, metr
     # No Augmentation
     templates = BaseBuilder.TEMPLATES.get(template_name, [])
     for imputer, classifier in templates:
-        pipeline_id = BaseBuilder.make_template(imputer, classifier, dataset, pipeline_template, targets,
-                                                         features, DBSession=DBSession)
+        pipeline_id = BaseBuilder.make_template(imputer, classifier, dataset, pipeline_template, targets, features,
+                                                feature_types, DBSession=DBSession)
         send(msg_queue, pipeline_id)
 
     # Augmentation
@@ -106,8 +106,8 @@ def generate_by_templates(task, dataset, search_results, pipeline_template, metr
             templates = BaseBuilder.TEMPLATES_AUGMENTATION.get(template_name, [])
             for datamart, imputer, classifier in templates:
                 pipeline_id = BaseBuilder.make_template_augment(datamart, imputer, classifier, dataset,
-                                                                        pipeline_template, targets, features,
-                                                                        search_result, DBSession=DBSession)
+                                                                pipeline_template, targets, features, feature_types,
+                                                                search_result, DBSession=DBSession)
                 send(msg_queue, pipeline_id)
 
     # MeanBaseline pipeline
@@ -120,14 +120,36 @@ def send(msg_queue, pipeline_id):
     return msg_queue.recv()
 
 
+def get_feature_types(dataset_doc):
+    feature_types = {}
+    try:
+        for data_res in dataset_doc['dataResources']:
+            if data_res['resID'] == 'learningData':
+                for column in data_res['columns']:
+                    if 'attribute' in column['role']:
+                        if column['colType'] not in feature_types:
+                            feature_types[column['colType']] = []
+                        feature_types[column['colType']].append(column['colName'])
+                break
+    except Exception as e:
+        logger.error(e)
+
+    return feature_types
+
+
 @database.with_sessionmaker
 def generate(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue,
              DBSession):
-    generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
-                          timeout, msg_queue, DBSession)
-
     import time
     start = time.time()
+
+    with open(dataset[7:]) as fin:
+        dataset_doc = json.load(fin)
+
+    feature_types = get_feature_types(dataset_doc)
+    generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
+                          feature_types, timeout, msg_queue, DBSession)
+
     builder = None
 
     def eval_pipeline(strings, origin):
@@ -141,12 +163,8 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
         else:
             return None
 
-    dataset_path = os.path.dirname(dataset[7:])
-    f = open(os.path.join(dataset_path, 'datasetDoc.json'))
-    dataset_doc = json.load(f)
-    data_resources = dataset_doc['dataResources']
     data_types = []
-    for data_res in data_resources:
+    for data_res in dataset_doc['dataResources']:
         data_types.append(data_res['resType'])
 
     if 'CLUSTERING' in task:

@@ -44,7 +44,7 @@ RANDOM_SEED = 42
 
 DATAMART_URL = {
     'NYU': os.environ['DATAMART_URL_NYU'] if 'DATAMART_URL_NYU' in os.environ
-                                          else 'https://datamart.d3m.vida-nyu.org/' ,
+                                          else 'https://datamart.d3m.vida-nyu.org/',
     'ISI': os.environ['DATAMART_URL_ISI'] if 'DATAMART_URL_ISI' in os.environ
                                           else 'http://dsbox02.isi.edu:9000/'
 }
