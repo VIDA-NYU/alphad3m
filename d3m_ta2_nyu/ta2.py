@@ -427,7 +427,7 @@ class Job(object):
 class ScoreJob(Job):
     timeout = 8 * 60
 
-    def __init__(self, ta2, pipeline_id, dataset_uri, metrics, problem, scoring_conf, do_rank=False,
+    def __init__(self, ta2, pipeline_id, dataset_uri, metrics, problem, scoring_config, do_rank=False,
                  sample_dataset_uri=None):
         Job.__init__(self)
         self.ta2 = ta2
@@ -436,7 +436,7 @@ class ScoreJob(Job):
         self.sample_dataset_uri = sample_dataset_uri
         self.metrics = metrics
         self.problem = problem
-        self.scoring_conf = scoring_conf
+        self.scoring_config = scoring_config
         self.do_rank = do_rank
 
     def start(self, db_filename, **kwargs):
@@ -447,7 +447,7 @@ class ScoreJob(Job):
                                 sample_dataset_uri=self.sample_dataset_uri,
                                 metrics=self.metrics,
                                 problem=self.problem,
-                                scoring_conf=self.scoring_conf,
+                                scoring_config=self.scoring_config,
                                 do_rank=self.do_rank,
                                 db_filename=db_filename)
         self.started = time.time()
@@ -827,8 +827,8 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
-    def score_pipeline(self, pipeline_id, metrics, dataset_uri, problem, scoring_conf):
-        job = ScoreJob(self, pipeline_id, dataset_uri, metrics, problem, scoring_conf)
+    def score_pipeline(self, pipeline_id, metrics, dataset_uri, problem, scoring_config):
+        job = ScoreJob(self, pipeline_id, dataset_uri, metrics, problem, scoring_config)
         self._run_queue.put(job)
         return id(job)
 
@@ -1084,17 +1084,16 @@ class D3mTa2(Observable):
         This is used by the pipeline synthesis code.
         """
 
-        scoring_conf = {'shuffle': 'true',
-                        'stratified': 'true' if task == 'CLASSIFICATION' else 'false',
-                        'train_test_ratio': '0.75',
-                        'method': pb_core.EvaluationMethod.Value('K_FOLD'),
-                        'folds': '2'}
+        scoring_config = {'shuffle': 'true',
+                          'stratified': 'true' if task == 'CLASSIFICATION' else 'false',
+                          'method': pb_core.EvaluationMethod.Value('K_FOLD'),
+                          'folds': '2'}
         # Add the pipeline to the session, score it
         with session.with_observer_queue() as queue:
             session.add_scoring_pipeline(pipeline_id)
             logger.info("Created pipeline %s", pipeline_id)
             self._run_queue.put(ScoreJob(self, pipeline_id, dataset_uri, session.metrics, session.problem,
-                                         scoring_conf, do_rank, sample_dataset_uri))
+                                         scoring_config, do_rank, sample_dataset_uri))
             session.notify('new_pipeline', pipeline_id=pipeline_id)
 
             while True:

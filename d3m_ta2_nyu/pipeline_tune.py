@@ -43,15 +43,17 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
 
     logger.info('Tuning primitives %s', ', '.join(tunable_primitives.values()))
 
-    dataset = Dataset.load(dataset_uri)
+    if sample_dataset_uri:
+        dataset = Dataset.load(sample_dataset_uri)
+    else:
+        dataset = Dataset.load(dataset_uri)
     tuning = HyperparameterTuning(tunable_primitives.values())
     task = problem['about']['taskType'].upper()
 
-    scoring_conf = {'shuffle': 'true',
-                    'stratified': 'true' if task == 'CLASSIFICATION' else 'false',
-                    'train_test_ratio': '0.75',
-                    'method': pb_core.EvaluationMethod.Value('K_FOLD'),
-                    'folds': '2'}
+    scoring_config = {'shuffle': 'true',
+                      'stratified': 'true' if task == 'CLASSIFICATION' else 'false',
+                      'method': pb_core.EvaluationMethod.Value('K_FOLD'),
+                      'folds': '2'}
 
     def evaluate_tune(hyperparameter_configuration):
         for primitive_id, primitive_name in tunable_primitives.items():
@@ -63,8 +65,15 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
                 value=pickle.dumps(hy),
             ))
 
-        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_conf)
-        cost = scores[0][metrics[0]['metric']] * SCORES_RANKING_ORDER[metrics[0]['metric']]
+        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_config)
+        first_metric = metrics[0]['metric']
+        score_values = []
+        for fold_scores in scores.values():
+            for metric, score in fold_scores.items():
+                if metric == first_metric:
+                    score_values.append(score)
+        avg_score = sum(score_values) / len(score_values)
+        cost = avg_score * SCORES_RANKING_ORDER[first_metric]
         logger.info('Tuning results:\n%s', scores)
         # Don't store those runs
         db.rollback()
@@ -94,7 +103,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
         if 'run_1' in f:
             shutil.rmtree(os.path.join('/tmp', f))
 
-    score(new_pipeline.id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_conf, do_rank, None,
+    score(new_pipeline.id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, do_rank, None,
           db_filename='/output/supporting_files/db.sqlite3')
     # TODO: Change this static string path
 
