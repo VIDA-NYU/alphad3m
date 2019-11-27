@@ -1,4 +1,8 @@
 {
+
+    "TEXT_CLASSIFICATION": {
+                "d3m.primitives.learner.text_classifier.DistilTextClassifier": 229
+    },
     "CLASSIFICATION": {
         "d3m.primitives.classification.ada_boost.SKlearn": 1,
         "d3m.primitives.classification.bagging.SKlearn": 2,
@@ -11,17 +15,12 @@
         "d3m.primitives.classification.gaussian_classification.JHU": 11,
         "d3m.primitives.classification.gaussian_classification.MeanBaseline": 12,
         "d3m.primitives.classification.gaussian_naive_bayes.SKlearn": 13,
-        "d3m.primitives.classification.general_relational_dataset.GeneralRelationalDataset": 14,
         "d3m.primitives.classification.gradient_boosting.SKlearn": 15,
         "d3m.primitives.classification.k_neighbors.SKlearn": 16,
         "d3m.primitives.classification.light_gbm.DataFrameCommon": 17,
         "d3m.primitives.classification.linear_discriminant_analysis.SKlearn": 18,
         "d3m.primitives.classification.linear_svc.SKlearn": 19,
         "d3m.primitives.classification.logistic_regression.SKlearn": 20,
-        "d3m.primitives.classification.lstm.DSBOX": 21,
-        "d3m.primitives.classification.lupi_rf.LupiRFClassifier": 22,
-        "d3m.primitives.classification.lupi_rfsel.LupiRFSelClassifier": 23,
-        "d3m.primitives.classification.lupi_svm.LupiSvmClassifier": 24,
         "d3m.primitives.classification.mlp.BBN": 25,
         "d3m.primitives.classification.mlp.SKlearn": 26,
         "d3m.primitives.classification.multilabel_classifier.DSBOX": 27,
@@ -36,39 +35,54 @@
         "d3m.primitives.classification.search_hybrid.Find_projections": 36,
         "d3m.primitives.classification.sgd.SKlearn": 37,
         "d3m.primitives.classification.svc.SKlearn": 38,
-        "d3m.primitives.classification.tensor_machines_binary_classification.TensorMachinesBinaryClassification": 39,
         "d3m.primitives.classification.tree_augmented_naive_bayes.BayesianInfRPI": 40,
         "d3m.primitives.classification.xgboost_dart.DataFrameCommon": 42,
-        "d3m.primitives.classification.xgboost_gbtree.DataFrameCommon": 43,
-        "d3m.primitives.learner.text_classifier.DistilTextClassifier": 229
+        "d3m.primitives.classification.xgboost_gbtree.DataFrameCommon": 43
     },
     "COMMUNITY_DETECTION": {
         "d3m.primitives.classification.community_detection.CommunityDetection": 5,
         "d3m.primitives.community_detection.community_detection_parser.CommunityDetectionParser": 56,
         "d3m.primitives.data_transformation.community_detection.DistilCommunityDetection": 125
     },
+    "TEXT_DATA_PROCESSING": {
+        "d3m.primitives.data_preprocessing.dataset_text_reader.DatasetTextReader": 85,
+        "d3m.primitives.data_preprocessing.text_reader.DataFrameCommon": 118,
+        "d3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn": 119
+    },
+    "IMAGE_DATA_PROCESSING": {
+        "d3m.primitives.data_preprocessing.dataframe_to_tensor.DSBOX": 83,
+        "d3m.primitives.data_preprocessing.image_reader.DataFrameCommon": 92
+    },
+    "VIDEO_DATA_PROCESSING": {
+        "d3m.primitives.data_preprocessing.video_reader.DataFrameCommon": 123
+
+    },
+    "GRAPH_DATA_PROCESSING": {
+        "d3m.primitives.data_preprocessing.largest_connected_component.JHU": 96
+    },
+    "AUDIO_DATA_PROCESSING": {
+        "d3m.primitives.data_preprocessing.channel_averager.BBN": 78
+    },
+    "TIME_SERIES_DATA_PROCESSING": {
+        "d3m.primitives.data_preprocessing.signal_dither.BBN": 113,
+        "d3m.primitives.data_preprocessing.targets_reader.BBN": 116
+    },
     "DATA_PREPROCESSING": {
         "d3m.primitives.classification.ensemble_voting.DSBOX": 9,
         "d3m.primitives.data_preprocessing.binarizer.SKlearn": 77,
-        "d3m.primitives.data_preprocessing.channel_averager.BBN": 78,
         "d3m.primitives.data_preprocessing.count_vectorizer.SKlearn": 79,
         "d3m.primitives.data_preprocessing.csv_reader.BBN": 80,
         "d3m.primitives.data_preprocessing.csv_reader.DataFrameCommon": 81,
         "d3m.primitives.data_preprocessing.data_conversion.FairnessPreProcessing": 82,
-        "d3m.primitives.data_preprocessing.dataframe_to_tensor.DSBOX": 83,
-        "d3m.primitives.data_preprocessing.dataset_sample.Common": 84,
-        "d3m.primitives.data_preprocessing.dataset_text_reader.DatasetTextReader": 85,
         "d3m.primitives.data_preprocessing.datetime_range_filter.DataFrameCommon": 86,
         "d3m.primitives.data_preprocessing.encoder.DSBOX": 87,
         "d3m.primitives.data_preprocessing.feature_agglomeration.SKlearn": 88,
         "d3m.primitives.data_preprocessing.flatten.DataFrameCommon": 89,
         "d3m.primitives.data_preprocessing.greedy_imputation.DSBOX": 90,
         "d3m.primitives.data_preprocessing.horizontal_concat.DSBOX": 91,
-        "d3m.primitives.data_preprocessing.image_reader.DataFrameCommon": 92,
         "d3m.primitives.data_preprocessing.iterative_regression_imputation.DSBOX": 93,
         "d3m.primitives.data_preprocessing.label_decoder.DataFrameCommon": 94,
         "d3m.primitives.data_preprocessing.label_encoder.DataFrameCommon": 95,
-        "d3m.primitives.data_preprocessing.largest_connected_component.JHU": 96,
         "d3m.primitives.data_preprocessing.low_rank_imputer.Cornell": 97,
         "d3m.primitives.data_preprocessing.max_abs_scaler.SKlearn": 98,
         "d3m.primitives.data_preprocessing.mean_imputation.DSBOX": 99,
@@ -76,8 +90,6 @@
         "d3m.primitives.data_preprocessing.normalizer.SKlearn": 101,
         "d3m.primitives.data_preprocessing.numeric_range_filter.DataFrameCommon": 102,
         "d3m.primitives.data_preprocessing.nystroem.SKlearn": 103,
-        "d3m.primitives.data_preprocessing.one_hot_encoder.MakerCommon": 104,
-        "d3m.primitives.data_preprocessing.one_hot_encoder.PandasCommon": 105,
         "d3m.primitives.data_preprocessing.polynomial_features.SKlearn": 106,
         "d3m.primitives.data_preprocessing.quantile_transformer.SKlearn": 107,
         "d3m.primitives.data_preprocessing.random_sampling_imputer.BYU": 108,
@@ -85,17 +97,12 @@
         "d3m.primitives.data_preprocessing.rbf_sampler.SKlearn": 110,
         "d3m.primitives.data_preprocessing.regex_filter.DataFrameCommon": 111,
         "d3m.primitives.data_preprocessing.robust_scaler.SKlearn": 112,
-        "d3m.primitives.data_preprocessing.signal_dither.BBN": 113,
         "d3m.primitives.data_preprocessing.splitter.DSBOX": 114,
         "d3m.primitives.data_preprocessing.standard_scaler.SKlearn": 115,
-        "d3m.primitives.data_preprocessing.targets_reader.BBN": 116,
         "d3m.primitives.data_preprocessing.term_filter.DataFrameCommon": 117,
-        "d3m.primitives.data_preprocessing.text_reader.DataFrameCommon": 118,
-        "d3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn": 119,
         "d3m.primitives.data_preprocessing.trecs.Umich": 120,
         "d3m.primitives.data_preprocessing.unary_encoder.DSBOX": 121,
-        "d3m.primitives.data_preprocessing.unfold.DSBOX": 122,
-        "d3m.primitives.data_preprocessing.video_reader.DataFrameCommon": 123
+        "d3m.primitives.data_preprocessing.unfold.DSBOX": 122
     },
     "VERTEX_CLASSIFICATION": {
         "d3m.primitives.classification.vertex_nomination.VertexClassification": 41
@@ -127,13 +134,10 @@
     },
     "DATA_CLEANING": {
         "d3m.primitives.data_cleaning.cleaning_featurizer.DSBOX": 62,
-        "d3m.primitives.data_cleaning.column_fold.DSBOX": 63,
-        "d3m.primitives.data_cleaning.column_type_profiler.Simon": 64,
         "d3m.primitives.data_cleaning.data_cleaning.Datacleaning": 65,
         "d3m.primitives.data_cleaning.imputer.SKlearn": 66,
         "d3m.primitives.data_cleaning.label_encoder.DSBOX": 67,
-        "d3m.primitives.data_cleaning.missing_indicator.SKlearn": 68,
-        "d3m.primitives.data_cleaning.tabular_extractor.Common": 69
+        "d3m.primitives.data_cleaning.missing_indicator.SKlearn": 68
     },
     "DATA_COMPRESSION": {
         "d3m.primitives.data_compression.go_dec.Umich": 70,
@@ -242,8 +246,6 @@
     "FEATURE_SELECTION": {
         "d3m.primitives.feature_selection.generic_univariate_select.SKlearn": 193,
         "d3m.primitives.feature_selection.joint_mutual_information.AutoRPI": 194,
-        "d3m.primitives.feature_selection.pca_features.Pcafeatures": 195,
-        "d3m.primitives.feature_selection.rffeatures.Rffeatures": 196,
         "d3m.primitives.feature_selection.score_based_markov_blanket.RPI": 197,
         "d3m.primitives.feature_selection.select_fwe.SKlearn": 198,
         "d3m.primitives.feature_selection.select_percentile.SKlearn": 199,
