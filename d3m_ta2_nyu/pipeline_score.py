@@ -29,12 +29,13 @@ with pkg_resources.resource_stream(
 with pkg_resources.resource_stream(
         'd3m_ta2_nyu',
         '../resource/pipelines/scoring.yaml') as fp:
-    scoring = Pipeline.from_yaml(fp)
+    scoring_pipeline = Pipeline.from_yaml(fp)
 
 
 @database.with_db
+
 def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_conf, do_rank, msg_queue, db):
-    scoring_conf['method'] = pb_core.EvaluationMethod.Value('RANKING')
+
     if sample_dataset_uri:
         dataset = Dataset.load(sample_dataset_uri)  # Come from search
     else:
@@ -52,19 +53,18 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
     scores = {}
     scores_db = []
 
-    if scoring_conf['method'] == pb_core.EvaluationMethod.Value('K_FOLD'):
-        scoring_conf['number_of_folds'] = scoring_conf.pop('folds')
-        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_conf)
+    if scoring_config['method'] == pb_core.EvaluationMethod.Value('K_FOLD'):
+        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_config)
         logger.info("Cross-validation results:\n%s", scores)
 
-    elif scoring_conf['method'] == pb_core.EvaluationMethod.Value('HOLDOUT'):
-        scores = evaluate(pipeline, train_test_tabular_split, dataset, metrics, problem, scoring_conf)
+    elif scoring_config['method'] == pb_core.EvaluationMethod.Value('HOLDOUT'):
+        scores = evaluate(pipeline, train_test_tabular_split, dataset, metrics, problem, scoring_config)
         logger.info("Holdout results:\n%s", scores)
 
-    elif scoring_conf['method'] == pb_core.EvaluationMethod.Value('RANKING'):  # For TA2 only evaluation
-        scoring_conf['number_of_folds'] = '4'
+    elif scoring_config['method'] == pb_core.EvaluationMethod.Value('RANKING'):  # For TA2 only evaluation
+        scoring_config['folds'] = '4'
         metrics = format_metrics(problem)
-        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_conf)
+        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_config)
         logger.info("Ranking-D3M results:\n%s", scores)
         if not do_rank:
             scores_db = add_scores_db(scores, scores_db)
@@ -76,8 +76,8 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
             logger.info("Calculating RANK in search solution for pipeline %s", pipeline_id)
             if sample_dataset_uri is not None:
                 entire_dataset = Dataset.load(dataset_uri)  # load complete dataset
-                scoring_conf['number_of_folds'] = '4'
-                scores = evaluate(pipeline, kfold_tabular_split, entire_dataset, metrics, problem, scoring_conf)
+                scoring_config['folds'] = '4'
+                scores = evaluate(pipeline, kfold_tabular_split, entire_dataset, metrics, problem, scoring_config)
             logger.info("Ranking-D3M (whole dataset) results:\n%s", scores)
             scores_db = add_scores_db(scores, scores_db)
             scores = create_new_metric(scores)
@@ -92,7 +92,7 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
     db.commit()
 
 
-def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
+def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config):
     json_pipeline = convert.to_d3m_json(pipeline)
 
     logger.info("Pipeline to be scored:\n\t%s",
@@ -110,14 +110,15 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_conf):
         d3m_problem = Problem.load('file://' + tmp_path)
 
     formatted_metric = format_d3m_metrics(metrics)
+    formatted_scoring_config = format_scoring_config(scoring_config)
 
     run_scores, run_results = d3m.runtime.evaluate(
         pipeline=d3m_pipeline,
         data_pipeline=data_pipeline,
-        scoring_pipeline=scoring,
+        scoring_pipeline=scoring_pipeline,
         problem_description=d3m_problem,
         inputs=[dataset],
-        data_params=scoring_conf,
+        data_params=formatted_scoring_config,
         metrics=formatted_metric,
         volumes_dir=os.environ.get('D3MSTATICDIR', None),
         context=d3m.metadata.base.Context.TESTING,
@@ -173,6 +174,23 @@ def format_d3m_metrics(metrics):
         formatted_metrics.append(formatted_metric)
 
     return formatted_metrics
+
+
+def format_scoring_config(scoring_config):
+    formatted_scoring_config = {}
+
+    if 'method' in scoring_config:
+        scoring_config.pop('method')
+
+    for parameter in scoring_config.keys():
+        if parameter == 'train_test_ratio':
+            formatted_scoring_config['train_score_ratio'] = scoring_config[parameter]
+        elif parameter == 'folds':
+            formatted_scoring_config['number_of_folds'] = scoring_config[parameter]
+        else:
+            formatted_scoring_config[parameter] = scoring_config[parameter]
+
+    return formatted_scoring_config
 
 
 def save_pipeline_runs(pipelines_runs):

@@ -138,6 +138,7 @@ class BaseBuilder:
 
     def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
                          features=None, DBSession=None):
+        # TODO parameters 'features and 'targets' are not needed
         db = DBSession()
         pipeline = database.Pipeline(origin=origin, dataset=dataset)
         try:
@@ -271,7 +272,7 @@ class BaseBuilder:
                 db.close()
 
     @staticmethod
-    def make_template(imputer, estimator, dataset, pipeline_template, targets, features, DBSession=None):
+    def make_template(imputer, estimator, dataset, pipeline_template, targets, features, feature_types, DBSession=None):
         db = DBSession()
         pipeline = database.Pipeline(origin="template(imputer=%s, estimator=%s)" % (imputer, estimator),
                                      dataset=dataset)
@@ -345,38 +346,56 @@ class BaseBuilder:
                             )
             connect(db, pipeline, step2, step3)
 
-            step4 = make_pipeline_module(db, pipeline, imputer)
-            set_hyperparams(db, pipeline, step4, strategy='most_frequent')
-            connect(db, pipeline, step3, step4)
-
-            step5 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')
-            set_hyperparams(db, pipeline, step5, handle_unknown='ignore')
-            connect(db, pipeline, step4, step5)
-
-            step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+            step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'extract_columns_by_semantic_types.DataFrameCommon')
-            set_hyperparams(db, pipeline, step6,
-                            semantic_types=['https://metadata.datadrivendiscovery.org/types/Target']
+            set_hyperparams(db, pipeline, step4,
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
                             )
-            connect(db, pipeline, step2, step6)
+            connect(db, pipeline, step2, step4)
 
-            step7 = make_pipeline_module(db, pipeline, estimator)
-            connect(db, pipeline, step5, step7)
-            connect(db, pipeline, step6, step7, to_input='outputs')
+            step5 = make_pipeline_module(db, pipeline, imputer)
+            set_hyperparams(db, pipeline, step5, strategy='most_frequent')
+            connect(db, pipeline, step3, step5)
+            prev_step = step5
+            both = 0
 
-            step8 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'extract_columns_by_semantic_types.DataFrameCommon')
-            set_hyperparams(db, pipeline, step8,
-                            semantic_types=['https://metadata.datadrivendiscovery.org/types/Target',
-                                            'https://metadata.datadrivendiscovery.org/types/PrimaryKey'
-                                            ]
-                            )
-            connect(db, pipeline, step2, step8)
+            if 'integer' in feature_types or 'real' in feature_types:
+                step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'extract_columns_by_semantic_types.DataFrameCommon')
+                set_hyperparams(db, pipeline, step6,
+                                semantic_types=['http://schema.org/Integer', 'http://schema.org/Float'])
+                connect(db, pipeline, step5, step6)
+                prev_step = step6
+                both += 1
 
-            step9 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'construct_predictions.DataFrameCommon')
-            connect(db, pipeline, step7, step9)
-            connect(db, pipeline, step8, step9, to_input='reference')
+            if 'categorical' in feature_types:
+                step7 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'extract_columns_by_semantic_types.DataFrameCommon')
+                set_hyperparams(db, pipeline, step7,
+                                semantic_types=['https://metadata.datadrivendiscovery.org/types/CategoricalData'])
+                connect(db, pipeline, step5, step7)
+
+                step8 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')
+                set_hyperparams(db, pipeline, step8, handle_unknown='ignore')
+                connect(db, pipeline, step7, step8)
+                prev_step = step8
+                both += 1
+
+            if both == 2:
+                step9 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'horizontal_concat.DataFrameConcat')
+                connect(db, pipeline, step6, step9, to_input='left')
+                connect(db, pipeline, step8, step9, to_input='right')
+                prev_step = step9
+
+            step10 = make_pipeline_module(db, pipeline, estimator)
+            connect(db, pipeline, prev_step, step10)
+            connect(db, pipeline, step4, step10, to_input='outputs')
+
+            step11 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                        'construct_predictions.DataFrameCommon')
+            connect(db, pipeline, step10, step11)
+            connect(db, pipeline, step2, step11, to_input='reference')
 
             db.add(pipeline)
             db.commit()
@@ -388,7 +407,7 @@ class BaseBuilder:
 
     @staticmethod
     def make_template_augment(datamart_system, imputer, estimator, dataset, pipeline_template, targets,
-                              features, search_result, DBSession=None):
+                              features, feature_types, search_result, DBSession=None):
         db = DBSession()
         pipeline = database.Pipeline(
             origin="template(datamart_system=%s, imputer=%s, estimator=%s)" % (datamart_system, imputer, estimator),
@@ -462,48 +481,66 @@ class BaseBuilder:
 
             step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'extract_columns_by_semantic_types.DataFrameCommon')
-            set_hyperparams(db, pipeline, step3, semantic_types=[
-                'https://metadata.datadrivendiscovery.org/types/Attribute',
-                ]
-            )
+            set_hyperparams(db, pipeline, step3,
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute']
+                            )
             connect(db, pipeline, step2, step3)
 
-            step4 = make_pipeline_module(db, pipeline, imputer)
-            set_hyperparams(db, pipeline, step4, strategy='most_frequent')
-            connect(db, pipeline, step3, step4)
-
-            step5 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')
-            set_hyperparams(db, pipeline, step5, handle_unknown='ignore')
-            connect(db, pipeline, step4, step5)
-
-            step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+            step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'extract_columns_by_semantic_types.DataFrameCommon')
-            set_hyperparams(db, pipeline, step6, semantic_types=[
-                'https://metadata.datadrivendiscovery.org/types/Target',
-                ]
-            )
-            connect(db, pipeline, step2, step6)
+            set_hyperparams(db, pipeline, step4,
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
+                            )
+            connect(db, pipeline, step2, step4)
 
-            step7 = make_pipeline_module(db, pipeline, estimator)
-            connect(db, pipeline, step5, step7)
-            connect(db, pipeline, step6, step7, to_input='outputs')
+            step5 = make_pipeline_module(db, pipeline, imputer)
+            set_hyperparams(db, pipeline, step5, strategy='most_frequent')
+            connect(db, pipeline, step3, step5)
+            prev_step = step5
+            both = 0
 
-            step8 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'extract_columns_by_semantic_types.DataFrameCommon')
-            set_hyperparams(db, pipeline, step8, semantic_types=[
-                    'https://metadata.datadrivendiscovery.org/types/Target',
-                    'https://metadata.datadrivendiscovery.org/types/PrimaryKey']
-            )
-            connect(db, pipeline, step2, step8)
+            if 'integer' in feature_types or 'real' in feature_types:
+                step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'extract_columns_by_semantic_types.DataFrameCommon')
+                set_hyperparams(db, pipeline, step6,
+                                semantic_types=['http://schema.org/Integer', 'http://schema.org/Float'])
+                connect(db, pipeline, step5, step6)
+                prev_step = step6
+                both += 1
 
-            step9 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'construct_predictions.DataFrameCommon')
-            connect(db, pipeline, step7, step9)
-            connect(db, pipeline, step8, step9, to_input='reference')
+            if 'categorical' in feature_types:
+                step7 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'extract_columns_by_semantic_types.DataFrameCommon')
+                set_hyperparams(db, pipeline, step7,
+                                semantic_types=['https://metadata.datadrivendiscovery.org/types/CategoricalData'])
+                connect(db, pipeline, step5, step7)
+
+                step8 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')
+                set_hyperparams(db, pipeline, step8, handle_unknown='ignore')
+                connect(db, pipeline, step7, step8)
+                prev_step = step8
+                both += 1
+
+            if both == 2:
+                step9 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'horizontal_concat.DataFrameConcat')
+                connect(db, pipeline, step6, step9, to_input='left')
+                connect(db, pipeline, step8, step9, to_input='right')
+                prev_step = step9
+
+            step10 = make_pipeline_module(db, pipeline, estimator)
+            connect(db, pipeline, prev_step, step10)
+            connect(db, pipeline, step4, step10, to_input='outputs')
+
+            step11 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                        'construct_predictions.DataFrameCommon')
+            connect(db, pipeline, step10, step11)
+            connect(db, pipeline, step2, step11, to_input='reference')
 
             db.add(pipeline)
             db.commit()
             return pipeline.id
+
         except:
             return None
         finally:

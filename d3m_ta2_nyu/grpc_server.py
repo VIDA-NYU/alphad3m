@@ -331,17 +331,17 @@ class CoreService(pb_core_grpc.CoreServicer):
                 break
 
         #  TODO Improve how to cast request.configuration to dict
-        scoring_conf = {
+        scoring_config = {
                         'method': request.configuration.method,
                         'train_test_ratio': request.configuration.train_test_ratio,
                         'random_seed': request.configuration.random_seed,
                         'shuffle': str(request.configuration.shuffle).lower(),
                         'stratified': str(request.configuration.stratified).lower()
                         }
-        if scoring_conf['method'] == pb_core.EvaluationMethod.Value('K_FOLD'):
-            scoring_conf['folds'] = str(request.configuration.folds)
+        if scoring_config['method'] == pb_core.EvaluationMethod.Value('K_FOLD'):
+            scoring_config['folds'] = str(request.configuration.folds)
 
-        job_id = self._ta2.score_pipeline(pipeline_id, metrics, dataset, problem, scoring_conf)
+        job_id = self._ta2.score_pipeline(pipeline_id, metrics, dataset, problem, scoring_config)
         self._requests[job_id] = PersistentQueue()
 
         return pb_core.ScoreSolutionResponse(
