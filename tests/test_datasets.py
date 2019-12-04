@@ -12,7 +12,7 @@ from d3m.metadata.pipeline import Pipeline
 from d3m_ta2_nyu.grpc_logger import LoggingStub
 from d3m_ta2_nyu.common import normalize_score
 from ta3ta2_api.utils import encode_pipeline_description, ValueType, decode_value
-from client import do_search, do_train, do_test, do_export
+from client import do_search, do_score, do_train, do_test, do_export
 
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
@@ -75,6 +75,7 @@ def search_pipelines(datasets, use_template=False):
             result['best_score'] = all_scores[0]['score']
             result['all_scores'] = all_scores
             #  do_train(core, [pipeline_id], dataset_train_path)
+            #  do_score(core, problem, [pipeline_id], dataset_train_path)
 
         search_results[dataset] = result
 

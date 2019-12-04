@@ -182,7 +182,7 @@ def format_scoring_config(scoring_config):
 
     for parameter in scoring_config.keys():
         if parameter == 'train_test_ratio':
-            formatted_scoring_config['train_score_ratio'] = scoring_config[parameter]
+            formatted_scoring_config['train_score_ratio'] = str(scoring_config[parameter])
         elif parameter == 'folds':
             formatted_scoring_config['number_of_folds'] = scoring_config[parameter]
         else:
