@@ -49,6 +49,7 @@ DATAMART_URL = {
                                           else 'http://dsbox02.isi.edu:9000/'
 }
 
+
 TUNE_PIPELINES_COUNT = 5
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
@@ -1002,8 +1003,7 @@ class D3mTa2(Observable):
         timeout_search = timeout  # * 0.7  # TODO: Do it dynamic
         timeout_tuning = timeout * 0.3
 
-        if 'TA2_DEBUG_BE_FAST' not in os.environ:
-            self._build_pipelines_from_generator(session, task, dataset_uri, sample_dataset_uri, search_results,
+        self._build_pipelines_from_generator(session, task, dataset_uri, sample_dataset_uri, search_results,
                                                  pipeline_template, metrics, timeout_search, do_rank)
 
         # For tuning

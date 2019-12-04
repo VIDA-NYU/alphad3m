@@ -1,5 +1,7 @@
 import typing
 import logging
+import json
+import os
 from d3m import index
 from d3m.metadata.hyperparams import Bounded, Enumeration, UniformInt, UniformBool, Uniform, Normal, Union, \
     Constant as ConstantD3M
@@ -12,7 +14,13 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformFloatH
 
 logger = logging.getLogger(__name__)
 PRIMITIVES = index.search()
+HYPERPARAMS_FROM_METALEARNING_PATH = os.path.join(os.path.dirname(__file__), '../../resource/hyperparams.json')
 
+
+def get_hyperparams_from_metalearnig():
+    with open(HYPERPARAMS_FROM_METALEARNING_PATH) as fin:
+        search_space = json.load(fin)
+        return  search_space
 
 def get_primitive_config(cs, primitive_name):
     primitive_class = index.get_primitive(primitive_name)
@@ -112,11 +120,28 @@ def is_tunable(name):
 def get_default_configspace(primitive):
     default_config = ConfigurationSpace()
 
-    if primitive in PRIMITIVES_DEFAULT_HYPERPARAMETERS:
-            default_config.add_configuration_space(primitive, PRIMITIVES_DEFAULT_HYPERPARAMETERS[primitive](), '|')
+    if primitive in get_hyperparams_from_metalearnig():
+        default_config.add_configuration_space(
+            primitive,
+            get_configspace_from_metalearning(get_hyperparams_from_metalearnig()[primitive]),
+            '|'
+        )
+    elif primitive in PRIMITIVES_DEFAULT_HYPERPARAMETERS:
+        default_config.add_configuration_space(primitive, PRIMITIVES_DEFAULT_HYPERPARAMETERS[primitive](), '|')
 
     return default_config
 
+def get_configspace_from_metalearning(metalearning_entry):
+    cs = ConfigurationSpace()
+    categorical_hyperparams = [
+        CategoricalHyperparameter(
+            name=hyperparam,
+            choices=metalearning_entry[hyperparam]['choices'],
+            default_value=metalearning_entry[hyperparam]['default'])
+    for hyperparam in metalearning_entry]
+    cs.add_hyperparameters(categorical_hyperparams)
+
+    return cs
 
 # CLASSIFICATION
 def adaboost():
@@ -791,6 +816,7 @@ def sgd_regression():
                        eta0_in_inv_con])
 
     return cs
+
 
 
 PRIMITIVES_DEFAULT_HYPERPARAMETERS = {

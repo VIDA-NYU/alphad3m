@@ -81,6 +81,12 @@ def connect(db, pipeline, from_module, to_module, from_output='produce', to_inpu
     to_module_input = to_module_primitive.metadata.query()['primitive_code']['class_type_arguments'][
         'Inputs']
 
+    arguments = to_module_primitive.metadata.query()['primitive_code']['arguments']
+
+    if to_input not in arguments:
+         raise NameError('Argument %s not found in %s' % (to_input, to_module.name))
+
+
     if from_module_output != to_module_input:
         cast_module_steps = CONTAINER_CAST[from_module_output][to_module_input]
         if cast_module_steps:
@@ -90,7 +96,7 @@ def connect(db, pipeline, from_module, to_module, from_output='produce', to_inpu
                                                    from_module=from_module,
                                                    to_module=cast_module,
                                                    from_output_name=from_output,
-                                                   to_input_name=to_input))
+                                                   to_input_name='inputs'))
                 from_module = cast_module
         else:
             raise TypeError('Incompatible connection types: %s and %s'%(str(from_module_output),str(to_module_input)))
@@ -241,7 +247,8 @@ class BaseBuilder:
                 connect(db, pipeline, prev_step, step)
                 prev_step = step
 
-                if 'feature_selection' in step.name:  # FIXME: Use the primitive family
+                to_module_primitive = index.get_primitive(preprocessor)
+                if 'outputs' in to_module_primitive.metadata.query()['primitive_code']['arguments']:
                     connect(db, pipeline, step4, step, to_input='outputs')
 
             step5 = make_pipeline_module(db, pipeline, estimator)
@@ -258,7 +265,8 @@ class BaseBuilder:
             db.commit()
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
-        except:
+        except Exception as e:
+            logger.error(e)
             return None
         finally:
                 db.close()
