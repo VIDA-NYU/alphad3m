@@ -1173,9 +1173,8 @@ class D3mTa2(Observable):
                 dataset_sample_uri = dataset_sample_folder + 'datasetDoc.json'
             else:
                 logger.info('Not doing sampling for small dataset (size = %d)', original_size)
-        except Exception as e:
-            logger.error('Error sampling in datatset, using whole dataset %s', dataset_uri)
-            logger.error(e)
+        except Exception:
+            logger.exception('Error sampling in datatset, using whole dataset %s', dataset_uri)
 
         return dataset_sample_uri
 

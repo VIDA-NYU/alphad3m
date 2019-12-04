@@ -85,9 +85,9 @@ def generate_by_templates(task, dataset, search_results, pipeline_template, metr
 
     if task in ['TIME_SERIES_CLASSIFICATION', 'GRAPH_MATCHING', 'LINK_PREDICTION', 'VERTEX_NOMINATION', 'CLUSTERING',
                 'SEMISUPERVISED_CLASSIFICATION', 'OBJECT_DETECTION', 'VERTEX_CLASSIFICATION', 'COMMUNITY_DETECTION']:
-        template_name = 'CLASSIFICATION'
+        template_name = 'DEBUG_CLASSIFICATION'
     elif task in ['TIME_SERIES_FORECASTING', 'COLLABORATIVE_FILTERING']:
-        template_name = 'REGRESSION'
+        template_name = 'DEBUG_REGRESSION'
     else:
         template_name = task
     if 'TA2_DEBUG_BE_FAST' in os.environ:
@@ -111,8 +111,8 @@ def generate_by_templates(task, dataset, search_results, pipeline_template, metr
                 send(msg_queue, pipeline_id)
 
     # MeanBaseline pipeline
-    pipeline_id = BaseBuilder.make_meanbaseline('MeanBaseline', dataset, DBSession)
-    send(msg_queue, pipeline_id)
+    #pipeline_id = BaseBuilder.make_meanbaseline('MeanBaseline', dataset, DBSession)
+    #send(msg_queue, pipeline_id)
 
 
 def send(msg_queue, pipeline_id):

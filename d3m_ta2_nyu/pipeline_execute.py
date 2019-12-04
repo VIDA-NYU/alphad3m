@@ -9,6 +9,7 @@ from d3m.container import Dataset
 from d3m.metadata import base as metadata_base
 from d3m.metadata.problem import Problem
 from d3m_ta2_nyu.workflow import database, convert
+from multiprocessing import Manager, Process
 
 
 logger = logging.getLogger(__name__)
@@ -52,8 +53,12 @@ def execute(pipeline_id, dataset, problem, results_path, msg_queue, db):
     runtime = d3m.runtime.Runtime(pipeline=d3m_pipeline, problem_description=d3m_problem,
                                   context=metadata_base.Context.TESTING)
 
-    # Fitting pipeline on input dataset.
-    fit_results = runtime.fit(inputs=[dataset])
+    manager = Manager()
+    return_dict = manager.dict()
+    p = Process(target=worker, args=(runtime, dataset, return_dict))
+    p.start()
+    p.join(180)  # Maximum 3 minutes
+    fit_results = return_dict['fit_results']
     fit_results.check_success()
 
     if results_path is not None:
@@ -63,3 +68,7 @@ def execute(pipeline_id, dataset, problem, results_path, msg_queue, db):
         logger.info('NOT storing fit results')
 
     return fit_results.values
+
+
+def worker(runtime, dataset, return_dict):
+    return_dict['fit_results'] = runtime.fit(inputs=[dataset])

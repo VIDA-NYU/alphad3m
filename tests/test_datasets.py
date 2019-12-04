@@ -56,7 +56,7 @@ def search_pipelines(datasets, use_template=False):
 
         number_pipelines = len(pipelines)
         result = {'task': task, 'search_time': str(datetime.now() - start_time), 'pipelines': number_pipelines,
-                  'best_time': 'None', 'best_score': 'None', 'all_scores': 'None'}
+                  'best_time': 'None', 'best_score': 'None', 'all_scores': []}
 
         if number_pipelines > 0:
             best_time = sorted(pipelines.values(), key=lambda x: x[2])[0][2]
@@ -74,6 +74,7 @@ def search_pipelines(datasets, use_template=False):
             result['best_time'] = best_time
             result['best_score'] = all_scores[0]['score']
             result['all_scores'] = all_scores
+            #  do_train(core, [pipeline_id], dataset_train_path)
 
         search_results[dataset] = result
 
@@ -176,6 +177,6 @@ def load_template():
 
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['185_baseball']
+    datasets = ['32_wikiqa']
     search_pipelines(datasets)
     evaluate_pipelines(datasets)

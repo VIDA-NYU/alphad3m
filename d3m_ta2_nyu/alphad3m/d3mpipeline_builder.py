@@ -348,7 +348,7 @@ class BaseBuilder:
             step5 = make_pipeline_module(db, pipeline, imputer)
             set_hyperparams(db, pipeline, step5, strategy='most_frequent')
             connect(db, pipeline, step3, step5)
-            prev_step = step5
+            prev_step = None
             both = 0
 
             if 'integer' in feature_types or 'real' in feature_types:
@@ -379,6 +379,13 @@ class BaseBuilder:
                 connect(db, pipeline, step6, step9, to_input='left')
                 connect(db, pipeline, step8, step9, to_input='right')
                 prev_step = step9
+
+            if both == 0:  # There is not categorical neither numeric features
+                step_fallback = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                                   'one_hot_encoder.SKlearn')
+                set_hyperparams(db, pipeline, step_fallback, handle_unknown='ignore')
+                connect(db, pipeline, step5, step_fallback)
+                prev_step = step_fallback
 
             step10 = make_pipeline_module(db, pipeline, estimator)
             connect(db, pipeline, prev_step, step10)
@@ -488,7 +495,7 @@ class BaseBuilder:
             step5 = make_pipeline_module(db, pipeline, imputer)
             set_hyperparams(db, pipeline, step5, strategy='most_frequent')
             connect(db, pipeline, step3, step5)
-            prev_step = step5
+            prev_step = None
             both = 0
 
             if 'integer' in feature_types or 'real' in feature_types:
@@ -519,6 +526,13 @@ class BaseBuilder:
                 connect(db, pipeline, step6, step9, to_input='left')
                 connect(db, pipeline, step8, step9, to_input='right')
                 prev_step = step9
+
+            if both == 0:  # There is not categorical neither numeric features
+                step_fallback = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                                   'one_hot_encoder.SKlearn')
+                set_hyperparams(db, pipeline, step_fallback, handle_unknown='ignore')
+                connect(db, pipeline, step5, step_fallback)
+                prev_step = step_fallback
 
             step10 = make_pipeline_module(db, pipeline, estimator)
             connect(db, pipeline, prev_step, step10)

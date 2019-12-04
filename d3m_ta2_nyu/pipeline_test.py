@@ -13,6 +13,7 @@ def test(pipeline_id, dataset, storage_dir, results_path, msg_queue, db):
     command = [
                 'python3', '-m', 'd3m', '--strict-resolving', '--strict-digest',
                 'runtime',
+                '--volumes', os.environ.get('D3MSTATICDIR', None),
                 '--context', 'TESTING',
                 '--random-seed', '0',
                 'produce',
@@ -23,9 +24,5 @@ def test(pipeline_id, dataset, storage_dir, results_path, msg_queue, db):
     try:
         subprocess.call(command)
         logger.info('Storing produce results at %s', results_path)
-    except Exception as e:
-        logger.error('Error calling produce method for pipeline %s', pipeline_id)
-        logger.error(e)
-
-
-
+    except Exception:
+        logger.exception('Error calling produce method for pipeline %s', pipeline_id)
