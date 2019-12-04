@@ -177,6 +177,6 @@ def load_template():
 
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['32_wikiqa']
+    datasets = ['185_baseball']
     search_pipelines(datasets)
     evaluate_pipelines(datasets)

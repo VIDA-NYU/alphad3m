@@ -38,7 +38,7 @@ from datamart_isi.entries import Datamart
 from d3m.container import Dataset
 
 
-MAX_RUNNING_PROCESSES = 1
+MAX_RUNNING_PROCESSES = 4
 SAMPLE_SIZE = 400
 RANDOM_SEED = 42
 

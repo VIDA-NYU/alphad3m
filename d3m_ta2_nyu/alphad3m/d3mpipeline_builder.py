@@ -265,8 +265,8 @@ class BaseBuilder:
             db.commit()
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
-        except Exception as e:
-            logger.error(e)
+        except Exception:
+            logger.exception('Error creating pipeline id=%s', pipeline.id)
             return None
         finally:
                 db.close()
