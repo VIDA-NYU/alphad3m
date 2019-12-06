@@ -8,14 +8,14 @@ import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.value_pb2 as pb_value
 import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
-from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA, TASKS_FROM_SCHEMA, SUBTASKS_FROM_SCHEMA
+from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA
+from ta3ta2_api.utils import encode_problem_description
 from d3m_ta2_nyu.grpc_logger import LoggingStub
 
 
 logger = logging.getLogger(__name__)
 
-TASK_TYPES = {n: v for n, v in pb_problem.TaskType.items()}
-TASK_SUBTYPES = {n: v for n, v in pb_problem.TaskSubtype.items()}
+TASK_KEYWORDS = {n: v for n, v in pb_problem.TaskKeyword.items()}
 METRICS = {n: v for n, v in pb_problem.PerformanceMetric.items()}
 
 
@@ -30,62 +30,13 @@ def do_listprimitives(core):
 def do_search(core, problem, dataset_path, time_bound=30.0, pipelines_limit=0, pipeline_template=None):
     version = pb_core.DESCRIPTOR.GetOptions().Extensions[pb_core.protocol_version]
 
-    metrics = []
-
-    for m in problem['inputs']['performanceMetrics']:
-        if 'posLabel' in m:
-            metrics.append(pb_problem.ProblemPerformanceMetric(
-                metric=METRICS[SCORES_FROM_SCHEMA[m['metric']]],
-                pos_label=m['posLabel'])
-            )
-        else:
-            metrics.append(pb_problem.ProblemPerformanceMetric(
-                metric=METRICS[SCORES_FROM_SCHEMA[m['metric']]],)
-            )
-
     search = core.SearchSolutions(pb_core.SearchSolutionsRequest(
         user_agent='ta3_stub',
         version=version,
         time_bound_search=time_bound,
         rank_solutions_limit=pipelines_limit,
         allowed_value_types=[pb_value.CSV_URI],
-        problem=pb_problem.ProblemDescription(
-            id=problem['about']['problemID'],
-            version=problem['about']['problemVersion'] if 'problemVersion' in problem['about'] else '0.0.1',
-            name=os.path.basename('/input/problem_TRAIN'),
-            description="",
-            problem=pb_problem.Problem(
-                task_type=TASK_TYPES[TASKS_FROM_SCHEMA[
-                    problem['about']['taskType']
-                ]],
-                task_subtype=TASK_SUBTYPES[SUBTASKS_FROM_SCHEMA[
-                    problem['about'].get('taskSubType', 'none')
-                ]],
-                performance_metrics=metrics
-            ),
-            inputs=[
-                pb_problem.ProblemInput(
-                    dataset_id=i['datasetID'],
-                    targets=[
-                        pb_problem.ProblemTarget(
-                            target_index=t['targetIndex'],
-                            resource_id=t['resID'],
-                            column_index=t['colIndex'],
-                            column_name=t['colName'],
-                        )
-                        for t in i['targets']
-                    ],
-                )
-                for i in problem['inputs']['data']
-            ],
-            data_augmentation=[
-                pb_problem.DataAugmentation(
-                    domain=i.get('domain', []),
-                    keywords=i.get('keywords', []),
-                )
-                for i in problem.get('dataAugmentation', []) if i.get('domain', []) or i.get('keywords', [])
-            ],
-        ),
+        problem=encode_problem_description(problem),
         template=pipeline_template,
         inputs=[pb_value.Value(
             dataset_uri='file://%s' % dataset_path,

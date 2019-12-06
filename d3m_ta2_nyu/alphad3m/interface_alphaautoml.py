@@ -13,7 +13,7 @@ from alphaAutoMLEdit.pipeline.PipelineGame import PipelineGame
 from alphaAutoMLEdit.pipeline.NNet import NNetWrapper
 from .d3mpipeline_builder import *
 from d3m_ta2_nyu.metafeature.metafeature_extractor import ComputeMetafeatures
-
+from d3m.metadata.problem import TaskKeyword
 logger = logging.getLogger(__name__)
 
     
@@ -83,13 +83,14 @@ def generate_by_templates(task, dataset, search_results, pipeline_template, metr
                           feature_types, timeout, msg_queue, DBSession):
     logger.info("Creating pipelines from templates...")
 
-    if task in ['TIME_SERIES_CLASSIFICATION', 'GRAPH_MATCHING', 'LINK_PREDICTION', 'VERTEX_NOMINATION', 'CLUSTERING',
-                'SEMISUPERVISED_CLASSIFICATION', 'OBJECT_DETECTION', 'VERTEX_CLASSIFICATION', 'COMMUNITY_DETECTION']:
+    if task in [TaskKeyword.GRAPH_MATCHING, TaskKeyword.LINK_PREDICTION, TaskKeyword.VERTEX_NOMINATION, TaskKeyword.VERTEX_CLASSIFICATION, TaskKeyword.CLUSTERING,
+                TaskKeyword.OBJECT_DETECTION, TaskKeyword.COMMUNITY_DETECTION, TaskKeyword.TIME_SERIES, TaskKeyword.SEMISUPERVISED]:  # 'TIME_SERIES_CLASSIFICATION', 'SEMISUPERVISED_CLASSIFICATION'
         template_name = 'DEBUG_CLASSIFICATION'
-    elif task in ['TIME_SERIES_FORECASTING', 'COLLABORATIVE_FILTERING']:
+    elif task in [TaskKeyword.COLLABORATIVE_FILTERING, TaskKeyword.FORECASTING]:  # 'TIME_SERIES_FORECASTING']
         template_name = 'DEBUG_REGRESSION'
     else:
-        template_name = task
+        template_name = task.name
+
     if 'TA2_DEBUG_BE_FAST' in os.environ:
         template_name = 'DEBUG_' + task
 
@@ -138,7 +139,7 @@ def get_feature_types(dataset_doc):
 
 
 @database.with_sessionmaker
-def generate(task, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue,
+def generate(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout, msg_queue,
              DBSession):
     import time
     start = time.time()
@@ -146,6 +147,7 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     with open(dataset[7:]) as fin:
         dataset_doc = json.load(fin)
 
+    task = task = task_keywords[0]
     feature_types = get_feature_types(dataset_doc)
     generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
                           feature_types, timeout, msg_queue, DBSession)
@@ -167,49 +169,50 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
     for data_res in dataset_doc['dataResources']:
         data_types.append(data_res['resType'])
 
-    if 'CLUSTERING' in task:
+    task_name = task.name
+
+    if TaskKeyword.CLUSTERING in task_keywords:
         builder = BaseBuilder()
-    if 'SEMISUPERVISED_CLASSIFICATION' in task:
+    if TaskKeyword.SEMISUPERVISED in task_keywords:  # review
         builder = BaseBuilder()
-    elif 'COLLABORATIVE_FILTERING' in task:
+    elif TaskKeyword.COLLABORATIVE_FILTERING in task_keywords:
         builder = BaseBuilder()
-    elif 'COMMUNITY_DETECTION' in task:
+    elif TaskKeyword.COMMUNITY_DETECTION in task_keywords:
         builder = CommunityDetectionBuilder()
-    elif 'LINK_PREDICTION' in task:
+    elif TaskKeyword.LINK_PREDICTION in task_keywords:
         builder = LinkPredictionBuilder()
-    elif 'OBJECT_DETECTION' in task:
+    elif TaskKeyword.OBJECT_DETECTION in task_keywords:
         builder = ObjectDetectionBuilder()
-    elif 'GRAPH_MATCHING' in task:
+    elif TaskKeyword.GRAPH_MATCHING in task_keywords:
         builder = GraphMatchingBuilder()
-    elif 'TIME_SERIES_FORECASTING' in task:
+    elif TaskKeyword.FORECASTING in task_keywords:  # review
         builder = TimeseriesForecastingBuilder()
-    elif 'timeseries' in data_types and 'CLASSIFICATION' in task:
-        task = 'TIME_SERIES_CLASSIFICATION'
+    elif TaskKeyword.TIME_SERIES in task_keywords:  # review
+        task_name = 'TIME_SERIES_CLASSIFICATION'
         builder = TimeseriesClassificationBuilder()
-    elif 'VERTEX_NOMINATION' in task or 'VERTEX_CLASSIFICATION' in task:
-        task = 'VERTEX_NOMINATION'
+    elif TaskKeyword.VERTEX_NOMINATION in task_keywords or TaskKeyword.VERTEX_CLASSIFICATION in task_keywords:
+        task_name = 'VERTEX_NOMINATION'
         builder = VertexNominationBuilder()
-    elif 'text' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
-        task = 'TEXT_' + task
+    elif 'text' in data_types and (TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
+        task_name = 'TEXT_' + task_name
         builder = BaseBuilder()
-    elif 'image' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
-        task = 'IMAGE_' + task
+    elif 'image' in data_types and (TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
+        task_name = 'IMAGE_' + task_name
         builder = BaseBuilder()
-    elif 'audio' in data_types and ('REGRESSION' in task or 'CLASSIFICATION' in task):
-        task = 'AUDIO_' + task
+    elif 'audio' in data_types and (TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
+        task_name = 'AUDIO_' + task_name
         builder = AudioBuilder()
-    elif 'CLASSIFICATION' in task or 'REGRESSION' in task:
+    elif TaskKeyword.CLASSIFICATION in task_keywords or TaskKeyword.REGRESSION in task_keywords:
         builder = BaseBuilder()
     else:
         logger.warning('Task %s doesnt exist in the grammar, using default NA_TASK' % task)
-        task = 'NA'
+        task_name = 'NA'
         builder = BaseBuilder()
 
-    def create_input(selected_primitves):
-        task_name = task + '_TASK'
+    def create_input(selected_primitves, task_name):
         metafeatures_extractor = ComputeMetafeatures(dataset, targets, features, DBSession)
-        input['GRAMMAR'] = format_grammar(task_name, selected_primitves)
-        input['PROBLEM'] = task
+        input['GRAMMAR'] = format_grammar(task_name + '_TASK', selected_primitves)
+        input['PROBLEM'] = task_name
         input['DATA_TYPE'] = 'TABULAR'
         input['METRIC'] = metrics[0]['metric']
         input['DATASET_METAFEATURES'] = metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
@@ -243,7 +246,7 @@ def generate(task, dataset, search_results, pipeline_template, metrics, problem,
 
     signal.signal(signal.SIGTERM, signal_handler)
 
-    input_all = create_input(ALL_PRIMITIVES)
+    input_all = create_input(ALL_PRIMITIVES, task_name)
     game = PipelineGame(input_all, eval_pipeline)
     nnet = NNetWrapper(game)
 

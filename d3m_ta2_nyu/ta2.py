@@ -33,9 +33,10 @@ from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json
 from sklearn.model_selection import train_test_split
 import datamart
-import datamart_nyu
-from datamart_isi.entries import Datamart
+#import datamart_nyu
+#from datamart_isi.entries import Datamart
 from d3m.container import Dataset
+from d3m.metadata.problem import TaskKeyword
 
 
 MAX_RUNNING_PROCESSES = 4
@@ -109,7 +110,7 @@ class Session(Observable):
 
     @property
     def problem_id(self):
-        return self.problem['about']['problemID']
+        return self.problem['id']
 
     @property
     def targets(self):
@@ -118,9 +119,9 @@ class Session(Observable):
         else:
             # Read targets from problem
             targets = set()
-            assert len(self.problem['inputs']['data']) == 1
-            for target in self.problem['inputs']['data'][0]['targets']:
-                targets.add((target['resID'], target['colName']))
+            #assert len(self.problem['inputs']) == 1
+            for target in self.problem['inputs'][0]['targets']:
+                targets.add((target['resource_id'], target['column_name']))
             return targets
 
     @targets.setter
@@ -1021,7 +1022,7 @@ class D3mTa2(Observable):
             'd3m_ta2_nyu.alphad3m.interface_alphaautoml.generate',
             'alphad3m',
             msg_queue,
-            task=task,
+            task_keywords=task,
             dataset=dataset_uri,
             search_results=search_results,
             pipeline_template=pipeline_template,
@@ -1138,8 +1139,10 @@ class D3mTa2(Observable):
 
     def _get_sample_uri(self, dataset_uri, problem):
         logger.info('About to sample dataset %s', dataset_uri)
-        if problem['about']['taskType'] in {'semiSupervisedClassification', 'objectDetection'}:  # timeSeriesForecasting
-            logger.info('Not doing sampling for task %s', problem['about']['taskType'])
+        task_keywords = problem['problem']['task_keywords']
+
+        if any(tk in [TaskKeyword.OBJECT_DETECTION, TaskKeyword.SEMISUPERVISED] for tk in task_keywords):
+            logger.info('Not doing sampling for task %s', '_'.join(task_keywords))
             return None
 
         dataset = Dataset.load(dataset_uri)
@@ -1150,7 +1153,7 @@ class D3mTa2(Observable):
             shutil.rmtree(dataset_sample_folder[6:])
 
         try:
-            target_name = problem['inputs']['data'][0]['targets'][0]['colName']
+            target_name = problem['inputs'][0]['targets'][0]['column_name']
             for res_id in dataset:
                 if ('https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
                         in dataset.metadata.query([res_id])['semantic_types']):
@@ -1163,7 +1166,7 @@ class D3mTa2(Observable):
                 labels = dataset[res_id].get(target_name)
                 ratio = SAMPLE_SIZE / original_size
                 stratified_labels = None
-                if problem['about']['taskType'] == 'classification':
+                if TaskKeyword.CLASSIFICATION in task_keywords:
                     stratified_labels = labels
                 x_train, x_test, y_train, y_test = train_test_split(dataset[res_id], labels, random_state=RANDOM_SEED,
                                                                     test_size=ratio, stratify=stratified_labels)

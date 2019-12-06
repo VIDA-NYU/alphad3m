@@ -20,7 +20,7 @@ req = [
 setup(name='d3m_ta2_nyu',
       version='0.9',
       packages=['d3m_ta2_nyu'],
-      package_data={'d3m_ta2_nyu': 'pipelines/*.yaml'},
+      package_data={'d3m_ta2_nyu': ['pipelines/*.yaml']},
       entry_points={
           'console_scripts': [
               'ta2_search = d3m_ta2_nyu.main:main_search',

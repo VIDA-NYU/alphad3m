@@ -8,37 +8,6 @@ import sklearn.metrics
 
 logger = logging.getLogger(__name__)
 
-
-SCORES_TO_SKLEARN = dict(
-    ACCURACY=sklearn.metrics.accuracy_score,
-    PRECISION=lambda y_true, y_pred:
-              sklearn.metrics.precision_score(y_true, y_pred, average='micro'),
-    OBJECT_DETECTION_AVERAGE_PRECISION=lambda y_true, y_pred:
-              sklearn.metrics.average_precision_score(y_true, y_pred, average='micro'),
-    RECALL=lambda y_true, y_pred:
-              sklearn.metrics.recall_score(y_true, y_pred, average='micro'),
-    F1=lambda y_true, y_pred:
-        sklearn.metrics.f1_score(y_true, y_pred,
-                                 average='binary', pos_label='1'),
-    F1_MICRO=lambda y_true, y_pred:
-        sklearn.metrics.f1_score(y_true, y_pred, average='micro'),
-    F1_MACRO=lambda y_true, y_pred:
-        sklearn.metrics.f1_score(y_true, y_pred, average=None),
-    ROC_AUC=sklearn.metrics.roc_auc_score,
-    ROC_AUC_MICRO=lambda y_true, y_pred:
-        sklearn.metrics.roc_auc_score(y_true, y_pred, average='micro'),
-    ROC_AUC_MACRO=lambda y_true, y_pred:
-        sklearn.metrics.roc_auc_score(y_true, y_pred, average='macro'),
-    MEAN_SQUARED_ERROR=sklearn.metrics.mean_squared_error,
-    ROOT_MEAN_SQUARED_ERROR=lambda y_true, y_pred:
-        math.sqrt(sklearn.metrics.mean_squared_error(y_true, y_pred)),
-    MEAN_ABSOLUTE_ERROR=sklearn.metrics.mean_absolute_error,
-    R_SQUARED=sklearn.metrics.r2_score,
-    NORMALIZED_MUTUAL_INFORMATION=sklearn.metrics.normalized_mutual_info_score,
-    # FIXME: JACCARD_SIMILARITY_SCORE
-    EXECUTION_TIME=None,
-)
-
 SCORES_FROM_SCHEMA = {
     'accuracy': 'ACCURACY',
     'f1': 'F1',
@@ -100,21 +69,6 @@ TASKS_FROM_SCHEMA = {
     'semiSupervisedRegression': 'SEMISUPERVISED_REGRESSION'
 }
 
-TASKS_TO_SCHEMA = {v: k for k, v in TASKS_FROM_SCHEMA.items()}
-
-SUBTASKS_FROM_SCHEMA = {
-    'none': 'NONE',
-    'binary': 'BINARY',
-    'multiClass': 'MULTICLASS',
-    'multiLabel': 'MULTILABEL',
-    'univariate': 'UNIVARIATE',
-    'multivariate': 'MULTIVARIATE',
-    'overlaping': 'OVERLAPPING',
-    'nonOverlapping': 'NONOVERLAPPING',
-}
-
-SUBTASKS_TO_SCHEMA = {v: k for k, v in SUBTASKS_FROM_SCHEMA.items()}
-
 
 def normalize_score(metric, score, order):
     """Normalize the score to a value between 0 and 1.
@@ -133,14 +87,8 @@ def normalize_score(metric, score, order):
 def format_metrics(problem):
     metrics = []
 
-    for metric in problem['inputs']['performanceMetrics']:
-        metric_name = metric['metric']
-        try:
-            metric_name = SCORES_FROM_SCHEMA[metric_name]
-        except KeyError:
-            logger.error("Unknown metric %r", metric_name)
-            raise ValueError("Unknown metric %r" % metric_name)
-
+    for metric in problem['problem']['performance_metrics']:
+        metric_name = metric['metric'].name
         formatted_metric = {'metric': metric_name}
 
         if len(metric) > 1:  # Metric has parameters

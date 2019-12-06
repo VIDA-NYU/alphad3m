@@ -1,4 +1,4 @@
-FROM  registry.datadrivendiscovery.org/jpl/docker_images/complete:ubuntu-bionic-python36-v2019.6.7-20190622-073225
+FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-v2019.11.10-20191127-050901
 
 MAINTAINER "remi.rampin@nyu.edu, raoni@nyu.edu, rlopez@nyu.edu"
 
@@ -36,9 +36,8 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
     rm prev_reqs.txt new_reqs.txt
 
 # Install TA3-TA2 API
-RUN pip3 install https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/archive/aa47f51d5fa886e4740a8b396f7023ecbb9f529f/ta3ta2-api-aa47f51d5fa886e4740a8b396f7023ecbb9f529f.zip
+RUN pip3 install https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/archive/5a60edd3230fa5c44854600ebb6ce769e8d23399/ta3ta2-api-5a60edd3230fa5c44854600ebb6ce769e8d23399.zip
 
-RUN pip3 install rpi-d3m-primitives==0.1.8
 RUN pip3 install nltk==3.4.5
 
 COPY eval.sh /usr/local/bin/eval.sh

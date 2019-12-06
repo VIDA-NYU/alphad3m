@@ -1,8 +1,6 @@
 import logging
-import json
 import os
 import pkg_resources
-import tempfile
 import d3m.metadata.base
 import d3m.runtime
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
@@ -97,24 +95,14 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config)
                 '\n\t'.join([x['primitive']['python_path'] for x in json_pipeline['steps']]))
 
     d3m_pipeline = Pipeline.from_json_structure(json_pipeline, )
-
-    # Convert problem description to core package format
-    # FIXME: There isn't a way to parse from JSON data, so write it to a file
-    # and read it back
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_path = os.path.join(tmp_dir, 'problemDoc.json')
-        with open(tmp_path, 'w', encoding='utf8') as fin:
-            json.dump(problem, fin)
-        d3m_problem = Problem.load('file://' + tmp_path)
-
     formatted_metric = format_d3m_metrics(metrics)
-    formatted_scoring_config = format_scoring_config(scoring_config)
+    formatted_scoring_config = to_runtime_scoringconfig(scoring_config)
 
     run_scores, run_results = d3m.runtime.evaluate(
         pipeline=d3m_pipeline,
         data_pipeline=data_pipeline,
         scoring_pipeline=scoring_pipeline,
-        problem_description=d3m_problem,
+        problem_description=problem,
         inputs=[dataset],
         data_params=formatted_scoring_config,
         metrics=formatted_metric,
@@ -174,7 +162,7 @@ def format_d3m_metrics(metrics):
     return formatted_metrics
 
 
-def format_scoring_config(scoring_config):
+def to_runtime_scoringconfig(scoring_config):
     formatted_scoring_config = {}
 
     if 'method' in scoring_config:

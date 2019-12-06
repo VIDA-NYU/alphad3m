@@ -156,7 +156,7 @@ class ComputeMetafeatures():
         connect(input_data, step1, from_output='dataset')
         #connect(step0, step1)
 
-        step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.DataFrameCommon')
+        step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.Common')
         connect(step1, step2)
 
         step3 = make_primitive_module('d3m.primitives.metalearning.metafeature_extractor.BYU')

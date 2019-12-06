@@ -12,6 +12,7 @@ from d3m.metadata.pipeline import Pipeline
 from d3m_ta2_nyu.grpc_logger import LoggingStub
 from d3m_ta2_nyu.common import normalize_score
 from ta3ta2_api.utils import encode_pipeline_description, ValueType, decode_value
+from d3m.metadata.problem import parse_problem_description
 from client import do_search, do_score, do_train, do_test, do_export
 
 
@@ -51,8 +52,8 @@ def search_pipelines(datasets, use_template=False):
 
         task = get_task(problem)
 
-        pipelines = do_search(core, problem, dataset_train_path, time_bound=10.0, pipelines_limit=0,
-                              pipeline_template=pipeline_template)
+        pipelines = do_search(core, parse_problem_description(problem_path), dataset_train_path, time_bound=10.0,
+                              pipelines_limit=0, pipeline_template=pipeline_template)
 
         number_pipelines = len(pipelines)
         result = {'task': task, 'search_time': str(datetime.now() - start_time), 'pipelines': number_pipelines,
@@ -144,11 +145,9 @@ def evaluate_pipelines(datasets, top=5):
 
 
 def get_task(problem):
-    task_type = problem['about']['taskType'].upper()
-    if 'taskSubType' in problem['about']:
-        task_type = task_type + '_' + problem['about']['taskSubType'].upper()
+    task_keywords = '_'.join(problem['about']['taskKeywords']).upper()
 
-    return task_type
+    return task_keywords
 
 
 def save_row(file_path, row):

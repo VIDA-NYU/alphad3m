@@ -12,6 +12,7 @@ from d3m_ta2_nyu.pipeline_score import evaluate, kfold_tabular_split, score
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.parameter_tuning.primitive_config import is_tunable
 from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, hyperparams_from_config
+from d3m.metadata.problem import TaskKeyword
 
 
 logger = logging.getLogger(__name__)
@@ -48,10 +49,10 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
     else:
         dataset = Dataset.load(dataset_uri)
     tuning = HyperparameterTuning(tunable_primitives.values())
-    task = problem['about']['taskType'].upper()
+    task_keywords = problem['problem']['task_keywords']
 
     scoring_config = {'shuffle': 'true',
-                      'stratified': 'true' if task == 'CLASSIFICATION' else 'false',
+                      'stratified': 'true' if TaskKeyword.CLASSIFICATION in task_keywords else 'false',
                       'method': pb_core.EvaluationMethod.Value('K_FOLD'),
                       'folds': '2'}
 
