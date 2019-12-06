@@ -64,7 +64,18 @@ black_list = {
     'd3m.primitives.data_transformation.stacking_operator.StackingOperator',
     'd3m.primitives.data_transformation.to_numeric.DSBOX',
     'd3m.primitives.data_transformation.vertex_classification_parser.VertexClassificationParser',
-    'd3m.primitives.data_transformation.zero_count.ZeroCount'
+    'd3m.primitives.data_transformation.zero_count.ZeroCount',
+    'd3m.primitives.data_preprocessing.video_reader.Common',
+    'd3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn',
+    'd3m.primitives.data_preprocessing.text_reader.Common',
+    'd3m.primitives.data_preprocessing.image_reader.Common',
+    'd3m.primitives.data_preprocessing.horizontal_concat.DSBOX',
+    'd3m.primitives.data_preprocessing.dataset_text_reader.DatasetTextReader',
+    'd3m.primitives.data_preprocessing.dataset_sample.Common',
+    'd3m.primitives.data_preprocessing.dataframe_to_tensor.DSBOX',
+    'd3m.primitives.data_preprocessing.data_cleaning.DistilTimeSeriesFormatter',
+    'd3m.primitives.data_preprocessing.audio_reader.Common'
+
 }
 
 
