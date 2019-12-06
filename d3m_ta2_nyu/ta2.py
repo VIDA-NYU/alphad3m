@@ -20,23 +20,22 @@ import subprocess
 import sys
 import threading
 import time
-from uuid import uuid4, UUID
-from d3m_ta2_nyu import __version__
-from d3m_ta2_nyu.common import SCORES_RANKING_ORDER, \
-    TASKS_FROM_SCHEMA, normalize_score, format_metrics
-from d3m_ta2_nyu.multiprocessing import Receiver, run_process
-from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
+from uuid import uuid4, UUID
+from d3m_ta2_nyu import __version__
+from d3m_ta2_nyu.common import SCORES_RANKING_ORDER, normalize_score
+from d3m_ta2_nyu.multiprocessing import Receiver, run_process
+from d3m_ta2_nyu import grpc_server
 from d3m_ta2_nyu.utils import Observable, ProgressStatus
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json
-from sklearn.model_selection import train_test_split
-import datamart
-#import datamart_nyu
-#from datamart_isi.entries import Datamart
 from d3m.container import Dataset
 from d3m.metadata.problem import TaskKeyword
+from sklearn.model_selection import train_test_split
+#import datamart
+#import datamart_nyu
+#from datamart_isi.entries import Datamart
 
 
 MAX_RUNNING_PROCESSES = 4
@@ -101,7 +100,7 @@ class Session(Observable):
 
         # Read metrics from problem
         if self.problem is not None:
-            self.metrics = format_metrics(problem)
+            self.metrics = problem['problem']['performance_metrics']
 
         self._targets = None
         self._features = None
@@ -255,7 +254,7 @@ class Session(Observable):
                     logger.info("Session stop requested, skipping tuning")
                 elif self._tune_when_ready:
                     top_pipelines = self.get_top_pipelines(
-                        db, self.metrics[0]['metric'],
+                        db, self.metrics[0]['metric'].name,
                         self._tune_when_ready)
                     for pipeline, _ in top_pipelines:
                         if pipeline.id not in self.tuned_pipelines:
@@ -281,7 +280,7 @@ class Session(Observable):
 
                 logger.warning("Search done")
                 if self.metrics:
-                    metric = self.metrics[0]['metric']
+                    metric = self.metrics[0]['metric'].name
                     top_pipelines = self.get_top_pipelines(db, metric)
                     logger.warning("Found %d pipelines", len(top_pipelines))
 
@@ -344,7 +343,7 @@ class Session(Observable):
             db.close()
 
     def write_exported_pipeline(self, pipeline_id, rank=None):
-        metric = self.metrics[0]['metric']
+        metric = self.metrics[0]['metric'].name
 
         db = self.DBSession()
         try:
@@ -717,47 +716,9 @@ class D3mTa2(Observable):
             os.makedirs(folder_path)
 
     def run_search(self, dataset, problem_path, timeout=None):
-        """Run the search phase: create pipelines and score them.
-
-        This is called by the ``ta2_search`` executable, it is part of the
-        evaluation.
+        """Not used anymore in the current TA2 evaluation
         """
-        if dataset[0] == '/':
-            dataset = 'file://' + dataset
-        # Read problem
-        with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
-            problem = json.load(fp)
-        task = problem['about']['taskType']
-        if task not in TASKS_FROM_SCHEMA:
-            logger.error("Unknown task %r", task)
-            sys.exit(1)
-        task = TASKS_FROM_SCHEMA[task]
-
-        # Create session
-        session = Session(self, problem, self.DBSession,
-                          self.searched_pipelines, self.scored_pipelines, self.ranked_pipelines)
-        logger.info("Dataset: %s, task: %s, metrics: %s",
-                    dataset, task, ", ".join([m['metric'] for m in session.metrics]))
-        self.sessions[session.id] = session
-
-        if timeout:
-            # Save 2 minutes to finish scoring
-            timeout = max(timeout - 2 * 60, 0.8 * timeout)
-
-        # Create pipelines, NO TUNING
-
-        with session.with_observer_queue() as queue:
-            self.build_pipelines(session.id, task, dataset, session.metrics, tune=TUNE_PIPELINES_COUNT, timeout=timeout)
-            while queue.get(True)[0] != 'done_searching':
-                pass
-
-        logger.info("Tuning pipelines...")
-
-        # Now do tuning, when we already have written out some solutions
-        with session.with_observer_queue() as queue:
-            session.tune_when_ready()
-            while queue.get(True)[0] != 'done_searching':
-                pass
+        pass
 
     def run_server(self, port=None):
         """Spin up the gRPC server to receive requests from a TA3 system.
@@ -1078,7 +1039,7 @@ class D3mTa2(Observable):
 
         logger.warning("Generator process exited with %r", proc.returncode)
 
-    def run_pipeline(self, session, dataset_uri, sample_dataset_uri, task, pipeline_id, do_rank):
+    def run_pipeline(self, session, dataset_uri, sample_dataset_uri, task_keywords, pipeline_id, do_rank):
 
         """Score a single pipeline.
 
@@ -1086,9 +1047,10 @@ class D3mTa2(Observable):
         """
 
         scoring_config = {'shuffle': 'true',
-                          'stratified': 'true' if task == 'CLASSIFICATION' else 'false',
+                          'stratified': 'true' if TaskKeyword.CLASSIFICATION in task_keywords else 'false',
                           'method': pb_core.EvaluationMethod.Value('K_FOLD'),
-                          'folds': '2'}
+                          'number_of_folds': '2'}
+
         # Add the pipeline to the session, score it
         with session.with_observer_queue() as queue:
             session.add_scoring_pipeline(pipeline_id)

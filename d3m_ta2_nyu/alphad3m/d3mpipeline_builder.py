@@ -3,11 +3,9 @@ import os
 import json
 import pickle
 import itertools
-
 from d3m_ta2_nyu.workflow import database
 from d3m import index
 from d3m.container import Dataset, DataFrame, ndarray, matrix, List
-
 
 
 # Use a headless matplotlib backend
@@ -272,7 +270,6 @@ class BaseBuilder:
 
     @staticmethod
     def make_template(imputer, estimator, dataset, pipeline_template, targets, features, feature_types, DBSession=None):
-        print('here', estimator)
         db = DBSession()
         pipeline = database.Pipeline(origin="template(imputer=%s, estimator=%s)" % (imputer, estimator),
                                      dataset=dataset)

@@ -47,13 +47,11 @@ def search_pipelines(datasets, use_template=False):
             logger.error('Problem file (%s) doesnt exist', problem_path)
             continue
 
-        with open(problem_path) as fin:
-            problem = json.load(fin)
-
+        problem = parse_problem_description(problem_path)
         task = get_task(problem)
 
-        pipelines = do_search(core, parse_problem_description(problem_path), dataset_train_path, time_bound=10.0,
-                              pipelines_limit=0, pipeline_template=pipeline_template)
+        pipelines = do_search(core, problem, dataset_train_path, time_bound=10.0, pipelines_limit=0,
+                              pipeline_template=pipeline_template)
 
         number_pipelines = len(pipelines)
         result = {'task': task, 'search_time': str(datetime.now() - start_time), 'pipelines': number_pipelines,
@@ -75,8 +73,10 @@ def search_pipelines(datasets, use_template=False):
             result['best_time'] = best_time
             result['best_score'] = all_scores[0]['score']
             result['all_scores'] = all_scores
-            #  do_train(core, [pipeline_id], dataset_train_path)
-            #  do_score(core, problem, [pipeline_id], dataset_train_path)
+            #do_score(core, problem, [pipeline_id], dataset_train_path)
+            #fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
+            #do_test(core, fitted_pipeline, dataset_train_path.replace('TRAIN', 'TEST'))
+            #do_export(core, fitted_pipeline)
 
         search_results[dataset] = result
 
@@ -145,7 +145,7 @@ def evaluate_pipelines(datasets, top=5):
 
 
 def get_task(problem):
-    task_keywords = '_'.join(problem['about']['taskKeywords']).upper()
+    task_keywords = '_'.join([x.name for x in problem['problem']['task_keywords']])
 
     return task_keywords
 

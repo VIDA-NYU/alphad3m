@@ -54,7 +54,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
     scoring_config = {'shuffle': 'true',
                       'stratified': 'true' if TaskKeyword.CLASSIFICATION in task_keywords else 'false',
                       'method': pb_core.EvaluationMethod.Value('K_FOLD'),
-                      'folds': '2'}
+                      'number_of_folds': '2'}
 
     def evaluate_tune(hyperparameter_configuration):
         for primitive_id, primitive_name in tunable_primitives.items():

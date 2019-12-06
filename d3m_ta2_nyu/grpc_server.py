@@ -26,7 +26,7 @@ from d3m_ta2_nyu.grpc_logger import log_service
 from d3m_ta2_nyu.primitive_loader import D3MPrimitiveLoader
 from d3m_ta2_nyu.utils import PersistentQueue
 from d3m_ta2_nyu.common import normalize_score
-from ta3ta2_api.utils import decode_pipeline_description, decode_problem_description
+from ta3ta2_api.utils import decode_pipeline_description, decode_problem_description, decode_performance_metric
 from d3m.metadata import pipeline as pipeline_module
 
 logger = logging.getLogger(__name__)
@@ -119,7 +119,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             else:  # Pipeline template fully defined
                 problem = None
                 if request.problem:
-                    problem = self._convert_problem(context, request.problem)
+                    problem = decode_problem_description(request.problem)
                 search_id = self._ta2.new_session(problem)
                 dataset = request.inputs[0].dataset_uri
                 if not dataset.startswith('file://'):
@@ -138,10 +138,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             dataset = 'file://' + dataset
 
         problem = decode_problem_description(request.problem)
-
-        for i in problem.keys():
-            print(i, problem[i])
-
         top_pipelines = request.rank_solutions_limit
         timeout = request.time_bound_search
         if timeout < 0.000001:
@@ -174,7 +170,6 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         def msg_solution(pipeline_id):
             scores = self._ta2.get_pipeline_scores(pipeline_id)
-
             progress = session.progress
 
             if scores:
@@ -306,17 +301,9 @@ class CoreService(pb_core_grpc.CoreServicer):
             dataset = 'file://' + dataset
 
         metrics = []
-        for m in request.performance_metrics:
-            if m.metric in self.grpc2metric:
-                decoded_metric = {'metric': self.grpc2metric[m.metric]}
-                if m.pos_label or m.k:
-                    decoded_metric['params'] = {}
-                    if m.pos_label:
-                        decoded_metric['params']['posLabel'] = m.pos_label
-                    if m.k:
-                        decoded_metric['params']['K'] = m.k
-
-                metrics.append(decoded_metric)
+        for metric in request.performance_metrics:
+            if metric.metric in self.grpc2metric:
+                metrics.append(decode_performance_metric(metric))
 
         logger.info("Got ScoreSolution request, dataset=%s, "
                     "metrics=%s",
@@ -331,13 +318,13 @@ class CoreService(pb_core_grpc.CoreServicer):
         #  TODO Improve how to cast request.configuration to dict
         scoring_config = {
                         'method': request.configuration.method,
-                        'train_test_ratio': request.configuration.train_test_ratio,
+                        'train_score_ratio': str(request.configuration.train_test_ratio),
                         'random_seed': request.configuration.random_seed,
                         'shuffle': str(request.configuration.shuffle).lower(),
                         'stratified': str(request.configuration.stratified).lower()
                         }
         if scoring_config['method'] == pb_core.EvaluationMethod.Value('K_FOLD'):
-            scoring_config['folds'] = str(request.configuration.folds)
+            scoring_config['number_of_folds'] = str(request.configuration.folds)
 
         job_id = self._ta2.score_pipeline(pipeline_id, metrics, dataset, problem, scoring_config)
         self._requests[job_id] = PersistentQueue()

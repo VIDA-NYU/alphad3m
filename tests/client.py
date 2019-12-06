@@ -1,22 +1,16 @@
 import grpc
 import json
 import logging
-import os
 import sys
 import datetime
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.value_pb2 as pb_value
-import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
-from d3m_ta2_nyu.common import SCORES_FROM_SCHEMA
-from ta3ta2_api.utils import encode_problem_description
+from ta3ta2_api.utils import encode_problem_description, encode_performance_metric
 from d3m_ta2_nyu.grpc_logger import LoggingStub
 
 
 logger = logging.getLogger(__name__)
-
-TASK_KEYWORDS = {n: v for n, v in pb_problem.TaskKeyword.items()}
-METRICS = {n: v for n, v in pb_problem.PerformanceMetric.items()}
 
 
 def do_hello(core):
@@ -65,16 +59,8 @@ def do_search(core, problem, dataset_path, time_bound=30.0, pipelines_limit=0, p
 def do_score(core, problem, solutions, dataset_path):
     metrics = []
 
-    for m in problem['inputs']['performanceMetrics']:
-        if 'posLabel' in m:
-            metrics.append(pb_problem.ProblemPerformanceMetric(
-                metric=METRICS[SCORES_FROM_SCHEMA[m['metric']]],
-                pos_label=m['posLabel'])
-            )
-        else:
-            metrics.append(pb_problem.ProblemPerformanceMetric(
-                metric=METRICS[SCORES_FROM_SCHEMA[m['metric']]], )
-            )
+    for metric in problem['problem']['performance_metrics']:
+        metrics.append(encode_performance_metric(metric))
 
     for solution in solutions:
         try:
@@ -90,7 +76,7 @@ def do_score(core, problem, solutions, dataset_path):
                     folds=4,
                     train_test_ratio=0.75,
                     shuffle=True,
-                    random_seed=42
+                    random_seed=0
                 ),
             ))
             results = core.GetScoreSolutionResults(

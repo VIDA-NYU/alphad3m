@@ -147,7 +147,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     with open(dataset[7:]) as fin:
         dataset_doc = json.load(fin)
 
-    task = task = task_keywords[0]
+    task = task_keywords[0]
     feature_types = get_feature_types(dataset_doc)
     generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
                           feature_types, timeout, msg_queue, DBSession)
@@ -173,7 +173,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
 
     if TaskKeyword.CLUSTERING in task_keywords:
         builder = BaseBuilder()
-    if TaskKeyword.SEMISUPERVISED in task_keywords:  # review
+    if TaskKeyword.SEMISUPERVISED in task_keywords:  # to review
         builder = BaseBuilder()
     elif TaskKeyword.COLLABORATIVE_FILTERING in task_keywords:
         builder = BaseBuilder()
@@ -185,9 +185,9 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         builder = ObjectDetectionBuilder()
     elif TaskKeyword.GRAPH_MATCHING in task_keywords:
         builder = GraphMatchingBuilder()
-    elif TaskKeyword.FORECASTING in task_keywords:  # review
+    elif TaskKeyword.FORECASTING in task_keywords:  # to review
         builder = TimeseriesForecastingBuilder()
-    elif TaskKeyword.TIME_SERIES in task_keywords:  # review
+    elif TaskKeyword.TIME_SERIES in task_keywords:  # to review
         task_name = 'TIME_SERIES_CLASSIFICATION'
         builder = TimeseriesClassificationBuilder()
     elif TaskKeyword.VERTEX_NOMINATION in task_keywords or TaskKeyword.VERTEX_CLASSIFICATION in task_keywords:
@@ -214,7 +214,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         input['GRAMMAR'] = format_grammar(task_name + '_TASK', selected_primitves)
         input['PROBLEM'] = task_name
         input['DATA_TYPE'] = 'TABULAR'
-        input['METRIC'] = metrics[0]['metric']
+        input['METRIC'] = metrics[0]['metric'].name
         input['DATASET_METAFEATURES'] = metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
         input['DATASET'] = dataset_doc['about']['datasetName']
         input['ARGS']['stepsfile'] = os.path.join('/output', input['DATASET'] + '_pipeline_steps.txt')
