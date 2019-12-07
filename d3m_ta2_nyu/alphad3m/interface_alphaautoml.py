@@ -155,9 +155,9 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         dataset_doc = json.load(fin)
 
     task = task_keywords[0]
-    feature_types = get_feature_types(dataset_doc)
-    generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
-                          feature_types, timeout, msg_queue, DBSession)
+    #feature_types = get_feature_types(dataset_doc)
+    #generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
+    #                      feature_types, timeout, msg_queue, DBSession)
 
     builder = None
 
@@ -177,6 +177,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         data_types.append(data_res['resType'])
 
     task_name = task.name
+    print(data_types, task_keywords)
 
     if TaskKeyword.CLUSTERING in task_keywords:
         builder = BaseBuilder()
@@ -215,7 +216,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     elif TaskKeyword.CLASSIFICATION in task_keywords or TaskKeyword.REGRESSION in task_keywords:
         builder = BaseBuilder()
     else:
-        logger.warning('Task %s doesnt exist in the grammar, using default NA_TASK' % task)
+        logger.warning('Task %s doesnt exist in the grammar, using default NA_TASK' % task_name)
         task_name = 'NA'
         builder = BaseBuilder()
 

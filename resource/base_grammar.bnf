@@ -18,8 +18,8 @@ TEXT_REGRESSION_TASK -> TEXT_PROCESSING GROUP_PREPROCESSING REGRESSION
 IMAGE_REGRESSION_TASK -> IMAGE_PROCESSING GROUP_PREPROCESSING REGRESSION
 AUDIO_REGRESSION_TASK -> AUDIO_PROCESSING REGRESSION
 NA_TASK -> CLASSIFICATION_TASK | REGRESSION_TASK
-TEXT_PROCESSING -> 'd3m.primitives.data_preprocessing.text_reader.DataFrameCommon' 'd3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn'
-IMAGE_PROCESSING -> 'd3m.primitives.data_preprocessing.dataframe_to_tensor.DSBOX' 'd3m.primitives.feature_extraction.resnet50_image_feature.DSBOX'
+TEXT_PROCESSING -> 'd3m.primitives.data_preprocessing.text_reader.Common' 'd3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn'
+IMAGE_PROCESSING -> 'd3m.primitives.data_preprocessing.image_reader.Common' 'd3m.primitives.feature_extraction.image_transfer.DistilImageTransfer'
 AUDIO_PROCESSING -> 'd3m.primitives.data_preprocessing.audio_reader.BBN' 'd3m.primitives.feature_extraction.audio_featurization.Umich' 'd3m.primitives.data_transformation.ndarray_to_dataframe.Common'
 DATA_CLEANING -> 'primitive_terminal' | 'E'
 DATA_TRANSFORMATION -> 'primitive_terminal' | 'E'

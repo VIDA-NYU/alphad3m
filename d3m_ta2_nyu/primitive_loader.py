@@ -21,19 +21,29 @@ black_list = {
     'd3m.primitives.classification.lupi_svm.LupiSvmClassifier',
     'd3m.primitives.data_preprocessing.audio_loader.DistilAudioDatasetLoader',
     'd3m.primitives.data_preprocessing.audio_reader.BBN',
-    'd3m.primitives.data_preprocessing.audio_reader.DataFrameCommon',
+    'd3m.primitives.data_preprocessing.audio_reader.Common',
     'd3m.primitives.data_preprocessing.audio_slicer.Umich',
     'd3m.primitives.data_preprocessing.dataframe_to_tensor.DSBOX'
     'd3m.primitives.data_preprocessing.do_nothing.DSBOX',
     'd3m.primitives.data_preprocessing.do_nothing_for_dataset.DSBOX',
     'd3m.primitives.data_preprocessing.do_nothing.DSBOX',
     'd3m.primitives.data_preprocessing.do_nothing_for_dataset.DSBOX',
-    'd3m.primitives.data_preprocessing.image_reader.DataFrameCommon'
+    'd3m.primitives.data_preprocessing.image_reader.Common'
     'd3m.primitives.data_preprocessing.signal_dither.BBN',
     'd3m.primitives.data_preprocessing.time_series_to_list.DSBOX',
     'd3m.primitives.data_preprocessing.truncated_svd.SKlearn',
     'd3m.primitives.data_preprocessing.vertical_concatenate.DSBOX',
-    'd3m.primitives.data_preprocessing.video_reader.DataFrameCommon'
+    'd3m.primitives.data_preprocessing.video_reader.Common',
+    'd3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn',
+    'd3m.primitives.data_preprocessing.text_reader.Common',
+    'd3m.primitives.data_preprocessing.image_reader.Common',
+    'd3m.primitives.data_preprocessing.horizontal_concat.DSBOX',
+    'd3m.primitives.data_preprocessing.dataset_text_reader.DatasetTextReader',
+    'd3m.primitives.data_preprocessing.dataset_sample.Common',
+    'd3m.primitives.data_preprocessing.dataframe_to_tensor.DSBOX',
+    'd3m.primitives.data_preprocessing.data_cleaning.DistilTimeSeriesFormatter',
+    'd3m.primitives.data_preprocessing.audio_reader.Common',
+    'd3m.primitives.data_preprocessing.csv_reader.Common'
 }
 
 
