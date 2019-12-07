@@ -173,8 +173,8 @@ class CoreService(pb_core_grpc.CoreServicer):
             progress = session.progress
 
             if scores:
-                if session.metrics and session.metrics[0]['metric'] in scores:
-                    metric = session.metrics[0]['metric']
+                if session.metrics and session.metrics[0]['metric'].name in scores:
+                    metric = session.metrics[0]['metric'].name
                     internal_score = normalize_score(metric, scores[metric],
                                                      'asc')
                 else:

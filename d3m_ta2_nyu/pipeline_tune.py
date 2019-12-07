@@ -67,15 +67,16 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
             ))
 
         scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_config)
-        first_metric = metrics[0]['metric']
+        first_metric = metrics[0]['metric'].name
         score_values = []
         for fold_scores in scores.values():
             for metric, score in fold_scores.items():
                 if metric == first_metric:
                     score_values.append(score)
+
         avg_score = sum(score_values) / len(score_values)
         cost = avg_score * SCORES_RANKING_ORDER[first_metric]
-        logger.info('Tuning results:\n%s', scores)
+        logger.info('Tuning results:\n%s, cost=%s', scores, cost)
         # Don't store those runs
         db.rollback()
 

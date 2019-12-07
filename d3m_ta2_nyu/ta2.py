@@ -215,7 +215,7 @@ class Session(Observable):
             .where(database.CrossValidation.pipeline_id == pipeline.id)
             .as_scalar()
         )
-        if SCORES_RANKING_ORDER[metric] == -1:
+        if SCORES_RANKING_ORDER.get(metric, 1) == -1:
             crossval_score_order = crossval_score.desc()
         else:
             crossval_score_order = crossval_score.asc()
@@ -1089,7 +1089,7 @@ class D3mTa2(Observable):
                     .group_by(database.CrossValidationScore.metric)
             ).all()
 
-            first_metric = session.metrics[0]['metric']
+            first_metric = session.metrics[0]['metric'].name
             for value, metric in scores:
                 if metric == first_metric:
                     logger.info("Evaluation result: %s -> %r", metric, value)
@@ -1104,7 +1104,7 @@ class D3mTa2(Observable):
         task_keywords = problem['problem']['task_keywords']
 
         if any(tk in [TaskKeyword.OBJECT_DETECTION, TaskKeyword.SEMISUPERVISED] for tk in task_keywords):
-            logger.info('Not doing sampling for task %s', '_'.join(task_keywords))
+            logger.info('Not doing sampling for task %s', '_'.join([x.name for x in task_keywords]))
             return None
 
         dataset = Dataset.load(dataset_uri)
@@ -1130,12 +1130,13 @@ class D3mTa2(Observable):
                 stratified_labels = None
                 if TaskKeyword.CLASSIFICATION in task_keywords:
                     stratified_labels = labels
+
                 x_train, x_test, y_train, y_test = train_test_split(dataset[res_id], labels, random_state=RANDOM_SEED,
                                                                     test_size=ratio, stratify=stratified_labels)
                 dataset[res_id] = x_test
-                logger.info('Sampling down data from %d to %d', original_size, len(dataset[res_id]))
                 dataset.save(dataset_sample_folder + 'datasetDoc.json')
                 dataset_sample_uri = dataset_sample_folder + 'datasetDoc.json'
+                logger.info('Sampled data, from %d to %d', original_size, len(dataset[res_id]))
             else:
                 logger.info('Not doing sampling for small dataset (size = %d)', original_size)
         except Exception:

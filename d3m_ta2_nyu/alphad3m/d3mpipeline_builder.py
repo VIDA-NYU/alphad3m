@@ -412,6 +412,114 @@ class BaseBuilder:
             db.close()
 
     @staticmethod
+    def make_template_unknown(imputer, estimator, dataset, pipeline_template, targets, features, DBSession=None):
+        db = DBSession()
+        pipeline = database.Pipeline(origin="template(imputer=%s, estimator=%s)" % (imputer, estimator),
+                                     dataset=dataset)
+
+        try:
+            #                          data
+            #                            |
+            #                        Denormalize
+            #                            |
+            #                     DatasetToDataframe
+            #                            |
+            #                        ColumnParser
+            #                       /     |     \
+            #                     /       |       \
+            #                   /         |         \
+            # Extract (attribute)  Extract (target)  |
+            #         |                  |        Extract (target, index)
+            #     [imputer]              |           |
+            #         |                  |           |
+            #    One-hot encoder         |           |
+            #         |                  |           |
+            #          \                /           /
+            #            \            /           /
+            #             [estimator]          /
+            #                       |         /
+            #                   ConstructPredictions
+            # TODO: Use pipeline input for this
+            input_data = make_data_module(db, pipeline, targets, features)
+
+            prev_step = None
+            if pipeline_template:
+                prev_steps = {}
+                count_template_steps = 0
+                for pipeline_step in pipeline_template['steps']:
+                    if pipeline_step['type'] == 'PRIMITIVE':
+                        step = make_pipeline_module(db, pipeline, pipeline_step['primitive']['python_path'])
+                        prev_steps['steps.%d.produce' % (count_template_steps)] = step
+                        count_template_steps += 1
+                        if 'hyperparams' in pipeline_step:
+                            hyperparams = {}
+                            for hyper, desc in pipeline_step['hyperparams'].items():
+                                hyperparams[hyper] = desc['data']
+                            set_hyperparams(db, pipeline, step, **hyperparams)
+                    else:
+                        # TODO In the future we should be able to handle subpipelines
+                        break
+                    if prev_step:
+                        for argument, desc in pipeline_step['arguments'].items():
+                            connect(db, pipeline, prev_steps[desc['data']], step, to_input=argument)
+                    else:
+                        connect(db, pipeline, input_data, step, from_output='dataset')
+                    prev_step = step
+
+            step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
+            if prev_step:
+                connect(db, pipeline, prev_step, step0)
+            else:
+                connect(db, pipeline, input_data, step0, from_output='dataset')
+
+            step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
+            connect(db, pipeline, step0, step1)
+
+            step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'column_parser.Common')
+            connect(db, pipeline, step1, step2)
+
+            step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'extract_columns_by_semantic_types.Common')
+            set_hyperparams(db, pipeline, step3,
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/UnknownType']
+                            )
+            connect(db, pipeline, step2, step3)
+
+            step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'extract_columns_by_semantic_types.Common')
+            set_hyperparams(db, pipeline, step4,
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
+                            )
+            connect(db, pipeline, step2, step4)
+
+            step5 = make_pipeline_module(db, pipeline, imputer)
+            set_hyperparams(db, pipeline, step5, strategy='most_frequent')
+            connect(db, pipeline, step3, step5)
+
+            step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')
+            set_hyperparams(db, pipeline, step6, handle_unknown='ignore')
+            connect(db, pipeline, step5, step6)
+
+            step7 = make_pipeline_module(db, pipeline, estimator)
+            connect(db, pipeline, step6, step7)
+            connect(db, pipeline, step4, step7, to_input='outputs')
+
+            step8 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                       'construct_predictions.Common')
+            connect(db, pipeline, step7, step8)
+            connect(db, pipeline, step2, step8, to_input='reference')
+
+            db.add(pipeline)
+            db.commit()
+            return pipeline.id
+        except Exception:
+            logger.exception('Error creating pipeline id=%s', pipeline.id)
+            return None
+        finally:
+            db.close()
+
+    @staticmethod
     def make_template_augment(datamart_system, imputer, estimator, dataset, pipeline_template, targets,
                               features, feature_types, search_result, DBSession=None):
         db = DBSession()

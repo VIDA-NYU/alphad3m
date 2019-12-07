@@ -133,20 +133,6 @@
         "digest": "4ea24359eb4d67e8b4eb8657d28c2e63a7bb840e59d025f1fc376d38befc48b1"
     },
     {
-        "id": "943a4b34-89c5-4296-bc1c-267f4887e2f9",
-        "name": "lupi_rfsel.LupiRFSelClassifier",
-        "version": "v6.0.0",
-        "python_path": "d3m.primitives.classification.lupi_rfsel.LupiRFSelClassifier",
-        "digest": "b922ffe85493153ebcaab722bf515d5f8e429240d5a7d1a9913530dea5358c98"
-    },
-    {
-        "id": "3fd60679-cc91-3703-9ce5-34098babbbdc",
-        "name": "lupi_svm.LupiSvmClassifier",
-        "version": "v6.0.0",
-        "python_path": "d3m.primitives.classification.lupi_svm.LupiSvmClassifier",
-        "digest": "1eb6cdde179ab1c6933be09b2ce4825539821958e211ed99ff042c4da997b952"
-    },
-    {
         "id": "89d7ffbd-df5d-352f-a038-311b7d379cd0",
         "name": "sklearn.neural_network.multilayer_perceptron.MLPClassifier",
         "version": "2019.6.7",
@@ -756,11 +742,32 @@
         "digest": "e71ab4fdda830bc9df88fbac38bd176ce8165b6db49b0fe180cee99fae6e4e78"
     },
     {
+        "id": "eb5fe752-f22a-4090-948b-aafcef203bf5",
+        "name": "Casts DataFrame",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.data_transformation.cast_to_type.Common",
+        "digest": "a0e724d95d6e8e00cf496d2cba32665508bf15c78f5780d71e899be94a4fd62d"
+    },
+    {
         "id": "d510cb7a-1782-4f51-b44c-58f0236e47c7",
         "name": "Parses strings into their types",
         "version": "0.6.0",
         "python_path": "d3m.primitives.data_transformation.column_parser.Common",
         "digest": "c0be7426515ed38d05b03f3c08cb25db1d21e955f6d2d919ead8b5cb842bf2da"
+    },
+    {
+        "id": "6fdcf530-2cfe-4e87-9d9e-b8770753e19c",
+        "name": "Autoflow Data Conditioner",
+        "version": "1.6.8",
+        "python_path": "d3m.primitives.data_transformation.conditioner.Conditioner",
+        "digest": "ff87726857f7c1e8342d6e5e3fff108a1a23ded09432c1e79fbcc9b3b396dee4"
+    },
+    {
+        "id": "ec24b04c-dbcc-11e8-9f8b-f2801f1b9fd1",
+        "name": "Autoflow Static Ensembler",
+        "version": "1.6.8",
+        "python_path": "d3m.primitives.data_transformation.conditioner.StaticEnsembler",
+        "digest": "0c6b2df3ef385a84bb1b554ca0fb6700463de76a53ce6d73a725303e4c0a80b1"
     },
     {
         "id": "8d38b340-f83f-4877-baaa-162f8e551736",
@@ -826,11 +833,25 @@
         "digest": "05a81db4ed54327cb7dc67354e8ed1d2815a6dffc2e5ae2c6bec1d0187a054bb"
     },
     {
+        "id": "4b42ce1e-9b98-4a25-b68e-fad13311eb65",
+        "name": "Extract a DataFrame from a Dataset",
+        "version": "0.3.0",
+        "python_path": "d3m.primitives.data_transformation.dataset_to_dataframe.Common",
+        "digest": "e796f76607089407dcd9b646eaccb244f06520e759112fd21846993f88fcd208"
+    },
+    {
         "id": "73d79f46-1bea-4858-a061-a2d1cfc5f122",
         "name": "Datetime Field Compose",
         "version": "0.1.0",
         "python_path": "d3m.primitives.data_transformation.datetime_field_compose.Common",
         "digest": "bc8ef311da6dd2a01677f66b916ba4c567bc9007d3e28daed815f43941e95316"
+    },
+    {
+        "id": "f31f8c1f-d1c5-43e5-a4b2-2ae4a761ef2e",
+        "name": "Denormalize datasets",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.data_transformation.denormalize.Common",
+        "digest": "045a41ff82bd660bee6bf3fcb3cd8477af6af3d930a82c0c92184d01a93e3b30"
     },
     {
         "id": "d38e2e28-9b18-4ce4-b07c-9d809cd8b915",
@@ -866,6 +887,13 @@
         "version": "0.1.0",
         "python_path": "d3m.primitives.data_transformation.extract_columns_by_structural_types.Common",
         "digest": "0457df651dd25f582ffe4ec0b601c39fd0cd0788ec256eb0b1fc629b03f5581f"
+    },
+    {
+        "id": "03633ffa-425e-37d4-9f1c-bbb552f1e995",
+        "name": "sklearn.decomposition.fastica_.FastICA",
+        "version": "2019.6.7",
+        "python_path": "d3m.primitives.data_transformation.fast_ica.SKlearn",
+        "digest": "4453e5dd491dd8d6272456f00d5fbcc4f6cd10baf52556d9b98f91ebcb64734d"
     },
     {
         "id": "99951ce7-193a-408d-96f0-87164b9a2b26",
@@ -915,6 +943,41 @@
         "version": "0.1.0",
         "python_path": "d3m.primitives.data_transformation.list_encoder.DistilListEncoder",
         "digest": "9d43658927608f901681904c82ce274d53aa558bdd7bfc59595d3d35a16209c6"
+    },
+    {
+        "id": "dd4598cf-2384-438a-a264-f6c77185132b",
+        "name": "List to DataFrame converter",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.list_to_dataframe.Common",
+        "digest": "ab46ae36c99c542016a2c158f30b0c7dd253882f804cb3bd10d68629b0ff5c05"
+    },
+    {
+        "id": "40ff1396-0725-4cf9-b7b9-c6eca6237f65",
+        "name": "List to ndarray converter",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.list_to_ndarray.Common",
+        "digest": "66fde7a4dad9e2767e126ff9468bad1d504b51444e44846b33a1c2be027434ce"
+    },
+    {
+        "id": "ae0797506-ea7b-4a7f-a7e4-2f91e2082f05",
+        "name": "Load graphs into a parseable object",
+        "version": "0.1.1",
+        "python_path": "d3m.primitives.data_transformation.load_graphs.DistilGraphLoader",
+        "digest": "77c17e54d1415ac5b66a5b0fd8c5bdc87724ccd62d32b37935d6ab474ffadeaf"
+    },
+    {
+        "id": "79012210-2463-4f94-9da6-11bdc5a7e6c4",
+        "name": "Load single graph and dataframe into a parseable object",
+        "version": "0.1.1",
+        "python_path": "d3m.primitives.data_transformation.load_single_graph.DistilSingleGraphLoader",
+        "digest": "72f43eb6733c94f57ccb9c633409e5e7c32d7ab74784ef3340e1bca9da2f2bbe"
+    },
+    {
+        "id": "f5241b2e-64f7-44ad-9675-df3d08066437",
+        "name": "ndarray to Dataframe converter",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.ndarray_to_dataframe.Common",
+        "digest": "1965952c96c4f0f9f8acfa2d8b7cb2eac1eb0a021650ac95aa165a0970152f38"
     },
     {
         "id": "b5101331-64b4-451a-beb6-260b40d1436b",
@@ -987,11 +1050,39 @@
         "digest": "47a87642deeab82f8ee139d84e9b4bda57486a61e6325dfcef9df76ddd02c8a3"
     },
     {
+        "id": "d519cb7a-1782-4f51-b44c-58f0236e47c7",
+        "name": "Parses strings into their types",
+        "version": "1.6.8",
+        "python_path": "d3m.primitives.data_transformation.simple_column_parser.DataFrameCommon",
+        "digest": "bedef639bdee8a7c6a4b7a4fff619d2a6d0abe75b507302a8e715a91d76dda65"
+    },
+    {
         "id": "43ddd6be-bb4f-3fd0-8765-df961c16d7dc",
         "name": "sklearn.random_projection.SparseRandomProjection",
         "version": "2019.6.7",
         "python_path": "d3m.primitives.data_transformation.sparse_random_projection.SKlearn",
         "digest": "9f0a6da9bfa43d56528620ed8954a36ad9560956b96ef4f779552eed87e375f7"
+    },
+    {
+        "id": "48c99864-14f3-4a61-b3a6-e439f22825f6",
+        "name": "Stack numpy arrays in a column",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.stack_ndarray_column.Common",
+        "digest": "f4de5e74e7fbe29c7d417a429c3d6d36422c2fa5bb4948efc0401a8178843740"
+    },
+    {
+        "id": "7ddf2fd8-2f7f-4e53-96a7-0d9f5aeecf93",
+        "name": "ISI DSBox To Numeric DataFrame",
+        "version": "1.5.3",
+        "python_path": "d3m.primitives.data_transformation.to_numeric.DSBOX",
+        "digest": "b1aeaf11edc88bd62142ba3fc8287c08bd1b8767ce18da906f4186baeed4d09e"
+    },
+    {
+        "id": "a22f9bd3-818e-44e9-84a3-9592c5a85408",
+        "name": "Vertex Classification Parser",
+        "version": "1.6.8",
+        "python_path": "d3m.primitives.data_transformation.vertex_classification_parser.VertexClassificationParser",
+        "digest": "eb29a5515ebf6486f6476edc19cb441b31d2e726f0fb9951bc7f3d227fc86b49"
     },
     {
         "id": "475c26dc-eb2e-43d3-acdb-159b80d9f099",
