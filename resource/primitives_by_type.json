@@ -17,7 +17,6 @@
         "d3m.primitives.classification.linear_svc.SKlearn": 16,
         "d3m.primitives.classification.logistic_regression.SKlearn": 17,
         "d3m.primitives.classification.lstm.DSBOX": 18,
-        "d3m.primitives.classification.lupi_rf.LupiRFClassifier": 19,
         "d3m.primitives.classification.mlp.SKlearn": 20,
         "d3m.primitives.classification.multinomial_naive_bayes.SKlearn": 21,
         "d3m.primitives.classification.nearest_centroid.SKlearn": 22,

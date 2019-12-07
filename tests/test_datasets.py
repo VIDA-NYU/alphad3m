@@ -47,9 +47,13 @@ def search_pipelines(datasets, use_template=False):
             logger.error('Problem file (%s) doesnt exist', problem_path)
             continue
 
-        problem = parse_problem_description(problem_path)
-        task = get_task(problem)
+        try:
+            problem = parse_problem_description(problem_path)
+        except:
+            logger.exception('Error reading problem')
+            continue
 
+        task = get_task(problem)
         pipelines = do_search(core, problem, dataset_train_path, time_bound=10.0, pipelines_limit=0,
                               pipeline_template=pipeline_template)
 
@@ -91,6 +95,9 @@ def evaluate_pipelines(datasets, top=5):
     size = len(datasets)
 
     for i, dataset in enumerate(datasets):
+        if dataset not in search_results:
+            continue
+
         logger.info('Processing dataset "%s" (%d/%d)' % (dataset, i+1, size))
         dataset_train_path = join(D3MINPUTDIR, dataset, 'TRAIN/dataset_TRAIN/datasetDoc.json')
         dataset_test_path = join(D3MINPUTDIR, dataset, 'TEST/dataset_TEST/datasetDoc.json')
@@ -101,6 +108,7 @@ def evaluate_pipelines(datasets, top=5):
             dataset_score_path = join(D3MINPUTDIR, dataset, 'SCORE/dataset_TEST/datasetDoc.json')
 
         performance_top_pipelines = {}
+        best_score = metric = best_id = 'None'
         for top_pipeline in search_results[dataset]['all_scores'][:top]:
             top_pipeline_id = top_pipeline['id']
             logger.info('Scoring top pipeline id=%s' % top_pipeline_id)
@@ -130,14 +138,14 @@ def evaluate_pipelines(datasets, top=5):
                 new_score = normalize_score(metric, score, 'asc')
                 performance_top_pipelines[top_pipeline_id] = (score, new_score)
                 logger.info('Scored top pipeline id=%s, %s=%.6f' % (top_pipeline_id, metric, score))
-            except Exception as e:
-                logger.error('Error calculating test score')
-                logger.error(e)
+            except:
+                logger.exception('Error calculating test score')
 
-        best_pipeline = sorted(performance_top_pipelines.items(), key=lambda x: x[1][1], reverse=True)[0]
-        best_id = best_pipeline[0]
-        best_score = best_pipeline[1][0]
-        logger.info('Best pipeline id=%s %s=%.6f' % (best_id, metric, best_score))
+        if len(performance_top_pipelines) > 0:
+            best_pipeline = sorted(performance_top_pipelines.items(), key=lambda x: x[1][1], reverse=True)[0]
+            best_id = best_pipeline[0]
+            best_score = best_pipeline[1][0]
+            logger.info('Best pipeline id=%s %s=%.6f' % (best_id, metric, best_score))
 
         row = [dataset, search_results[dataset]['pipelines'], search_results[dataset]['best_time'],
                search_results[dataset]['search_time'], best_score, metric, search_results[dataset]['task'], best_id]
@@ -177,6 +185,6 @@ def load_template():
 
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['22_handgeometry']
+    datasets = ['LL1_736_stock_market']
     search_pipelines(datasets)
     evaluate_pipelines(datasets)

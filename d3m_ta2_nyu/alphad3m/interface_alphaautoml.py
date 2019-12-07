@@ -155,9 +155,9 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         dataset_doc = json.load(fin)
 
     task = task_keywords[0]
-    #feature_types = get_feature_types(dataset_doc)
-    #generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
-    #                      feature_types, timeout, msg_queue, DBSession)
+    feature_types = get_feature_types(dataset_doc)
+    generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
+                          feature_types, timeout, msg_queue, DBSession)
 
     builder = None
 
@@ -181,21 +181,23 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
 
     if TaskKeyword.CLUSTERING in task_keywords:
         builder = BaseBuilder()
-    if TaskKeyword.SEMISUPERVISED in task_keywords:  # to review
+    if TaskKeyword.SEMISUPERVISED in task_keywords:
+        task_name = 'SEMISUPERVISED_CLASSIFICATION'
         builder = BaseBuilder()
     elif TaskKeyword.COLLABORATIVE_FILTERING in task_keywords:
         builder = BaseBuilder()
-    elif TaskKeyword.COMMUNITY_DETECTION in task_keywords:
+    elif TaskKeyword.COMMUNITY_DETECTION in task_keywords: # come back
         builder = CommunityDetectionBuilder()
-    elif TaskKeyword.LINK_PREDICTION in task_keywords:
+    elif TaskKeyword.LINK_PREDICTION in task_keywords: # come back
         builder = LinkPredictionBuilder()
     elif TaskKeyword.OBJECT_DETECTION in task_keywords:
         builder = ObjectDetectionBuilder()
-    elif TaskKeyword.GRAPH_MATCHING in task_keywords:
+    elif TaskKeyword.GRAPH_MATCHING in task_keywords: # come back
         builder = GraphMatchingBuilder()
-    elif TaskKeyword.FORECASTING in task_keywords:  # to review
+    elif TaskKeyword.FORECASTING in task_keywords:
+        task_name = 'TIME_SERIES_FORECASTING'
         builder = TimeseriesForecastingBuilder()
-    elif TaskKeyword.TIME_SERIES in task_keywords:  # to review
+    elif TaskKeyword.TIME_SERIES in task_keywords and TaskKeyword.CLASSIFICATION in task_keywords:  # to review
         task_name = 'TIME_SERIES_CLASSIFICATION'
         builder = TimeseriesClassificationBuilder()
     elif TaskKeyword.VERTEX_NOMINATION in task_keywords or TaskKeyword.VERTEX_CLASSIFICATION in task_keywords:
@@ -209,10 +211,10 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'IMAGE_' + task_name
         builder = BaseBuilder()
-    elif 'audio' in data_types and (
+    elif 'audio' in data_types and ( # come back
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'AUDIO_' + task_name
-        builder = AudioBuilder()
+        builder = BaseBuilder()
     elif TaskKeyword.CLASSIFICATION in task_keywords or TaskKeyword.REGRESSION in task_keywords:
         builder = BaseBuilder()
     else:

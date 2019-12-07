@@ -43,7 +43,8 @@ black_list = {
     'd3m.primitives.data_preprocessing.dataframe_to_tensor.DSBOX',
     'd3m.primitives.data_preprocessing.data_cleaning.DistilTimeSeriesFormatter',
     'd3m.primitives.data_preprocessing.audio_reader.Common',
-    'd3m.primitives.data_preprocessing.csv_reader.Common'
+    'd3m.primitives.data_preprocessing.csv_reader.Common',
+    'd3m.primitives.data_preprocessing.flatten.DataFrameCommon'
 }
 
 

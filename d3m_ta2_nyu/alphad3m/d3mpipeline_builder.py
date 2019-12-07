@@ -121,12 +121,15 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive):
         set_hyperparams(db, pipeline, primitive, metric='meanAbsoluteError')
     elif primitive_name == 'd3m.primitives.data_preprocessing.text_reader.Common':
         set_hyperparams(db, pipeline, primitive, return_result='new')
+    elif primitive_name == 'd3m.primitives.data_preprocessing.image_reader.Common':
+        set_hyperparams(db, pipeline, primitive, return_result='replace')
 
 
 def need_d3mindex(primitives):
     for primitive in primitives:
         if primitive in {'d3m.primitives.data_preprocessing.dataframe_to_tensor.DSBOX',
-                         'd3m.primitives.data_preprocessing.time_series_to_list.DSBOX'}:
+                         'd3m.primitives.data_preprocessing.time_series_to_list.DSBOX',
+                         'd3m.primitives.feature_extraction.image_transfer.DistilImageTransfer'}:
             return True
     return False
 
