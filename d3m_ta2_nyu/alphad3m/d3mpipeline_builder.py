@@ -890,12 +890,12 @@ class TimeseriesForecastingBuilder(BaseBuilder):
 
                 step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.column_parser.Common')
                 set_hyperparams(db, pipeline, step2, parse_semantic_types=[
-                  "http://schema.org/Boolean",
-                  "http://schema.org/Integer",
-                  "http://schema.org/Float",
-                  "https://metadata.datadrivendiscovery.org/types/FloatVector",
-                  "http://schema.org/DateTime"
-               ])
+                                                          'http://schema.org/Boolean',
+                                                          'http://schema.org/Integer',
+                                                          'http://schema.org/Float',
+                                                          'https://metadata.datadrivendiscovery.org/types/FloatVector',
+                                                          'http://schema.org/DateTime']
+                                )
                 connect(db, pipeline, step1, step2)
 
                 step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
@@ -915,6 +915,7 @@ class TimeseriesForecastingBuilder(BaseBuilder):
                                                        targets, features, DBSession=DBSession)
                 return pipeline_id
         except:
+            logger.exception('Error creating pipeline id=%s', pipeline.id)
             return None
         finally:
             db.close()
@@ -1023,7 +1024,7 @@ class GraphMatchingBuilder(BaseBuilder):
             db.close()
 
 
-class VertexNominationBuilder(BaseBuilder):
+class VertexClassificationBuilder(BaseBuilder):
     def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
                          features=None, DBSession=None):
         db = DBSession()
@@ -1034,14 +1035,12 @@ class VertexNominationBuilder(BaseBuilder):
                 input_data = make_data_module(db, pipeline, targets, features)
 
                 step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'load_graphs.DistilGraphLoader')
+                                                           'vertex_classification_parser.VertexClassificationParser')
                 connect(db, pipeline, input_data, step0, from_output='dataset')
 
                 step1 = make_pipeline_module(db, pipeline, primitives[0])
-                set_hyperparams(db, pipeline, step1, metric='accuracy')
 
                 connect(db, pipeline, step0, step1)
-                connect(db, pipeline, step0, step1, to_input='outputs', from_output='produce_target')
 
                 db.add(pipeline)
                 db.commit()

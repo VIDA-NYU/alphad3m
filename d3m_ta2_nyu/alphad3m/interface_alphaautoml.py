@@ -43,7 +43,7 @@ input = {
                       'GRAPH_MATCHING': 7,
                       'COLLABORATIVE_FILTERING': 8,
                       'LINK_PREDICTION': 9,
-                      'VERTEX_NOMINATION': 10,
+                      'VERTEX_CLASSIFICATION': 10,
                       'OBJECT_DETECTION': 11,
                       'SEMISUPERVISED_CLASSIFICATION': 12,
                       'TEXT_CLASSIFICATION': 13,
@@ -156,9 +156,9 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
 
     task = task_keywords[0]
     task_name = task.name
-    feature_types = get_feature_types(dataset_doc)
-    generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
-                          feature_types, timeout, msg_queue, DBSession)
+    #feature_types = get_feature_types(dataset_doc)
+    #generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
+    #                      feature_types, timeout, msg_queue, DBSession)
 
     builder = None
 
@@ -196,9 +196,9 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     elif TaskKeyword.TIME_SERIES in task_keywords and TaskKeyword.CLASSIFICATION in task_keywords:
         task_name = 'TIME_SERIES_CLASSIFICATION'
         builder = TimeseriesClassificationBuilder()
-    elif TaskKeyword.VERTEX_NOMINATION in task_keywords or TaskKeyword.VERTEX_CLASSIFICATION in task_keywords: # to review
-        task_name = 'VERTEX_NOMINATION'
-        builder = VertexNominationBuilder()
+    elif TaskKeyword.VERTEX_CLASSIFICATION in task_keywords or TaskKeyword.VERTEX_NOMINATION in task_keywords:
+        task_name = 'VERTEX_CLASSIFICATION'
+        builder = VertexClassificationBuilder()
     elif TaskKeyword.TEXT in task_keywords and (
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'TEXT_' + task_name
@@ -224,7 +224,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         input['PROBLEM'] = task_name
         input['DATA_TYPE'] = 'TABULAR'
         input['METRIC'] = metrics[0]['metric'].name
-        input['DATASET_METAFEATURES'] = metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
+        input['DATASET_METAFEATURES'] = [0] * 100 #metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
         input['DATASET'] = dataset_doc['about']['datasetName']
         input['ARGS']['stepsfile'] = os.path.join('/output', input['DATASET'] + '_pipeline_steps.txt')
 

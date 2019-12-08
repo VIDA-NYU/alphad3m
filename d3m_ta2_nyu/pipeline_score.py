@@ -94,7 +94,8 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config)
                 '\n\t'.join([x['primitive']['python_path'] for x in json_pipeline['steps']]))
 
     d3m_pipeline = Pipeline.from_json_structure(json_pipeline, )
-    scoring_config.pop('method')
+    if 'method' in scoring_config:
+        scoring_config.pop('method')
 
     run_scores, run_results = d3m.runtime.evaluate(
         pipeline=d3m_pipeline,
