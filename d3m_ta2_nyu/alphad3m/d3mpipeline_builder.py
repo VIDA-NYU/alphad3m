@@ -883,28 +883,41 @@ class TimeseriesForecastingBuilder(BaseBuilder):
         try:
             if len(primitives) == 1:
                 input_data = make_data_module(db, pipeline, targets, features)
+                step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
+                connect(db, pipeline, input_data, step0, from_output='dataset')
 
-                step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'dataset_to_dataframe.Common')
-                connect(db, pipeline, input_data, step1, from_output='dataset')
+                step1 = make_pipeline_module(db, pipeline,
+                                             'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
+                connect(db, pipeline, step0, step1)
 
-                step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.column_parser.Common')
+                step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'column_parser.Common')
                 set_hyperparams(db, pipeline, step2, parse_semantic_types=[
-                                                          'http://schema.org/Boolean',
-                                                          'http://schema.org/Integer',
-                                                          'http://schema.org/Float',
-                                                          'https://metadata.datadrivendiscovery.org/types/FloatVector',
-                                                          'http://schema.org/DateTime']
-                                )
+                                                        'http://schema.org/Boolean',
+                                                        'http://schema.org/Integer',
+                                                        'http://schema.org/Float',
+                                                        'https://metadata.datadrivendiscovery.org/types/FloatVector'])
                 connect(db, pipeline, step1, step2)
 
                 step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'grouping_field_compose.Common')
+                                                           'extract_columns_by_semantic_types.Common')
+
+                set_hyperparams(db, pipeline, step3, semantic_types=[
+                    'https://metadata.datadrivendiscovery.org/types/TrueTarget'])
                 connect(db, pipeline, step2, step3)
 
-                step4 = make_pipeline_module(db, pipeline, primitives[0])
-                connect(db, pipeline, step3, step4)
-                connect(db, pipeline, step3, step4, to_input='outputs')
+                step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'extract_columns_by_semantic_types.Common')
+                set_hyperparams(db, pipeline, step4, semantic_types=[
+                                                            'https://metadata.datadrivendiscovery.org/types/PrimaryKey',
+                                                            'https://metadata.datadrivendiscovery.org/types/TrueTarget',
+                                                            'https://metadata.datadrivendiscovery.org/types/Attribute'])
+                connect(db, pipeline, step2, step4)
+
+                step5 = make_pipeline_module(db, pipeline, primitives[0])
+                set_hyperparams(db, pipeline, step5, auto=True, take_log=False)
+                connect(db, pipeline, step4, step5)
+                connect(db, pipeline, step3, step5, to_input='outputs')
 
                 db.add(pipeline)
                 db.commit()

@@ -39,7 +39,7 @@ from sklearn.model_selection import train_test_split
 
 
 MAX_RUNNING_PROCESSES = 4
-SAMPLE_SIZE = 400
+SAMPLE_SIZE = 2000
 RANDOM_SEED = 42
 
 DATAMART_URL = {
@@ -964,8 +964,8 @@ class D3mTa2(Observable):
 
         sample_dataset_uri = self._get_sample_uri(dataset_uri, session.problem)
         do_rank = True if top_pipelines > 0 else False
-        timeout_search = timeout * 0.7  # TODO: Do it dynamic
-        timeout_tuning = timeout * 0.3
+        timeout_search = timeout * 0.8  # TODO: Do it dynamic
+        timeout_tuning = timeout * 0.2
 
         self._build_pipelines_from_generator(session, task, dataset_uri, sample_dataset_uri, search_results,
                                              pipeline_template, metrics, timeout_search, do_rank)
@@ -1105,7 +1105,7 @@ class D3mTa2(Observable):
         logger.info('About to sample dataset %s', dataset_uri)
         task_keywords = problem['problem']['task_keywords']
 
-        if any(tk in [TaskKeyword.OBJECT_DETECTION, TaskKeyword.SEMISUPERVISED, TaskKeyword.FORECASTING] for tk in task_keywords):
+        if any(tk in [TaskKeyword.OBJECT_DETECTION, TaskKeyword.SEMISUPERVISED] for tk in task_keywords):
             logger.info('Not doing sampling for task %s', '_'.join([x.name for x in task_keywords]))
             return None
 
