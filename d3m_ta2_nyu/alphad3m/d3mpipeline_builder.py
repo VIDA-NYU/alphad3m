@@ -169,7 +169,7 @@ class BaseBuilder:
                     if pipeline_step['type'] == 'PRIMITIVE':
                         step = make_pipeline_module(db, pipeline, pipeline_step['primitive']['python_path'])
                         for output in pipeline_step['outputs']:
-                            prev_steps['steps.%d.%s' % (count_template_steps,output['id'])] = step
+                            prev_steps['steps.%d.%s' % (count_template_steps, output['id'])] = step
 
                         count_template_steps += 1
                         if 'hyperparams' in pipeline_step:
@@ -816,24 +816,56 @@ class TimeseriesClassificationBuilder(BaseBuilder):
         pipeline = database.Pipeline(origin=origin, dataset=dataset)
 
         try:
-            input_data = make_data_module(db, pipeline, targets, features)
-
-            step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
-            connect(db, pipeline, input_data, step0, from_output='dataset')
-
             if len(primitives) == 1:
-                step1 = make_pipeline_module(db, pipeline, primitives[0])
+                input_data = make_data_module(db, pipeline, targets, features)
+                step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.'
+                                                           'data_cleaning.DistilTimeSeriesFormatter')
+                connect(db, pipeline, input_data, step0, from_output='dataset')
+
+                step1 = make_pipeline_module(db, pipeline,
+                                             'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
                 connect(db, pipeline, step0, step1)
-                connect(db, pipeline, step0, step1, to_input='outputs')
+
+                step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'dataset_to_dataframe.Common')
+                connect(db, pipeline, input_data, step2, from_output='dataset')
+
+                step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.column_parser.Common')
+
+                set_hyperparams(db, pipeline, step3, parse_semantic_types=[
+                                                      'http://schema.org/Boolean',
+                                                      'http://schema.org/Integer',
+                                                      'http://schema.org/Float',
+                                                      'https://metadata.datadrivendiscovery.org/types/FloatVector'])
+                connect(db, pipeline, step2, step3)
+
+                step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'extract_columns_by_semantic_types.Common')
+                set_hyperparams(db, pipeline, step4,
+                                semantic_types=['https://metadata.datadrivendiscovery.org/types/Target',
+                                                'https://metadata.datadrivendiscovery.org/types/TrueTarget',
+                                                'https://metadata.datadrivendiscovery.org/types/SuggestedTarget'
+                                                ]
+                                )
+                connect(db, pipeline, step2, step4)
+
+                step5 = make_pipeline_module(db, pipeline, primitives[0])
+                connect(db, pipeline, step1, step5)
+                connect(db, pipeline, step4, step5, to_input='outputs')
+
+                step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'construct_predictions.Common')
+                connect(db, pipeline, step5, step6)
+                connect(db, pipeline, step2, step6, to_input='reference')
+
+                db.add(pipeline)
+                db.commit()
+                logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
+                return pipeline.id
             else:
                 pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
                                                        targets, features, DBSession=DBSession)
                 return pipeline_id
-
-            db.add(pipeline)
-            db.commit()
-            logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
-            return pipeline.id
         except Exception as e:
             logger.error(e)
             return None

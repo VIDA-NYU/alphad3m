@@ -193,10 +193,10 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     elif TaskKeyword.FORECASTING in task_keywords:  # to review
         task_name = 'TIME_SERIES_FORECASTING'
         builder = TimeseriesForecastingBuilder()
-    elif TaskKeyword.TIME_SERIES in task_keywords and TaskKeyword.CLASSIFICATION in task_keywords:  # to review
+    elif TaskKeyword.TIME_SERIES in task_keywords and TaskKeyword.CLASSIFICATION in task_keywords:
         task_name = 'TIME_SERIES_CLASSIFICATION'
         builder = TimeseriesClassificationBuilder()
-    elif TaskKeyword.VERTEX_NOMINATION in task_keywords or TaskKeyword.VERTEX_CLASSIFICATION in task_keywords:
+    elif TaskKeyword.VERTEX_NOMINATION in task_keywords or TaskKeyword.VERTEX_CLASSIFICATION in task_keywords: # to review
         task_name = 'VERTEX_NOMINATION'
         builder = VertexNominationBuilder()
     elif TaskKeyword.TEXT in task_keywords and (

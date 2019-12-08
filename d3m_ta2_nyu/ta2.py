@@ -895,7 +895,7 @@ class D3mTa2(Observable):
                     break
                 if prev_step:
                     for argument, desc in pipeline_step['arguments'].items():
-                        connect(prev_steps[desc['data']], step,from_output=desc['data'].split('.')[-1], to_input=argument)
+                        connect(prev_steps[desc['data']], step, from_output=desc['data'].split('.')[-1], to_input=argument)
                 else:
                     connect(input_data, step, from_output='dataset')
                 prev_step = step
