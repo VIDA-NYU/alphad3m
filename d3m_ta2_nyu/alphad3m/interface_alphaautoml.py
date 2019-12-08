@@ -87,9 +87,9 @@ def generate_by_templates(task, dataset, search_results, pipeline_template, metr
     if task in [TaskKeyword.GRAPH_MATCHING, TaskKeyword.LINK_PREDICTION, TaskKeyword.VERTEX_NOMINATION,
                 TaskKeyword.VERTEX_CLASSIFICATION, TaskKeyword.CLUSTERING,
                 TaskKeyword.OBJECT_DETECTION, TaskKeyword.COMMUNITY_DETECTION, TaskKeyword.TIME_SERIES,
-                TaskKeyword.SEMISUPERVISED]:  # 'TIME_SERIES_CLASSIFICATION', 'SEMISUPERVISED_CLASSIFICATION'
+                TaskKeyword.SEMISUPERVISED]:
         template_name = 'DEBUG_CLASSIFICATION'
-    elif task in [TaskKeyword.COLLABORATIVE_FILTERING, TaskKeyword.FORECASTING]:  # 'TIME_SERIES_FORECASTING']
+    elif task in [TaskKeyword.COLLABORATIVE_FILTERING, TaskKeyword.FORECASTING]:
         template_name = 'DEBUG_REGRESSION'
     else:
         template_name = task.name
@@ -155,6 +155,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         dataset_doc = json.load(fin)
 
     task = task_keywords[0]
+    task_name = task.name
     feature_types = get_feature_types(dataset_doc)
     generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
                           feature_types, timeout, msg_queue, DBSession)
@@ -172,12 +173,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         else:
             return None
 
-    data_types = []
-    for data_res in dataset_doc['dataResources']:
-        data_types.append(data_res['resType'])
-
-    task_name = task.name
-    print(data_types, task_keywords)
+    print(task_keywords)
 
     if TaskKeyword.CLUSTERING in task_keywords:
         builder = BaseBuilder()
@@ -186,15 +182,15 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         builder = BaseBuilder()
     elif TaskKeyword.COLLABORATIVE_FILTERING in task_keywords:
         builder = BaseBuilder()
-    elif TaskKeyword.COMMUNITY_DETECTION in task_keywords: # come back
+    elif TaskKeyword.COMMUNITY_DETECTION in task_keywords:
         builder = CommunityDetectionBuilder()
-    elif TaskKeyword.LINK_PREDICTION in task_keywords: # come back
+    elif TaskKeyword.LINK_PREDICTION in task_keywords:
         builder = LinkPredictionBuilder()
     elif TaskKeyword.OBJECT_DETECTION in task_keywords:
         builder = ObjectDetectionBuilder()
-    elif TaskKeyword.GRAPH_MATCHING in task_keywords: # come back
+    elif TaskKeyword.GRAPH_MATCHING in task_keywords:
         builder = GraphMatchingBuilder()
-    elif TaskKeyword.FORECASTING in task_keywords:
+    elif TaskKeyword.FORECASTING in task_keywords:  # to review
         task_name = 'TIME_SERIES_FORECASTING'
         builder = TimeseriesForecastingBuilder()
     elif TaskKeyword.TIME_SERIES in task_keywords and TaskKeyword.CLASSIFICATION in task_keywords:  # to review
@@ -203,18 +199,18 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     elif TaskKeyword.VERTEX_NOMINATION in task_keywords or TaskKeyword.VERTEX_CLASSIFICATION in task_keywords:
         task_name = 'VERTEX_NOMINATION'
         builder = VertexNominationBuilder()
-    elif 'text' in data_types and (
+    elif TaskKeyword.TEXT in task_keywords and (
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'TEXT_' + task_name
         builder = BaseBuilder()
-    elif 'image' in data_types and (
+    elif TaskKeyword.IMAGE in task_keywords and (
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'IMAGE_' + task_name
         builder = BaseBuilder()
-    elif 'audio' in data_types and ( # come back
+    elif TaskKeyword.AUDIO in task_keywords and (
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'AUDIO_' + task_name
-        builder = BaseBuilder()
+        builder = AudioBuilder()
     elif TaskKeyword.CLASSIFICATION in task_keywords or TaskKeyword.REGRESSION in task_keywords:
         builder = BaseBuilder()
     else:

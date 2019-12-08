@@ -185,6 +185,6 @@ def load_template():
 
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['LL1_736_stock_market']
+    datasets = ['185_baseball']
     search_pipelines(datasets)
     evaluate_pipelines(datasets)
