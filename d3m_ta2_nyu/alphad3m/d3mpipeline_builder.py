@@ -170,7 +170,9 @@ class BaseBuilder:
                 for pipeline_step in pipeline_template['steps']:
                     if pipeline_step['type'] == 'PRIMITIVE':
                         step = make_pipeline_module(db, pipeline, pipeline_step['primitive']['python_path'])
-                        prev_steps['steps.%d.produce' % (count_template_steps)] = step
+                        for output in pipeline_step['outputs']:
+                            prev_steps['steps.%d.%s' % (count_template_steps,output['id'])] = step
+
                         count_template_steps += 1
                         if 'hyperparams' in pipeline_step:
                             hyperparams = {}
@@ -182,7 +184,7 @@ class BaseBuilder:
                         break
                     if prev_step:
                         for argument, desc in pipeline_step['arguments'].items():
-                            connect(db, pipeline, prev_steps[desc['data']], step, to_input=argument)
+                            connect(db, pipeline, prev_steps[desc['data']], step, from_output=desc['data'].split('.')[-1], to_input=argument)
                     else:
                         connect(db, pipeline, input_data, step, from_output='dataset')
                     prev_step = step
