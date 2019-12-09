@@ -23,7 +23,7 @@ SCORES_RANKING_ORDER = dict(
     R_SQUARED=-1,
     NORMALIZED_MUTUAL_INFORMATION=-1,
     JACCARD_SIMILARITY_SCORE=-1,
-    PRECISION_AT_TOP_K=1,
+    PRECISION_AT_TOP_K=-1,
     OBJECT_DETECTION_AVERAGE_PRECISION=-1,
     HAMMING_LOSS=1,
     EXECUTION_TIME=1,
@@ -41,4 +41,6 @@ def normalize_score(metric, score, order):
     try:
         return 1.0 / (1.0 + math.exp(order_mult * score))
     except ArithmeticError:  # OverflowError can happen with weird scores
+        if SCORES_RANKING_ORDER.get(metric, 1) == 1:  # For error based metrics
+            return 1.0 - (1.0 / score)
         return dict(asc=0.0, desc=1.0)[order]

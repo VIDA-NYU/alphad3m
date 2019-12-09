@@ -378,7 +378,7 @@ class Session(Observable):
                                    "%s=%s origin=%s",
                                    pipeline_id, metric, score.value,
                                    pipeline.origin)
-                    rank = normalize_score(metric, score.value, 'desc')
+                    rank = 1.0 - normalize_score(metric, score.value, 'asc')
             else:
                 logger.warning("Writing pipeline JSON for pipeline %s with "
                                "provided rank %s. origin=%s",

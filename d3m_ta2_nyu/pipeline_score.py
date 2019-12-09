@@ -70,9 +70,9 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
         if do_rank:  # Need to rank too during the search
             logger.info("Calculating RANK in search solution for pipeline %s", pipeline_id)
             if sample_dataset_uri is not None:
-                entire_dataset = Dataset.load(dataset_uri)  # load complete dataset
+                #entire_dataset = Dataset.load(dataset_uri)  # load complete dataset
                 scoring_config['number_of_folds'] = '4'
-                scores = evaluate(pipeline, kfold_tabular_split, entire_dataset, metrics, problem, scoring_config)
+                scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_config)
             logger.info("Ranking-D3M (whole dataset) results:\n%s", scores)
             scores_db = add_scores_db(scores, scores_db)
             scores = create_new_metric(scores)
@@ -129,7 +129,7 @@ def create_new_metric(scores):
     for fold, fold_scores in scores.items():
         scores_tmp[fold] = {}
         for metric, current_score in fold_scores.items():
-            new_score = normalize_score(metric, current_score, 'desc')
+            new_score = 1.0 - normalize_score(metric, current_score, 'asc')
             new_metric = 'RANK'
             scores_tmp[fold][new_metric] = new_score
 
