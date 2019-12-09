@@ -75,7 +75,7 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
                 scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_config)
             logger.info("Ranking-D3M (whole dataset) results:\n%s", scores)
             scores_db = add_scores_db(scores, scores_db)
-            scores = create_new_metric(scores)
+            scores = create_new_metric(scores, metrics)
             logger.info("Ranking-D3M (whole dataset) new metric results:\n%s", scores)
             scores_db = add_scores_db(scores, scores_db)
         else:
@@ -123,13 +123,13 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config)
     return scores
 
 
-def create_new_metric(scores):
+def create_new_metric(scores, metrics):
     scores_tmp = {}
 
     for fold, fold_scores in scores.items():
         scores_tmp[fold] = {}
         for metric, current_score in fold_scores.items():
-            new_score = 1.0 - normalize_score(metric, current_score, 'asc')
+            new_score = 1.0 - metrics[0]['metric'].normalize(current_score)
             new_metric = 'RANK'
             scores_tmp[fold][new_metric] = new_score
 
