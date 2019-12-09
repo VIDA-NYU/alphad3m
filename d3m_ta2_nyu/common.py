@@ -41,6 +41,4 @@ def normalize_score(metric, score, order):
     try:
         return 1.0 / (1.0 + math.exp(order_mult * score))
     except ArithmeticError:  # OverflowError can happen with weird scores
-        if SCORES_RANKING_ORDER.get(metric, 1) == 1:  # For error based metrics
-            return 1.0 - (1.0 / score)
         return dict(asc=0.0, desc=1.0)[order]
