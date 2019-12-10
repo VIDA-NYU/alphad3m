@@ -7,7 +7,6 @@ import d3m_ta2_nyu.proto.core_pb2 as pb_core
 from d3m import index
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
-from d3m_ta2_nyu.common import SCORES_RANKING_ORDER
 from d3m_ta2_nyu.pipeline_score import evaluate, kfold_tabular_split, score
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.parameter_tuning.primitive_config import is_tunable
@@ -75,7 +74,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
                     score_values.append(score)
 
         avg_score = sum(score_values) / len(score_values)
-        cost = avg_score * SCORES_RANKING_ORDER[first_metric]
+        cost = 1.0 - metrics[0]['metric'].normalize(avg_score)
         logger.info('Tuning results:\n%s, cost=%s', scores, cost)
         # Don't store those runs
         db.rollback()

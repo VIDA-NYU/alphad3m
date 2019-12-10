@@ -17,21 +17,19 @@ from sqlalchemy.orm import aliased, joinedload, lazyload
 from sqlalchemy.sql import func
 import shutil
 import subprocess
-import sys
 import threading
 import time
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
 from uuid import uuid4, UUID
 from d3m_ta2_nyu import __version__
-from d3m_ta2_nyu.common import SCORES_RANKING_ORDER, normalize_score
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu import grpc_server
 from d3m_ta2_nyu.utils import Observable, ProgressStatus
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json
 from d3m.container import Dataset
-from d3m.metadata.problem import TaskKeyword
+from d3m.metadata.problem import TaskKeyword, parse_problem_description
 from sklearn.model_selection import train_test_split
 #import datamart
 #import datamart_nyu
@@ -206,19 +204,20 @@ class Session(Observable):
         )
 
     def get_top_pipelines(self, db, metric, limit=None):
+        metric_name = metric.name
         pipeline = aliased(database.Pipeline)
         crossval_score = (
             select([func.avg(database.CrossValidationScore.value)])
             .where(database.CrossValidationScore.cross_validation_id ==
                    database.CrossValidation.id)
-            .where(database.CrossValidationScore.metric == metric)
+            .where(database.CrossValidationScore.metric == metric_name)
             .where(database.CrossValidation.pipeline_id == pipeline.id)
             .as_scalar()
         )
-        if SCORES_RANKING_ORDER.get(metric, 1) == -1:
+        if metric.best_value() == 1:
             crossval_score_order = crossval_score.desc()
         else:
-            crossval_score_order = crossval_score.asc()
+            crossval_score_order = crossval_score.asc()  # Error based metrics
         q = (
             db.query(pipeline, crossval_score)
             .filter(pipeline.id.in_(self.pipelines))
@@ -254,7 +253,7 @@ class Session(Observable):
                     logger.info("Session stop requested, skipping tuning")
                 elif self._tune_when_ready:
                     top_pipelines = self.get_top_pipelines(
-                        db, self.metrics[0]['metric'].name,
+                        db, self.metrics[0]['metric'],
                         self._tune_when_ready)
                     for pipeline, _ in top_pipelines:
                         if pipeline.id not in self.tuned_pipelines:
@@ -280,7 +279,7 @@ class Session(Observable):
 
                 logger.warning("Search done")
                 if self.metrics:
-                    metric = self.metrics[0]['metric'].name
+                    metric = self.metrics[0]['metric']
                     top_pipelines = self.get_top_pipelines(db, metric)
                     logger.warning("Found %d pipelines", len(top_pipelines))
 
@@ -378,7 +377,6 @@ class Session(Observable):
                                    "%s=%s origin=%s",
                                    pipeline_id, metric, score.value,
                                    pipeline.origin)
-                    #rank = 1.0 - normalize_score(metric, score.value, 'asc')
                     rank = 1.0 - self.metrics[0]['metric'].normalize(score.value)
             else:
                 logger.warning("Writing pipeline JSON for pipeline %s with "
@@ -717,9 +715,45 @@ class D3mTa2(Observable):
             os.makedirs(folder_path)
 
     def run_search(self, dataset, problem_path, timeout=None):
-        """Not used anymore in the current TA2 evaluation
-        """
-        pass
+        """Run the search phase: create pipelines and score them.
+
+                This is called by the ``ta2_search`` executable, it is part of the
+                evaluation.
+                """
+        if dataset[0] == '/':
+            dataset = 'file://' + dataset
+        # Read problem
+        try:
+            problem = parse_problem_description(os.path.join(problem_path, 'problemDoc.json'))
+        except:
+            logger.exception('Error parsing problem')
+
+        task_keywords = problem['problem']['task_keywords']
+        # Create session
+        session = Session(self, problem, self.DBSession, self.searched_pipelines, self.scored_pipelines,
+                          self.ranked_pipelines)
+        logger.info('Dataset: %s, task: %s, metrics: %s', dataset, '_'.join([x.name for x in task_keywords]),
+                    session.metrics)
+        self.sessions[session.id] = session
+
+        if timeout:
+            # Save 2 minutes to finish scoring
+            timeout = max(timeout - 2 * 60, 0.8 * timeout)
+
+        # Create pipelines, NO TUNING
+        with session.with_observer_queue() as queue:
+            self.build_pipelines(session.id, task_keywords, dataset, None, session.metrics, tune=TUNE_PIPELINES_COUNT,
+                                 timeout=timeout)
+            while queue.get(True)[0] != 'done_searching':
+                pass
+
+        logger.info('Tuning pipelines...')
+
+        # Now do tuning, when we already have written out some solutions
+        with session.with_observer_queue() as queue:
+            session.tune_when_ready()
+            while queue.get(True)[0] != 'done_searching':
+                pass
 
     def run_server(self, port=None):
         """Spin up the gRPC server to receive requests from a TA3 system.
@@ -961,11 +995,11 @@ class D3mTa2(Observable):
                 if len(next_page) > 5:
                     next_page = next_page[:5]
                 search_results = [result.serialize() for result in next_page]'''
-            pass # Not included in this evaluation
+            pass  # Not included in this evaluation
 
         sample_dataset_uri = self._get_sample_uri(dataset_uri, session.problem)
         do_rank = True if top_pipelines > 0 else False
-        timeout_search = timeout * 0.8  # TODO: Do it dynamic
+        timeout_search = 15#timeout * 0.8  # TODO: Do it dynamic
         timeout_tuning = timeout * 0.2
 
         self._build_pipelines_from_generator(session, task, dataset_uri, sample_dataset_uri, search_results,

@@ -95,7 +95,7 @@ def generate_by_templates(task, dataset, search_results, pipeline_template, metr
         template_name = task.name
 
     if 'TA2_DEBUG_BE_FAST' in os.environ:
-        template_name = 'DEBUG_' + task
+        template_name = 'DEBUG_' + task.name
 
     # No Augmentation
     templates = BaseBuilder.TEMPLATES.get(template_name, [])
@@ -138,8 +138,8 @@ def get_feature_types(dataset_doc):
                         feature_types[column['colType']].append(column['colName'])
 
                 break
-    except Exception as e:
-        logger.error(e)
+    except:
+        logger.exception('Error reading the type of attributes')
 
     return feature_types
 

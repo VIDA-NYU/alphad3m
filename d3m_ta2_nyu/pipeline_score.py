@@ -7,9 +7,7 @@ import d3m_ta2_nyu.proto.core_pb2 as pb_core
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from d3m_ta2_nyu.workflow import database, convert
-from d3m_ta2_nyu.common import normalize_score
 from d3m.metadata.pipeline import Pipeline
-from d3m.metadata.problem import Problem
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +61,7 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
         logger.info("Ranking-D3M results:\n%s", scores)
         if not do_rank:
             scores_db = add_scores_db(scores, scores_db)
-        scores = create_new_metric(scores)
+        scores = create_new_metric(scores, metrics)
         logger.info("Ranking-D3M new metric results:\n%s", scores)
 
     if len(scores) > 0:  # It's a valid pipeline
@@ -129,9 +127,10 @@ def create_new_metric(scores, metrics):
     for fold, fold_scores in scores.items():
         scores_tmp[fold] = {}
         for metric, current_score in fold_scores.items():
-            new_score = 1.0 - metrics[0]['metric'].normalize(current_score)
-            new_metric = 'RANK'
-            scores_tmp[fold][new_metric] = new_score
+            if metric == metrics[0]['metric'].name:
+                new_score = 1.0 - metrics[0]['metric'].normalize(current_score)
+                new_metric = 'RANK'
+                scores_tmp[fold][new_metric] = new_score
 
     return scores_tmp
 
