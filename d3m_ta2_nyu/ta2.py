@@ -17,29 +17,27 @@ from sqlalchemy.orm import aliased, joinedload, lazyload
 from sqlalchemy.sql import func
 import shutil
 import subprocess
-import sys
 import threading
 import time
-from uuid import uuid4, UUID
-from d3m_ta2_nyu import __version__
-from d3m_ta2_nyu.common import SCORES_RANKING_ORDER, \
-    TASKS_FROM_SCHEMA, normalize_score, format_metrics
-from d3m_ta2_nyu.multiprocessing import Receiver, run_process
-from d3m_ta2_nyu import grpc_server
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 import d3m_ta2_nyu.proto.core_pb2 as pb_core
+from uuid import uuid4, UUID
+from d3m_ta2_nyu import __version__
+from d3m_ta2_nyu.multiprocessing import Receiver, run_process
+from d3m_ta2_nyu import grpc_server
 from d3m_ta2_nyu.utils import Observable, ProgressStatus
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json
-from sklearn.model_selection import train_test_split
-import datamart
-import datamart_nyu
-from datamart_isi.entries import Datamart
 from d3m.container import Dataset
+from d3m.metadata.problem import TaskKeyword, parse_problem_description
+from sklearn.model_selection import train_test_split
+#import datamart
+#import datamart_nyu
+#from datamart_isi.entries import Datamart
 
 
 MAX_RUNNING_PROCESSES = 4
-SAMPLE_SIZE = 400
+SAMPLE_SIZE = 2000
 RANDOM_SEED = 42
 
 DATAMART_URL = {
@@ -100,7 +98,7 @@ class Session(Observable):
 
         # Read metrics from problem
         if self.problem is not None:
-            self.metrics = format_metrics(problem)
+            self.metrics = problem['problem']['performance_metrics']
 
         self._targets = None
         self._features = None
@@ -109,7 +107,7 @@ class Session(Observable):
 
     @property
     def problem_id(self):
-        return self.problem['about']['problemID']
+        return self.problem['id']
 
     @property
     def targets(self):
@@ -118,9 +116,9 @@ class Session(Observable):
         else:
             # Read targets from problem
             targets = set()
-            assert len(self.problem['inputs']['data']) == 1
-            for target in self.problem['inputs']['data'][0]['targets']:
-                targets.add((target['resID'], target['colName']))
+            #assert len(self.problem['inputs']) == 1
+            for target in self.problem['inputs'][0]['targets']:
+                targets.add((target['resource_id'], target['column_name']))
             return targets
 
     @targets.setter
@@ -206,19 +204,20 @@ class Session(Observable):
         )
 
     def get_top_pipelines(self, db, metric, limit=None):
+        metric_name = metric.name
         pipeline = aliased(database.Pipeline)
         crossval_score = (
             select([func.avg(database.CrossValidationScore.value)])
             .where(database.CrossValidationScore.cross_validation_id ==
                    database.CrossValidation.id)
-            .where(database.CrossValidationScore.metric == metric)
+            .where(database.CrossValidationScore.metric == metric_name)
             .where(database.CrossValidation.pipeline_id == pipeline.id)
             .as_scalar()
         )
-        if SCORES_RANKING_ORDER[metric] == -1:
+        if metric.best_value() == 1:
             crossval_score_order = crossval_score.desc()
         else:
-            crossval_score_order = crossval_score.asc()
+            crossval_score_order = crossval_score.asc()  # Error based metrics
         q = (
             db.query(pipeline, crossval_score)
             .filter(pipeline.id.in_(self.pipelines))
@@ -343,7 +342,7 @@ class Session(Observable):
             db.close()
 
     def write_exported_pipeline(self, pipeline_id, rank=None):
-        metric = self.metrics[0]['metric']
+        metric = self.metrics[0]['metric'].name
 
         db = self.DBSession()
         try:
@@ -378,7 +377,7 @@ class Session(Observable):
                                    "%s=%s origin=%s",
                                    pipeline_id, metric, score.value,
                                    pipeline.origin)
-                    rank = normalize_score(metric, score.value, 'desc')
+                    rank = 1.0 - self.metrics[0]['metric'].normalize(score.value)
             else:
                 logger.warning("Writing pipeline JSON for pipeline %s with "
                                "provided rank %s. origin=%s",
@@ -718,25 +717,23 @@ class D3mTa2(Observable):
     def run_search(self, dataset, problem_path, timeout=None):
         """Run the search phase: create pipelines and score them.
 
-        This is called by the ``ta2_search`` executable, it is part of the
-        evaluation.
-        """
+                This is called by the ``ta2_search`` executable, it is part of the
+                evaluation.
+                """
         if dataset[0] == '/':
             dataset = 'file://' + dataset
         # Read problem
-        with open(os.path.join(problem_path, 'problemDoc.json')) as fp:
-            problem = json.load(fp)
-        task = problem['about']['taskType']
-        if task not in TASKS_FROM_SCHEMA:
-            logger.error("Unknown task %r", task)
-            sys.exit(1)
-        task = TASKS_FROM_SCHEMA[task]
+        try:
+            problem = parse_problem_description(os.path.join(problem_path, 'problemDoc.json'))
+        except:
+            logger.exception('Error parsing problem')
 
+        task_keywords = problem['problem']['task_keywords']
         # Create session
-        session = Session(self, problem, self.DBSession,
-                          self.searched_pipelines, self.scored_pipelines, self.ranked_pipelines)
-        logger.info("Dataset: %s, task: %s, metrics: %s",
-                    dataset, task, ", ".join([m['metric'] for m in session.metrics]))
+        session = Session(self, problem, self.DBSession, self.searched_pipelines, self.scored_pipelines,
+                          self.ranked_pipelines)
+        logger.info('Dataset: %s, task: %s, metrics: %s', dataset, '_'.join([x.name for x in task_keywords]),
+                    session.metrics)
         self.sessions[session.id] = session
 
         if timeout:
@@ -744,13 +741,13 @@ class D3mTa2(Observable):
             timeout = max(timeout - 2 * 60, 0.8 * timeout)
 
         # Create pipelines, NO TUNING
-
         with session.with_observer_queue() as queue:
-            self.build_pipelines(session.id, task, dataset, session.metrics, tune=TUNE_PIPELINES_COUNT, timeout=timeout)
+            self.build_pipelines(session.id, task_keywords, dataset, None, session.metrics, tune=TUNE_PIPELINES_COUNT,
+                                 timeout=timeout)
             while queue.get(True)[0] != 'done_searching':
                 pass
 
-        logger.info("Tuning pipelines...")
+        logger.info('Tuning pipelines...')
 
         # Now do tuning, when we already have written out some solutions
         with session.with_observer_queue() as queue:
@@ -920,7 +917,8 @@ class D3mTa2(Observable):
             for pipeline_step in pipeline_template['steps']:
                 if pipeline_step['type'] == 'PRIMITIVE':
                     step = make_primitive_module(pipeline_step['primitive']['python_path'])
-                    prev_steps['steps.%d.produce' % (count_template_steps)] = step
+                    for output in pipeline_step['outputs']:
+                        prev_steps['steps.%d.%s' % (count_template_steps,output['id'])] = step
                     count_template_steps += 1
                     if 'hyperparams' in pipeline_step:
                         hyperparams = {}
@@ -932,7 +930,7 @@ class D3mTa2(Observable):
                     break
                 if prev_step:
                     for argument, desc in pipeline_step['arguments'].items():
-                        connect(prev_steps[desc['data']], step, to_input=argument)
+                        connect(prev_steps[desc['data']], step, from_output=desc['data'].split('.')[-1], to_input=argument)
                 else:
                     connect(input_data, step, from_output='dataset')
                 prev_step = step
@@ -976,7 +974,7 @@ class D3mTa2(Observable):
         search_results = []
 
         if 'dataAugmentation' in session.problem:
-            dc = Dataset.load(dataset_uri)
+            '''dc = Dataset.load(dataset_uri)
             keywords = []
             for aug in session.problem['dataAugmentation']:
                 keywords += aug['keywords']
@@ -996,15 +994,16 @@ class D3mTa2(Observable):
             if next_page:
                 if len(next_page) > 5:
                     next_page = next_page[:5]
-                search_results = [result.serialize() for result in next_page]
+                search_results = [result.serialize() for result in next_page]'''
+            pass  # Not included in this evaluation
 
         sample_dataset_uri = self._get_sample_uri(dataset_uri, session.problem)
         do_rank = True if top_pipelines > 0 else False
-        timeout_search = timeout  # * 0.7  # TODO: Do it dynamic
-        timeout_tuning = timeout * 0.3
+        timeout_search = timeout * 0.8  # TODO: Do it dynamic
+        timeout_tuning = timeout * 0.2
 
         self._build_pipelines_from_generator(session, task, dataset_uri, sample_dataset_uri, search_results,
-                                                 pipeline_template, metrics, timeout_search, do_rank)
+                                             pipeline_template, metrics, timeout_search, do_rank)
 
         # For tuning
         session.dataset_uri = dataset_uri
@@ -1021,7 +1020,7 @@ class D3mTa2(Observable):
             'd3m_ta2_nyu.alphad3m.interface_alphaautoml.generate',
             'alphad3m',
             msg_queue,
-            task=task,
+            task_keywords=task,
             dataset=dataset_uri,
             search_results=search_results,
             pipeline_template=pipeline_template,
@@ -1077,7 +1076,7 @@ class D3mTa2(Observable):
 
         logger.warning("Generator process exited with %r", proc.returncode)
 
-    def run_pipeline(self, session, dataset_uri, sample_dataset_uri, task, pipeline_id, do_rank):
+    def run_pipeline(self, session, dataset_uri, sample_dataset_uri, task_keywords, pipeline_id, do_rank):
 
         """Score a single pipeline.
 
@@ -1085,9 +1084,10 @@ class D3mTa2(Observable):
         """
 
         scoring_config = {'shuffle': 'true',
-                          'stratified': 'true' if task == 'CLASSIFICATION' else 'false',
+                          'stratified': 'true' if TaskKeyword.CLASSIFICATION in task_keywords else 'false',
                           'method': pb_core.EvaluationMethod.Value('K_FOLD'),
-                          'folds': '2'}
+                          'number_of_folds': '2'}
+
         # Add the pipeline to the session, score it
         with session.with_observer_queue() as queue:
             session.add_scoring_pipeline(pipeline_id)
@@ -1126,7 +1126,7 @@ class D3mTa2(Observable):
                     .group_by(database.CrossValidationScore.metric)
             ).all()
 
-            first_metric = session.metrics[0]['metric']
+            first_metric = session.metrics[0]['metric'].name
             for value, metric in scores:
                 if metric == first_metric:
                     logger.info("Evaluation result: %s -> %r", metric, value)
@@ -1138,8 +1138,10 @@ class D3mTa2(Observable):
 
     def _get_sample_uri(self, dataset_uri, problem):
         logger.info('About to sample dataset %s', dataset_uri)
-        if problem['about']['taskType'] in {'semiSupervisedClassification', 'objectDetection'}:  # timeSeriesForecasting
-            logger.info('Not doing sampling for task %s', problem['about']['taskType'])
+        task_keywords = problem['problem']['task_keywords']
+
+        if any(tk in [TaskKeyword.OBJECT_DETECTION, TaskKeyword.SEMISUPERVISED] for tk in task_keywords):
+            logger.info('Not doing sampling for task %s', '_'.join([x.name for x in task_keywords]))
             return None
 
         dataset = Dataset.load(dataset_uri)
@@ -1150,7 +1152,7 @@ class D3mTa2(Observable):
             shutil.rmtree(dataset_sample_folder[6:])
 
         try:
-            target_name = problem['inputs']['data'][0]['targets'][0]['colName']
+            target_name = problem['inputs'][0]['targets'][0]['column_name']
             for res_id in dataset:
                 if ('https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
                         in dataset.metadata.query([res_id])['semantic_types']):
@@ -1163,14 +1165,15 @@ class D3mTa2(Observable):
                 labels = dataset[res_id].get(target_name)
                 ratio = SAMPLE_SIZE / original_size
                 stratified_labels = None
-                if problem['about']['taskType'] == 'classification':
+                if TaskKeyword.CLASSIFICATION in task_keywords:
                     stratified_labels = labels
+
                 x_train, x_test, y_train, y_test = train_test_split(dataset[res_id], labels, random_state=RANDOM_SEED,
                                                                     test_size=ratio, stratify=stratified_labels)
                 dataset[res_id] = x_test
-                logger.info('Sampling down data from %d to %d', original_size, len(dataset[res_id]))
                 dataset.save(dataset_sample_folder + 'datasetDoc.json')
                 dataset_sample_uri = dataset_sample_folder + 'datasetDoc.json'
+                logger.info('Sampled data, from %d to %d', original_size, len(dataset[res_id]))
             else:
                 logger.info('Not doing sampling for small dataset (size = %d)', original_size)
         except Exception:

@@ -1,15 +1,11 @@
 import os
 import logging
-import json
-import tempfile
 import pickle
-
 import d3m.runtime
 import d3m.metadata.base
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from d3m.metadata import base as metadata_base
-from d3m.metadata.problem import Problem
 from d3m_ta2_nyu.workflow import database, convert
 
 
@@ -40,18 +36,7 @@ def train(pipeline_id, dataset, problem, storage_dir, results_path, msg_queue, d
         convert.to_d3m_json(pipeline),
     )
 
-    d3m_problem = None
-    if problem is not None:
-        # Convert problem description to core package format
-        # FIXME: There isn't a way to parse from JSON data, so write it to a file
-        # and read it back
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp_path = os.path.join(tmp_dir, 'problemDoc.json')
-            with open(tmp_path, 'w', encoding='utf8') as fin:
-                json.dump(problem, fin)
-            d3m_problem = Problem.load('file://' + tmp_path)
-
-    fitted_pipeline, predictions, result = d3m.runtime.fit(d3m_pipeline, d3m_problem, [dataset],
+    fitted_pipeline, predictions, result = d3m.runtime.fit(d3m_pipeline, [dataset], problem_description=problem,
                                                            context=metadata_base.Context.TESTING,
                                                            volumes_dir=os.environ.get('D3MSTATICDIR', None),
                                                            random_seed=0)

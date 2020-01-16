@@ -7,11 +7,11 @@ import d3m_ta2_nyu.proto.core_pb2 as pb_core
 from d3m import index
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
-from d3m_ta2_nyu.common import SCORES_RANKING_ORDER
 from d3m_ta2_nyu.pipeline_score import evaluate, kfold_tabular_split, score
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.parameter_tuning.primitive_config import is_tunable
 from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, hyperparams_from_config
+from d3m.metadata.problem import TaskKeyword
 
 
 logger = logging.getLogger(__name__)
@@ -48,12 +48,12 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
     else:
         dataset = Dataset.load(dataset_uri)
     tuning = HyperparameterTuning(tunable_primitives.values())
-    task = problem['about']['taskType'].upper()
+    task_keywords = problem['problem']['task_keywords']
 
     scoring_config = {'shuffle': 'true',
-                      'stratified': 'true' if task == 'CLASSIFICATION' else 'false',
+                      'stratified': 'true' if TaskKeyword.CLASSIFICATION in task_keywords else 'false',
                       'method': pb_core.EvaluationMethod.Value('K_FOLD'),
-                      'folds': '2'}
+                      'number_of_folds': '2'}
 
     def evaluate_tune(hyperparameter_configuration):
         for primitive_id, primitive_name in tunable_primitives.items():
@@ -66,15 +66,16 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
             ))
 
         scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_config)
-        first_metric = metrics[0]['metric']
+        first_metric = metrics[0]['metric'].name
         score_values = []
         for fold_scores in scores.values():
             for metric, score in fold_scores.items():
                 if metric == first_metric:
                     score_values.append(score)
+
         avg_score = sum(score_values) / len(score_values)
-        cost = avg_score * SCORES_RANKING_ORDER[first_metric]
-        logger.info('Tuning results:\n%s', scores)
+        cost = 1.0 - metrics[0]['metric'].normalize(avg_score)
+        logger.info('Tuning results:\n%s, cost=%s', scores, cost)
         # Don't store those runs
         db.rollback()
 

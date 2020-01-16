@@ -33,13 +33,16 @@ def get_primitive_config(cs, primitive_name):
         hyperparameters = []
         for hp_name in config:
             new_hp_name = primitive_name + '|' + hp_name
+            new_hp = None
             if new_hp_name in default_hyperparameters and not isinstance(config[hp_name], Union):
                 new_hp = default_config.get_hyperparameter(new_hp_name)
-            else:
-                new_hp = cast_hyperparameters(config[hp_name], new_hp_name)
+            casted_hp = cast_hyperparameters(config[hp_name], new_hp_name)
 
-            if new_hp is not None:
-                hyperparameters.append(new_hp)
+            if casted_hp is not None:
+                if new_hp is not None and casted_hp.is_legal(new_hp.default_value):
+                    hyperparameters.append(new_hp)
+                else:
+                    hyperparameters.append(casted_hp)            
 
         cs.add_hyperparameters(hyperparameters)
 
@@ -63,7 +66,7 @@ def cast_hyperparameters(hyperparameter, name):
 
     try:
         if isinstance(hyperparameter, Bounded):
-            lower = hyperparameter.lower
+            lower = hyperparameter.lower 
             upper = hyperparameter.upper
             default = hyperparameter.get_default()
             if lower is None:
@@ -71,8 +74,16 @@ def cast_hyperparameters(hyperparameter, name):
             if upper is None:
                 upper = default * 2 if default > 0 else 10
             if hyperparameter.structural_type == int:
+                if  not hyperparameter.lower_inclusive:
+                    lower += 1
+                if  not hyperparameter.upper_inclusive:
+                    upper -= 1
                 new_hyperparameter = UniformIntegerHyperparameter(name, lower, upper, default_value=default)
             else:
+                if  not hyperparameter.lower_inclusive:
+                    lower += 0.1
+                if  not hyperparameter.upper_inclusive:
+                    upper -= 0.1
                 new_hyperparameter = UniformFloatHyperparameter(name, lower, upper, default_value=default)
         elif isinstance(hyperparameter, UniformBool):
             default = hyperparameter.get_default()

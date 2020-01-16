@@ -10,8 +10,8 @@ from datetime import datetime
 from os.path import dirname, join
 from d3m.metadata.pipeline import Pipeline
 from d3m_ta2_nyu.grpc_logger import LoggingStub
-from d3m_ta2_nyu.common import normalize_score
 from ta3ta2_api.utils import encode_pipeline_description, ValueType, decode_value
+from d3m.metadata.problem import parse_problem_description, PerformanceMetric
 from client import do_search, do_score, do_train, do_test, do_export
 
 
@@ -46,16 +46,18 @@ def search_pipelines(datasets, use_template=False):
             logger.error('Problem file (%s) doesnt exist', problem_path)
             continue
 
-        with open(problem_path) as fin:
-            problem = json.load(fin)
+        try:
+            problem = parse_problem_description(problem_path)
+        except:
+            logger.exception('Error parsing problem')
+            continue
 
-        task = get_task(problem)
-
+        task_keywords = '_'.join([x.name for x in problem['problem']['task_keywords']])
         pipelines = do_search(core, problem, dataset_train_path, time_bound=10.0, pipelines_limit=0,
                               pipeline_template=pipeline_template)
 
         number_pipelines = len(pipelines)
-        result = {'task': task, 'search_time': str(datetime.now() - start_time), 'pipelines': number_pipelines,
+        result = {'task': task_keywords, 'search_time': str(datetime.now() - start_time), 'pipelines': number_pipelines,
                   'best_time': 'None', 'best_score': 'None', 'all_scores': []}
 
         if number_pipelines > 0:
@@ -74,8 +76,10 @@ def search_pipelines(datasets, use_template=False):
             result['best_time'] = best_time
             result['best_score'] = all_scores[0]['score']
             result['all_scores'] = all_scores
-            #  do_train(core, [pipeline_id], dataset_train_path)
-            #  do_score(core, problem, [pipeline_id], dataset_train_path)
+            #do_score(core, problem, [pipeline_id], dataset_train_path)
+            #fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
+            #do_test(core, fitted_pipeline, dataset_train_path.replace('TRAIN', 'TEST'))
+            #do_export(core, fitted_pipeline)
 
         search_results[dataset] = result
 
@@ -90,6 +94,9 @@ def evaluate_pipelines(datasets, top=5):
     size = len(datasets)
 
     for i, dataset in enumerate(datasets):
+        if dataset not in search_results:
+            continue
+
         logger.info('Processing dataset "%s" (%d/%d)' % (dataset, i+1, size))
         dataset_train_path = join(D3MINPUTDIR, dataset, 'TRAIN/dataset_TRAIN/datasetDoc.json')
         dataset_test_path = join(D3MINPUTDIR, dataset, 'TEST/dataset_TEST/datasetDoc.json')
@@ -100,6 +107,7 @@ def evaluate_pipelines(datasets, top=5):
             dataset_score_path = join(D3MINPUTDIR, dataset, 'SCORE/dataset_TEST/datasetDoc.json')
 
         performance_top_pipelines = {}
+        best_score = metric = best_id = 'None'
         for top_pipeline in search_results[dataset]['all_scores'][:top]:
             top_pipeline_id = top_pipeline['id']
             logger.info('Scoring top pipeline id=%s' % top_pipeline_id)
@@ -126,29 +134,21 @@ def evaluate_pipelines(datasets, top=5):
                 df = pd.read_csv(score_pipeline_path)
                 score = round(df['value'][0], 6)
                 metric = df['metric'][0]
-                new_score = normalize_score(metric, score, 'asc')
-                performance_top_pipelines[top_pipeline_id] = (score, new_score)
+                normalized_score = PerformanceMetric[metric].normalize(score)
+                performance_top_pipelines[top_pipeline_id] = (score, normalized_score)
                 logger.info('Scored top pipeline id=%s, %s=%.6f' % (top_pipeline_id, metric, score))
-            except Exception as e:
-                logger.error('Error calculating test score')
-                logger.error(e)
+            except:
+                logger.exception('Error calculating test score')
 
-        best_pipeline = sorted(performance_top_pipelines.items(), key=lambda x: x[1][1], reverse=True)[0]
-        best_id = best_pipeline[0]
-        best_score = best_pipeline[1][0]
-        logger.info('Best pipeline id=%s %s=%.6f' % (best_id, metric, best_score))
+        if len(performance_top_pipelines) > 0:
+            best_pipeline = sorted(performance_top_pipelines.items(), key=lambda x: x[1][1], reverse=True)[0]
+            best_id = best_pipeline[0]
+            best_score = best_pipeline[1][0]
+            logger.info('Best pipeline id=%s %s=%.6f' % (best_id, metric, best_score))
 
         row = [dataset, search_results[dataset]['pipelines'], search_results[dataset]['best_time'],
                search_results[dataset]['search_time'], best_score, metric, search_results[dataset]['task'], best_id]
         save_row(statistics_path, row)
-
-
-def get_task(problem):
-    task_type = problem['about']['taskType'].upper()
-    if 'taskSubType' in problem['about']:
-        task_type = task_type + '_' + problem['about']['taskSubType'].upper()
-
-    return task_type
 
 
 def save_row(file_path, row):

@@ -3,7 +3,7 @@
 
 import importlib
 import pickle
-
+from frozendict import FrozenOrderedDict
 
 def get_class(name):
     package, classname = name.rsplit('.', 1)
@@ -39,6 +39,10 @@ def _add_step(steps, modules, params, module_to_step, mod):
         for key, value in klass.metadata.query().items()
         if key in {'id', 'version', 'python_path', 'name', 'digest'}
     }
+    outputs = [{'id':k}
+                for k, v in klass.metadata.query()['primitive_code']['instance_methods'].items()
+                if v['kind']=='PRODUCE'
+              ]
 
     # Create step description
     step = {
@@ -51,9 +55,7 @@ def _add_step(steps, modules, params, module_to_step, mod):
             }
             for name, data in inputs.items()
         },
-        'outputs': [
-            {'id': 'produce'},
-        ],
+        'outputs': outputs,
     }
 
     # If hyperparameters are set, export them

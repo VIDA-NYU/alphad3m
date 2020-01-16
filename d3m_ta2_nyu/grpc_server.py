@@ -25,8 +25,7 @@ from google.protobuf.timestamp_pb2 import Timestamp
 from d3m_ta2_nyu.grpc_logger import log_service
 from d3m_ta2_nyu.primitive_loader import D3MPrimitiveLoader
 from d3m_ta2_nyu.utils import PersistentQueue
-from d3m_ta2_nyu.common import TASKS_FROM_SCHEMA, SCORES_TO_SCHEMA, TASKS_TO_SCHEMA, SUBTASKS_TO_SCHEMA, normalize_score
-from ta3ta2_api.utils import decode_pipeline_description, encode_pipeline_description
+from ta3ta2_api.utils import decode_pipeline_description, decode_problem_description, decode_performance_metric
 from d3m.metadata import pipeline as pipeline_module
 
 logger = logging.getLogger(__name__)
@@ -59,11 +58,6 @@ class CoreService(pb_core_grpc.CoreServicer):
     grpc2metric = {k: v for v, k in pb_problem.PerformanceMetric.items()
                    if k != pb_problem.METRIC_UNDEFINED}
     metric2grpc = dict(pb_problem.PerformanceMetric.items())
-
-    grpc2task = {k: v for v, k in pb_problem.TaskType.items()
-                 if k != pb_problem.TASK_TYPE_UNDEFINED}
-    grpc2tasksubtype = {k: v for v, k in pb_problem.TaskSubtype.items()
-                        if k != pb_problem.TASK_TYPE_UNDEFINED}
 
     installed_primitives = D3MPrimitiveLoader.get_primitives_by_name()
 
@@ -124,7 +118,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             else:  # Pipeline template fully defined
                 problem = None
                 if request.problem:
-                    problem = self._convert_problem(context, request.problem)
+                    problem = decode_problem_description(request.problem)
                 search_id = self._ta2.new_session(problem)
                 dataset = request.inputs[0].dataset_uri
                 if not dataset.startswith('file://'):
@@ -142,8 +136,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         if not dataset.startswith('file://'):
             dataset = 'file://' + dataset
 
-        problem = self._convert_problem(context, request.problem)
-
+        problem = decode_problem_description(request.problem)
         top_pipelines = request.rank_solutions_limit
         timeout = request.time_bound_search
         if timeout < 0.000001:
@@ -155,9 +148,9 @@ class CoreService(pb_core_grpc.CoreServicer):
         search_id = self._ta2.new_session(problem)
 
         session = self._ta2.sessions[search_id]
-        task = TASKS_FROM_SCHEMA[session.problem['about']['taskType']]
+        task_keywords = session.problem['problem']['task_keywords']
 
-        self._ta2.build_pipelines(search_id, task, dataset, template, session.metrics, timeout=timeout,
+        self._ta2.build_pipelines(search_id, task_keywords, dataset, template, session.metrics, timeout=timeout,
                                   top_pipelines=top_pipelines)
 
         return pb_core.SearchSolutionsResponse(
@@ -176,14 +169,12 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         def msg_solution(pipeline_id):
             scores = self._ta2.get_pipeline_scores(pipeline_id)
-
             progress = session.progress
 
             if scores:
-                if session.metrics and session.metrics[0]['metric'] in scores:
+                if session.metrics and session.metrics[0]['metric'].name in scores:
                     metric = session.metrics[0]['metric']
-                    internal_score = normalize_score(metric, scores[metric],
-                                                     'asc')
+                    internal_score = metric.normalize(scores[metric.name])
                 else:
                     internal_score = float('nan')
                 scores = [
@@ -308,17 +299,9 @@ class CoreService(pb_core_grpc.CoreServicer):
             dataset = 'file://' + dataset
 
         metrics = []
-        for m in request.performance_metrics:
-            if m.metric in self.grpc2metric:
-                decoded_metric = {'metric': self.grpc2metric[m.metric]}
-                if m.pos_label or m.k:
-                    decoded_metric['params'] = {}
-                    if m.pos_label:
-                        decoded_metric['params']['posLabel'] = m.pos_label
-                    if m.k:
-                        decoded_metric['params']['K'] = m.k
-
-                metrics.append(decoded_metric)
+        for metric in request.performance_metrics:
+            if metric.metric in self.grpc2metric:
+                metrics.append(decode_performance_metric(metric))
 
         logger.info("Got ScoreSolution request, dataset=%s, "
                     "metrics=%s",
@@ -333,13 +316,13 @@ class CoreService(pb_core_grpc.CoreServicer):
         #  TODO Improve how to cast request.configuration to dict
         scoring_config = {
                         'method': request.configuration.method,
-                        'train_test_ratio': request.configuration.train_test_ratio,
+                        'train_score_ratio': str(request.configuration.train_test_ratio),
                         'random_seed': request.configuration.random_seed,
                         'shuffle': str(request.configuration.shuffle).lower(),
                         'stratified': str(request.configuration.stratified).lower()
                         }
         if scoring_config['method'] == pb_core.EvaluationMethod.Value('K_FOLD'):
-            scoring_config['folds'] = str(request.configuration.folds)
+            scoring_config['number_of_folds'] = str(request.configuration.folds)
 
         job_id = self._ta2.score_pipeline(pipeline_id, metrics, dataset, problem, scoring_config)
         self._requests[job_id] = PersistentQueue()
@@ -597,83 +580,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             ),
             steps=step_descriptions
         )
-
-    def _convert_problem(self, context, problem):
-        """Convert the problem from the gRPC message to the JSON schema.
-        """
-        task = problem.problem.task_type
-        if task not in self.grpc2task:
-            raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
-                        "Got unknown task %r", task)
-        task = self.grpc2task[task]
-
-        metrics = problem.problem.performance_metrics
-        if any(m.metric not in self.grpc2metric for m in metrics):
-            logger.warning("Got metrics that we don't know about: %s",
-                           ", ".join(m.metric for m in metrics
-                                     if m.metric not in self.grpc2metric))
-
-        decoded_metrics = []
-        for m in metrics:
-            if m.metric in self.grpc2metric:
-                decoded_metric = {'metric': SCORES_TO_SCHEMA[self.grpc2metric[m.metric]]}
-                if m.pos_label:
-                    decoded_metric['posLabel'] = m.pos_label
-                if m.k:
-                    decoded_metric['K'] = m.k
-
-                decoded_metrics.append(decoded_metric)
-
-        if not decoded_metrics:
-            raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
-                        "Didn't get any metrics we know")
-
-        problem_dict = {
-            'about': {
-                'problemID': problem.id,
-                'problemVersion': problem.version,
-                'problemDescription': problem.description,
-                'taskType': TASKS_TO_SCHEMA.get(task, ''),
-                'problemSchemaVersion': '3.0',
-                'problemName': problem.name,
-
-            },
-            'inputs': {
-                'performanceMetrics': decoded_metrics,
-                'data': [
-                    {
-                        'datasetID': i.dataset_id,
-                        'targets': [
-                            {
-                                'targetIndex': t.target_index,
-                                'resID': t.resource_id,
-                                'colIndex': t.column_index,
-                                'colName': t.column_name,
-
-                            }
-                            for t in i.targets
-                        ],
-                    }
-                    for i in problem.inputs
-                ],
-            },
-            'expectedOutputs': {
-                'predictionsFile': 'predictions.csv'
-            }
-        }
-
-        if problem.problem.task_subtype != pb_problem.TASK_SUBTYPE_UNDEFINED \
-           and problem.problem.task_subtype != pb_problem.NONE:  # Avoid TASK_SUBTYPE_UNDEFINED and NONE
-            problem_dict['about']['taskSubType'] = SUBTASKS_TO_SCHEMA[
-                                                        self.grpc2tasksubtype[problem.problem.task_subtype]
-                                                    ]
-
-        if len(problem.data_augmentation) > 0:
-            problem_dict['dataAugmentation'] = [
-                {'domain': [j for j in i.domain], 'keywords': [j for j in i.keywords]} for i in problem.data_augmentation
-            ]
-
-        return problem_dict
 
     def _add_step(self, steps, step_descriptions, modules, params, module_to_step, mod):
         if mod.id in module_to_step:
