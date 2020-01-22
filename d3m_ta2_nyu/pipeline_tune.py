@@ -105,7 +105,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
             shutil.rmtree(os.path.join('/tmp', f))
 
     score(new_pipeline.id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, do_rank, None,
-          db_filename='/output/supporting_files/db.sqlite3')
+          db_filename=os.path.join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'db.sqlite3'))
     # TODO: Change this static string path
 
     msg_queue.send(('tuned_pipeline_id', new_pipeline.id))

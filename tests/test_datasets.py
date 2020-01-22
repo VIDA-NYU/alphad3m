@@ -25,7 +25,7 @@ D3MSTATICDIR = os.environ.get('D3MSTATICDIR')
 
 
 def search_pipelines(datasets, use_template=False):
-    search_results_path = join(dirname(__file__), '../resource/search_results.json')
+    search_results_path = join(D3MOUTPUTDIR, 'ta2', 'search_results.json')
     search_results = load_search_results(search_results_path)
     channel = grpc.insecure_channel('localhost:45042')
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
@@ -76,10 +76,10 @@ def search_pipelines(datasets, use_template=False):
             result['best_time'] = best_time
             result['best_score'] = all_scores[0]['score']
             result['all_scores'] = all_scores
-            #do_score(core, problem, [pipeline_id], dataset_train_path)
-            #fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
-            #do_test(core, fitted_pipeline, dataset_train_path.replace('TRAIN', 'TEST'))
-            #do_export(core, fitted_pipeline)
+            do_score(core, problem, [pipeline_id], dataset_train_path)
+            fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
+            do_test(core, fitted_pipeline, dataset_train_path.replace('TRAIN', 'TEST'))
+            do_export(core, fitted_pipeline)
 
         search_results[dataset] = result
 
@@ -88,8 +88,8 @@ def search_pipelines(datasets, use_template=False):
 
 
 def evaluate_pipelines(datasets, top=5):
-    statistics_path = join(dirname(__file__), '../resource/statistics_datasets.csv')
-    search_results_path = join(dirname(__file__), '../resource/search_results.json')
+    statistics_path = join(D3MOUTPUTDIR, 'ta2', 'statistics_datasets.csv')
+    search_results_path = join(D3MOUTPUTDIR, 'ta2', 'search_results.json')
     search_results = load_search_results(search_results_path)
     size = len(datasets)
 
@@ -112,7 +112,7 @@ def evaluate_pipelines(datasets, top=5):
             top_pipeline_id = top_pipeline['id']
             logger.info('Scoring top pipeline id=%s' % top_pipeline_id)
             top_pipeline_path = join(D3MOUTPUTDIR, 'pipelines_searched', top_pipeline_id + '.json')
-            score_pipeline_path = join(D3MOUTPUTDIR, 'predictions', top_pipeline_id + '_testscore.csv')
+            score_pipeline_path = join(D3MOUTPUTDIR, 'ta2', 'train_test', 'fit_score_%s.csv' % top_pipeline_id)
 
             command = [
                 'python3', '-m', 'd3m', '--strict-resolving', '--strict-digest',
@@ -160,7 +160,7 @@ def save_row(file_path, row):
 def load_search_results(file_path):
     if not os.path.isfile(file_path):
         with open(file_path, 'w') as fout:
-            json.dump([], fout)
+            json.dump({}, fout)
 
     with open(file_path) as fin:
         return json.load(fin)

@@ -48,7 +48,7 @@ DATAMART_URL = {
 }
 
 
-TUNE_PIPELINES_COUNT = 5
+TUNE_PIPELINES_COUNT = 0
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0
@@ -496,8 +496,8 @@ class TrainJob(Job):
                                 pipeline_id=self.pipeline_id,
                                 dataset=self.dataset,
                                 problem=self.problem,
-                                storage_dir=self.ta2.storage_root,
-                                results_path=os.path.join(self.ta2.predictions_root,
+                                storage_dir=self.ta2.traintest_folder,
+                                results_path=os.path.join(self.ta2.traintest_folder,
                                                           'fit_%s.csv' % UUID(int=id(self))),
                                 db_filename=db_filename)
         self.ta2.notify('training_start',
@@ -513,7 +513,7 @@ class TrainJob(Job):
         if self.proc.returncode == 0:
             self.ta2.notify('training_success',
                             pipeline_id=self.pipeline_id,
-                            results_path=os.path.join(self.ta2.predictions_root,
+                            results_path=os.path.join(self.ta2.traintest_folder,
                                                       'fit_%s.csv' % UUID(int=id(self))),
                             job_id=id(self))
         else:
@@ -536,9 +536,9 @@ class TestJob(Job):
         self.proc = run_process('d3m_ta2_nyu.pipeline_test.test', 'test', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 dataset=self.dataset,
-                                storage_dir=self.ta2.storage_root,
-                                results_path=os.path.join(self.ta2.predictions_root,
-                                                          'predictions_%s.csv' % UUID(int=id(self))),
+                                storage_dir=self.ta2.traintest_folder,
+                                results_path=os.path.join(self.ta2.traintest_folder,
+                                                          'produce_%s.csv' % UUID(int=id(self))),
                                 db_filename=db_filename)
         self.ta2.notify('testing_start',
                         pipeline_id=self.pipeline_id,
@@ -553,8 +553,8 @@ class TestJob(Job):
         if self.proc.returncode == 0:
             self.ta2.notify('testing_success',
                             pipeline_id=self.pipeline_id,
-                            results_path=os.path.join(self.ta2.predictions_root,
-                                                      'predictions_%s.csv' % UUID(int=id(self))),
+                            results_path=os.path.join(self.ta2.traintest_folder,
+                                                      'produce_%s.csv' % UUID(int=id(self))),
                             job_id=id(self))
         else:
             self.ta2.notify('testing_error',
@@ -573,13 +573,13 @@ class TuneHyperparamsJob(Job):
         self.timeout = timeout
 
     def start(self, db_filename, predictions_root, **kwargs):
-        self.predictions_root = predictions_root
+        self.traintest_folder = predictions_root
         logger.info("Running tuning for %s "
                     "(session %s has %d pipelines left to tune)",
                     self.pipeline_id, self.session.id,
                     len(self.session.pipelines_tuning))
-        if self.store_results and self.predictions_root is not None:
-            subdir = os.path.join(self.predictions_root, str(self.pipeline_id))
+        if self.store_results and self.traintest_folder is not None:
+            subdir = os.path.join(self.traintest_folder, str(self.pipeline_id))
             if not os.path.exists(subdir):
                 os.mkdir(subdir)
 
@@ -649,9 +649,7 @@ class ThreadPoolExecutor(futures.ThreadPoolExecutor):
 
 
 class D3mTa2(Observable):
-    def __init__(self, storage_root, pipelines_root=None,
-                 predictions_root=None,
-                 executables_root=None):
+    def __init__(self, output_folder):
         Observable.__init__(self)
         if 'TA2_DEBUG_BE_FAST' in os.environ:
             logger.warning("**************************************************"
@@ -662,42 +660,33 @@ class D3mTa2(Observable):
                            "T ***")
             logger.warning("**************************************************"
                            "*****")
-        self.storage_root = storage_root
-        self.pipelines_root = pipelines_root
-        self.predictions_root = predictions_root
-        self.executables_root = executables_root
+
+        self.output_folder = output_folder
         self.searched_pipelines = None
         self.scored_pipelines = None
         self.ranked_pipelines = None
         self.run_pipelines = None
 
-        self.create_outputfolders(self.storage_root)
-
-        if self.pipelines_root is not None:
-            self.create_outputfolders(self.pipelines_root)
-            self.searched_pipelines = os.path.join(self.pipelines_root, 'pipelines_searched')
-            self.scored_pipelines = os.path.join(self.pipelines_root, 'pipelines_scored')
-            self.ranked_pipelines = os.path.join(self.pipelines_root, 'pipelines_ranked')
-            self.run_pipelines = os.path.join(self.pipelines_root, 'pipeline_runs')
+        if self.output_folder is not None:
+            self.create_outputfolders(self.output_folder)
+            # D3M folders
+            self.searched_pipelines = os.path.join(self.output_folder, 'pipelines_searched')
+            self.scored_pipelines = os.path.join(self.output_folder, 'pipelines_scored')
+            self.ranked_pipelines = os.path.join(self.output_folder, 'pipelines_ranked')
+            self.run_pipelines = os.path.join(self.output_folder, 'pipeline_runs')
             self.create_outputfolders(self.searched_pipelines)
             self.create_outputfolders(self.scored_pipelines)
             self.create_outputfolders(self.ranked_pipelines)
             self.create_outputfolders(self.run_pipelines)
 
-        if self.predictions_root is not None:
-            self.create_outputfolders(self.predictions_root)
+            #  Internal folders
+            self.internal_folder = os.path.join(self.output_folder, 'ta2')
+            self.traintest_folder = os.path.join(self.output_folder, 'ta2', 'train_test')
+            self.create_outputfolders(self.internal_folder)
+            self.create_outputfolders(self.traintest_folder)
+            self.db_filename = os.path.join(self.internal_folder, 'db.sqlite3')
 
-        if self.executables_root is not None:
-            self.create_outputfolders(self.executables_root)
-
-        self.db_filename = os.path.join(self.storage_root, 'db.sqlite3')
-
-        logger.info("storage_root=%r, pipelines_root=%r, predictions_root=%r, "
-                    "executables_root=%r",
-                    self.storage_root,
-                    self.pipelines_root,
-                    self.predictions_root,
-                    self.executables_root)
+        logger.info("output_folder=%r", self.output_folder)
 
         self.dbengine, self.DBSession = database.connect(self.db_filename)
 
@@ -1145,7 +1134,7 @@ class D3mTa2(Observable):
             return None
 
         dataset = Dataset.load(dataset_uri)
-        dataset_sample_folder = 'file://%s/dataset_sample/' % os.environ.get('D3MOUTPUTDIR')
+        dataset_sample_folder = 'file://%s/ta2/dataset_sample/' % os.environ.get('D3MOUTPUTDIR')
         dataset_sample_uri = None
 
         if os.path.exists(dataset_sample_folder[6:]):
@@ -1201,7 +1190,7 @@ class D3mTa2(Observable):
                     pass
                 else:
                     job.start(db_filename=self.db_filename,
-                              predictions_root=self.predictions_root)
+                              predictions_root=self.traintest_folder)
                     running_jobs[id(job)] = job
 
             time.sleep(3)

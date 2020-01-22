@@ -71,9 +71,9 @@ input = {
         'arenaCompare': 40,
         'cpuct': 1,
 
-        'checkpoint': '/output/nn_models',
+        'checkpoint': os.path.join(os.environ.get('D3MOUTPUTDIR'), 'nn_models'),
         'load_model': False,
-        'load_folder_file': ('/output/nn_models', 'best.pth.tar'),
+        'load_folder_file': (os.path.join(os.environ.get('D3MOUTPUTDIR'), 'nn_models'), 'best.pth.tar'),
         'metafeatures_path': '/d3m/data/metafeatures',
         'verbose': True
     }
@@ -225,8 +225,8 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         input['DATA_TYPE'] = 'TABULAR'
         input['METRIC'] = metrics[0]['metric'].name
         input['DATASET_METAFEATURES'] = metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
-        input['DATASET'] = dataset_doc['about']['datasetName']
-        input['ARGS']['stepsfile'] = os.path.join('/output', input['DATASET'] + '_pipeline_steps.txt')
+        input['DATASET'] = dataset_doc['about']['datasetID']
+        input['ARGS']['stepsfile'] = os.path.join(os.environ.get('D3MOUTPUTDIR'), 'ta2', input['DATASET'] + '_pipeline_steps.txt')
 
         return input
 
@@ -242,9 +242,9 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         if 'error' not in game.metric.lower():
             evaluations.reverse()
 
-        out_p = open(os.path.join('/output', input['DATASET'] + '_best_pipelines.txt'), 'a')
+        out_p = open(os.path.join(os.environ.get('D3MOUTPUTDIR'), 'ta2', input['DATASET'] + '_best_pipelines.txt'), 'a')
         out_p.write(
-            dataset_doc['about']['datasetName'] + ' ' + evaluations[0][0] + ' ' + str(evaluations[0][1]) + ' ' + str(
+            dataset_doc['about']['datasetID'] + ' ' + evaluations[0][0] + ' ' + str(evaluations[0][1]) + ' ' + str(
                 game.steps) + ' ' + str((eval_times[evaluations[0][0]] - start) / 60.0) + ' ' + str(
                 (end - start) / 60.0) + '\n')
 
