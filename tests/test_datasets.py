@@ -7,7 +7,7 @@ import subprocess
 import pandas as pd
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 from datetime import datetime
-from os.path import dirname, join
+from os.path import join
 from d3m.metadata.pipeline import Pipeline
 from d3m_ta2_nyu.grpc_logger import LoggingStub
 from ta3ta2_api.utils import encode_pipeline_description, ValueType, decode_value
@@ -76,10 +76,10 @@ def search_pipelines(datasets, use_template=False):
             result['best_time'] = best_time
             result['best_score'] = all_scores[0]['score']
             result['all_scores'] = all_scores
-            do_score(core, problem, [pipeline_id], dataset_train_path)
-            fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
-            do_test(core, fitted_pipeline, dataset_train_path.replace('TRAIN', 'TEST'))
-            do_export(core, fitted_pipeline)
+            #do_score(core, problem, [pipeline_id], dataset_train_path)
+            #fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
+            #do_test(core, fitted_pipeline, dataset_train_path.replace('TRAIN', 'TEST'))
+            #do_export(core, fitted_pipeline)
 
         search_results[dataset] = result
 
@@ -115,7 +115,7 @@ def evaluate_pipelines(datasets, top=5):
             score_pipeline_path = join(D3MOUTPUTDIR, 'ta2', 'train_test', 'fit_score_%s.csv' % top_pipeline_id)
 
             command = [
-                'python3', '-m', 'd3m', '--strict-resolving', '--strict-digest',
+                'python3', '-m', 'd3m',
                 'runtime',
                 '--volumes', D3MSTATICDIR,
                 '--context', 'TESTING',
@@ -127,7 +127,7 @@ def evaluate_pipelines(datasets, top=5):
                 '--test-input', dataset_test_path,
                 '--score-input', dataset_score_path,
                 '--scores', score_pipeline_path
-                #'--output-run', os.path.join('/output/pipeline_runs/run.yaml')
+                #'--output-run', join(D3MOUTPUTDIR, 'pipeline_runs', 'run.yaml')
                 ]
             try:
                 subprocess.call(command)
@@ -178,6 +178,6 @@ def load_template():
 
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['185_baseball']
+    datasets = ['185_baseball_MIN_METADATA']
     search_pipelines(datasets)
     evaluate_pipelines(datasets)

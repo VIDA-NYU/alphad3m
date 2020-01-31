@@ -272,7 +272,7 @@ class BaseBuilder:
                 db.close()
 
     @staticmethod
-    def make_template(imputer, estimator, dataset, pipeline_template, targets, features, feature_types, DBSession=None):
+    def make_template(imputer, estimator, dataset, pipeline_template, targets, features, all_types, inferred_types, DBSession=None):
         db = DBSession()
         pipeline = database.Pipeline(origin="template(imputer=%s, estimator=%s)" % (imputer, estimator),
                                      dataset=dataset)
@@ -335,9 +335,22 @@ class BaseBuilder:
             step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
             connect(db, pipeline, step0, step1)
 
+            # step_profiler = make_pipeline_module(db, pipeline, 'd3m.primitives.schema_discovery.profiler.Common')
+            # connect(db, pipeline, step1, step_profiler)
+
+            prev_step = step1
+            if len(inferred_types) > 0:
+                for semantic_type, columns in inferred_types.items():
+                    step_add_type = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                                       'add_semantic_types.Common')
+                    set_hyperparams(db, pipeline, step_add_type, columns=columns, semantic_types=[semantic_type])
+                    connect(db, pipeline, prev_step, step_add_type)
+                    prev_step = step_add_type
+
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
-            connect(db, pipeline, step1, step2)
+            connect(db, pipeline, prev_step, step2)
+            # connect(db, pipeline, step_profiler, step2)
 
             step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'extract_columns_by_semantic_types.Common')
@@ -359,7 +372,7 @@ class BaseBuilder:
             prev_step = None
             both = 0
 
-            if 'integer' in feature_types or 'real' in feature_types:
+            if 'http://schema.org/Integer' in all_types or 'http://schema.org/Float' in all_types:
                 step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                            'extract_columns_by_semantic_types.Common')
                 set_hyperparams(db, pipeline, step6,
@@ -368,7 +381,8 @@ class BaseBuilder:
                 prev_step = step6
                 both += 1
 
-            if 'categorical' in feature_types or 'dateTime' in feature_types:
+            if 'https://metadata.datadrivendiscovery.org/types/CategoricalData' in all_types or \
+                    'http://schema.org/DateTime' in all_types:
                 step7 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                            'extract_columns_by_semantic_types.Common')
                 set_hyperparams(db, pipeline, step7,
@@ -668,25 +682,6 @@ class BaseBuilder:
 
         except Exception:
             logger.exception('Error creating pipeline id=%s', pipeline.id)
-            return None
-        finally:
-            db.close()
-
-    @staticmethod
-    def make_meanbaseline(origin, dataset, DBSession):
-        db = DBSession()
-        pipeline = database.Pipeline(origin=origin, dataset=dataset)
-
-        try:
-            input_data = make_data_module(db, pipeline, 'targets', 'features')
-            step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.classification.'
-                                                       'gaussian_classification.MeanBaseline')
-            connect(db, pipeline, input_data, step0, from_output='dataset')
-            db.add(pipeline)
-            db.commit()
-            logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
-            return pipeline.id
-        except:
             return None
         finally:
             db.close()

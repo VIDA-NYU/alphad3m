@@ -13,12 +13,6 @@ PRIMITIVES_BY_TYPE_PATH = os.path.join(os.path.dirname(__file__), '../resource/p
 
 
 black_list = {
-    #d3m.primitives.feature_selection.simultaneous_markov_blanket.AutoRPI,
-    'd3m.primitives.classification.lupi_rfsel.LupiRFSelClassifier',
-    'd3m.primitives.classification.lupi_rfsel.LupiRFSelClassifier'
-    'd3m.primitives.classification.lupi_rf.LupiRFClassifier',
-    'd3m.primitives.classification.lupi_rfsel.LupiRFSelClassifier',
-    'd3m.primitives.classification.lupi_svm.LupiSvmClassifier',
     'd3m.primitives.data_preprocessing.audio_loader.DistilAudioDatasetLoader',
     'd3m.primitives.data_preprocessing.audio_reader.BBN',
     'd3m.primitives.data_preprocessing.audio_reader.Common',

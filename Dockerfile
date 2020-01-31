@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-v2019.11.10-20191127-050901
+FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-v2020.1.9-20200125-073913
 
 MAINTAINER "remi.rampin@nyu.edu, raoni@nyu.edu, rlopez@nyu.edu"
 
@@ -11,7 +11,7 @@ WORKDIR /usr/src/app
 # Install requirements
 COPY requirements.txt /usr/src/app/requirements.txt
 RUN pip3 freeze | sort >prev_reqs.txt && \
-    pip3 install Cython==0.29.7 && \
+    pip3 install Cython==0.29.14 && \
     pip3 install -r requirements.txt && \
     pip3 freeze | sort >new_reqs.txt && \
     comm -23 prev_reqs.txt new_reqs.txt | while read i; do echo "Removed package $i" >&2; exit 1; done && \
@@ -36,9 +36,11 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
     rm prev_reqs.txt new_reqs.txt
 
 # Install TA3-TA2 API
-RUN pip3 install https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/archive/5a60edd3230fa5c44854600ebb6ce769e8d23399/ta3ta2-api-5a60edd3230fa5c44854600ebb6ce769e8d23399.zip
+RUN pip3 install https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/archive/8d3097274905d82fe35ac67d8852fc6863db872f/ta3ta2-api-8d3097274905d82fe35ac67d8852fc6863db872f.zip
 
 RUN pip3 install nltk==3.4.5
+RUN pip3 install datamart-profiler
+RUN pip3 install datamart-materialize
 
 COPY eval.sh /usr/local/bin/eval.sh
 
