@@ -13,7 +13,7 @@ os.environ['MPLBACKEND'] = 'Agg'
 logger = logging.getLogger(__name__)
 
 CONTAINER_CAST = {
-    Dataset:{
+    Dataset: {
         DataFrame:'d3m.primitives.data_transformation.dataset_to_dataframe.Common',
         ndarray: ('d3m.primitives.data_transformation.dataset_to_dataframe.Common'
                   '|d3m.primitives.data_transformation.dataframe_to_ndarray.Common'),
@@ -84,7 +84,7 @@ def connect(db, pipeline, from_module, to_module, from_output='produce', to_inpu
     if to_input not in arguments:
          raise NameError('Argument %s not found in %s' % (to_input, to_module.name))
 
-    if from_module_output != to_module_input:
+    if False: #from_module_output != to_module_input:
         cast_module_steps = CONTAINER_CAST[from_module_output][to_module_input]
         if cast_module_steps:
             for cast_step in cast_module_steps.split('|'):
@@ -134,7 +134,7 @@ def need_d3mindex(primitives):
 
 class BaseBuilder:
 
-    def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets=None,
+    def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, inferred_types, targets=None,
                          features=None, DBSession=None):
         # TODO parameters 'features and 'targets' are not needed
         db = DBSession()
@@ -216,9 +216,18 @@ class BaseBuilder:
             step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
             connect(db, pipeline, step0, step1)
 
+            prev_step = step1
+            if len(inferred_types) > 0:
+                for semantic_type, columns in inferred_types.items():
+                    step_add_type = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                                       'add_semantic_types.Common')
+                    set_hyperparams(db, pipeline, step_add_type, columns=columns, semantic_types=[semantic_type])
+                    connect(db, pipeline, prev_step, step_add_type)
+                    prev_step = step_add_type
+
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
-            connect(db, pipeline, step1, step2)
+            connect(db, pipeline, prev_step, step2)
 
             step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'extract_columns_by_semantic_types.Common')
@@ -335,9 +344,6 @@ class BaseBuilder:
             step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
             connect(db, pipeline, step0, step1)
 
-            # step_profiler = make_pipeline_module(db, pipeline, 'd3m.primitives.schema_discovery.profiler.Common')
-            # connect(db, pipeline, step1, step_profiler)
-
             prev_step = step1
             if len(inferred_types) > 0:
                 for semantic_type, columns in inferred_types.items():
@@ -350,7 +356,6 @@ class BaseBuilder:
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
             connect(db, pipeline, prev_step, step2)
-            # connect(db, pipeline, step_profiler, step2)
 
             step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'extract_columns_by_semantic_types.Common')
@@ -369,8 +374,7 @@ class BaseBuilder:
             step5 = make_pipeline_module(db, pipeline, imputer)
             set_hyperparams(db, pipeline, step5, strategy='most_frequent')
             connect(db, pipeline, step3, step5)
-            prev_step = None
-            both = 0
+            primitives_concatenate = []
 
             if 'http://schema.org/Integer' in all_types or 'http://schema.org/Float' in all_types:
                 step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
@@ -378,32 +382,28 @@ class BaseBuilder:
                 set_hyperparams(db, pipeline, step6,
                                 semantic_types=['http://schema.org/Integer', 'http://schema.org/Float'])
                 connect(db, pipeline, step5, step6)
-                prev_step = step6
-                both += 1
+                primitives_concatenate.append(step6)
 
             if 'https://metadata.datadrivendiscovery.org/types/CategoricalData' in all_types or \
-                    'http://schema.org/DateTime' in all_types:
+                    'http://schema.org/DateTime' in all_types or 'http://schema.org/Text' in all_types:
                 step7 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                            'extract_columns_by_semantic_types.Common')
                 set_hyperparams(db, pipeline, step7,
                                 semantic_types=['https://metadata.datadrivendiscovery.org/types/CategoricalData',
-                                                'http://schema.org/DateTime'])
+                                                'http://schema.org/DateTime', 'http://schema.org/Text'])
                 connect(db, pipeline, step5, step7)
 
                 step8 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')
                 set_hyperparams(db, pipeline, step8, handle_unknown='ignore')
                 connect(db, pipeline, step7, step8)
-                prev_step = step8
-                both += 1
+                primitives_concatenate.append(step8)
 
-            if both == 2:
-                step9 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'horizontal_concat.DataFrameCommon')
-                connect(db, pipeline, step6, step9, to_input='left')
-                connect(db, pipeline, step8, step9, to_input='right')
+            if len(primitives_concatenate) > 0:
+                step9 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.horizontal_concat.TAMU')
                 prev_step = step9
-
-            if both == 0:  # There is not categorical neither numeric features
+                for primitive_concatenate in primitives_concatenate:
+                    connect(db, pipeline, primitive_concatenate, step9)
+            else:  # There are only unknown types
                 step_fallback = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                                    'one_hot_encoder.SKlearn')
                 set_hyperparams(db, pipeline, step_fallback, handle_unknown='ignore')
@@ -696,15 +696,9 @@ class BaseBuilder:
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
                 'd3m.primitives.classification.k_neighbors.SKlearn',
-                'd3m.primitives.classification.bernoulli_naive_bayes.SKlearn',
-                'd3m.primitives.classification.decision_tree.SKlearn',
-                'd3m.primitives.classification.gaussian_naive_bayes.SKlearn',
                 'd3m.primitives.classification.gradient_boosting.SKlearn',
                 'd3m.primitives.classification.linear_svc.SKlearn',
-                'd3m.primitives.classification.logistic_regression.SKlearn',
-                'd3m.primitives.classification.multinomial_naive_bayes.SKlearn',
-                'd3m.primitives.classification.passive_aggressive.SKlearn',
-                'd3m.primitives.classification.sgd.SKlearn',
+                'd3m.primitives.classification.sgd.SKlearn'
             ],
         )),
         'DEBUG_CLASSIFICATION': list(itertools.product(
@@ -715,7 +709,7 @@ class BaseBuilder:
             # Classifier
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
-                'd3m.primitives.classification.k_neighbors.SKlearn',
+                'd3m.primitives.classification.k_neighbors.SKlearn'
 
             ],
         )),
@@ -729,10 +723,8 @@ class BaseBuilder:
                 'd3m.primitives.regression.random_forest.SKlearn',
                 'd3m.primitives.regression.sgd.SKlearn',
                 'd3m.primitives.regression.decision_tree.SKlearn',
-                'd3m.primitives.regression.gaussian_process.SKlearn',
                 'd3m.primitives.regression.gradient_boosting.SKlearn',
-                'd3m.primitives.regression.lasso.SKlearn',
-                'd3m.primitives.regression.passive_aggressive.SKlearn',
+                'd3m.primitives.regression.lasso.SKlearn'
             ],
         )),
         'DEBUG_REGRESSION': list(itertools.product(
@@ -743,7 +735,7 @@ class BaseBuilder:
             # Classifier
             [
                 'd3m.primitives.regression.random_forest.SKlearn',
-                'd3m.primitives.regression.sgd.SKlearn',
+                'd3m.primitives.regression.sgd.SKlearn'
             ],
         )),
     }
@@ -756,15 +748,9 @@ class BaseBuilder:
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
                 'd3m.primitives.classification.k_neighbors.SKlearn',
-                'd3m.primitives.classification.bernoulli_naive_bayes.SKlearn',
-                'd3m.primitives.classification.decision_tree.SKlearn',
-                'd3m.primitives.classification.gaussian_naive_bayes.SKlearn',
                 'd3m.primitives.classification.gradient_boosting.SKlearn',
                 'd3m.primitives.classification.linear_svc.SKlearn',
-                'd3m.primitives.classification.logistic_regression.SKlearn',
-                'd3m.primitives.classification.multinomial_naive_bayes.SKlearn',
-                'd3m.primitives.classification.passive_aggressive.SKlearn',
-                'd3m.primitives.classification.sgd.SKlearn',
+                'd3m.primitives.classification.sgd.SKlearn'
             ],
         )),
         'DEBUG_CLASSIFICATION': list(itertools.product(
@@ -773,8 +759,7 @@ class BaseBuilder:
             # Classifier
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
-                'd3m.primitives.classification.k_neighbors.SKlearn',
-
+                'd3m.primitives.classification.k_neighbors.SKlearn'
             ],
         )),
         'REGRESSION': list(itertools.product(
@@ -785,10 +770,8 @@ class BaseBuilder:
                 'd3m.primitives.regression.random_forest.SKlearn',
                 'd3m.primitives.regression.sgd.SKlearn',
                 'd3m.primitives.regression.decision_tree.SKlearn',
-                'd3m.primitives.regression.gaussian_process.SKlearn',
                 'd3m.primitives.regression.gradient_boosting.SKlearn',
-                'd3m.primitives.regression.lasso.SKlearn',
-                'd3m.primitives.regression.passive_aggressive.SKlearn',
+                'd3m.primitives.regression.lasso.SKlearn'
             ],
         )),
         'DEBUG_REGRESSION': list(itertools.product(
@@ -797,7 +780,7 @@ class BaseBuilder:
             # Classifier
             [
                 'd3m.primitives.regression.random_forest.SKlearn',
-                'd3m.primitives.regression.sgd.SKlearn',
+                'd3m.primitives.regression.sgd.SKlearn'
             ],
         )),
     }

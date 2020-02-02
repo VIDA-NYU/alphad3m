@@ -167,7 +167,8 @@ def indentify_feature_types(csv_path, features2identify, target_name, index_name
         elif column_name == target_name:
             new_types['https://metadata.datadrivendiscovery.org/types/TrueTarget'] = [index]
         elif column_name in features2identify:
-            for semantic_type in [item['structural_type']] + item['semantic_types']:
+            semantic_types = item['semantic_types'] if len(item['semantic_types']) > 0 else [item['structural_type']]
+            for semantic_type in semantic_types:
                 if semantic_type == 'http://schema.org/Enumeration':  # Changing to D3M format
                     semantic_type = 'https://metadata.datadrivendiscovery.org/types/CategoricalData'
                 if semantic_type not in new_types:
@@ -213,7 +214,8 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
 
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = builder.make_d3mpipeline(strings, origin, dataset, search_results, pipeline_template, targets,
+        pipeline_id = builder.make_d3mpipeline(strings, origin, dataset, search_results, pipeline_template, new_types,
+                                               targets,
                                                features, DBSession=DBSession)
         # Evaluate the pipeline if syntax is correct:
         if pipeline_id:
