@@ -115,12 +115,6 @@ def generate_by_templates(task, dataset, search_results, pipeline_template, metr
                                                                 search_result, DBSession=DBSession)
                 send(msg_queue, pipeline_id)
 
-    if len(all_types) == 0:  # For unknown types
-        for imputer, classifier in templates:
-            pipeline_id = BaseBuilder.make_template_unknown(imputer, classifier, dataset, pipeline_template, targets,
-                                                            features, DBSession=DBSession)
-            send(msg_queue, pipeline_id)
-
     if 'TA2_DEBUG_BE_FAST' in os.environ:
         sys.exit(0)
 
@@ -214,9 +208,8 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
 
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
-        pipeline_id = builder.make_d3mpipeline(strings, origin, dataset, search_results, pipeline_template, new_types,
-                                               targets,
-                                               features, DBSession=DBSession)
+        pipeline_id = builder.make_d3mpipeline(strings, origin, dataset, search_results, pipeline_template, targets,
+                                               features, all_types, new_types, DBSession=DBSession)
         # Evaluate the pipeline if syntax is correct:
         if pipeline_id:
             msg_queue.send(('eval', pipeline_id))

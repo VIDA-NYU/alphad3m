@@ -38,7 +38,8 @@ black_list = {
     'd3m.primitives.data_preprocessing.data_cleaning.DistilTimeSeriesFormatter',
     'd3m.primitives.data_preprocessing.audio_reader.Common',
     'd3m.primitives.data_preprocessing.csv_reader.Common',
-    'd3m.primitives.data_preprocessing.flatten.DataFrameCommon'
+    'd3m.primitives.data_preprocessing.flatten.DataFrameCommon',
+    'd3m.primitives.feature_selection.simultaneous_markov_blanket.AutoRPI'
 }
 
 

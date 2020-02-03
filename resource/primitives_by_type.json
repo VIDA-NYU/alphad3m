@@ -229,7 +229,6 @@
         "d3m.primitives.feature_selection.score_based_markov_blanket.RPI": 195,
         "d3m.primitives.feature_selection.select_fwe.SKlearn": 196,
         "d3m.primitives.feature_selection.select_percentile.SKlearn": 197,
-        "d3m.primitives.feature_selection.simultaneous_markov_blanket.AutoRPI": 198,
         "d3m.primitives.feature_selection.skfeature.TAMU": 199,
         "d3m.primitives.feature_selection.variance_threshold.SKlearn": 200
     },
