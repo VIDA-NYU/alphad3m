@@ -266,7 +266,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         config['PROBLEM'] = task_name
         config['DATA_TYPE'] = 'TABULAR'
         config['METRIC'] = metrics[0]['metric'].name
-        config['DATASET_METAFEATURES'] = metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
+        config['DATASET_METAFEATURES'] = [0] * 50 #  metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
         config['DATASET'] = dataset_doc['about']['datasetID']
         config['ARGS']['stepsfile'] = os.path.join(os.environ.get('D3MOUTPUTDIR'), 'ta2', config['DATASET'] + '_pipeline_steps.txt')
 

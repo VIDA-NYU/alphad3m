@@ -295,7 +295,7 @@ class BaseBuilder:
             db.commit()
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
-        except Exception:
+        except:
             logger.exception('Error creating pipeline id=%s', pipeline.id)
             return None
         finally:
@@ -397,7 +397,7 @@ class BaseBuilder:
             db.add(pipeline)
             db.commit()
             return pipeline.id
-        except Exception:
+        except:
             logger.exception('Error creating pipeline id=%s', pipeline.id)
             return None
         finally:
@@ -547,7 +547,7 @@ class BaseBuilder:
             db.commit()
             return pipeline.id
 
-        except Exception:
+        except:
             logger.exception('Error creating pipeline id=%s', pipeline.id)
             return None
         finally:
@@ -709,10 +709,10 @@ class TimeseriesClassificationBuilder(BaseBuilder):
                 return pipeline.id
             else:
                 pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
-                                                       targets, features, DBSession=DBSession)
+                                                       targets, features, all_types, inferred_types, DBSession)
                 return pipeline_id
-        except Exception as e:
-            logger.error(e)
+        except:
+            logger.exception('Error creating pipeline id=%s', pipeline.id)
             return None
         finally:
             db.close()
@@ -770,7 +770,7 @@ class TimeseriesForecastingBuilder(BaseBuilder):
                 return pipeline.id
             else:
                 pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
-                                                       targets, features, DBSession=DBSession)
+                                                       targets, features, all_types, inferred_types, DBSession)
                 return pipeline_id
         except:
             logger.exception('Error creating pipeline id=%s', pipeline.id)
@@ -806,9 +806,10 @@ class CommunityDetectionBuilder(BaseBuilder):
                 return pipeline.id
             else:
                 pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
-                                                       targets, features, DBSession=DBSession)
+                                                       targets, features, all_types, inferred_types, DBSession)
                 return pipeline_id
         except:
+            logger.exception('Error creating pipeline id=%s', pipeline.id)
             return None
         finally:
             db.close()
@@ -840,9 +841,10 @@ class LinkPredictionBuilder(BaseBuilder):
                 return pipeline.id
             else:
                 pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
-                                                       targets, features, DBSession=DBSession)
+                                                       targets, features, all_types, inferred_types, DBSession)
                 return pipeline_id
         except:
+            logger.exception('Error creating pipeline id=%s', pipeline.id)
             return None
         finally:
             db.close()
@@ -874,9 +876,10 @@ class GraphMatchingBuilder(BaseBuilder):
                 return pipeline.id
             else:
                 pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
-                                                       targets, features, DBSession=DBSession)
+                                                       targets, features, all_types, inferred_types, DBSession)
                 return pipeline_id
         except:
+            logger.exception('Error creating pipeline id=%s', pipeline.id)
             return None
         finally:
             db.close()
@@ -906,9 +909,10 @@ class VertexClassificationBuilder(BaseBuilder):
                 return pipeline.id
             else:
                 pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
-                                                       targets, features, DBSession=DBSession)
+                                                       targets, features, all_types, inferred_types, DBSession)
                 return pipeline_id
         except:
+            logger.exception('Error creating pipeline id=%s', pipeline.id)
             return None
         finally:
             db.close()
@@ -959,6 +963,7 @@ class ObjectDetectionBuilder(BaseBuilder):
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
         except:
+            logger.exception('Error creating pipeline id=%s', pipeline.id)
             return None
         finally:
             db.close()
@@ -1042,6 +1047,7 @@ class AudioBuilder(BaseBuilder):
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
         except:
+            logger.exception('Error creating pipeline id=%s', pipeline.id)
             return None
         finally:
             db.close()

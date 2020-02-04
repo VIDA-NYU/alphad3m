@@ -53,7 +53,7 @@ def search_pipelines(datasets, use_template=False):
             continue
 
         task_keywords = '_'.join([x.name for x in problem['problem']['task_keywords']])
-        pipelines = do_search(core, problem, dataset_train_path, time_bound=1.0, pipelines_limit=0,
+        pipelines = do_search(core, problem, dataset_train_path, time_bound=10.0, pipelines_limit=0,
                               pipeline_template=pipeline_template)
 
         number_pipelines = len(pipelines)
