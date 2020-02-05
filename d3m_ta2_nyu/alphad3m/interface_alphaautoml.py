@@ -83,7 +83,6 @@ def list_primitives():
 
 def generate_by_templates(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets, features,
                           all_types, inferred_types, timeout, msg_queue, DBSession):
-    logger.info("Creating pipelines from templates...")
     task_keywords = set(task_keywords)
 
     if task_keywords & {TaskKeyword.GRAPH_MATCHING, TaskKeyword.LINK_PREDICTION, TaskKeyword.VERTEX_NOMINATION,
@@ -94,9 +93,14 @@ def generate_by_templates(task_keywords, dataset, search_results, pipeline_templ
         template_name = 'DEBUG_REGRESSION'
     elif TaskKeyword.REGRESSION in task_keywords:
         template_name = 'REGRESSION'
+        if task_keywords & {TaskKeyword.IMAGE, TaskKeyword.TEXT, TaskKeyword.AUDIO}:
+            template_name = 'DEBUG_REGRESSION'
     else:
         template_name = 'CLASSIFICATION'
+        if task_keywords & {TaskKeyword.IMAGE, TaskKeyword.TEXT, TaskKeyword.AUDIO}:
+            template_name = 'DEBUG_CLASSIFICATION'
 
+    logger.info("Creating pipelines from template %s" % template_name)
 
     # No Augmentation
     templates = BaseBuilder.TEMPLATES.get(template_name, [])
@@ -131,7 +135,8 @@ def read_feature_types(dataset_doc):
             if data_res['resID'] == 'learningData':
                 for column in data_res['columns']:
                     if 'attribute' in column['role'] and column['colType'] != 'unknown':
-                        feature_types[column['colName']] = D3M_COLUMN_TYPE_CONSTANTS_TO_SEMANTIC_TYPES[column['colType']]
+                        feature_types[column['colName']] = (D3M_COLUMN_TYPE_CONSTANTS_TO_SEMANTIC_TYPES[column['colType']],
+                                                            'refersTo' in column)
                 break
     except:
         logger.exception('Error reading the type of attributes')
@@ -186,8 +191,6 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         dataset_doc = json.load(fin)
         csv_path = os.path.dirname(dataset[7:]) + '/tables/learningData.csv'
 
-
-
     target_name = list(targets)[0][1]
     index_name = 'd3mIndex'
     annotated_types = read_feature_types(dataset_doc)
@@ -195,8 +198,10 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     new_types = {}
     if len(features2identify) > 0:
         new_types = indentify_feature_types(csv_path, features2identify, target_name, index_name)
-    all_types = list(annotated_types.values()) + list(new_types.keys())
-    print('annotated_features', annotated_types)
+    filtered_annotated_types = {k: v[0] for k, v in annotated_types.items() if not v[1]}
+    all_types = list(filtered_annotated_types.values()) + list(new_types.keys())
+    print('annotated_types', annotated_types)
+    print('filtered_annotated_types', filtered_annotated_types)
     print('features2identify', features2identify)
     print('new_types', new_types)
     print('all_types', all_types)

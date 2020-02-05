@@ -133,7 +133,7 @@ def need_d3mindex(primitives):
     return False
 
 
-def enconde_features(pipeline, initial_step, feature_types, db):
+def encode_features(pipeline, initial_step, feature_types, db):
     primitives_concatenate = []
     last_step = initial_step
 
@@ -144,6 +144,7 @@ def enconde_features(pipeline, initial_step, feature_types, db):
                         semantic_types=['http://schema.org/Integer', 'http://schema.org/Float'])
         connect(db, pipeline, initial_step, step6)
         primitives_concatenate.append(step6)
+        last_step = step6
 
     if 'https://metadata.datadrivendiscovery.org/types/CategoricalData' in feature_types or \
             'http://schema.org/DateTime' in feature_types or 'http://schema.org/Text' in feature_types or \
@@ -160,8 +161,9 @@ def enconde_features(pipeline, initial_step, feature_types, db):
         set_hyperparams(db, pipeline, step8, handle_unknown='ignore')
         connect(db, pipeline, step7, step8)
         primitives_concatenate.append(step8)
+        last_step = step8
 
-    if len(primitives_concatenate) > 0:
+    if len(primitives_concatenate) > 1:
         step9 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.horizontal_concat.TAMU')
 
         for primitive_concatenate in primitives_concatenate:
@@ -267,7 +269,7 @@ class BaseBuilder:
                             semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
                             )
             connect(db, pipeline, step2, step4)
-            encoder_step = enconde_features(pipeline, step3, all_types, db)
+            encoder_step = encode_features(pipeline, step3, all_types, db)
 
             step = prev_step = encoder_step
             preprocessors = primitives[:-1]
@@ -377,7 +379,7 @@ class BaseBuilder:
             set_hyperparams(db, pipeline, step5, strategy='most_frequent')
             connect(db, pipeline, step3, step5)
 
-            encoder_step = enconde_features(pipeline, step5, all_types, db)
+            encoder_step = encode_features(pipeline, step5, all_types, db)
             prev_step = encoder_step
 
             if encoder_step == step5:  # Encoders were not applied, so use one_hot_encoder for all features
@@ -750,21 +752,30 @@ class TimeseriesForecastingBuilder(BaseBuilder):
                                                            'extract_columns_by_semantic_types.Common')
 
                 set_hyperparams(db, pipeline, step3, semantic_types=[
-                    'https://metadata.datadrivendiscovery.org/types/TrueTarget'])
+                    'https://metadata.datadrivendiscovery.org/types/Attribute'])
                 connect(db, pipeline, step2, step3)
 
                 step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                            'extract_columns_by_semantic_types.Common')
                 set_hyperparams(db, pipeline, step4, semantic_types=[
-                                                            'https://metadata.datadrivendiscovery.org/types/PrimaryKey',
-                                                            'https://metadata.datadrivendiscovery.org/types/TrueTarget',
-                                                            'https://metadata.datadrivendiscovery.org/types/Attribute'])
+                                                            "https://metadata.datadrivendiscovery.org/types/Target",
+                                                            "https://metadata.datadrivendiscovery.org/types/TrueTarget",
+                                                            "https://metadata.datadrivendiscovery.org/types/SuggestedTarget"])
                 connect(db, pipeline, step2, step4)
 
+                step_imputer = make_pipeline_module(db, pipeline, 'd3m.primitives.data_cleaning.imputer.SKlearn')
+                set_hyperparams(db, pipeline, step_imputer, use_semantic_types=True, return_result='replace')
+                connect(db, pipeline, step3, step_imputer)
+
+                step_group = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.grouping_field_compose.Common')
+                connect(db, pipeline, step_imputer, step_group)
+
+
+
                 step5 = make_pipeline_module(db, pipeline, primitives[0])
-                set_hyperparams(db, pipeline, step5, auto=True, take_log=False)
-                connect(db, pipeline, step4, step5)
-                connect(db, pipeline, step3, step5, to_input='outputs')
+                #set_hyperparams(db, pipeline, step5, auto=True, take_log=False)
+                connect(db, pipeline, step_group, step5)
+                connect(db, pipeline, step4, step5, to_input='outputs')
 
                 db.add(pipeline)
                 db.commit()
