@@ -178,6 +178,7 @@ def load_template():
 
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['185_baseball_MIN_METADATA']
+    datasets = ['LL1_terra_canopy_height_long_form_s4_100'] #'LL1_VTXC_1343_cora' '185_baseball_MIN_METADATA' LL1_GT_actor_group_association_prediction
+
     search_pipelines(datasets)
     evaluate_pipelines(datasets)

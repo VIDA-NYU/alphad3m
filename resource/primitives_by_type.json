@@ -18,9 +18,6 @@
         "d3m.primitives.classification.linear_svc.SKlearn": 17,
         "d3m.primitives.classification.logistic_regression.SKlearn": 18,
         "d3m.primitives.classification.lstm.DSBOX": 19,
-        "d3m.primitives.classification.lupi_rf.LupiRFClassifier": 20,
-        "d3m.primitives.classification.lupi_rfsel.LupiRFSelClassifier": 21,
-        "d3m.primitives.classification.lupi_svm.LupiSvmClassifier": 22,
         "d3m.primitives.classification.mlp.SKlearn": 23,
         "d3m.primitives.classification.multinomial_naive_bayes.SKlearn": 24,
         "d3m.primitives.classification.nearest_centroid.SKlearn": 25,
@@ -33,8 +30,6 @@
         "d3m.primitives.classification.search_hybrid.Find_projections": 32,
         "d3m.primitives.classification.sgd.SKlearn": 33,
         "d3m.primitives.classification.svc.SKlearn": 34,
-        "d3m.primitives.classification.text_classifier.DistilTextClassifier": 35,
-        "d3m.primitives.classification.tree_augmented_naive_bayes.BayesianInfRPI": 36,
         "d3m.primitives.classification.xgboost_dart.Common": 38,
         "d3m.primitives.classification.xgboost_gbtree.Common": 39
     },
@@ -108,8 +103,7 @@
         "d3m.primitives.data_cleaning.label_encoder.DSBOX": 59,
         "d3m.primitives.data_cleaning.missing_indicator.SKlearn": 60,
         "d3m.primitives.data_cleaning.string_imputer.SKlearn": 61,
-        "d3m.primitives.data_cleaning.tabular_extractor.Common": 62,
-        "d3m.primitives.data_cleaning.text_summarization.Duke": 63
+        "d3m.primitives.data_cleaning.tabular_extractor.Common": 62
     },
     "DATA_COMPRESSION": {
         "d3m.primitives.data_compression.grasta.Umich": 64
@@ -222,9 +216,7 @@
         "d3m.primitives.feature_construction.zero_count.TPOT": 173
     },
     "FEATURE_SELECTION": {
-        "d3m.primitives.feature_selection.generic_univariate_select.SKlearn": 190,
         "d3m.primitives.feature_selection.joint_mutual_information.AutoRPI": 191,
-        "d3m.primitives.feature_selection.pca_features.Pcafeatures": 193,
         "d3m.primitives.feature_selection.rffeatures.Rffeatures": 194,
         "d3m.primitives.feature_selection.score_based_markov_blanket.RPI": 195,
         "d3m.primitives.feature_selection.select_fwe.SKlearn": 196,
@@ -266,8 +258,8 @@
         "d3m.primitives.learner.random_forest.DistilEnsembleForest": 225
     },
     "LINK_PREDICTION": {
-        "d3m.primitives.link_prediction.data_conversion.JHU": 226,
-        "d3m.primitives.link_prediction.link_prediction.DistilLinkPrediction": 227,
+        "d3m.primitives.link_prediction.link_prediction.DistilLinkPrediction": 226,
+        "d3m.primitives.link_prediction.data_conversion.JHU": 227,
         "d3m.primitives.link_prediction.rank_classification.JHU": 228
     },
     "LOSS_FUNCTION": {

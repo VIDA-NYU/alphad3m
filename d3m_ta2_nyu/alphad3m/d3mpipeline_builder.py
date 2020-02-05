@@ -146,12 +146,14 @@ def enconde_features(pipeline, initial_step, feature_types, db):
         primitives_concatenate.append(step6)
 
     if 'https://metadata.datadrivendiscovery.org/types/CategoricalData' in feature_types or \
-            'http://schema.org/DateTime' in feature_types or 'http://schema.org/Text' in feature_types:
+            'http://schema.org/DateTime' in feature_types or 'http://schema.org/Text' in feature_types or \
+            'http://schema.org/Boolean' in feature_types:
         step7 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                    'extract_columns_by_semantic_types.Common')
         set_hyperparams(db, pipeline, step7,
                         semantic_types=['https://metadata.datadrivendiscovery.org/types/CategoricalData',
-                                        'http://schema.org/DateTime', 'http://schema.org/Text'])
+                                        'http://schema.org/DateTime', 'http://schema.org/Text',
+                                        'http://schema.org/Boolean'])
         connect(db, pipeline, initial_step, step7)
 
         step8 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')

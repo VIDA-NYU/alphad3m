@@ -81,22 +81,22 @@ def list_primitives():
     return all_primitives
 
 
-def generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
+def generate_by_templates(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets, features,
                           all_types, inferred_types, timeout, msg_queue, DBSession):
     logger.info("Creating pipelines from templates...")
+    task_keywords = set(task_keywords)
 
-    if task in [TaskKeyword.GRAPH_MATCHING, TaskKeyword.LINK_PREDICTION, TaskKeyword.VERTEX_NOMINATION,
-                TaskKeyword.VERTEX_CLASSIFICATION, TaskKeyword.CLUSTERING,
-                TaskKeyword.OBJECT_DETECTION, TaskKeyword.COMMUNITY_DETECTION, TaskKeyword.TIME_SERIES,
-                TaskKeyword.SEMISUPERVISED]:
+    if task_keywords & {TaskKeyword.GRAPH_MATCHING, TaskKeyword.LINK_PREDICTION, TaskKeyword.VERTEX_NOMINATION,
+                        TaskKeyword.VERTEX_CLASSIFICATION, TaskKeyword.CLUSTERING, TaskKeyword.OBJECT_DETECTION,
+                        TaskKeyword.COMMUNITY_DETECTION, TaskKeyword.SEMISUPERVISED}:
         template_name = 'DEBUG_CLASSIFICATION'
-    elif task in [TaskKeyword.COLLABORATIVE_FILTERING, TaskKeyword.FORECASTING]:
+    elif task_keywords & {TaskKeyword.COLLABORATIVE_FILTERING, TaskKeyword.FORECASTING}:
         template_name = 'DEBUG_REGRESSION'
+    elif TaskKeyword.REGRESSION in task_keywords:
+        template_name = 'REGRESSION'
     else:
-        template_name = task.name
+        template_name = 'CLASSIFICATION'
 
-    if 'TA2_DEBUG_BE_FAST' in os.environ:
-        template_name = 'DEBUG_' + task.name
 
     # No Augmentation
     templates = BaseBuilder.TEMPLATES.get(template_name, [])
@@ -186,8 +186,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         dataset_doc = json.load(fin)
         csv_path = os.path.dirname(dataset[7:]) + '/tables/learningData.csv'
 
-    task = task_keywords[0]
-    task_name = task.name
+
 
     target_name = list(targets)[0][1]
     index_name = 'd3mIndex'
@@ -201,10 +200,11 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     print('features2identify', features2identify)
     print('new_types', new_types)
     print('all_types', all_types)
-    generate_by_templates(task, dataset, search_results, pipeline_template, metrics, problem, targets, features,
+    generate_by_templates(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets, features,
                           all_types, new_types, timeout, msg_queue, DBSession)
 
     builder = None
+    task_name = 'CLASSIFICATION' if TaskKeyword.CLASSIFICATION in task_keywords else 'REGRESSION'
 
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
@@ -218,19 +218,25 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
             return None
 
     if TaskKeyword.CLUSTERING in task_keywords:
+        task_name = 'CLUSTERING'
         builder = BaseBuilder()
     if TaskKeyword.SEMISUPERVISED in task_keywords:
         task_name = 'SEMISUPERVISED_CLASSIFICATION'
         builder = BaseBuilder()
     elif TaskKeyword.COLLABORATIVE_FILTERING in task_keywords:
+        task_name = 'COLLABORATIVE_FILTERING'
         builder = BaseBuilder()
     elif TaskKeyword.COMMUNITY_DETECTION in task_keywords:
+        task_name = 'COMMUNITY_DETECTION'
         builder = CommunityDetectionBuilder()
     elif TaskKeyword.LINK_PREDICTION in task_keywords:
+        task_name = 'LINK_PREDICTION'
         builder = LinkPredictionBuilder()
     elif TaskKeyword.OBJECT_DETECTION in task_keywords:
+        task_name = 'OBJECT_DETECTION'
         builder = ObjectDetectionBuilder()
     elif TaskKeyword.GRAPH_MATCHING in task_keywords:
+        task_name = 'GRAPH_MATCHING'
         builder = GraphMatchingBuilder()
     elif TaskKeyword.FORECASTING in task_keywords:
         task_name = 'TIME_SERIES_FORECASTING'
