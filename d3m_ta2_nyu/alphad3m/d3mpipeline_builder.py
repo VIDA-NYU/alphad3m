@@ -174,6 +174,16 @@ def encode_features(pipeline, initial_step, feature_types, db):
     return last_step
 
 
+def skip_encoding(primitives):
+    for primitive in primitives:
+        if primitive in {'d3m.primitives.data_preprocessing.text_reader.Common',
+                         'd3m.primitives.data_preprocessing.image_reader.Common',
+                         'd3m.primitives.feature_extraction.image_transfer.DistilImageTransfer',
+                         'd3m.primitives.feature_extraction.audio_transfer.DistilAudioTransfer'}:
+            return True
+    return False
+
+
 class BaseBuilder:
 
     def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets, features,
@@ -269,7 +279,11 @@ class BaseBuilder:
                             semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
                             )
             connect(db, pipeline, step2, step4)
-            encoder_step = encode_features(pipeline, step3, all_types, db)
+
+            if skip_encoding(primitives):
+                encoder_step = step3
+            else:
+                encoder_step = encode_features(pipeline, step3, all_types, db)
 
             step = prev_step = encoder_step
             preprocessors = primitives[:-1]

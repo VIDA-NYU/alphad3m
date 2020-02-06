@@ -178,7 +178,7 @@ def load_template():
 
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['uu3_world_development_indicators_raw'] #'LL1_VTXC_1343_cora' '185_baseball_MIN_METADATA' LL1_GT_actor_group_association_prediction
+    #datasets = ['uu3_world_development_indicators_raw'] #'LL1_VTXC_1343_cora' '185_baseball_MIN_METADATA' LL1_GT_actor_group_association_prediction
 
     search_pipelines(datasets)
     evaluate_pipelines(datasets)
