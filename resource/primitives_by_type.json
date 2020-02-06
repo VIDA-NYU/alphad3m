@@ -18,9 +18,6 @@
         "d3m.primitives.classification.linear_svc.SKlearn": 17,
         "d3m.primitives.classification.logistic_regression.SKlearn": 18,
         "d3m.primitives.classification.lstm.DSBOX": 19,
-        "d3m.primitives.classification.lupi_rf.LupiRFClassifier": 20,
-        "d3m.primitives.classification.lupi_rfsel.LupiRFSelClassifier": 21,
-        "d3m.primitives.classification.lupi_svm.LupiSvmClassifier": 22,
         "d3m.primitives.classification.mlp.SKlearn": 23,
         "d3m.primitives.classification.multinomial_naive_bayes.SKlearn": 24,
         "d3m.primitives.classification.nearest_centroid.SKlearn": 25,
@@ -33,7 +30,6 @@
         "d3m.primitives.classification.search_hybrid.Find_projections": 32,
         "d3m.primitives.classification.sgd.SKlearn": 33,
         "d3m.primitives.classification.svc.SKlearn": 34,
-        "d3m.primitives.classification.text_classifier.DistilTextClassifier": 35,
         "d3m.primitives.classification.tree_augmented_naive_bayes.BayesianInfRPI": 36,
         "d3m.primitives.classification.xgboost_dart.Common": 38,
         "d3m.primitives.classification.xgboost_gbtree.Common": 39
@@ -41,7 +37,6 @@
     "DATA_PREPROCESSING": {
         "d3m.primitives.classification.ensemble_voting.DSBOX": 8,
         "d3m.primitives.column_parser.preprocess_categorical_columns.Cornell": 48,
-        "d3m.primitives.data_preprocessing.audio_reader.DistilAudioDatasetLoader": 66,
         "d3m.primitives.data_preprocessing.binarizer.SKlearn": 67,
         "d3m.primitives.data_preprocessing.count_vectorizer.SKlearn": 68,
         "d3m.primitives.data_preprocessing.datetime_range_filter.Common": 69,

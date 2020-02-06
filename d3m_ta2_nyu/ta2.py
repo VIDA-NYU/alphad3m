@@ -988,8 +988,8 @@ class D3mTa2(Observable):
 
         sample_dataset_uri = self._get_sample_uri(dataset_uri, session.problem)
         do_rank = True if top_pipelines > 0 else False
-        timeout_search = timeout * 0.9  # TODO: Do it dynamic
-        timeout_tuning = timeout * 0.05
+        timeout_search = timeout - 180  # timeout * 0.85  # TODO: Do it dynamic
+        timeout_tuning = timeout * 0.15
 
         self._build_pipelines_from_generator(session, task, dataset_uri, sample_dataset_uri, search_results,
                                              pipeline_template, metrics, timeout_search, do_rank)

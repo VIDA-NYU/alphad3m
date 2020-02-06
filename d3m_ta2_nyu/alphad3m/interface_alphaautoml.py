@@ -40,7 +40,8 @@ config = {
                       'TEXT_REGRESSION': 16,
                       'IMAGE_REGRESSION': 17,
                       'AUDIO_REGRESSION': 18,
-                      'NA': 19
+                      'LUPI': 19,
+                      'NA': 20
                       },
 
     'DATA_TYPES': {'TABULAR': 1,
@@ -252,6 +253,9 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     elif TaskKeyword.VERTEX_CLASSIFICATION in task_keywords or TaskKeyword.VERTEX_NOMINATION in task_keywords:
         task_name = 'VERTEX_CLASSIFICATION'
         builder = VertexClassificationBuilder()
+    elif TaskKeyword.LUPI in task_keywords:
+        task_name = 'LUPI'
+        builder = LupiBuilder()
     elif TaskKeyword.TEXT in task_keywords and (
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'TEXT_' + task_name
