@@ -1076,7 +1076,8 @@ class D3mTa2(Observable):
                           'stratified': 'true' if TaskKeyword.CLASSIFICATION in task_keywords else 'false',
                           'method': pb_core.EvaluationMethod.Value('K_FOLD'),
                           'number_of_folds': '2'}
-
+        if TaskKeyword.SEMISUPERVISED in task_keywords and session.metrics[0]['metric'].name == 'F1':
+            scoring_config['method'] = 'SEMISUPERVISED'
         # Add the pipeline to the session, score it
         with session.with_observer_queue() as queue:
             session.add_scoring_pipeline(pipeline_id)
