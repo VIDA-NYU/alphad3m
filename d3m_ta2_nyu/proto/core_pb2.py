@@ -25,8 +25,8 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='core.proto',
   package='',
   syntax='proto3',
-  serialized_options=_b('Z\010pipeline\242\265\032\t2019.12.4'),
-  serialized_pb=_b('\n\ncore.proto\x1a google/protobuf/descriptor.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x0epipeline.proto\x1a\x0fprimitive.proto\x1a\rproblem.proto\x1a\x0bvalue.proto\"\x9c\x01\n\x14ScoringConfiguration\x12!\n\x06method\x18\x01 \x01(\x0e\x32\x11.EvaluationMethod\x12\r\n\x05\x66olds\x18\x02 \x01(\x05\x12\x18\n\x10train_test_ratio\x18\x03 \x01(\x01\x12\x0f\n\x07shuffle\x18\x04 \x01(\x08\x12\x13\n\x0brandom_seed\x18\x05 \x01(\x05\x12\x12\n\nstratified\x18\x06 \x01(\x08\"\x88\x01\n\x05Score\x12)\n\x06metric\x18\x01 \x01(\x0b\x32\x19.ProblemPerformanceMetric\x12\x0c\n\x04\x66old\x18\x02 \x01(\x05\x12\x15\n\x05value\x18\x04 \x01(\x0b\x32\x06.Value\x12\x13\n\x0brandom_seed\x18\x05 \x01(\x05\x12\x1a\n\nnormalized\x18\x06 \x01(\x0b\x32\x06.Value\"\x8d\x01\n\x08Progress\x12\x1d\n\x05state\x18\x01 \x01(\x0e\x32\x0e.ProgressState\x12\x0e\n\x06status\x18\x02 \x01(\t\x12)\n\x05start\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\'\n\x03\x65nd\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"\xc4\x02\n\x16SearchSolutionsRequest\x12\x12\n\nuser_agent\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x19\n\x11time_bound_search\x18\x03 \x01(\x01\x12\x10\n\x08priority\x18\x04 \x01(\x01\x12\'\n\x13\x61llowed_value_types\x18\x05 \x03(\x0e\x32\n.ValueType\x12$\n\x07problem\x18\x06 \x01(\x0b\x32\x13.ProblemDescription\x12&\n\x08template\x18\x07 \x01(\x0b\x32\x14.PipelineDescription\x12\x16\n\x06inputs\x18\x08 \x03(\x0b\x32\x06.Value\x12\x16\n\x0etime_bound_run\x18\t \x01(\x01\x12\x1c\n\x14rank_solutions_limit\x18\n \x01(\x05\x12\x13\n\x0brandom_seed\x18\x0b \x01(\x05\",\n\x17SearchSolutionsResponse\x12\x11\n\tsearch_id\x18\x01 \x01(\t\".\n\x19\x45ndSearchSolutionsRequest\x12\x11\n\tsearch_id\x18\x01 \x01(\t\"\x1c\n\x1a\x45ndSearchSolutionsResponse\"/\n\x1aStopSearchSolutionsRequest\x12\x11\n\tsearch_id\x18\x01 \x01(\t\"\x1d\n\x1bStopSearchSolutionsResponse\"c\n\x13SolutionSearchScore\x12\x34\n\x15scoring_configuration\x18\x01 \x01(\x0b\x32\x15.ScoringConfiguration\x12\x16\n\x06scores\x18\x02 \x03(\x0b\x32\x06.Score\"5\n GetSearchSolutionsResultsRequest\x12\x11\n\tsearch_id\x18\x01 \x01(\t\"\xba\x01\n!GetSearchSolutionsResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x12\n\ndone_ticks\x18\x02 \x01(\x01\x12\x11\n\tall_ticks\x18\x03 \x01(\x01\x12\x13\n\x0bsolution_id\x18\x04 \x01(\t\x12\x16\n\x0einternal_score\x18\x05 \x01(\x01\x12$\n\x06scores\x18\x06 \x03(\x0b\x32\x14.SolutionSearchScore\".\n\x17\x44\x65scribeSolutionRequest\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\"\x97\x01\n\x18PrimitiveStepDescription\x12?\n\x0bhyperparams\x18\x01 \x03(\x0b\x32*.PrimitiveStepDescription.HyperparamsEntry\x1a:\n\x10HyperparamsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x15\n\x05value\x18\x02 \x01(\x0b\x32\x06.Value:\x02\x38\x01\"=\n\x1aSubpipelineStepDescription\x12\x1f\n\x05steps\x18\x01 \x03(\x0b\x32\x10.StepDescription\"z\n\x0fStepDescription\x12.\n\tprimitive\x18\x01 \x01(\x0b\x32\x19.PrimitiveStepDescriptionH\x00\x12/\n\x08pipeline\x18\x02 \x01(\x0b\x32\x1b.SubpipelineStepDescriptionH\x00\x42\x06\n\x04step\"c\n\x18\x44\x65scribeSolutionResponse\x12&\n\x08pipeline\x18\x01 \x01(\x0b\x32\x14.PipelineDescription\x12\x1f\n\x05steps\x18\x02 \x03(\x0b\x32\x10.StepDescription\"I\n\x0cStepProgress\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x1c\n\x05steps\x18\x02 \x03(\x0b\x32\r.StepProgress\"=\n\x0fSolutionRunUser\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06\x63hosen\x18\x02 \x01(\x08\x12\x0e\n\x06reason\x18\x03 \x01(\t\"\xca\x01\n\x14ScoreSolutionRequest\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\x12\x16\n\x06inputs\x18\x02 \x03(\x0b\x32\x06.Value\x12\x36\n\x13performance_metrics\x18\x03 \x03(\x0b\x32\x19.ProblemPerformanceMetric\x12\x1f\n\x05users\x18\x04 \x03(\x0b\x32\x10.SolutionRunUser\x12,\n\rconfiguration\x18\x05 \x01(\x0b\x32\x15.ScoringConfiguration\"+\n\x15ScoreSolutionResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"4\n\x1eGetScoreSolutionResultsRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"V\n\x1fGetScoreSolutionResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x16\n\x06scores\x18\x02 \x03(\x0b\x32\x06.Score\"\xb7\x01\n\x12\x46itSolutionRequest\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\x12\x16\n\x06inputs\x18\x02 \x03(\x0b\x32\x06.Value\x12\x16\n\x0e\x65xpose_outputs\x18\x03 \x03(\t\x12&\n\x12\x65xpose_value_types\x18\x04 \x03(\x0e\x32\n.ValueType\x12\x1f\n\x05users\x18\x05 \x03(\x0b\x32\x10.SolutionRunUser\x12\x13\n\x0brandom_seed\x18\x06 \x01(\x05\")\n\x13\x46itSolutionResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"2\n\x1cGetFitSolutionResultsRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"\x82\x02\n\x1dGetFitSolutionResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x1c\n\x05steps\x18\x02 \x03(\x0b\x32\r.StepProgress\x12K\n\x0f\x65xposed_outputs\x18\x03 \x03(\x0b\x32\x32.GetFitSolutionResultsResponse.ExposedOutputsEntry\x12\x1a\n\x12\x66itted_solution_id\x18\x04 \x01(\t\x1a=\n\x13\x45xposedOutputsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x15\n\x05value\x18\x02 \x01(\x0b\x32\x06.Value:\x02\x38\x01\"\xad\x01\n\x16ProduceSolutionRequest\x12\x1a\n\x12\x66itted_solution_id\x18\x01 \x01(\t\x12\x16\n\x06inputs\x18\x02 \x03(\x0b\x32\x06.Value\x12\x16\n\x0e\x65xpose_outputs\x18\x03 \x03(\t\x12&\n\x12\x65xpose_value_types\x18\x04 \x03(\x0e\x32\n.ValueType\x12\x1f\n\x05users\x18\x05 \x03(\x0b\x32\x10.SolutionRunUser\"-\n\x17ProduceSolutionResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"6\n GetProduceSolutionResultsRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"\xee\x01\n!GetProduceSolutionResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x1c\n\x05steps\x18\x02 \x03(\x0b\x32\r.StepProgress\x12O\n\x0f\x65xposed_outputs\x18\x03 \x03(\x0b\x32\x36.GetProduceSolutionResultsResponse.ExposedOutputsEntry\x1a=\n\x13\x45xposedOutputsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x15\n\x05value\x18\x02 \x01(\x0b\x32\x06.Value:\x02\x38\x01\":\n\x15SolutionExportRequest\x12\x13\n\x0bsolution_id\x18\x03 \x01(\t\x12\x0c\n\x04rank\x18\x02 \x01(\x01\"\x18\n\x16SolutionExportResponse\"w\n\x14\x44\x61taAvailableRequest\x12\x12\n\nuser_agent\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x12\n\ntime_bound\x18\x03 \x01(\x01\x12\x10\n\x08priority\x18\x04 \x01(\x01\x12\x14\n\x04\x64\x61ta\x18\x05 \x03(\x0b\x32\x06.Value\"\x17\n\x15\x44\x61taAvailableResponse\"\x88\x01\n\x10SplitDataRequest\x12\x15\n\x05input\x18\x01 \x01(\x0b\x32\x06.Value\x12\x34\n\x15scoring_configuration\x18\x02 \x01(\x0b\x32\x15.ScoringConfiguration\x12\'\n\x13\x61llowed_value_types\x18\x03 \x03(\x0e\x32\n.ValueType\"l\n\x11SplitDataResponse\x12\x1c\n\x0ctrain_output\x18\x01 \x01(\x0b\x32\x06.Value\x12\x1b\n\x0btest_output\x18\x02 \x01(\x0b\x32\x06.Value\x12\x1c\n\x0cscore_output\x18\x03 \x01(\x0b\x32\x06.Value\"\xa4\x01\n\x17ScorePredictionsRequest\x12\x1b\n\x0bpredictions\x18\x01 \x01(\x0b\x32\x06.Value\x12\x1b\n\x0bscore_input\x18\x04 \x01(\x0b\x32\x06.Value\x12$\n\x07problem\x18\x02 \x01(\x0b\x32\x13.ProblemDescription\x12)\n\x06metric\x18\x03 \x03(\x0b\x32\x19.ProblemPerformanceMetric\"2\n\x18ScorePredictionsResponse\x12\x16\n\x06scores\x18\x01 \x03(\x0b\x32\x06.Score\"*\n\x13SaveSolutionRequest\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\",\n\x14SaveSolutionResponse\x12\x14\n\x0csolution_uri\x18\x01 \x01(\t\"+\n\x13LoadSolutionRequest\x12\x14\n\x0csolution_uri\x18\x01 \x01(\t\"+\n\x14LoadSolutionResponse\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\"7\n\x19SaveFittedSolutionRequest\x12\x1a\n\x12\x66itted_solution_id\x18\x01 \x01(\t\"9\n\x1aSaveFittedSolutionResponse\x12\x1b\n\x13\x66itted_solution_uri\x18\x01 \x01(\t\"8\n\x19LoadFittedSolutionRequest\x12\x1b\n\x13\x66itted_solution_uri\x18\x01 \x01(\t\"8\n\x1aLoadFittedSolutionResponse\x12\x1a\n\x12\x66itted_solution_id\x18\x01 \x01(\t\"\x17\n\x15ListPrimitivesRequest\"8\n\x16ListPrimitivesResponse\x12\x1e\n\nprimitives\x18\x01 \x03(\x0b\x32\n.Primitive\"\x0e\n\x0cHelloRequest\"{\n\rHelloResponse\x12\x12\n\nuser_agent\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\'\n\x13\x61llowed_value_types\x18\x03 \x03(\x0e\x32\n.ValueType\x12\x1c\n\x14supported_extensions\x18\x04 \x03(\t*\x8f\x01\n\x10\x45valuationMethod\x12\x1f\n\x1b\x45VALUATION_METHOD_UNDEFINED\x10\x00\x12\x0b\n\x07HOLDOUT\x10\x01\x12\n\n\x06K_FOLD\x10\x02\x12\x0b\n\x07RANKING\x10\x63\x12\x11\n\rLEAVE_ONE_OUT\x10\x64\x12\x0e\n\nPREDICTION\x10\x65\x12\x11\n\rTRAINING_DATA\x10\x66*[\n\rProgressState\x12\x14\n\x10PROGRESS_UNKNOWN\x10\x00\x12\x0b\n\x07PENDING\x10\x01\x12\x0b\n\x07RUNNING\x10\x02\x12\r\n\tCOMPLETED\x10\x03\x12\x0b\n\x07\x45RRORED\x10\x04\x32\xab\x0c\n\x04\x43ore\x12\x46\n\x0fSearchSolutions\x12\x17.SearchSolutionsRequest\x1a\x18.SearchSolutionsResponse\"\x00\x12\x66\n\x19GetSearchSolutionsResults\x12!.GetSearchSolutionsResultsRequest\x1a\".GetSearchSolutionsResultsResponse\"\x00\x30\x01\x12O\n\x12\x45ndSearchSolutions\x12\x1a.EndSearchSolutionsRequest\x1a\x1b.EndSearchSolutionsResponse\"\x00\x12R\n\x13StopSearchSolutions\x12\x1b.StopSearchSolutionsRequest\x1a\x1c.StopSearchSolutionsResponse\"\x00\x12I\n\x10\x44\x65scribeSolution\x12\x18.DescribeSolutionRequest\x1a\x19.DescribeSolutionResponse\"\x00\x12@\n\rScoreSolution\x12\x15.ScoreSolutionRequest\x1a\x16.ScoreSolutionResponse\"\x00\x12`\n\x17GetScoreSolutionResults\x12\x1f.GetScoreSolutionResultsRequest\x1a .GetScoreSolutionResultsResponse\"\x00\x30\x01\x12:\n\x0b\x46itSolution\x12\x13.FitSolutionRequest\x1a\x14.FitSolutionResponse\"\x00\x12Z\n\x15GetFitSolutionResults\x12\x1d.GetFitSolutionResultsRequest\x1a\x1e.GetFitSolutionResultsResponse\"\x00\x30\x01\x12\x46\n\x0fProduceSolution\x12\x17.ProduceSolutionRequest\x1a\x18.ProduceSolutionResponse\"\x00\x12\x66\n\x19GetProduceSolutionResults\x12!.GetProduceSolutionResultsRequest\x1a\".GetProduceSolutionResultsResponse\"\x00\x30\x01\x12\x43\n\x0eSolutionExport\x12\x16.SolutionExportRequest\x1a\x17.SolutionExportResponse\"\x00\x12@\n\rDataAvailable\x12\x15.DataAvailableRequest\x1a\x16.DataAvailableResponse\"\x00\x12\x43\n\x0eListPrimitives\x12\x16.ListPrimitivesRequest\x1a\x17.ListPrimitivesResponse\"\x00\x12(\n\x05Hello\x12\r.HelloRequest\x1a\x0e.HelloResponse\"\x00\x12=\n\x0cSaveSolution\x12\x14.SaveSolutionRequest\x1a\x15.SaveSolutionResponse\"\x00\x12=\n\x0cLoadSolution\x12\x14.LoadSolutionRequest\x1a\x15.LoadSolutionResponse\"\x00\x12O\n\x12SaveFittedSolution\x12\x1a.SaveFittedSolutionRequest\x1a\x1b.SaveFittedSolutionResponse\"\x00\x12O\n\x12LoadFittedSolution\x12\x1a.LoadFittedSolutionRequest\x1a\x1b.LoadFittedSolutionResponse\"\x00\x12\x36\n\tSplitData\x12\x11.SplitDataRequest\x1a\x12.SplitDataResponse\"\x00\x30\x01\x12I\n\x10ScorePredictions\x12\x18.ScorePredictionsRequest\x1a\x19.ScorePredictionsResponse\"\x00:8\n\x10protocol_version\x12\x1c.google.protobuf.FileOptions\x18\xd4\xa6\x03 \x01(\tB\x17Z\x08pipeline\xa2\xb5\x1a\t2019.12.4b\x06proto3')
+  serialized_options=_b('Z\010pipeline\242\265\032\t2020.2.11'),
+  serialized_pb=_b('\n\ncore.proto\x1a google/protobuf/descriptor.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x0epipeline.proto\x1a\x0fprimitive.proto\x1a\rproblem.proto\x1a\x0bvalue.proto\"\x9c\x01\n\x14ScoringConfiguration\x12!\n\x06method\x18\x01 \x01(\x0e\x32\x11.EvaluationMethod\x12\r\n\x05\x66olds\x18\x02 \x01(\x05\x12\x18\n\x10train_test_ratio\x18\x03 \x01(\x01\x12\x0f\n\x07shuffle\x18\x04 \x01(\x08\x12\x13\n\x0brandom_seed\x18\x05 \x01(\x05\x12\x12\n\nstratified\x18\x06 \x01(\x08\"\x88\x01\n\x05Score\x12)\n\x06metric\x18\x01 \x01(\x0b\x32\x19.ProblemPerformanceMetric\x12\x0c\n\x04\x66old\x18\x02 \x01(\x05\x12\x15\n\x05value\x18\x04 \x01(\x0b\x32\x06.Value\x12\x13\n\x0brandom_seed\x18\x05 \x01(\x05\x12\x1a\n\nnormalized\x18\x06 \x01(\x0b\x32\x06.Value\"\x8d\x01\n\x08Progress\x12\x1d\n\x05state\x18\x01 \x01(\x0e\x32\x0e.ProgressState\x12\x0e\n\x06status\x18\x02 \x01(\t\x12)\n\x05start\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\'\n\x03\x65nd\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"\xc4\x02\n\x16SearchSolutionsRequest\x12\x12\n\nuser_agent\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x19\n\x11time_bound_search\x18\x03 \x01(\x01\x12\x10\n\x08priority\x18\x04 \x01(\x01\x12\'\n\x13\x61llowed_value_types\x18\x05 \x03(\x0e\x32\n.ValueType\x12$\n\x07problem\x18\x06 \x01(\x0b\x32\x13.ProblemDescription\x12&\n\x08template\x18\x07 \x01(\x0b\x32\x14.PipelineDescription\x12\x16\n\x06inputs\x18\x08 \x03(\x0b\x32\x06.Value\x12\x16\n\x0etime_bound_run\x18\t \x01(\x01\x12\x1c\n\x14rank_solutions_limit\x18\n \x01(\x05\x12\x13\n\x0brandom_seed\x18\x0b \x01(\x05\",\n\x17SearchSolutionsResponse\x12\x11\n\tsearch_id\x18\x01 \x01(\t\".\n\x19\x45ndSearchSolutionsRequest\x12\x11\n\tsearch_id\x18\x01 \x01(\t\"\x1c\n\x1a\x45ndSearchSolutionsResponse\"/\n\x1aStopSearchSolutionsRequest\x12\x11\n\tsearch_id\x18\x01 \x01(\t\"\x1d\n\x1bStopSearchSolutionsResponse\"c\n\x13SolutionSearchScore\x12\x34\n\x15scoring_configuration\x18\x01 \x01(\x0b\x32\x15.ScoringConfiguration\x12\x16\n\x06scores\x18\x02 \x03(\x0b\x32\x06.Score\"5\n GetSearchSolutionsResultsRequest\x12\x11\n\tsearch_id\x18\x01 \x01(\t\"\xba\x01\n!GetSearchSolutionsResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x12\n\ndone_ticks\x18\x02 \x01(\x01\x12\x11\n\tall_ticks\x18\x03 \x01(\x01\x12\x13\n\x0bsolution_id\x18\x04 \x01(\t\x12\x16\n\x0einternal_score\x18\x05 \x01(\x01\x12$\n\x06scores\x18\x06 \x03(\x0b\x32\x14.SolutionSearchScore\".\n\x17\x44\x65scribeSolutionRequest\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\"\x97\x01\n\x18PrimitiveStepDescription\x12?\n\x0bhyperparams\x18\x01 \x03(\x0b\x32*.PrimitiveStepDescription.HyperparamsEntry\x1a:\n\x10HyperparamsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x15\n\x05value\x18\x02 \x01(\x0b\x32\x06.Value:\x02\x38\x01\"=\n\x1aSubpipelineStepDescription\x12\x1f\n\x05steps\x18\x01 \x03(\x0b\x32\x10.StepDescription\"z\n\x0fStepDescription\x12.\n\tprimitive\x18\x01 \x01(\x0b\x32\x19.PrimitiveStepDescriptionH\x00\x12/\n\x08pipeline\x18\x02 \x01(\x0b\x32\x1b.SubpipelineStepDescriptionH\x00\x42\x06\n\x04step\"c\n\x18\x44\x65scribeSolutionResponse\x12&\n\x08pipeline\x18\x01 \x01(\x0b\x32\x14.PipelineDescription\x12\x1f\n\x05steps\x18\x02 \x03(\x0b\x32\x10.StepDescription\"I\n\x0cStepProgress\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x1c\n\x05steps\x18\x02 \x03(\x0b\x32\r.StepProgress\"=\n\x0fSolutionRunUser\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06\x63hosen\x18\x02 \x01(\x08\x12\x0e\n\x06reason\x18\x03 \x01(\t\"\xca\x01\n\x14ScoreSolutionRequest\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\x12\x16\n\x06inputs\x18\x02 \x03(\x0b\x32\x06.Value\x12\x36\n\x13performance_metrics\x18\x03 \x03(\x0b\x32\x19.ProblemPerformanceMetric\x12\x1f\n\x05users\x18\x04 \x03(\x0b\x32\x10.SolutionRunUser\x12,\n\rconfiguration\x18\x05 \x01(\x0b\x32\x15.ScoringConfiguration\"+\n\x15ScoreSolutionResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"4\n\x1eGetScoreSolutionResultsRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"V\n\x1fGetScoreSolutionResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x16\n\x06scores\x18\x02 \x03(\x0b\x32\x06.Score\"\xb7\x01\n\x12\x46itSolutionRequest\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\x12\x16\n\x06inputs\x18\x02 \x03(\x0b\x32\x06.Value\x12\x16\n\x0e\x65xpose_outputs\x18\x03 \x03(\t\x12&\n\x12\x65xpose_value_types\x18\x04 \x03(\x0e\x32\n.ValueType\x12\x1f\n\x05users\x18\x05 \x03(\x0b\x32\x10.SolutionRunUser\x12\x13\n\x0brandom_seed\x18\x06 \x01(\x05\")\n\x13\x46itSolutionResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"2\n\x1cGetFitSolutionResultsRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"\x82\x02\n\x1dGetFitSolutionResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x1c\n\x05steps\x18\x02 \x03(\x0b\x32\r.StepProgress\x12K\n\x0f\x65xposed_outputs\x18\x03 \x03(\x0b\x32\x32.GetFitSolutionResultsResponse.ExposedOutputsEntry\x12\x1a\n\x12\x66itted_solution_id\x18\x04 \x01(\t\x1a=\n\x13\x45xposedOutputsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x15\n\x05value\x18\x02 \x01(\x0b\x32\x06.Value:\x02\x38\x01\"\xad\x01\n\x16ProduceSolutionRequest\x12\x1a\n\x12\x66itted_solution_id\x18\x01 \x01(\t\x12\x16\n\x06inputs\x18\x02 \x03(\x0b\x32\x06.Value\x12\x16\n\x0e\x65xpose_outputs\x18\x03 \x03(\t\x12&\n\x12\x65xpose_value_types\x18\x04 \x03(\x0e\x32\n.ValueType\x12\x1f\n\x05users\x18\x05 \x03(\x0b\x32\x10.SolutionRunUser\"-\n\x17ProduceSolutionResponse\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"6\n GetProduceSolutionResultsRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\"\xee\x01\n!GetProduceSolutionResultsResponse\x12\x1b\n\x08progress\x18\x01 \x01(\x0b\x32\t.Progress\x12\x1c\n\x05steps\x18\x02 \x03(\x0b\x32\r.StepProgress\x12O\n\x0f\x65xposed_outputs\x18\x03 \x03(\x0b\x32\x36.GetProduceSolutionResultsResponse.ExposedOutputsEntry\x1a=\n\x13\x45xposedOutputsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x15\n\x05value\x18\x02 \x01(\x0b\x32\x06.Value:\x02\x38\x01\":\n\x15SolutionExportRequest\x12\x13\n\x0bsolution_id\x18\x03 \x01(\t\x12\x0c\n\x04rank\x18\x02 \x01(\x01\"\x18\n\x16SolutionExportResponse\"w\n\x14\x44\x61taAvailableRequest\x12\x12\n\nuser_agent\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x12\n\ntime_bound\x18\x03 \x01(\x01\x12\x10\n\x08priority\x18\x04 \x01(\x01\x12\x14\n\x04\x64\x61ta\x18\x05 \x03(\x0b\x32\x06.Value\"\x17\n\x15\x44\x61taAvailableResponse\"\x88\x01\n\x10SplitDataRequest\x12\x15\n\x05input\x18\x01 \x01(\x0b\x32\x06.Value\x12\x34\n\x15scoring_configuration\x18\x02 \x01(\x0b\x32\x15.ScoringConfiguration\x12\'\n\x13\x61llowed_value_types\x18\x03 \x03(\x0e\x32\n.ValueType\"l\n\x11SplitDataResponse\x12\x1c\n\x0ctrain_output\x18\x01 \x01(\x0b\x32\x06.Value\x12\x1b\n\x0btest_output\x18\x02 \x01(\x0b\x32\x06.Value\x12\x1c\n\x0cscore_output\x18\x03 \x01(\x0b\x32\x06.Value\"\xa4\x01\n\x17ScorePredictionsRequest\x12\x1b\n\x0bpredictions\x18\x01 \x01(\x0b\x32\x06.Value\x12\x1b\n\x0bscore_input\x18\x04 \x01(\x0b\x32\x06.Value\x12$\n\x07problem\x18\x02 \x01(\x0b\x32\x13.ProblemDescription\x12)\n\x06metric\x18\x03 \x03(\x0b\x32\x19.ProblemPerformanceMetric\"2\n\x18ScorePredictionsResponse\x12\x16\n\x06scores\x18\x01 \x03(\x0b\x32\x06.Score\"*\n\x13SaveSolutionRequest\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\",\n\x14SaveSolutionResponse\x12\x14\n\x0csolution_uri\x18\x01 \x01(\t\"+\n\x13LoadSolutionRequest\x12\x14\n\x0csolution_uri\x18\x01 \x01(\t\"+\n\x14LoadSolutionResponse\x12\x13\n\x0bsolution_id\x18\x01 \x01(\t\"7\n\x19SaveFittedSolutionRequest\x12\x1a\n\x12\x66itted_solution_id\x18\x01 \x01(\t\"9\n\x1aSaveFittedSolutionResponse\x12\x1b\n\x13\x66itted_solution_uri\x18\x01 \x01(\t\"8\n\x19LoadFittedSolutionRequest\x12\x1b\n\x13\x66itted_solution_uri\x18\x01 \x01(\t\"8\n\x1aLoadFittedSolutionResponse\x12\x1a\n\x12\x66itted_solution_id\x18\x01 \x01(\t\"\x17\n\x15ListPrimitivesRequest\"8\n\x16ListPrimitivesResponse\x12\x1e\n\nprimitives\x18\x01 \x03(\x0b\x32\n.Primitive\"\x0e\n\x0cHelloRequest\"{\n\rHelloResponse\x12\x12\n\nuser_agent\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\'\n\x13\x61llowed_value_types\x18\x03 \x03(\x0e\x32\n.ValueType\x12\x1c\n\x14supported_extensions\x18\x04 \x03(\t*\x8f\x01\n\x10\x45valuationMethod\x12\x1f\n\x1b\x45VALUATION_METHOD_UNDEFINED\x10\x00\x12\x0b\n\x07HOLDOUT\x10\x01\x12\n\n\x06K_FOLD\x10\x02\x12\x0b\n\x07RANKING\x10\x63\x12\x11\n\rLEAVE_ONE_OUT\x10\x64\x12\x0e\n\nPREDICTION\x10\x65\x12\x11\n\rTRAINING_DATA\x10\x66*[\n\rProgressState\x12\x14\n\x10PROGRESS_UNKNOWN\x10\x00\x12\x0b\n\x07PENDING\x10\x01\x12\x0b\n\x07RUNNING\x10\x02\x12\r\n\tCOMPLETED\x10\x03\x12\x0b\n\x07\x45RRORED\x10\x04\x32\xab\x0c\n\x04\x43ore\x12\x46\n\x0fSearchSolutions\x12\x17.SearchSolutionsRequest\x1a\x18.SearchSolutionsResponse\"\x00\x12\x66\n\x19GetSearchSolutionsResults\x12!.GetSearchSolutionsResultsRequest\x1a\".GetSearchSolutionsResultsResponse\"\x00\x30\x01\x12O\n\x12\x45ndSearchSolutions\x12\x1a.EndSearchSolutionsRequest\x1a\x1b.EndSearchSolutionsResponse\"\x00\x12R\n\x13StopSearchSolutions\x12\x1b.StopSearchSolutionsRequest\x1a\x1c.StopSearchSolutionsResponse\"\x00\x12I\n\x10\x44\x65scribeSolution\x12\x18.DescribeSolutionRequest\x1a\x19.DescribeSolutionResponse\"\x00\x12@\n\rScoreSolution\x12\x15.ScoreSolutionRequest\x1a\x16.ScoreSolutionResponse\"\x00\x12`\n\x17GetScoreSolutionResults\x12\x1f.GetScoreSolutionResultsRequest\x1a .GetScoreSolutionResultsResponse\"\x00\x30\x01\x12:\n\x0b\x46itSolution\x12\x13.FitSolutionRequest\x1a\x14.FitSolutionResponse\"\x00\x12Z\n\x15GetFitSolutionResults\x12\x1d.GetFitSolutionResultsRequest\x1a\x1e.GetFitSolutionResultsResponse\"\x00\x30\x01\x12\x46\n\x0fProduceSolution\x12\x17.ProduceSolutionRequest\x1a\x18.ProduceSolutionResponse\"\x00\x12\x66\n\x19GetProduceSolutionResults\x12!.GetProduceSolutionResultsRequest\x1a\".GetProduceSolutionResultsResponse\"\x00\x30\x01\x12\x43\n\x0eSolutionExport\x12\x16.SolutionExportRequest\x1a\x17.SolutionExportResponse\"\x00\x12@\n\rDataAvailable\x12\x15.DataAvailableRequest\x1a\x16.DataAvailableResponse\"\x00\x12\x43\n\x0eListPrimitives\x12\x16.ListPrimitivesRequest\x1a\x17.ListPrimitivesResponse\"\x00\x12(\n\x05Hello\x12\r.HelloRequest\x1a\x0e.HelloResponse\"\x00\x12=\n\x0cSaveSolution\x12\x14.SaveSolutionRequest\x1a\x15.SaveSolutionResponse\"\x00\x12=\n\x0cLoadSolution\x12\x14.LoadSolutionRequest\x1a\x15.LoadSolutionResponse\"\x00\x12O\n\x12SaveFittedSolution\x12\x1a.SaveFittedSolutionRequest\x1a\x1b.SaveFittedSolutionResponse\"\x00\x12O\n\x12LoadFittedSolution\x12\x1a.LoadFittedSolutionRequest\x1a\x1b.LoadFittedSolutionResponse\"\x00\x12\x36\n\tSplitData\x12\x11.SplitDataRequest\x1a\x12.SplitDataResponse\"\x00\x30\x01\x12I\n\x10ScorePredictions\x12\x18.ScorePredictionsRequest\x1a\x19.ScorePredictionsResponse\"\x00:8\n\x10protocol_version\x12\x1c.google.protobuf.FileOptions\x18\xd4\xa6\x03 \x01(\tB\x17Z\x08pipeline\xa2\xb5\x1a\t2020.2.11b\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_descriptor__pb2.DESCRIPTOR,google_dot_protobuf_dot_timestamp__pb2.DESCRIPTOR,pipeline__pb2.DESCRIPTOR,primitive__pb2.DESCRIPTOR,problem__pb2.DESCRIPTOR,value__pb2.DESCRIPTOR,])
 
@@ -2375,385 +2375,385 @@ DESCRIPTOR.enum_types_by_name['ProgressState'] = _PROGRESSSTATE
 DESCRIPTOR.extensions_by_name['protocol_version'] = protocol_version
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-ScoringConfiguration = _reflection.GeneratedProtocolMessageType('ScoringConfiguration', (_message.Message,), dict(
-  DESCRIPTOR = _SCORINGCONFIGURATION,
-  __module__ = 'core_pb2'
+ScoringConfiguration = _reflection.GeneratedProtocolMessageType('ScoringConfiguration', (_message.Message,), {
+  'DESCRIPTOR' : _SCORINGCONFIGURATION,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:ScoringConfiguration)
-  ))
+  })
 _sym_db.RegisterMessage(ScoringConfiguration)
 
-Score = _reflection.GeneratedProtocolMessageType('Score', (_message.Message,), dict(
-  DESCRIPTOR = _SCORE,
-  __module__ = 'core_pb2'
+Score = _reflection.GeneratedProtocolMessageType('Score', (_message.Message,), {
+  'DESCRIPTOR' : _SCORE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:Score)
-  ))
+  })
 _sym_db.RegisterMessage(Score)
 
-Progress = _reflection.GeneratedProtocolMessageType('Progress', (_message.Message,), dict(
-  DESCRIPTOR = _PROGRESS,
-  __module__ = 'core_pb2'
+Progress = _reflection.GeneratedProtocolMessageType('Progress', (_message.Message,), {
+  'DESCRIPTOR' : _PROGRESS,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:Progress)
-  ))
+  })
 _sym_db.RegisterMessage(Progress)
 
-SearchSolutionsRequest = _reflection.GeneratedProtocolMessageType('SearchSolutionsRequest', (_message.Message,), dict(
-  DESCRIPTOR = _SEARCHSOLUTIONSREQUEST,
-  __module__ = 'core_pb2'
+SearchSolutionsRequest = _reflection.GeneratedProtocolMessageType('SearchSolutionsRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SEARCHSOLUTIONSREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:SearchSolutionsRequest)
-  ))
+  })
 _sym_db.RegisterMessage(SearchSolutionsRequest)
 
-SearchSolutionsResponse = _reflection.GeneratedProtocolMessageType('SearchSolutionsResponse', (_message.Message,), dict(
-  DESCRIPTOR = _SEARCHSOLUTIONSRESPONSE,
-  __module__ = 'core_pb2'
+SearchSolutionsResponse = _reflection.GeneratedProtocolMessageType('SearchSolutionsResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SEARCHSOLUTIONSRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:SearchSolutionsResponse)
-  ))
+  })
 _sym_db.RegisterMessage(SearchSolutionsResponse)
 
-EndSearchSolutionsRequest = _reflection.GeneratedProtocolMessageType('EndSearchSolutionsRequest', (_message.Message,), dict(
-  DESCRIPTOR = _ENDSEARCHSOLUTIONSREQUEST,
-  __module__ = 'core_pb2'
+EndSearchSolutionsRequest = _reflection.GeneratedProtocolMessageType('EndSearchSolutionsRequest', (_message.Message,), {
+  'DESCRIPTOR' : _ENDSEARCHSOLUTIONSREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:EndSearchSolutionsRequest)
-  ))
+  })
 _sym_db.RegisterMessage(EndSearchSolutionsRequest)
 
-EndSearchSolutionsResponse = _reflection.GeneratedProtocolMessageType('EndSearchSolutionsResponse', (_message.Message,), dict(
-  DESCRIPTOR = _ENDSEARCHSOLUTIONSRESPONSE,
-  __module__ = 'core_pb2'
+EndSearchSolutionsResponse = _reflection.GeneratedProtocolMessageType('EndSearchSolutionsResponse', (_message.Message,), {
+  'DESCRIPTOR' : _ENDSEARCHSOLUTIONSRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:EndSearchSolutionsResponse)
-  ))
+  })
 _sym_db.RegisterMessage(EndSearchSolutionsResponse)
 
-StopSearchSolutionsRequest = _reflection.GeneratedProtocolMessageType('StopSearchSolutionsRequest', (_message.Message,), dict(
-  DESCRIPTOR = _STOPSEARCHSOLUTIONSREQUEST,
-  __module__ = 'core_pb2'
+StopSearchSolutionsRequest = _reflection.GeneratedProtocolMessageType('StopSearchSolutionsRequest', (_message.Message,), {
+  'DESCRIPTOR' : _STOPSEARCHSOLUTIONSREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:StopSearchSolutionsRequest)
-  ))
+  })
 _sym_db.RegisterMessage(StopSearchSolutionsRequest)
 
-StopSearchSolutionsResponse = _reflection.GeneratedProtocolMessageType('StopSearchSolutionsResponse', (_message.Message,), dict(
-  DESCRIPTOR = _STOPSEARCHSOLUTIONSRESPONSE,
-  __module__ = 'core_pb2'
+StopSearchSolutionsResponse = _reflection.GeneratedProtocolMessageType('StopSearchSolutionsResponse', (_message.Message,), {
+  'DESCRIPTOR' : _STOPSEARCHSOLUTIONSRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:StopSearchSolutionsResponse)
-  ))
+  })
 _sym_db.RegisterMessage(StopSearchSolutionsResponse)
 
-SolutionSearchScore = _reflection.GeneratedProtocolMessageType('SolutionSearchScore', (_message.Message,), dict(
-  DESCRIPTOR = _SOLUTIONSEARCHSCORE,
-  __module__ = 'core_pb2'
+SolutionSearchScore = _reflection.GeneratedProtocolMessageType('SolutionSearchScore', (_message.Message,), {
+  'DESCRIPTOR' : _SOLUTIONSEARCHSCORE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:SolutionSearchScore)
-  ))
+  })
 _sym_db.RegisterMessage(SolutionSearchScore)
 
-GetSearchSolutionsResultsRequest = _reflection.GeneratedProtocolMessageType('GetSearchSolutionsResultsRequest', (_message.Message,), dict(
-  DESCRIPTOR = _GETSEARCHSOLUTIONSRESULTSREQUEST,
-  __module__ = 'core_pb2'
+GetSearchSolutionsResultsRequest = _reflection.GeneratedProtocolMessageType('GetSearchSolutionsResultsRequest', (_message.Message,), {
+  'DESCRIPTOR' : _GETSEARCHSOLUTIONSRESULTSREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetSearchSolutionsResultsRequest)
-  ))
+  })
 _sym_db.RegisterMessage(GetSearchSolutionsResultsRequest)
 
-GetSearchSolutionsResultsResponse = _reflection.GeneratedProtocolMessageType('GetSearchSolutionsResultsResponse', (_message.Message,), dict(
-  DESCRIPTOR = _GETSEARCHSOLUTIONSRESULTSRESPONSE,
-  __module__ = 'core_pb2'
+GetSearchSolutionsResultsResponse = _reflection.GeneratedProtocolMessageType('GetSearchSolutionsResultsResponse', (_message.Message,), {
+  'DESCRIPTOR' : _GETSEARCHSOLUTIONSRESULTSRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetSearchSolutionsResultsResponse)
-  ))
+  })
 _sym_db.RegisterMessage(GetSearchSolutionsResultsResponse)
 
-DescribeSolutionRequest = _reflection.GeneratedProtocolMessageType('DescribeSolutionRequest', (_message.Message,), dict(
-  DESCRIPTOR = _DESCRIBESOLUTIONREQUEST,
-  __module__ = 'core_pb2'
+DescribeSolutionRequest = _reflection.GeneratedProtocolMessageType('DescribeSolutionRequest', (_message.Message,), {
+  'DESCRIPTOR' : _DESCRIBESOLUTIONREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:DescribeSolutionRequest)
-  ))
+  })
 _sym_db.RegisterMessage(DescribeSolutionRequest)
 
-PrimitiveStepDescription = _reflection.GeneratedProtocolMessageType('PrimitiveStepDescription', (_message.Message,), dict(
+PrimitiveStepDescription = _reflection.GeneratedProtocolMessageType('PrimitiveStepDescription', (_message.Message,), {
 
-  HyperparamsEntry = _reflection.GeneratedProtocolMessageType('HyperparamsEntry', (_message.Message,), dict(
-    DESCRIPTOR = _PRIMITIVESTEPDESCRIPTION_HYPERPARAMSENTRY,
-    __module__ = 'core_pb2'
+  'HyperparamsEntry' : _reflection.GeneratedProtocolMessageType('HyperparamsEntry', (_message.Message,), {
+    'DESCRIPTOR' : _PRIMITIVESTEPDESCRIPTION_HYPERPARAMSENTRY,
+    '__module__' : 'core_pb2'
     # @@protoc_insertion_point(class_scope:PrimitiveStepDescription.HyperparamsEntry)
-    ))
+    })
   ,
-  DESCRIPTOR = _PRIMITIVESTEPDESCRIPTION,
-  __module__ = 'core_pb2'
+  'DESCRIPTOR' : _PRIMITIVESTEPDESCRIPTION,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:PrimitiveStepDescription)
-  ))
+  })
 _sym_db.RegisterMessage(PrimitiveStepDescription)
 _sym_db.RegisterMessage(PrimitiveStepDescription.HyperparamsEntry)
 
-SubpipelineStepDescription = _reflection.GeneratedProtocolMessageType('SubpipelineStepDescription', (_message.Message,), dict(
-  DESCRIPTOR = _SUBPIPELINESTEPDESCRIPTION,
-  __module__ = 'core_pb2'
+SubpipelineStepDescription = _reflection.GeneratedProtocolMessageType('SubpipelineStepDescription', (_message.Message,), {
+  'DESCRIPTOR' : _SUBPIPELINESTEPDESCRIPTION,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:SubpipelineStepDescription)
-  ))
+  })
 _sym_db.RegisterMessage(SubpipelineStepDescription)
 
-StepDescription = _reflection.GeneratedProtocolMessageType('StepDescription', (_message.Message,), dict(
-  DESCRIPTOR = _STEPDESCRIPTION,
-  __module__ = 'core_pb2'
+StepDescription = _reflection.GeneratedProtocolMessageType('StepDescription', (_message.Message,), {
+  'DESCRIPTOR' : _STEPDESCRIPTION,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:StepDescription)
-  ))
+  })
 _sym_db.RegisterMessage(StepDescription)
 
-DescribeSolutionResponse = _reflection.GeneratedProtocolMessageType('DescribeSolutionResponse', (_message.Message,), dict(
-  DESCRIPTOR = _DESCRIBESOLUTIONRESPONSE,
-  __module__ = 'core_pb2'
+DescribeSolutionResponse = _reflection.GeneratedProtocolMessageType('DescribeSolutionResponse', (_message.Message,), {
+  'DESCRIPTOR' : _DESCRIBESOLUTIONRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:DescribeSolutionResponse)
-  ))
+  })
 _sym_db.RegisterMessage(DescribeSolutionResponse)
 
-StepProgress = _reflection.GeneratedProtocolMessageType('StepProgress', (_message.Message,), dict(
-  DESCRIPTOR = _STEPPROGRESS,
-  __module__ = 'core_pb2'
+StepProgress = _reflection.GeneratedProtocolMessageType('StepProgress', (_message.Message,), {
+  'DESCRIPTOR' : _STEPPROGRESS,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:StepProgress)
-  ))
+  })
 _sym_db.RegisterMessage(StepProgress)
 
-SolutionRunUser = _reflection.GeneratedProtocolMessageType('SolutionRunUser', (_message.Message,), dict(
-  DESCRIPTOR = _SOLUTIONRUNUSER,
-  __module__ = 'core_pb2'
+SolutionRunUser = _reflection.GeneratedProtocolMessageType('SolutionRunUser', (_message.Message,), {
+  'DESCRIPTOR' : _SOLUTIONRUNUSER,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:SolutionRunUser)
-  ))
+  })
 _sym_db.RegisterMessage(SolutionRunUser)
 
-ScoreSolutionRequest = _reflection.GeneratedProtocolMessageType('ScoreSolutionRequest', (_message.Message,), dict(
-  DESCRIPTOR = _SCORESOLUTIONREQUEST,
-  __module__ = 'core_pb2'
+ScoreSolutionRequest = _reflection.GeneratedProtocolMessageType('ScoreSolutionRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SCORESOLUTIONREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:ScoreSolutionRequest)
-  ))
+  })
 _sym_db.RegisterMessage(ScoreSolutionRequest)
 
-ScoreSolutionResponse = _reflection.GeneratedProtocolMessageType('ScoreSolutionResponse', (_message.Message,), dict(
-  DESCRIPTOR = _SCORESOLUTIONRESPONSE,
-  __module__ = 'core_pb2'
+ScoreSolutionResponse = _reflection.GeneratedProtocolMessageType('ScoreSolutionResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SCORESOLUTIONRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:ScoreSolutionResponse)
-  ))
+  })
 _sym_db.RegisterMessage(ScoreSolutionResponse)
 
-GetScoreSolutionResultsRequest = _reflection.GeneratedProtocolMessageType('GetScoreSolutionResultsRequest', (_message.Message,), dict(
-  DESCRIPTOR = _GETSCORESOLUTIONRESULTSREQUEST,
-  __module__ = 'core_pb2'
+GetScoreSolutionResultsRequest = _reflection.GeneratedProtocolMessageType('GetScoreSolutionResultsRequest', (_message.Message,), {
+  'DESCRIPTOR' : _GETSCORESOLUTIONRESULTSREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetScoreSolutionResultsRequest)
-  ))
+  })
 _sym_db.RegisterMessage(GetScoreSolutionResultsRequest)
 
-GetScoreSolutionResultsResponse = _reflection.GeneratedProtocolMessageType('GetScoreSolutionResultsResponse', (_message.Message,), dict(
-  DESCRIPTOR = _GETSCORESOLUTIONRESULTSRESPONSE,
-  __module__ = 'core_pb2'
+GetScoreSolutionResultsResponse = _reflection.GeneratedProtocolMessageType('GetScoreSolutionResultsResponse', (_message.Message,), {
+  'DESCRIPTOR' : _GETSCORESOLUTIONRESULTSRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetScoreSolutionResultsResponse)
-  ))
+  })
 _sym_db.RegisterMessage(GetScoreSolutionResultsResponse)
 
-FitSolutionRequest = _reflection.GeneratedProtocolMessageType('FitSolutionRequest', (_message.Message,), dict(
-  DESCRIPTOR = _FITSOLUTIONREQUEST,
-  __module__ = 'core_pb2'
+FitSolutionRequest = _reflection.GeneratedProtocolMessageType('FitSolutionRequest', (_message.Message,), {
+  'DESCRIPTOR' : _FITSOLUTIONREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:FitSolutionRequest)
-  ))
+  })
 _sym_db.RegisterMessage(FitSolutionRequest)
 
-FitSolutionResponse = _reflection.GeneratedProtocolMessageType('FitSolutionResponse', (_message.Message,), dict(
-  DESCRIPTOR = _FITSOLUTIONRESPONSE,
-  __module__ = 'core_pb2'
+FitSolutionResponse = _reflection.GeneratedProtocolMessageType('FitSolutionResponse', (_message.Message,), {
+  'DESCRIPTOR' : _FITSOLUTIONRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:FitSolutionResponse)
-  ))
+  })
 _sym_db.RegisterMessage(FitSolutionResponse)
 
-GetFitSolutionResultsRequest = _reflection.GeneratedProtocolMessageType('GetFitSolutionResultsRequest', (_message.Message,), dict(
-  DESCRIPTOR = _GETFITSOLUTIONRESULTSREQUEST,
-  __module__ = 'core_pb2'
+GetFitSolutionResultsRequest = _reflection.GeneratedProtocolMessageType('GetFitSolutionResultsRequest', (_message.Message,), {
+  'DESCRIPTOR' : _GETFITSOLUTIONRESULTSREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetFitSolutionResultsRequest)
-  ))
+  })
 _sym_db.RegisterMessage(GetFitSolutionResultsRequest)
 
-GetFitSolutionResultsResponse = _reflection.GeneratedProtocolMessageType('GetFitSolutionResultsResponse', (_message.Message,), dict(
+GetFitSolutionResultsResponse = _reflection.GeneratedProtocolMessageType('GetFitSolutionResultsResponse', (_message.Message,), {
 
-  ExposedOutputsEntry = _reflection.GeneratedProtocolMessageType('ExposedOutputsEntry', (_message.Message,), dict(
-    DESCRIPTOR = _GETFITSOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY,
-    __module__ = 'core_pb2'
+  'ExposedOutputsEntry' : _reflection.GeneratedProtocolMessageType('ExposedOutputsEntry', (_message.Message,), {
+    'DESCRIPTOR' : _GETFITSOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY,
+    '__module__' : 'core_pb2'
     # @@protoc_insertion_point(class_scope:GetFitSolutionResultsResponse.ExposedOutputsEntry)
-    ))
+    })
   ,
-  DESCRIPTOR = _GETFITSOLUTIONRESULTSRESPONSE,
-  __module__ = 'core_pb2'
+  'DESCRIPTOR' : _GETFITSOLUTIONRESULTSRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetFitSolutionResultsResponse)
-  ))
+  })
 _sym_db.RegisterMessage(GetFitSolutionResultsResponse)
 _sym_db.RegisterMessage(GetFitSolutionResultsResponse.ExposedOutputsEntry)
 
-ProduceSolutionRequest = _reflection.GeneratedProtocolMessageType('ProduceSolutionRequest', (_message.Message,), dict(
-  DESCRIPTOR = _PRODUCESOLUTIONREQUEST,
-  __module__ = 'core_pb2'
+ProduceSolutionRequest = _reflection.GeneratedProtocolMessageType('ProduceSolutionRequest', (_message.Message,), {
+  'DESCRIPTOR' : _PRODUCESOLUTIONREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:ProduceSolutionRequest)
-  ))
+  })
 _sym_db.RegisterMessage(ProduceSolutionRequest)
 
-ProduceSolutionResponse = _reflection.GeneratedProtocolMessageType('ProduceSolutionResponse', (_message.Message,), dict(
-  DESCRIPTOR = _PRODUCESOLUTIONRESPONSE,
-  __module__ = 'core_pb2'
+ProduceSolutionResponse = _reflection.GeneratedProtocolMessageType('ProduceSolutionResponse', (_message.Message,), {
+  'DESCRIPTOR' : _PRODUCESOLUTIONRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:ProduceSolutionResponse)
-  ))
+  })
 _sym_db.RegisterMessage(ProduceSolutionResponse)
 
-GetProduceSolutionResultsRequest = _reflection.GeneratedProtocolMessageType('GetProduceSolutionResultsRequest', (_message.Message,), dict(
-  DESCRIPTOR = _GETPRODUCESOLUTIONRESULTSREQUEST,
-  __module__ = 'core_pb2'
+GetProduceSolutionResultsRequest = _reflection.GeneratedProtocolMessageType('GetProduceSolutionResultsRequest', (_message.Message,), {
+  'DESCRIPTOR' : _GETPRODUCESOLUTIONRESULTSREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetProduceSolutionResultsRequest)
-  ))
+  })
 _sym_db.RegisterMessage(GetProduceSolutionResultsRequest)
 
-GetProduceSolutionResultsResponse = _reflection.GeneratedProtocolMessageType('GetProduceSolutionResultsResponse', (_message.Message,), dict(
+GetProduceSolutionResultsResponse = _reflection.GeneratedProtocolMessageType('GetProduceSolutionResultsResponse', (_message.Message,), {
 
-  ExposedOutputsEntry = _reflection.GeneratedProtocolMessageType('ExposedOutputsEntry', (_message.Message,), dict(
-    DESCRIPTOR = _GETPRODUCESOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY,
-    __module__ = 'core_pb2'
+  'ExposedOutputsEntry' : _reflection.GeneratedProtocolMessageType('ExposedOutputsEntry', (_message.Message,), {
+    'DESCRIPTOR' : _GETPRODUCESOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY,
+    '__module__' : 'core_pb2'
     # @@protoc_insertion_point(class_scope:GetProduceSolutionResultsResponse.ExposedOutputsEntry)
-    ))
+    })
   ,
-  DESCRIPTOR = _GETPRODUCESOLUTIONRESULTSRESPONSE,
-  __module__ = 'core_pb2'
+  'DESCRIPTOR' : _GETPRODUCESOLUTIONRESULTSRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetProduceSolutionResultsResponse)
-  ))
+  })
 _sym_db.RegisterMessage(GetProduceSolutionResultsResponse)
 _sym_db.RegisterMessage(GetProduceSolutionResultsResponse.ExposedOutputsEntry)
 
-SolutionExportRequest = _reflection.GeneratedProtocolMessageType('SolutionExportRequest', (_message.Message,), dict(
-  DESCRIPTOR = _SOLUTIONEXPORTREQUEST,
-  __module__ = 'core_pb2'
+SolutionExportRequest = _reflection.GeneratedProtocolMessageType('SolutionExportRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SOLUTIONEXPORTREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:SolutionExportRequest)
-  ))
+  })
 _sym_db.RegisterMessage(SolutionExportRequest)
 
-SolutionExportResponse = _reflection.GeneratedProtocolMessageType('SolutionExportResponse', (_message.Message,), dict(
-  DESCRIPTOR = _SOLUTIONEXPORTRESPONSE,
-  __module__ = 'core_pb2'
+SolutionExportResponse = _reflection.GeneratedProtocolMessageType('SolutionExportResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SOLUTIONEXPORTRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:SolutionExportResponse)
-  ))
+  })
 _sym_db.RegisterMessage(SolutionExportResponse)
 
-DataAvailableRequest = _reflection.GeneratedProtocolMessageType('DataAvailableRequest', (_message.Message,), dict(
-  DESCRIPTOR = _DATAAVAILABLEREQUEST,
-  __module__ = 'core_pb2'
+DataAvailableRequest = _reflection.GeneratedProtocolMessageType('DataAvailableRequest', (_message.Message,), {
+  'DESCRIPTOR' : _DATAAVAILABLEREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:DataAvailableRequest)
-  ))
+  })
 _sym_db.RegisterMessage(DataAvailableRequest)
 
-DataAvailableResponse = _reflection.GeneratedProtocolMessageType('DataAvailableResponse', (_message.Message,), dict(
-  DESCRIPTOR = _DATAAVAILABLERESPONSE,
-  __module__ = 'core_pb2'
+DataAvailableResponse = _reflection.GeneratedProtocolMessageType('DataAvailableResponse', (_message.Message,), {
+  'DESCRIPTOR' : _DATAAVAILABLERESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:DataAvailableResponse)
-  ))
+  })
 _sym_db.RegisterMessage(DataAvailableResponse)
 
-SplitDataRequest = _reflection.GeneratedProtocolMessageType('SplitDataRequest', (_message.Message,), dict(
-  DESCRIPTOR = _SPLITDATAREQUEST,
-  __module__ = 'core_pb2'
+SplitDataRequest = _reflection.GeneratedProtocolMessageType('SplitDataRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SPLITDATAREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:SplitDataRequest)
-  ))
+  })
 _sym_db.RegisterMessage(SplitDataRequest)
 
-SplitDataResponse = _reflection.GeneratedProtocolMessageType('SplitDataResponse', (_message.Message,), dict(
-  DESCRIPTOR = _SPLITDATARESPONSE,
-  __module__ = 'core_pb2'
+SplitDataResponse = _reflection.GeneratedProtocolMessageType('SplitDataResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SPLITDATARESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:SplitDataResponse)
-  ))
+  })
 _sym_db.RegisterMessage(SplitDataResponse)
 
-ScorePredictionsRequest = _reflection.GeneratedProtocolMessageType('ScorePredictionsRequest', (_message.Message,), dict(
-  DESCRIPTOR = _SCOREPREDICTIONSREQUEST,
-  __module__ = 'core_pb2'
+ScorePredictionsRequest = _reflection.GeneratedProtocolMessageType('ScorePredictionsRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SCOREPREDICTIONSREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:ScorePredictionsRequest)
-  ))
+  })
 _sym_db.RegisterMessage(ScorePredictionsRequest)
 
-ScorePredictionsResponse = _reflection.GeneratedProtocolMessageType('ScorePredictionsResponse', (_message.Message,), dict(
-  DESCRIPTOR = _SCOREPREDICTIONSRESPONSE,
-  __module__ = 'core_pb2'
+ScorePredictionsResponse = _reflection.GeneratedProtocolMessageType('ScorePredictionsResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SCOREPREDICTIONSRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:ScorePredictionsResponse)
-  ))
+  })
 _sym_db.RegisterMessage(ScorePredictionsResponse)
 
-SaveSolutionRequest = _reflection.GeneratedProtocolMessageType('SaveSolutionRequest', (_message.Message,), dict(
-  DESCRIPTOR = _SAVESOLUTIONREQUEST,
-  __module__ = 'core_pb2'
+SaveSolutionRequest = _reflection.GeneratedProtocolMessageType('SaveSolutionRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SAVESOLUTIONREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:SaveSolutionRequest)
-  ))
+  })
 _sym_db.RegisterMessage(SaveSolutionRequest)
 
-SaveSolutionResponse = _reflection.GeneratedProtocolMessageType('SaveSolutionResponse', (_message.Message,), dict(
-  DESCRIPTOR = _SAVESOLUTIONRESPONSE,
-  __module__ = 'core_pb2'
+SaveSolutionResponse = _reflection.GeneratedProtocolMessageType('SaveSolutionResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SAVESOLUTIONRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:SaveSolutionResponse)
-  ))
+  })
 _sym_db.RegisterMessage(SaveSolutionResponse)
 
-LoadSolutionRequest = _reflection.GeneratedProtocolMessageType('LoadSolutionRequest', (_message.Message,), dict(
-  DESCRIPTOR = _LOADSOLUTIONREQUEST,
-  __module__ = 'core_pb2'
+LoadSolutionRequest = _reflection.GeneratedProtocolMessageType('LoadSolutionRequest', (_message.Message,), {
+  'DESCRIPTOR' : _LOADSOLUTIONREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:LoadSolutionRequest)
-  ))
+  })
 _sym_db.RegisterMessage(LoadSolutionRequest)
 
-LoadSolutionResponse = _reflection.GeneratedProtocolMessageType('LoadSolutionResponse', (_message.Message,), dict(
-  DESCRIPTOR = _LOADSOLUTIONRESPONSE,
-  __module__ = 'core_pb2'
+LoadSolutionResponse = _reflection.GeneratedProtocolMessageType('LoadSolutionResponse', (_message.Message,), {
+  'DESCRIPTOR' : _LOADSOLUTIONRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:LoadSolutionResponse)
-  ))
+  })
 _sym_db.RegisterMessage(LoadSolutionResponse)
 
-SaveFittedSolutionRequest = _reflection.GeneratedProtocolMessageType('SaveFittedSolutionRequest', (_message.Message,), dict(
-  DESCRIPTOR = _SAVEFITTEDSOLUTIONREQUEST,
-  __module__ = 'core_pb2'
+SaveFittedSolutionRequest = _reflection.GeneratedProtocolMessageType('SaveFittedSolutionRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SAVEFITTEDSOLUTIONREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:SaveFittedSolutionRequest)
-  ))
+  })
 _sym_db.RegisterMessage(SaveFittedSolutionRequest)
 
-SaveFittedSolutionResponse = _reflection.GeneratedProtocolMessageType('SaveFittedSolutionResponse', (_message.Message,), dict(
-  DESCRIPTOR = _SAVEFITTEDSOLUTIONRESPONSE,
-  __module__ = 'core_pb2'
+SaveFittedSolutionResponse = _reflection.GeneratedProtocolMessageType('SaveFittedSolutionResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SAVEFITTEDSOLUTIONRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:SaveFittedSolutionResponse)
-  ))
+  })
 _sym_db.RegisterMessage(SaveFittedSolutionResponse)
 
-LoadFittedSolutionRequest = _reflection.GeneratedProtocolMessageType('LoadFittedSolutionRequest', (_message.Message,), dict(
-  DESCRIPTOR = _LOADFITTEDSOLUTIONREQUEST,
-  __module__ = 'core_pb2'
+LoadFittedSolutionRequest = _reflection.GeneratedProtocolMessageType('LoadFittedSolutionRequest', (_message.Message,), {
+  'DESCRIPTOR' : _LOADFITTEDSOLUTIONREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:LoadFittedSolutionRequest)
-  ))
+  })
 _sym_db.RegisterMessage(LoadFittedSolutionRequest)
 
-LoadFittedSolutionResponse = _reflection.GeneratedProtocolMessageType('LoadFittedSolutionResponse', (_message.Message,), dict(
-  DESCRIPTOR = _LOADFITTEDSOLUTIONRESPONSE,
-  __module__ = 'core_pb2'
+LoadFittedSolutionResponse = _reflection.GeneratedProtocolMessageType('LoadFittedSolutionResponse', (_message.Message,), {
+  'DESCRIPTOR' : _LOADFITTEDSOLUTIONRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:LoadFittedSolutionResponse)
-  ))
+  })
 _sym_db.RegisterMessage(LoadFittedSolutionResponse)
 
-ListPrimitivesRequest = _reflection.GeneratedProtocolMessageType('ListPrimitivesRequest', (_message.Message,), dict(
-  DESCRIPTOR = _LISTPRIMITIVESREQUEST,
-  __module__ = 'core_pb2'
+ListPrimitivesRequest = _reflection.GeneratedProtocolMessageType('ListPrimitivesRequest', (_message.Message,), {
+  'DESCRIPTOR' : _LISTPRIMITIVESREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:ListPrimitivesRequest)
-  ))
+  })
 _sym_db.RegisterMessage(ListPrimitivesRequest)
 
-ListPrimitivesResponse = _reflection.GeneratedProtocolMessageType('ListPrimitivesResponse', (_message.Message,), dict(
-  DESCRIPTOR = _LISTPRIMITIVESRESPONSE,
-  __module__ = 'core_pb2'
+ListPrimitivesResponse = _reflection.GeneratedProtocolMessageType('ListPrimitivesResponse', (_message.Message,), {
+  'DESCRIPTOR' : _LISTPRIMITIVESRESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:ListPrimitivesResponse)
-  ))
+  })
 _sym_db.RegisterMessage(ListPrimitivesResponse)
 
-HelloRequest = _reflection.GeneratedProtocolMessageType('HelloRequest', (_message.Message,), dict(
-  DESCRIPTOR = _HELLOREQUEST,
-  __module__ = 'core_pb2'
+HelloRequest = _reflection.GeneratedProtocolMessageType('HelloRequest', (_message.Message,), {
+  'DESCRIPTOR' : _HELLOREQUEST,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:HelloRequest)
-  ))
+  })
 _sym_db.RegisterMessage(HelloRequest)
 
-HelloResponse = _reflection.GeneratedProtocolMessageType('HelloResponse', (_message.Message,), dict(
-  DESCRIPTOR = _HELLORESPONSE,
-  __module__ = 'core_pb2'
+HelloResponse = _reflection.GeneratedProtocolMessageType('HelloResponse', (_message.Message,), {
+  'DESCRIPTOR' : _HELLORESPONSE,
+  '__module__' : 'core_pb2'
   # @@protoc_insertion_point(class_scope:HelloResponse)
-  ))
+  })
 _sym_db.RegisterMessage(HelloResponse)
 
 google_dot_protobuf_dot_descriptor__pb2.FileOptions.RegisterExtension(protocol_version)
