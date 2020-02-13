@@ -258,6 +258,10 @@ class BaseBuilder:
                     set_hyperparams(db, pipeline, step_add_type, columns=columns, semantic_types=[semantic_type])
                     connect(db, pipeline, prev_step, step_add_type)
                     prev_step = step_add_type
+            else:
+                step_profiler = make_pipeline_module(db, pipeline, 'd3m.primitives.schema_discovery.profiler.Common')
+                connect(db, pipeline, step1, step_profiler)
+                prev_step = step_profiler
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
@@ -370,6 +374,10 @@ class BaseBuilder:
                     set_hyperparams(db, pipeline, step_add_type, columns=columns, semantic_types=[semantic_type])
                     connect(db, pipeline, prev_step, step_add_type)
                     prev_step = step_add_type
+            else:
+                step_profiler = make_pipeline_module(db, pipeline, 'd3m.primitives.schema_discovery.profiler.Common')
+                connect(db, pipeline, step1, step_profiler)
+                prev_step = step_profiler
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
@@ -403,8 +411,11 @@ class BaseBuilder:
                 connect(db, pipeline, step5, step_fallback)
                 prev_step = step_fallback
 
+            step99 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.robust_scaler.SKlearn')
+            connect(db, pipeline, prev_step, step99)
+
             step10 = make_pipeline_module(db, pipeline, estimator)
-            connect(db, pipeline, prev_step, step10)
+            connect(db, pipeline, step99, step10)
             connect(db, pipeline, step4, step10, to_input='outputs')
 
             step11 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
@@ -565,6 +576,29 @@ class BaseBuilder:
             db.commit()
             return pipeline.id
 
+        except:
+            logger.exception('Error creating pipeline id=%s', pipeline.id)
+            return None
+        finally:
+            db.close()
+
+    @staticmethod
+    def make_denormalize_pipeline(dataset, targets, features, DBSession=None):
+        db = DBSession()
+        pipeline = database.Pipeline(origin="profiler", dataset=dataset)
+
+        try:
+            input_data = make_data_module(db, pipeline, targets, features)
+
+            step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
+            connect(db, pipeline, input_data, step0, from_output='dataset')
+
+            step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
+            connect(db, pipeline, step0, step1)
+
+            db.add(pipeline)
+            db.commit()
+            return pipeline.id
         except:
             logger.exception('Error creating pipeline id=%s', pipeline.id)
             return None

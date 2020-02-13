@@ -17,7 +17,8 @@ from .d3mpipeline_builder import *
 from d3m_ta2_nyu.metafeature.metafeature_extractor import ComputeMetafeatures
 from d3m.metadata.problem import TaskKeyword
 from d3m.container.dataset import D3M_COLUMN_TYPE_CONSTANTS_TO_SEMANTIC_TYPES
-
+from os.path import join
+from d3m_ta2_nyu.pipeline_execute import execute
 logger = logging.getLogger(__name__)
 
 
@@ -60,9 +61,9 @@ config = {
         'arenaCompare': 40,
         'cpuct': 1,
 
-        'checkpoint': os.path.join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'nn_models'),
+        'checkpoint': join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'nn_models'),
         'load_model': False,
-        'load_folder_file': (os.path.join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'nn_models'), 'best.pth.tar'),
+        'load_folder_file': (join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'nn_models'), 'best.pth.tar'),
         'metafeatures_path': '/d3m/data/metafeatures',
         'verbose': True
     }
@@ -102,6 +103,10 @@ def generate_by_templates(task_keywords, dataset, search_results, pipeline_templ
             template_name = 'DEBUG_CLASSIFICATION'
 
     logger.info("Creating pipelines from template %s" % template_name)
+
+    pipeline_id = BaseBuilder.make_denormalize_pipeline(dataset, targets, features, DBSession=DBSession)
+    execute(pipeline_id, dataset, problem, join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'denormalized_dataset.csv'),
+            None, db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'db.sqlite3')) # TODO: Change this static path
 
     # No Augmentation
     templates = BaseBuilder.TEMPLATES.get(template_name, [])
@@ -283,7 +288,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         config['METRIC'] = metrics[0]['metric'].name
         config['DATASET_METAFEATURES'] = [0] * 50 #  metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
         config['DATASET'] = dataset_doc['about']['datasetID']
-        config['ARGS']['stepsfile'] = os.path.join(os.environ.get('D3MOUTPUTDIR'), 'ta2', config['DATASET'] + '_pipeline_steps.txt')
+        config['ARGS']['stepsfile'] = join(os.environ.get('D3MOUTPUTDIR'), 'ta2', config['DATASET'] + '_pipeline_steps.txt')
 
         return config
 
@@ -299,7 +304,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         if 'error' not in game.metric.lower():
             evaluations.reverse()
 
-        out_p = open(os.path.join(os.environ.get('D3MOUTPUTDIR'), 'ta2', config['DATASET'] + '_best_pipelines.txt'), 'a')
+        out_p = open(join(os.environ.get('D3MOUTPUTDIR'), 'ta2', config['DATASET'] + '_best_pipelines.txt'), 'a')
         out_p.write(
             config['DATASET'] + ' ' + evaluations[0][0] + ' ' + str(evaluations[0][1]) + ' ' + str(
                 game.steps) + ' ' + str((eval_times[evaluations[0][0]] - start) / 60.0) + ' ' + str(
@@ -318,8 +323,8 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     nnet = NNetWrapper(game)
 
     if config['ARGS'].get('load_model'):
-        model_file = os.path.join(config['ARGS'].get('load_folder_file')[0],
-                                  config['ARGS'].get('load_folder_file')[1])
+        model_file = join(config['ARGS'].get('load_folder_file')[0],
+                          config['ARGS'].get('load_folder_file')[1])
         if os.path.isfile(model_file):
             nnet.load_checkpoint(config['ARGS'].get('load_folder_file')[0],
                                  config['ARGS'].get('load_folder_file')[1])
