@@ -963,32 +963,44 @@ class ObjectDetectionBuilder(BaseBuilder):
             step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
             connect(db, pipeline, input_data, step0, from_output='dataset')
 
-            step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
-            connect(db, pipeline, step0, step1)
+            if primitives[0] == 'd3m.primitives.feature_extraction.yolo.DSBOX':
+                step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'dataset_to_dataframe.Common')
+                connect(db, pipeline, step0, step1)
 
-            step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'extract_columns_by_semantic_types.Common')
-            set_hyperparams(db, pipeline, step2,
-                            semantic_types=['https://metadata.datadrivendiscovery.org/types/PrimaryMultiKey',
-                                            'https://metadata.datadrivendiscovery.org/types/FileName']
-                            )
-            connect(db, pipeline, step1, step2)
+                step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'extract_columns_by_semantic_types.Common')
+                set_hyperparams(db, pipeline, step2,
+                                semantic_types=['https://metadata.datadrivendiscovery.org/types/PrimaryMultiKey',
+                                                'https://metadata.datadrivendiscovery.org/types/FileName']
+                                )
+                connect(db, pipeline, step1, step2)
 
-            step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'extract_columns_by_semantic_types.Common')
-            set_hyperparams(db, pipeline, step3,
-                            semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget'],
-                            )
-            connect(db, pipeline, step1, step3)
+                step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'extract_columns_by_semantic_types.Common')
+                set_hyperparams(db, pipeline, step3,
+                                semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget'],
+                                )
+                connect(db, pipeline, step1, step3)
 
-            step4 = make_pipeline_module(db, pipeline, primitives[0])
-            connect(db, pipeline, step2, step4)
-            connect(db, pipeline, step3, step4, to_input='outputs')
+                step4 = make_pipeline_module(db, pipeline, primitives[0])
+                connect(db, pipeline, step2, step4)
+                connect(db, pipeline, step3, step4, to_input='outputs')
 
-            step5 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'construct_predictions.Common')
-            connect(db, pipeline, step4, step5)
-            connect(db, pipeline, step2, step5, to_input='reference')
+                step5 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'construct_predictions.Common')
+                connect(db, pipeline, step4, step5)
+                connect(db, pipeline, step2, step5, to_input='reference')
+            else:
+                step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'dataset_to_dataframe.Common')
+                set_hyperparams(db, pipeline, step1, dataframe_resource='learningData')
+                connect(db, pipeline, step0, step1)
+
+                step2 = make_pipeline_module(db, pipeline, primitives[0])
+                set_hyperparams(db, pipeline, step2, n_epochs=1)
+                connect(db, pipeline, step1, step2)
+                connect(db, pipeline, step1, step2, to_input='outputs')
 
             db.add(pipeline)
             db.commit()
