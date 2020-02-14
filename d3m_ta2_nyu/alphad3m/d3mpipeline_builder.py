@@ -258,10 +258,6 @@ class BaseBuilder:
                     set_hyperparams(db, pipeline, step_add_type, columns=columns, semantic_types=[semantic_type])
                     connect(db, pipeline, prev_step, step_add_type)
                     prev_step = step_add_type
-            else:
-                step_profiler = make_pipeline_module(db, pipeline, 'd3m.primitives.schema_discovery.profiler.Common')
-                connect(db, pipeline, step1, step_profiler)
-                prev_step = step_profiler
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
@@ -374,10 +370,6 @@ class BaseBuilder:
                     set_hyperparams(db, pipeline, step_add_type, columns=columns, semantic_types=[semantic_type])
                     connect(db, pipeline, prev_step, step_add_type)
                     prev_step = step_add_type
-            else:
-                step_profiler = make_pipeline_module(db, pipeline, 'd3m.primitives.schema_discovery.profiler.Common')
-                connect(db, pipeline, step1, step_profiler)
-                prev_step = step_profiler
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
@@ -411,17 +403,17 @@ class BaseBuilder:
                 connect(db, pipeline, step5, step_fallback)
                 prev_step = step_fallback
 
-            step99 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.robust_scaler.SKlearn')
-            connect(db, pipeline, prev_step, step99)
+            step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.robust_scaler.SKlearn')
+            connect(db, pipeline, prev_step, step6)
 
-            step10 = make_pipeline_module(db, pipeline, estimator)
-            connect(db, pipeline, step99, step10)
-            connect(db, pipeline, step4, step10, to_input='outputs')
+            step7 = make_pipeline_module(db, pipeline, estimator)
+            connect(db, pipeline, step6, step7)
+            connect(db, pipeline, step4, step7, to_input='outputs')
 
-            step11 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+            step8 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                         'construct_predictions.Common')
-            connect(db, pipeline, step10, step11)
-            connect(db, pipeline, step2, step11, to_input='reference')
+            connect(db, pipeline, step7, step8)
+            connect(db, pipeline, step2, step8, to_input='reference')
 
             db.add(pipeline)
             db.commit()
@@ -441,27 +433,6 @@ class BaseBuilder:
             dataset=dataset)
 
         try:
-            #                          data
-            #                            |
-            #                        Denormalize
-            #                            |
-            #                     DatasetToDataframe
-            #                            |
-            #                        ColumnParser
-            #                       /     |     \
-            #                     /       |       \
-            #                   /         |         \
-            # Extract (attribute)  Extract (target)  |
-            #         |                  |        Extract (target, index)
-            #     [imputer]              |           |
-            #         |                  |           |
-            #    One-hot encoder         |           |
-            #         |                  |           |
-            #          \                /           /
-            #            \            /           /
-            #             [estimator]          /
-            #                       |         /
-            #                   ConstructPredictions
             # TODO: Use pipeline input for this
             input_data = make_data_module(db, pipeline, targets, features)
 
@@ -585,7 +556,7 @@ class BaseBuilder:
     @staticmethod
     def make_denormalize_pipeline(dataset, targets, features, DBSession=None):
         db = DBSession()
-        pipeline = database.Pipeline(origin="profiler", dataset=dataset)
+        pipeline = database.Pipeline(origin="denormalize", dataset=dataset)
 
         try:
             input_data = make_data_module(db, pipeline, targets, features)

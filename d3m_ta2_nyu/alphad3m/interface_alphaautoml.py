@@ -104,10 +104,6 @@ def generate_by_templates(task_keywords, dataset, search_results, pipeline_templ
 
     logger.info("Creating pipelines from template %s" % template_name)
 
-    pipeline_id = BaseBuilder.make_denormalize_pipeline(dataset, targets, features, DBSession=DBSession)
-    execute(pipeline_id, dataset, problem, join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'denormalized_dataset.csv'),
-            None, db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'db.sqlite3')) # TODO: Change this static path
-
     # No Augmentation
     templates = BaseBuilder.TEMPLATES.get(template_name, [])
     for imputer, classifier in templates:
@@ -134,85 +130,100 @@ def send(msg_queue, pipeline_id):
     return msg_queue.recv()
 
 
-def read_feature_types(dataset_doc):
+def denormalize_dataset(dataset, targets, features, DBSession):
+    new_path = join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'denormalized_dataset.csv')
+    pipeline_id = BaseBuilder.make_denormalize_pipeline(dataset, targets, features, DBSession=DBSession)
+    try:
+        execute(pipeline_id, dataset, None, new_path, None,
+                db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'db.sqlite3'))  # TODO: Change this static path
+    except:
+        new_path = os.path.dirname(dataset[7:]) + '/tables/learningData.csv'
+        logger.exception('Error denormalizing dataset, using only learningData.csv file')
+
+    return new_path
+
+
+def read_annotated_feature_types(dataset_doc):
     feature_types = {}
     try:
         for data_res in dataset_doc['dataResources']:
-            if data_res['resID'] == 'learningData':
+            if data_res['resType'] == 'table':
                 for column in data_res['columns']:
                     if 'attribute' in column['role'] and column['colType'] != 'unknown':
                         feature_types[column['colName']] = (D3M_COLUMN_TYPE_CONSTANTS_TO_SEMANTIC_TYPES[column['colType']],
                                                             'refersTo' in column)
-                break
     except:
         logger.exception('Error reading the type of attributes')
+
+    logger.info('Features with annotated types: [%s]', ', '.join(feature_types.keys()))
 
     return feature_types
 
 
-def select_features2identify(csv_path, annotated_features, target_name, index_name):
+def select_unkown_feature_types(csv_path, annotated_features, target_name, index_name):
     all_features = pd.read_csv(csv_path).columns
-    features2identify = []
+    unkown_feature_types = []
 
     for feature_name in all_features:
         if feature_name != target_name and feature_name != index_name and feature_name not in annotated_features:
-            features2identify.append(feature_name)
+            unkown_feature_types.append(feature_name)
 
-    return features2identify
+    logger.info('Features with unknown types: [%s]', ', '.join(unkown_feature_types))
+
+    return unkown_feature_types
 
 
-def indentify_feature_types(csv_path, features2identify, target_name, index_name):
+def indentify_feature_types(csv_path, unkown_feature_types, target_name, index_name):
     metadata = datamart_profiler.process_dataset(csv_path)
     new_types = {'https://metadata.datadrivendiscovery.org/types/Attribute': []}
 
     for index, item in enumerate(metadata['columns']):
         column_name = item['name']
         if column_name == index_name:
-            new_types['https://metadata.datadrivendiscovery.org/types/PrimaryKey'] = [index]
+            new_types['https://metadata.datadrivendiscovery.org/types/PrimaryKey'] = [(index, column_name)]
         elif column_name == target_name:
-            new_types['https://metadata.datadrivendiscovery.org/types/TrueTarget'] = [index]
-        elif column_name in features2identify:
+            new_types['https://metadata.datadrivendiscovery.org/types/TrueTarget'] = [(index, column_name)]
+        elif column_name in unkown_feature_types:
             semantic_types = item['semantic_types'] if len(item['semantic_types']) > 0 else [item['structural_type']]
             for semantic_type in semantic_types:
                 if semantic_type == 'http://schema.org/Enumeration':  # Changing to D3M format
                     semantic_type = 'https://metadata.datadrivendiscovery.org/types/CategoricalData'
                 if semantic_type not in new_types:
                     new_types[semantic_type] = []
-                new_types[semantic_type].append(index)
+                new_types[semantic_type].append((index, column_name))
 
-            new_types['https://metadata.datadrivendiscovery.org/types/Attribute'].append(index)
+            new_types['https://metadata.datadrivendiscovery.org/types/Attribute'].append((index, column_name))
 
-    return new_types
+    logger.info('New feature types:\n%s',
+                '\n'.join(['%s = [%s]' % (k, ', '.join([i for _, i in v])) for k, v in new_types.items()]))
+
+    return {k: [i for i, _ in v] for k, v in new_types.items()}
 
 
 @database.with_sessionmaker
 def generate(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout,
-             msg_queue,
-             DBSession):
+             msg_queue, DBSession):
 
     import time
     start = time.time()
 
     with open(dataset[7:]) as fin:
         dataset_doc = json.load(fin)
-        csv_path = os.path.dirname(dataset[7:]) + '/tables/learningData.csv'
 
-    target_name = list(targets)[0][1]
     index_name = 'd3mIndex'
-    annotated_types = read_feature_types(dataset_doc)
-    features2identify = select_features2identify(csv_path, annotated_types.keys(), target_name, index_name)
-    new_types = {}
-    if len(features2identify) > 0:
-        new_types = indentify_feature_types(csv_path, features2identify, target_name, index_name)
-    filtered_annotated_types = {k: v[0] for k, v in annotated_types.items() if not v[1]}
-    all_types = list(filtered_annotated_types.values()) + list(new_types.keys())
-    print('annotated_types', annotated_types)
-    print('filtered_annotated_types', filtered_annotated_types)
-    print('features2identify', features2identify)
-    print('new_types', new_types)
-    print('all_types', all_types)
+    target_name = list(targets)[0][1]
+    csv_path = denormalize_dataset(dataset, targets, features, DBSession)
+    annotated_feature_types = read_annotated_feature_types(dataset_doc)
+    unkown_feature_types = select_unkown_feature_types(csv_path, annotated_feature_types.keys(), target_name, index_name)
+    inferred_types = {}
+    if len(unkown_feature_types) > 0:
+        inferred_types = indentify_feature_types(csv_path, unkown_feature_types, target_name, index_name)
+    #  Filter out  types of features which are foreign keys of other tables
+    filtered_annotated_types = {k: v[0] for k, v in annotated_feature_types.items() if not v[1]}
+    all_types = list(filtered_annotated_types.values()) + list(inferred_types.keys())
+
     generate_by_templates(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets, features,
-                          all_types, new_types, timeout, msg_queue, DBSession)
+                          all_types, inferred_types, timeout, msg_queue, DBSession)
 
     builder = None
     task_name = 'CLASSIFICATION' if TaskKeyword.CLASSIFICATION in task_keywords else 'REGRESSION'
@@ -220,7 +231,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
         pipeline_id = builder.make_d3mpipeline(strings, origin, dataset, search_results, pipeline_template, targets,
-                                               features, all_types, new_types, DBSession=DBSession)
+                                               features, all_types, inferred_types, DBSession=DBSession)
         # Evaluate the pipeline if syntax is correct:
         if pipeline_id:
             msg_queue.send(('eval', pipeline_id))
