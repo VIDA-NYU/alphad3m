@@ -105,16 +105,12 @@
     "DATA_CLEANING": {
         "d3m.primitives.data_cleaning.clean_augmentation.AutonBox": 57,
         "d3m.primitives.data_cleaning.cleaning_featurizer.DSBOX": 58,
-        "d3m.primitives.data_cleaning.column_type_profiler.Simon": 59,
         "d3m.primitives.data_cleaning.data_cleaning.Datacleaning": 60,
-        "d3m.primitives.data_cleaning.geocoding.Goat_forward": 61,
-        "d3m.primitives.data_cleaning.geocoding.Goat_reverse": 62,
         "d3m.primitives.data_cleaning.imputer.SKlearn": 63,
         "d3m.primitives.data_cleaning.label_encoder.DSBOX": 64,
         "d3m.primitives.data_cleaning.missing_indicator.SKlearn": 65,
         "d3m.primitives.data_cleaning.string_imputer.SKlearn": 66,
-        "d3m.primitives.data_cleaning.tabular_extractor.Common": 67,
-        "d3m.primitives.data_cleaning.text_summarization.Duke": 68
+        "d3m.primitives.data_cleaning.tabular_extractor.Common": 67
     },
     "DATA_COMPRESSION": {
         "d3m.primitives.data_compression.grasta.Umich": 69

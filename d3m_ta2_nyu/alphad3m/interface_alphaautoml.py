@@ -160,12 +160,12 @@ def read_annotated_feature_types(dataset_doc):
     return feature_types
 
 
-def select_unkown_feature_types(csv_path, annotated_features, target_name, index_name):
+def select_unkown_feature_types(csv_path, annotated_features, target_names, index_name):
     all_features = pd.read_csv(csv_path).columns
     unkown_feature_types = []
 
     for feature_name in all_features:
-        if feature_name != target_name and feature_name != index_name and feature_name not in annotated_features:
+        if feature_name not in target_names and feature_name != index_name and feature_name not in annotated_features:
             unkown_feature_types.append(feature_name)
 
     logger.info('Features with unknown types: [%s]', ', '.join(unkown_feature_types))
@@ -173,7 +173,7 @@ def select_unkown_feature_types(csv_path, annotated_features, target_name, index
     return unkown_feature_types
 
 
-def indentify_feature_types(csv_path, unkown_feature_types, target_name, index_name):
+def indentify_feature_types(csv_path, unkown_feature_types, target_names, index_name):
     metadata = datamart_profiler.process_dataset(csv_path)
     new_types = {'https://metadata.datadrivendiscovery.org/types/Attribute': []}
 
@@ -181,13 +181,15 @@ def indentify_feature_types(csv_path, unkown_feature_types, target_name, index_n
         column_name = item['name']
         if column_name == index_name:
             new_types['https://metadata.datadrivendiscovery.org/types/PrimaryKey'] = [(index, column_name)]
-        elif column_name == target_name:
+        elif column_name in target_names:
             new_types['https://metadata.datadrivendiscovery.org/types/TrueTarget'] = [(index, column_name)]
         elif column_name in unkown_feature_types:
             semantic_types = item['semantic_types'] if len(item['semantic_types']) > 0 else [item['structural_type']]
             for semantic_type in semantic_types:
                 if semantic_type == 'http://schema.org/Enumeration':  # Changing to D3M format
                     semantic_type = 'https://metadata.datadrivendiscovery.org/types/CategoricalData'
+                if semantic_type == 'http://schema.org/identifier':
+                    semantic_type = 'http://schema.org/Integer'
                 if semantic_type not in new_types:
                     new_types[semantic_type] = []
                 new_types[semantic_type].append((index, column_name))
@@ -211,13 +213,14 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         dataset_doc = json.load(fin)
 
     index_name = 'd3mIndex'
-    target_name = list(targets)[0][1]
+    target_names = [x[1] for x in targets]
+
     csv_path = denormalize_dataset(dataset, targets, features, DBSession)
     annotated_feature_types = read_annotated_feature_types(dataset_doc)
-    unkown_feature_types = select_unkown_feature_types(csv_path, annotated_feature_types.keys(), target_name, index_name)
+    unkown_feature_types = select_unkown_feature_types(csv_path, annotated_feature_types.keys(), target_names, index_name)
     inferred_types = {}
     if len(unkown_feature_types) > 0:
-        inferred_types = indentify_feature_types(csv_path, unkown_feature_types, target_name, index_name)
+        inferred_types = indentify_feature_types(csv_path, unkown_feature_types, target_names, index_name)
     #  Filter out  types of features which are foreign keys of other tables
     filtered_annotated_types = {k: v[0] for k, v in annotated_feature_types.items() if not v[1]}
     all_types = list(filtered_annotated_types.values()) + list(inferred_types.keys())

@@ -998,7 +998,6 @@ class ObjectDetectionBuilder(BaseBuilder):
                 connect(db, pipeline, step0, step1)
 
                 step2 = make_pipeline_module(db, pipeline, primitives[0])
-                set_hyperparams(db, pipeline, step2, n_epochs=1)
                 connect(db, pipeline, step1, step2)
                 connect(db, pipeline, step1, step2, to_input='outputs')
 
