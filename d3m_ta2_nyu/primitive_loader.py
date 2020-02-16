@@ -39,6 +39,9 @@ black_list = {
     'd3m.primitives.data_preprocessing.audio_reader.Common',
     'd3m.primitives.data_preprocessing.csv_reader.Common',
     'd3m.primitives.data_preprocessing.flatten.DataFrameCommon',
+    'd3m.primitives.data_cleaning.geocoding.Goat_forward',
+    'd3m.primitives.data_cleaning.geocoding.Goat_reverse',
+    'd3m.primitives.data_cleaning.text_summarization.Duke',
     'd3m.primitives.feature_selection.simultaneous_markov_blanket.AutoRPI'
 }
 
