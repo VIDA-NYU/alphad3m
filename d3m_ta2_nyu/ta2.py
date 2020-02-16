@@ -1076,8 +1076,7 @@ class D3mTa2(Observable):
                           'stratified': 'true' if TaskKeyword.CLASSIFICATION in task_keywords else 'false',
                           'method': pb_core.EvaluationMethod.Value('K_FOLD'),
                           'number_of_folds': '2'}
-        if TaskKeyword.SEMISUPERVISED in task_keywords and session.metrics[0]['metric'].name == 'F1':
-            scoring_config['method'] = 'SEMISUPERVISED'
+
         # Add the pipeline to the session, score it
         with session.with_observer_queue() as queue:
             session.add_scoring_pipeline(pipeline_id)
@@ -1130,7 +1129,7 @@ class D3mTa2(Observable):
         logger.info('About to sample dataset %s', dataset_uri)
         task_keywords = problem['problem']['task_keywords']
 
-        if any(tk in [TaskKeyword.OBJECT_DETECTION, TaskKeyword.SEMISUPERVISED] for tk in task_keywords):
+        if any(tk in [TaskKeyword.OBJECT_DETECTION] for tk in task_keywords):
             logger.info('Not doing sampling for task %s', '_'.join([x.name for x in task_keywords]))
             return None
 
