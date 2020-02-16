@@ -8,6 +8,7 @@ from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from d3m_ta2_nyu.workflow import database, convert
 from d3m.metadata.pipeline import Pipeline
+from d3m.metadata.problem import PerformanceMetric
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +47,12 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
 
     scores = {}
     scores_db = []
-
-    if scoring_config['method'] == pb_core.EvaluationMethod.Value('K_FOLD'):
+    if scoring_config['method'] == 'SEMISUPERVISED':
+        new_metrics = [{'metric': PerformanceMetric.F1_MICRO}]
+        scores = evaluate(pipeline, kfold_tabular_split, dataset, new_metrics, problem, scoring_config)
+        scores = create_new_metric(scores, new_metrics, new_metric=metrics[0]['metric'].name)
+        logger.info("Cross-validation results for semi-supervised:\n%s", scores)
+    elif scoring_config['method'] == pb_core.EvaluationMethod.Value('K_FOLD'):
         scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_config)
         logger.info("Cross-validation results:\n%s", scores)
 
@@ -121,7 +126,7 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config)
     return scores
 
 
-def create_new_metric(scores, metrics):
+def create_new_metric(scores, metrics, new_metric='RANK'):
     scores_tmp = {}
 
     for fold, fold_scores in scores.items():
@@ -129,7 +134,6 @@ def create_new_metric(scores, metrics):
         for metric, current_score in fold_scores.items():
             if metric == metrics[0]['metric'].name:
                 new_score = 1.0 - metrics[0]['metric'].normalize(current_score)
-                new_metric = 'RANK'
                 scores_tmp[fold][new_metric] = new_score
 
     return scores_tmp
