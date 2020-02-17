@@ -41,7 +41,6 @@
     "DATA_PREPROCESSING": {
         "d3m.primitives.classification.ensemble_voting.DSBOX": 8,
         "d3m.primitives.column_parser.preprocess_categorical_columns.Cornell": 53,
-        "d3m.primitives.data_preprocessing.audio_reader.DistilAudioDatasetLoader": 71,
         "d3m.primitives.data_preprocessing.binarizer.SKlearn": 72,
         "d3m.primitives.data_preprocessing.count_vectorizer.SKlearn": 73,
         "d3m.primitives.data_preprocessing.datetime_range_filter.Common": 74,
@@ -68,7 +67,6 @@
         "d3m.primitives.data_preprocessing.random_trees_embedding.SKlearn": 95,
         "d3m.primitives.data_preprocessing.rbf_sampler.SKlearn": 96,
         "d3m.primitives.data_preprocessing.regex_filter.Common": 97,
-        "d3m.primitives.data_preprocessing.robust_scaler.SKlearn": 98,
         "d3m.primitives.data_preprocessing.splitter.DSBOX": 99,
         "d3m.primitives.data_preprocessing.standard_scaler.SKlearn": 100,
         "d3m.primitives.data_preprocessing.term_filter.Common": 101,
@@ -268,7 +266,6 @@
         "d3m.primitives.learner.random_forest.DistilEnsembleForest": 230
     },
     "LINK_PREDICTION": {
-        "d3m.primitives.link_prediction.data_conversion.JHU": 231,
         "d3m.primitives.link_prediction.link_prediction.DistilLinkPrediction": 232,
         "d3m.primitives.link_prediction.rank_classification.JHU": 233
     },

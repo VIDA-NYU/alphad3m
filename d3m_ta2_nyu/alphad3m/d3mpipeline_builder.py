@@ -179,7 +179,9 @@ def skip_encoding(primitives):
         if primitive in {'d3m.primitives.data_preprocessing.text_reader.Common',
                          'd3m.primitives.data_preprocessing.image_reader.Common',
                          'd3m.primitives.feature_extraction.image_transfer.DistilImageTransfer',
-                         'd3m.primitives.feature_extraction.audio_transfer.DistilAudioTransfer'}:
+                         'd3m.primitives.feature_extraction.audio_transfer.DistilAudioTransfer',
+                         'd3m.primitives.data_preprocessing.time_series_to_list.DSBOX',
+                         'd3m.primitives.collaborative_filtering.collaborative_filtering_link_prediction.DistilCollaborativeFiltering'}:
             return True
     return False
 
@@ -876,7 +878,7 @@ class LinkPredictionBuilder(BaseBuilder):
                                                        targets, features, all_types, inferred_types, DBSession)
                 return pipeline_id
         except:
-            logger.exception('Error creating pipeline id=%s', pipeline.id)
+            logger.exception('Error creating pipeline id=%s, primitives=%s', pipeline.id, str(primitives))
             return None
         finally:
             db.close()
