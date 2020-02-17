@@ -89,7 +89,7 @@ def generate_by_templates(task_keywords, dataset, search_results, pipeline_templ
 
     if task_keywords & {TaskKeyword.GRAPH_MATCHING, TaskKeyword.LINK_PREDICTION, TaskKeyword.VERTEX_NOMINATION,
                         TaskKeyword.VERTEX_CLASSIFICATION, TaskKeyword.CLUSTERING, TaskKeyword.OBJECT_DETECTION,
-                        TaskKeyword.COMMUNITY_DETECTION, TaskKeyword.SEMISUPERVISED}:
+                        TaskKeyword.COMMUNITY_DETECTION, TaskKeyword.SEMISUPERVISED, TaskKeyword.LUPI}:
         template_name = 'DEBUG_CLASSIFICATION'
     elif task_keywords & {TaskKeyword.COLLABORATIVE_FILTERING, TaskKeyword.FORECASTING}:
         template_name = 'DEBUG_REGRESSION'
