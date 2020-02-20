@@ -7,7 +7,7 @@ import subprocess
 import pandas as pd
 import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
 from datetime import datetime
-from os.path import dirname, join
+from os.path import join
 from d3m.metadata.pipeline import Pipeline
 from d3m_ta2_nyu.grpc_logger import LoggingStub
 from ta3ta2_api.utils import encode_pipeline_description, ValueType, decode_value
@@ -25,7 +25,7 @@ D3MSTATICDIR = os.environ.get('D3MSTATICDIR')
 
 
 def search_pipelines(datasets, use_template=False):
-    search_results_path = join(dirname(__file__), '../resource/search_results.json')
+    search_results_path = join(D3MOUTPUTDIR, 'ta2', 'search_results.json')
     search_results = load_search_results(search_results_path)
     channel = grpc.insecure_channel('localhost:45042')
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
@@ -53,7 +53,7 @@ def search_pipelines(datasets, use_template=False):
             continue
 
         task_keywords = '_'.join([x.name for x in problem['problem']['task_keywords']])
-        pipelines = do_search(core, problem, dataset_train_path, time_bound=10.0, pipelines_limit=0,
+        pipelines = do_search(core, problem, dataset_train_path, time_bound=5.0, pipelines_limit=0,
                               pipeline_template=pipeline_template)
 
         number_pipelines = len(pipelines)
@@ -88,8 +88,8 @@ def search_pipelines(datasets, use_template=False):
 
 
 def evaluate_pipelines(datasets, top=5):
-    statistics_path = join(dirname(__file__), '../resource/statistics_datasets.csv')
-    search_results_path = join(dirname(__file__), '../resource/search_results.json')
+    statistics_path = join(D3MOUTPUTDIR, 'ta2', 'statistics_datasets.csv')
+    search_results_path = join(D3MOUTPUTDIR, 'ta2', 'search_results.json')
     search_results = load_search_results(search_results_path)
     size = len(datasets)
 
@@ -112,10 +112,10 @@ def evaluate_pipelines(datasets, top=5):
             top_pipeline_id = top_pipeline['id']
             logger.info('Scoring top pipeline id=%s' % top_pipeline_id)
             top_pipeline_path = join(D3MOUTPUTDIR, 'pipelines_searched', top_pipeline_id + '.json')
-            score_pipeline_path = join(D3MOUTPUTDIR, 'predictions', top_pipeline_id + '_testscore.csv')
+            score_pipeline_path = join(D3MOUTPUTDIR, 'ta2', 'train_test', 'fit_score_%s.csv' % top_pipeline_id)
 
             command = [
-                'python3', '-m', 'd3m', '--strict-resolving', '--strict-digest',
+                'python3', '-m', 'd3m',
                 'runtime',
                 '--volumes', D3MSTATICDIR,
                 '--context', 'TESTING',
@@ -127,7 +127,7 @@ def evaluate_pipelines(datasets, top=5):
                 '--test-input', dataset_test_path,
                 '--score-input', dataset_score_path,
                 '--scores', score_pipeline_path
-                #'--output-run', os.path.join('/output/pipeline_runs/run.yaml')
+                #'--output-run', join(D3MOUTPUTDIR, 'pipeline_runs', 'run.yaml')
                 ]
             try:
                 subprocess.call(command)
@@ -160,7 +160,7 @@ def save_row(file_path, row):
 def load_search_results(file_path):
     if not os.path.isfile(file_path):
         with open(file_path, 'w') as fout:
-            json.dump([], fout)
+            json.dump({}, fout)
 
     with open(file_path) as fin:
         return json.load(fin)
@@ -178,6 +178,6 @@ def load_template():
 
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['185_baseball']
+    datasets = ['185_baseball_MIN_METADATA']
     search_pipelines(datasets)
     evaluate_pipelines(datasets)

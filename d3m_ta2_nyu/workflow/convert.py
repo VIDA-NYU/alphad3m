@@ -3,7 +3,7 @@
 
 import importlib
 import pickle
-from frozendict import FrozenOrderedDict
+
 
 def get_class(name):
     package, classname = name.rsplit('.', 1)
@@ -24,14 +24,21 @@ def _add_step(steps, modules, params, module_to_step, mod):
     # Recursively walk upstream modules (to get `steps` in topological order)
     # Add inputs to a dictionary, in deterministic order
     inputs = {}
+
     for conn in sorted(mod.connections_to, key=lambda c: c.to_input_name):
-        step = _add_step(steps, modules, params, module_to_step,
-                         modules[conn.from_module_id])
+        step = _add_step(steps, modules, params, module_to_step, modules[conn.from_module_id])
+
         if step.startswith('inputs.'):
             inputs[conn.to_input_name] = step
         else:
-            inputs[conn.to_input_name] = '%s.%s' % (step,
-                                                    conn.from_output_name)
+            if conn.to_input_name in inputs:
+                previous_value = inputs[conn.to_input_name]
+                if isinstance(previous_value, str):
+                    inputs[conn.to_input_name] = [previous_value] + ['%s.%s' % (step, conn.from_output_name)]
+                else:
+                    inputs[conn.to_input_name].append('%s.%s' % (step, conn.from_output_name))
+            else:
+                inputs[conn.to_input_name] = '%s.%s' % (step, conn.from_output_name)
 
     klass = get_class(mod.name)
     primitive_desc = {
@@ -39,10 +46,9 @@ def _add_step(steps, modules, params, module_to_step, mod):
         for key, value in klass.metadata.query().items()
         if key in {'id', 'version', 'python_path', 'name', 'digest'}
     }
-    outputs = [{'id':k}
-                for k, v in klass.metadata.query()['primitive_code']['instance_methods'].items()
-                if v['kind']=='PRODUCE'
-              ]
+
+    outputs = [{'id': k} for k, v in klass.metadata.query()['primitive_code']['instance_methods'].items()
+               if v['kind'] == 'PRODUCE']
 
     # Create step description
     step = {
@@ -55,7 +61,7 @@ def _add_step(steps, modules, params, module_to_step, mod):
             }
             for name, data in inputs.items()
         },
-        'outputs': outputs,
+        'outputs': outputs
     }
 
     # If hyperparameters are set, export them
@@ -70,6 +76,7 @@ def _add_step(steps, modules, params, module_to_step, mod):
     step_nb = 'steps.%d' % len(steps)
     steps.append(step)
     module_to_step[mod.id] = step_nb
+
     return step_nb
 
 

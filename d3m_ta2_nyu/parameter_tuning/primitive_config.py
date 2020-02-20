@@ -125,7 +125,7 @@ def is_tunable(name):
 
     return family in {'CLASSIFICATION', 'REGRESSION', 'TIME_SERIES_CLASSIFICATION', 'TIME_SERIES_FORECASTING',
                       'SEMISUPERVISED_CLASSIFICATION', 'COMMUNITY_DETECTION', 'VERTEX_CLASSIFICATION', 'GRAPH_MATCHING',
-                      'LINK_PREDICTION', 'FEATURE_SELECTION'}
+                      'LINK_PREDICTION', 'FEATURE_SELECTION', 'OBJECT_DETECTION'}
 
 
 def get_default_configspace(primitive):

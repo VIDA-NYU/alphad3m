@@ -1,6 +1,30 @@
 Changelog
 =========
 
+Version 20.xx
+------------------
+
+Version 20.02 (2020.02.16)
+------------------
+Submission for Winter evaluation.
+
+* Added data profiler to the workflow.
+* Added support for LUPI problems.
+* Added encoders to the search by AlphaD3M.
+* Changed versioning to CalVer format.
+* Updated to core package v2020.1.9 and TA2-TA3 API v2020.2.11.
+
+1.0 (2019-12-8)
+------------------
+Submission for December dry-run.
+
+* Added different tasks to the grammar. [#35](https://gitlab.com/ViDA-NYU/d3m/ta2/issues/35) [!42](https://gitlab.com/ViDA-NYU/d3m/ta2/-/merge_requests/42)
+* Updated sampling strategy. [#30](https://gitlab.com/ViDA-NYU/d3m/ta2/issues/30) 
+[#32](https://gitlab.com/ViDA-NYU/d3m/ta2/issues/32)
+* Added templates to external process.
+* Updated to core package v2019.11.10 and TA2-TA3 API v2020.12.4.
+ 
+
 0.9 (2019-06-18)
 ------------------
 
@@ -8,11 +32,10 @@ Submission for June dry-run.
 
 * Added standard Reference Runtime to execute pipelines
 * Added data sampling strategies and priorization of some D3M primitives
-* Updated to core package v2019.6.7 and TA2-TA3 API v2019.6.11
 * Added `RANK` metric (and corresponding `RANKING` evaluation method) for TA2-only evaluation
 * Added `rank_solutions_limit` parameter in `SearchSolutions` which allows request both searching and ranking at the same time
 * Updated TA3-TA2 API functions: ListPrimitivesRequest, SearchSolutions and ScoreSolution
-
+* Updated to core package v2019.6.7 and TA2-TA3 API v2019.6.11
 
 0.8.1 (2018-08-08)
 ------------------

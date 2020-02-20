@@ -779,60 +779,60 @@ DESCRIPTOR.enum_types_by_name['TaskKeyword'] = _TASKKEYWORD
 DESCRIPTOR.enum_types_by_name['PerformanceMetric'] = _PERFORMANCEMETRIC
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-ProblemPerformanceMetric = _reflection.GeneratedProtocolMessageType('ProblemPerformanceMetric', (_message.Message,), {
-  'DESCRIPTOR' : _PROBLEMPERFORMANCEMETRIC,
-  '__module__' : 'problem_pb2'
+ProblemPerformanceMetric = _reflection.GeneratedProtocolMessageType('ProblemPerformanceMetric', (_message.Message,), dict(
+  DESCRIPTOR = _PROBLEMPERFORMANCEMETRIC,
+  __module__ = 'problem_pb2'
   # @@protoc_insertion_point(class_scope:ProblemPerformanceMetric)
-  })
+  ))
 _sym_db.RegisterMessage(ProblemPerformanceMetric)
 
-Problem = _reflection.GeneratedProtocolMessageType('Problem', (_message.Message,), {
-  'DESCRIPTOR' : _PROBLEM,
-  '__module__' : 'problem_pb2'
+Problem = _reflection.GeneratedProtocolMessageType('Problem', (_message.Message,), dict(
+  DESCRIPTOR = _PROBLEM,
+  __module__ = 'problem_pb2'
   # @@protoc_insertion_point(class_scope:Problem)
-  })
+  ))
 _sym_db.RegisterMessage(Problem)
 
-ProblemTarget = _reflection.GeneratedProtocolMessageType('ProblemTarget', (_message.Message,), {
-  'DESCRIPTOR' : _PROBLEMTARGET,
-  '__module__' : 'problem_pb2'
+ProblemTarget = _reflection.GeneratedProtocolMessageType('ProblemTarget', (_message.Message,), dict(
+  DESCRIPTOR = _PROBLEMTARGET,
+  __module__ = 'problem_pb2'
   # @@protoc_insertion_point(class_scope:ProblemTarget)
-  })
+  ))
 _sym_db.RegisterMessage(ProblemTarget)
 
-ProblemPrivilegedData = _reflection.GeneratedProtocolMessageType('ProblemPrivilegedData', (_message.Message,), {
-  'DESCRIPTOR' : _PROBLEMPRIVILEGEDDATA,
-  '__module__' : 'problem_pb2'
+ProblemPrivilegedData = _reflection.GeneratedProtocolMessageType('ProblemPrivilegedData', (_message.Message,), dict(
+  DESCRIPTOR = _PROBLEMPRIVILEGEDDATA,
+  __module__ = 'problem_pb2'
   # @@protoc_insertion_point(class_scope:ProblemPrivilegedData)
-  })
+  ))
 _sym_db.RegisterMessage(ProblemPrivilegedData)
 
-ForecastingHorizon = _reflection.GeneratedProtocolMessageType('ForecastingHorizon', (_message.Message,), {
-  'DESCRIPTOR' : _FORECASTINGHORIZON,
-  '__module__' : 'problem_pb2'
+ForecastingHorizon = _reflection.GeneratedProtocolMessageType('ForecastingHorizon', (_message.Message,), dict(
+  DESCRIPTOR = _FORECASTINGHORIZON,
+  __module__ = 'problem_pb2'
   # @@protoc_insertion_point(class_scope:ForecastingHorizon)
-  })
+  ))
 _sym_db.RegisterMessage(ForecastingHorizon)
 
-ProblemInput = _reflection.GeneratedProtocolMessageType('ProblemInput', (_message.Message,), {
-  'DESCRIPTOR' : _PROBLEMINPUT,
-  '__module__' : 'problem_pb2'
+ProblemInput = _reflection.GeneratedProtocolMessageType('ProblemInput', (_message.Message,), dict(
+  DESCRIPTOR = _PROBLEMINPUT,
+  __module__ = 'problem_pb2'
   # @@protoc_insertion_point(class_scope:ProblemInput)
-  })
+  ))
 _sym_db.RegisterMessage(ProblemInput)
 
-DataAugmentation = _reflection.GeneratedProtocolMessageType('DataAugmentation', (_message.Message,), {
-  'DESCRIPTOR' : _DATAAUGMENTATION,
-  '__module__' : 'problem_pb2'
+DataAugmentation = _reflection.GeneratedProtocolMessageType('DataAugmentation', (_message.Message,), dict(
+  DESCRIPTOR = _DATAAUGMENTATION,
+  __module__ = 'problem_pb2'
   # @@protoc_insertion_point(class_scope:DataAugmentation)
-  })
+  ))
 _sym_db.RegisterMessage(DataAugmentation)
 
-ProblemDescription = _reflection.GeneratedProtocolMessageType('ProblemDescription', (_message.Message,), {
-  'DESCRIPTOR' : _PROBLEMDESCRIPTION,
-  '__module__' : 'problem_pb2'
+ProblemDescription = _reflection.GeneratedProtocolMessageType('ProblemDescription', (_message.Message,), dict(
+  DESCRIPTOR = _PROBLEMDESCRIPTION,
+  __module__ = 'problem_pb2'
   # @@protoc_insertion_point(class_scope:ProblemDescription)
-  })
+  ))
 _sym_db.RegisterMessage(ProblemDescription)
 
 

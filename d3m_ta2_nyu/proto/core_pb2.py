@@ -2375,385 +2375,385 @@ DESCRIPTOR.enum_types_by_name['ProgressState'] = _PROGRESSSTATE
 DESCRIPTOR.extensions_by_name['protocol_version'] = protocol_version
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-ScoringConfiguration = _reflection.GeneratedProtocolMessageType('ScoringConfiguration', (_message.Message,), {
-  'DESCRIPTOR' : _SCORINGCONFIGURATION,
-  '__module__' : 'core_pb2'
+ScoringConfiguration = _reflection.GeneratedProtocolMessageType('ScoringConfiguration', (_message.Message,), dict(
+  DESCRIPTOR = _SCORINGCONFIGURATION,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:ScoringConfiguration)
-  })
+  ))
 _sym_db.RegisterMessage(ScoringConfiguration)
 
-Score = _reflection.GeneratedProtocolMessageType('Score', (_message.Message,), {
-  'DESCRIPTOR' : _SCORE,
-  '__module__' : 'core_pb2'
+Score = _reflection.GeneratedProtocolMessageType('Score', (_message.Message,), dict(
+  DESCRIPTOR = _SCORE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:Score)
-  })
+  ))
 _sym_db.RegisterMessage(Score)
 
-Progress = _reflection.GeneratedProtocolMessageType('Progress', (_message.Message,), {
-  'DESCRIPTOR' : _PROGRESS,
-  '__module__' : 'core_pb2'
+Progress = _reflection.GeneratedProtocolMessageType('Progress', (_message.Message,), dict(
+  DESCRIPTOR = _PROGRESS,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:Progress)
-  })
+  ))
 _sym_db.RegisterMessage(Progress)
 
-SearchSolutionsRequest = _reflection.GeneratedProtocolMessageType('SearchSolutionsRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SEARCHSOLUTIONSREQUEST,
-  '__module__' : 'core_pb2'
+SearchSolutionsRequest = _reflection.GeneratedProtocolMessageType('SearchSolutionsRequest', (_message.Message,), dict(
+  DESCRIPTOR = _SEARCHSOLUTIONSREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:SearchSolutionsRequest)
-  })
+  ))
 _sym_db.RegisterMessage(SearchSolutionsRequest)
 
-SearchSolutionsResponse = _reflection.GeneratedProtocolMessageType('SearchSolutionsResponse', (_message.Message,), {
-  'DESCRIPTOR' : _SEARCHSOLUTIONSRESPONSE,
-  '__module__' : 'core_pb2'
+SearchSolutionsResponse = _reflection.GeneratedProtocolMessageType('SearchSolutionsResponse', (_message.Message,), dict(
+  DESCRIPTOR = _SEARCHSOLUTIONSRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:SearchSolutionsResponse)
-  })
+  ))
 _sym_db.RegisterMessage(SearchSolutionsResponse)
 
-EndSearchSolutionsRequest = _reflection.GeneratedProtocolMessageType('EndSearchSolutionsRequest', (_message.Message,), {
-  'DESCRIPTOR' : _ENDSEARCHSOLUTIONSREQUEST,
-  '__module__' : 'core_pb2'
+EndSearchSolutionsRequest = _reflection.GeneratedProtocolMessageType('EndSearchSolutionsRequest', (_message.Message,), dict(
+  DESCRIPTOR = _ENDSEARCHSOLUTIONSREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:EndSearchSolutionsRequest)
-  })
+  ))
 _sym_db.RegisterMessage(EndSearchSolutionsRequest)
 
-EndSearchSolutionsResponse = _reflection.GeneratedProtocolMessageType('EndSearchSolutionsResponse', (_message.Message,), {
-  'DESCRIPTOR' : _ENDSEARCHSOLUTIONSRESPONSE,
-  '__module__' : 'core_pb2'
+EndSearchSolutionsResponse = _reflection.GeneratedProtocolMessageType('EndSearchSolutionsResponse', (_message.Message,), dict(
+  DESCRIPTOR = _ENDSEARCHSOLUTIONSRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:EndSearchSolutionsResponse)
-  })
+  ))
 _sym_db.RegisterMessage(EndSearchSolutionsResponse)
 
-StopSearchSolutionsRequest = _reflection.GeneratedProtocolMessageType('StopSearchSolutionsRequest', (_message.Message,), {
-  'DESCRIPTOR' : _STOPSEARCHSOLUTIONSREQUEST,
-  '__module__' : 'core_pb2'
+StopSearchSolutionsRequest = _reflection.GeneratedProtocolMessageType('StopSearchSolutionsRequest', (_message.Message,), dict(
+  DESCRIPTOR = _STOPSEARCHSOLUTIONSREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:StopSearchSolutionsRequest)
-  })
+  ))
 _sym_db.RegisterMessage(StopSearchSolutionsRequest)
 
-StopSearchSolutionsResponse = _reflection.GeneratedProtocolMessageType('StopSearchSolutionsResponse', (_message.Message,), {
-  'DESCRIPTOR' : _STOPSEARCHSOLUTIONSRESPONSE,
-  '__module__' : 'core_pb2'
+StopSearchSolutionsResponse = _reflection.GeneratedProtocolMessageType('StopSearchSolutionsResponse', (_message.Message,), dict(
+  DESCRIPTOR = _STOPSEARCHSOLUTIONSRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:StopSearchSolutionsResponse)
-  })
+  ))
 _sym_db.RegisterMessage(StopSearchSolutionsResponse)
 
-SolutionSearchScore = _reflection.GeneratedProtocolMessageType('SolutionSearchScore', (_message.Message,), {
-  'DESCRIPTOR' : _SOLUTIONSEARCHSCORE,
-  '__module__' : 'core_pb2'
+SolutionSearchScore = _reflection.GeneratedProtocolMessageType('SolutionSearchScore', (_message.Message,), dict(
+  DESCRIPTOR = _SOLUTIONSEARCHSCORE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:SolutionSearchScore)
-  })
+  ))
 _sym_db.RegisterMessage(SolutionSearchScore)
 
-GetSearchSolutionsResultsRequest = _reflection.GeneratedProtocolMessageType('GetSearchSolutionsResultsRequest', (_message.Message,), {
-  'DESCRIPTOR' : _GETSEARCHSOLUTIONSRESULTSREQUEST,
-  '__module__' : 'core_pb2'
+GetSearchSolutionsResultsRequest = _reflection.GeneratedProtocolMessageType('GetSearchSolutionsResultsRequest', (_message.Message,), dict(
+  DESCRIPTOR = _GETSEARCHSOLUTIONSRESULTSREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetSearchSolutionsResultsRequest)
-  })
+  ))
 _sym_db.RegisterMessage(GetSearchSolutionsResultsRequest)
 
-GetSearchSolutionsResultsResponse = _reflection.GeneratedProtocolMessageType('GetSearchSolutionsResultsResponse', (_message.Message,), {
-  'DESCRIPTOR' : _GETSEARCHSOLUTIONSRESULTSRESPONSE,
-  '__module__' : 'core_pb2'
+GetSearchSolutionsResultsResponse = _reflection.GeneratedProtocolMessageType('GetSearchSolutionsResultsResponse', (_message.Message,), dict(
+  DESCRIPTOR = _GETSEARCHSOLUTIONSRESULTSRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetSearchSolutionsResultsResponse)
-  })
+  ))
 _sym_db.RegisterMessage(GetSearchSolutionsResultsResponse)
 
-DescribeSolutionRequest = _reflection.GeneratedProtocolMessageType('DescribeSolutionRequest', (_message.Message,), {
-  'DESCRIPTOR' : _DESCRIBESOLUTIONREQUEST,
-  '__module__' : 'core_pb2'
+DescribeSolutionRequest = _reflection.GeneratedProtocolMessageType('DescribeSolutionRequest', (_message.Message,), dict(
+  DESCRIPTOR = _DESCRIBESOLUTIONREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:DescribeSolutionRequest)
-  })
+  ))
 _sym_db.RegisterMessage(DescribeSolutionRequest)
 
-PrimitiveStepDescription = _reflection.GeneratedProtocolMessageType('PrimitiveStepDescription', (_message.Message,), {
+PrimitiveStepDescription = _reflection.GeneratedProtocolMessageType('PrimitiveStepDescription', (_message.Message,), dict(
 
-  'HyperparamsEntry' : _reflection.GeneratedProtocolMessageType('HyperparamsEntry', (_message.Message,), {
-    'DESCRIPTOR' : _PRIMITIVESTEPDESCRIPTION_HYPERPARAMSENTRY,
-    '__module__' : 'core_pb2'
+  HyperparamsEntry = _reflection.GeneratedProtocolMessageType('HyperparamsEntry', (_message.Message,), dict(
+    DESCRIPTOR = _PRIMITIVESTEPDESCRIPTION_HYPERPARAMSENTRY,
+    __module__ = 'core_pb2'
     # @@protoc_insertion_point(class_scope:PrimitiveStepDescription.HyperparamsEntry)
-    })
+    ))
   ,
-  'DESCRIPTOR' : _PRIMITIVESTEPDESCRIPTION,
-  '__module__' : 'core_pb2'
+  DESCRIPTOR = _PRIMITIVESTEPDESCRIPTION,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:PrimitiveStepDescription)
-  })
+  ))
 _sym_db.RegisterMessage(PrimitiveStepDescription)
 _sym_db.RegisterMessage(PrimitiveStepDescription.HyperparamsEntry)
 
-SubpipelineStepDescription = _reflection.GeneratedProtocolMessageType('SubpipelineStepDescription', (_message.Message,), {
-  'DESCRIPTOR' : _SUBPIPELINESTEPDESCRIPTION,
-  '__module__' : 'core_pb2'
+SubpipelineStepDescription = _reflection.GeneratedProtocolMessageType('SubpipelineStepDescription', (_message.Message,), dict(
+  DESCRIPTOR = _SUBPIPELINESTEPDESCRIPTION,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:SubpipelineStepDescription)
-  })
+  ))
 _sym_db.RegisterMessage(SubpipelineStepDescription)
 
-StepDescription = _reflection.GeneratedProtocolMessageType('StepDescription', (_message.Message,), {
-  'DESCRIPTOR' : _STEPDESCRIPTION,
-  '__module__' : 'core_pb2'
+StepDescription = _reflection.GeneratedProtocolMessageType('StepDescription', (_message.Message,), dict(
+  DESCRIPTOR = _STEPDESCRIPTION,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:StepDescription)
-  })
+  ))
 _sym_db.RegisterMessage(StepDescription)
 
-DescribeSolutionResponse = _reflection.GeneratedProtocolMessageType('DescribeSolutionResponse', (_message.Message,), {
-  'DESCRIPTOR' : _DESCRIBESOLUTIONRESPONSE,
-  '__module__' : 'core_pb2'
+DescribeSolutionResponse = _reflection.GeneratedProtocolMessageType('DescribeSolutionResponse', (_message.Message,), dict(
+  DESCRIPTOR = _DESCRIBESOLUTIONRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:DescribeSolutionResponse)
-  })
+  ))
 _sym_db.RegisterMessage(DescribeSolutionResponse)
 
-StepProgress = _reflection.GeneratedProtocolMessageType('StepProgress', (_message.Message,), {
-  'DESCRIPTOR' : _STEPPROGRESS,
-  '__module__' : 'core_pb2'
+StepProgress = _reflection.GeneratedProtocolMessageType('StepProgress', (_message.Message,), dict(
+  DESCRIPTOR = _STEPPROGRESS,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:StepProgress)
-  })
+  ))
 _sym_db.RegisterMessage(StepProgress)
 
-SolutionRunUser = _reflection.GeneratedProtocolMessageType('SolutionRunUser', (_message.Message,), {
-  'DESCRIPTOR' : _SOLUTIONRUNUSER,
-  '__module__' : 'core_pb2'
+SolutionRunUser = _reflection.GeneratedProtocolMessageType('SolutionRunUser', (_message.Message,), dict(
+  DESCRIPTOR = _SOLUTIONRUNUSER,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:SolutionRunUser)
-  })
+  ))
 _sym_db.RegisterMessage(SolutionRunUser)
 
-ScoreSolutionRequest = _reflection.GeneratedProtocolMessageType('ScoreSolutionRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SCORESOLUTIONREQUEST,
-  '__module__' : 'core_pb2'
+ScoreSolutionRequest = _reflection.GeneratedProtocolMessageType('ScoreSolutionRequest', (_message.Message,), dict(
+  DESCRIPTOR = _SCORESOLUTIONREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:ScoreSolutionRequest)
-  })
+  ))
 _sym_db.RegisterMessage(ScoreSolutionRequest)
 
-ScoreSolutionResponse = _reflection.GeneratedProtocolMessageType('ScoreSolutionResponse', (_message.Message,), {
-  'DESCRIPTOR' : _SCORESOLUTIONRESPONSE,
-  '__module__' : 'core_pb2'
+ScoreSolutionResponse = _reflection.GeneratedProtocolMessageType('ScoreSolutionResponse', (_message.Message,), dict(
+  DESCRIPTOR = _SCORESOLUTIONRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:ScoreSolutionResponse)
-  })
+  ))
 _sym_db.RegisterMessage(ScoreSolutionResponse)
 
-GetScoreSolutionResultsRequest = _reflection.GeneratedProtocolMessageType('GetScoreSolutionResultsRequest', (_message.Message,), {
-  'DESCRIPTOR' : _GETSCORESOLUTIONRESULTSREQUEST,
-  '__module__' : 'core_pb2'
+GetScoreSolutionResultsRequest = _reflection.GeneratedProtocolMessageType('GetScoreSolutionResultsRequest', (_message.Message,), dict(
+  DESCRIPTOR = _GETSCORESOLUTIONRESULTSREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetScoreSolutionResultsRequest)
-  })
+  ))
 _sym_db.RegisterMessage(GetScoreSolutionResultsRequest)
 
-GetScoreSolutionResultsResponse = _reflection.GeneratedProtocolMessageType('GetScoreSolutionResultsResponse', (_message.Message,), {
-  'DESCRIPTOR' : _GETSCORESOLUTIONRESULTSRESPONSE,
-  '__module__' : 'core_pb2'
+GetScoreSolutionResultsResponse = _reflection.GeneratedProtocolMessageType('GetScoreSolutionResultsResponse', (_message.Message,), dict(
+  DESCRIPTOR = _GETSCORESOLUTIONRESULTSRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetScoreSolutionResultsResponse)
-  })
+  ))
 _sym_db.RegisterMessage(GetScoreSolutionResultsResponse)
 
-FitSolutionRequest = _reflection.GeneratedProtocolMessageType('FitSolutionRequest', (_message.Message,), {
-  'DESCRIPTOR' : _FITSOLUTIONREQUEST,
-  '__module__' : 'core_pb2'
+FitSolutionRequest = _reflection.GeneratedProtocolMessageType('FitSolutionRequest', (_message.Message,), dict(
+  DESCRIPTOR = _FITSOLUTIONREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:FitSolutionRequest)
-  })
+  ))
 _sym_db.RegisterMessage(FitSolutionRequest)
 
-FitSolutionResponse = _reflection.GeneratedProtocolMessageType('FitSolutionResponse', (_message.Message,), {
-  'DESCRIPTOR' : _FITSOLUTIONRESPONSE,
-  '__module__' : 'core_pb2'
+FitSolutionResponse = _reflection.GeneratedProtocolMessageType('FitSolutionResponse', (_message.Message,), dict(
+  DESCRIPTOR = _FITSOLUTIONRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:FitSolutionResponse)
-  })
+  ))
 _sym_db.RegisterMessage(FitSolutionResponse)
 
-GetFitSolutionResultsRequest = _reflection.GeneratedProtocolMessageType('GetFitSolutionResultsRequest', (_message.Message,), {
-  'DESCRIPTOR' : _GETFITSOLUTIONRESULTSREQUEST,
-  '__module__' : 'core_pb2'
+GetFitSolutionResultsRequest = _reflection.GeneratedProtocolMessageType('GetFitSolutionResultsRequest', (_message.Message,), dict(
+  DESCRIPTOR = _GETFITSOLUTIONRESULTSREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetFitSolutionResultsRequest)
-  })
+  ))
 _sym_db.RegisterMessage(GetFitSolutionResultsRequest)
 
-GetFitSolutionResultsResponse = _reflection.GeneratedProtocolMessageType('GetFitSolutionResultsResponse', (_message.Message,), {
+GetFitSolutionResultsResponse = _reflection.GeneratedProtocolMessageType('GetFitSolutionResultsResponse', (_message.Message,), dict(
 
-  'ExposedOutputsEntry' : _reflection.GeneratedProtocolMessageType('ExposedOutputsEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GETFITSOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY,
-    '__module__' : 'core_pb2'
+  ExposedOutputsEntry = _reflection.GeneratedProtocolMessageType('ExposedOutputsEntry', (_message.Message,), dict(
+    DESCRIPTOR = _GETFITSOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY,
+    __module__ = 'core_pb2'
     # @@protoc_insertion_point(class_scope:GetFitSolutionResultsResponse.ExposedOutputsEntry)
-    })
+    ))
   ,
-  'DESCRIPTOR' : _GETFITSOLUTIONRESULTSRESPONSE,
-  '__module__' : 'core_pb2'
+  DESCRIPTOR = _GETFITSOLUTIONRESULTSRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetFitSolutionResultsResponse)
-  })
+  ))
 _sym_db.RegisterMessage(GetFitSolutionResultsResponse)
 _sym_db.RegisterMessage(GetFitSolutionResultsResponse.ExposedOutputsEntry)
 
-ProduceSolutionRequest = _reflection.GeneratedProtocolMessageType('ProduceSolutionRequest', (_message.Message,), {
-  'DESCRIPTOR' : _PRODUCESOLUTIONREQUEST,
-  '__module__' : 'core_pb2'
+ProduceSolutionRequest = _reflection.GeneratedProtocolMessageType('ProduceSolutionRequest', (_message.Message,), dict(
+  DESCRIPTOR = _PRODUCESOLUTIONREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:ProduceSolutionRequest)
-  })
+  ))
 _sym_db.RegisterMessage(ProduceSolutionRequest)
 
-ProduceSolutionResponse = _reflection.GeneratedProtocolMessageType('ProduceSolutionResponse', (_message.Message,), {
-  'DESCRIPTOR' : _PRODUCESOLUTIONRESPONSE,
-  '__module__' : 'core_pb2'
+ProduceSolutionResponse = _reflection.GeneratedProtocolMessageType('ProduceSolutionResponse', (_message.Message,), dict(
+  DESCRIPTOR = _PRODUCESOLUTIONRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:ProduceSolutionResponse)
-  })
+  ))
 _sym_db.RegisterMessage(ProduceSolutionResponse)
 
-GetProduceSolutionResultsRequest = _reflection.GeneratedProtocolMessageType('GetProduceSolutionResultsRequest', (_message.Message,), {
-  'DESCRIPTOR' : _GETPRODUCESOLUTIONRESULTSREQUEST,
-  '__module__' : 'core_pb2'
+GetProduceSolutionResultsRequest = _reflection.GeneratedProtocolMessageType('GetProduceSolutionResultsRequest', (_message.Message,), dict(
+  DESCRIPTOR = _GETPRODUCESOLUTIONRESULTSREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetProduceSolutionResultsRequest)
-  })
+  ))
 _sym_db.RegisterMessage(GetProduceSolutionResultsRequest)
 
-GetProduceSolutionResultsResponse = _reflection.GeneratedProtocolMessageType('GetProduceSolutionResultsResponse', (_message.Message,), {
+GetProduceSolutionResultsResponse = _reflection.GeneratedProtocolMessageType('GetProduceSolutionResultsResponse', (_message.Message,), dict(
 
-  'ExposedOutputsEntry' : _reflection.GeneratedProtocolMessageType('ExposedOutputsEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GETPRODUCESOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY,
-    '__module__' : 'core_pb2'
+  ExposedOutputsEntry = _reflection.GeneratedProtocolMessageType('ExposedOutputsEntry', (_message.Message,), dict(
+    DESCRIPTOR = _GETPRODUCESOLUTIONRESULTSRESPONSE_EXPOSEDOUTPUTSENTRY,
+    __module__ = 'core_pb2'
     # @@protoc_insertion_point(class_scope:GetProduceSolutionResultsResponse.ExposedOutputsEntry)
-    })
+    ))
   ,
-  'DESCRIPTOR' : _GETPRODUCESOLUTIONRESULTSRESPONSE,
-  '__module__' : 'core_pb2'
+  DESCRIPTOR = _GETPRODUCESOLUTIONRESULTSRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:GetProduceSolutionResultsResponse)
-  })
+  ))
 _sym_db.RegisterMessage(GetProduceSolutionResultsResponse)
 _sym_db.RegisterMessage(GetProduceSolutionResultsResponse.ExposedOutputsEntry)
 
-SolutionExportRequest = _reflection.GeneratedProtocolMessageType('SolutionExportRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SOLUTIONEXPORTREQUEST,
-  '__module__' : 'core_pb2'
+SolutionExportRequest = _reflection.GeneratedProtocolMessageType('SolutionExportRequest', (_message.Message,), dict(
+  DESCRIPTOR = _SOLUTIONEXPORTREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:SolutionExportRequest)
-  })
+  ))
 _sym_db.RegisterMessage(SolutionExportRequest)
 
-SolutionExportResponse = _reflection.GeneratedProtocolMessageType('SolutionExportResponse', (_message.Message,), {
-  'DESCRIPTOR' : _SOLUTIONEXPORTRESPONSE,
-  '__module__' : 'core_pb2'
+SolutionExportResponse = _reflection.GeneratedProtocolMessageType('SolutionExportResponse', (_message.Message,), dict(
+  DESCRIPTOR = _SOLUTIONEXPORTRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:SolutionExportResponse)
-  })
+  ))
 _sym_db.RegisterMessage(SolutionExportResponse)
 
-DataAvailableRequest = _reflection.GeneratedProtocolMessageType('DataAvailableRequest', (_message.Message,), {
-  'DESCRIPTOR' : _DATAAVAILABLEREQUEST,
-  '__module__' : 'core_pb2'
+DataAvailableRequest = _reflection.GeneratedProtocolMessageType('DataAvailableRequest', (_message.Message,), dict(
+  DESCRIPTOR = _DATAAVAILABLEREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:DataAvailableRequest)
-  })
+  ))
 _sym_db.RegisterMessage(DataAvailableRequest)
 
-DataAvailableResponse = _reflection.GeneratedProtocolMessageType('DataAvailableResponse', (_message.Message,), {
-  'DESCRIPTOR' : _DATAAVAILABLERESPONSE,
-  '__module__' : 'core_pb2'
+DataAvailableResponse = _reflection.GeneratedProtocolMessageType('DataAvailableResponse', (_message.Message,), dict(
+  DESCRIPTOR = _DATAAVAILABLERESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:DataAvailableResponse)
-  })
+  ))
 _sym_db.RegisterMessage(DataAvailableResponse)
 
-SplitDataRequest = _reflection.GeneratedProtocolMessageType('SplitDataRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SPLITDATAREQUEST,
-  '__module__' : 'core_pb2'
+SplitDataRequest = _reflection.GeneratedProtocolMessageType('SplitDataRequest', (_message.Message,), dict(
+  DESCRIPTOR = _SPLITDATAREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:SplitDataRequest)
-  })
+  ))
 _sym_db.RegisterMessage(SplitDataRequest)
 
-SplitDataResponse = _reflection.GeneratedProtocolMessageType('SplitDataResponse', (_message.Message,), {
-  'DESCRIPTOR' : _SPLITDATARESPONSE,
-  '__module__' : 'core_pb2'
+SplitDataResponse = _reflection.GeneratedProtocolMessageType('SplitDataResponse', (_message.Message,), dict(
+  DESCRIPTOR = _SPLITDATARESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:SplitDataResponse)
-  })
+  ))
 _sym_db.RegisterMessage(SplitDataResponse)
 
-ScorePredictionsRequest = _reflection.GeneratedProtocolMessageType('ScorePredictionsRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SCOREPREDICTIONSREQUEST,
-  '__module__' : 'core_pb2'
+ScorePredictionsRequest = _reflection.GeneratedProtocolMessageType('ScorePredictionsRequest', (_message.Message,), dict(
+  DESCRIPTOR = _SCOREPREDICTIONSREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:ScorePredictionsRequest)
-  })
+  ))
 _sym_db.RegisterMessage(ScorePredictionsRequest)
 
-ScorePredictionsResponse = _reflection.GeneratedProtocolMessageType('ScorePredictionsResponse', (_message.Message,), {
-  'DESCRIPTOR' : _SCOREPREDICTIONSRESPONSE,
-  '__module__' : 'core_pb2'
+ScorePredictionsResponse = _reflection.GeneratedProtocolMessageType('ScorePredictionsResponse', (_message.Message,), dict(
+  DESCRIPTOR = _SCOREPREDICTIONSRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:ScorePredictionsResponse)
-  })
+  ))
 _sym_db.RegisterMessage(ScorePredictionsResponse)
 
-SaveSolutionRequest = _reflection.GeneratedProtocolMessageType('SaveSolutionRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SAVESOLUTIONREQUEST,
-  '__module__' : 'core_pb2'
+SaveSolutionRequest = _reflection.GeneratedProtocolMessageType('SaveSolutionRequest', (_message.Message,), dict(
+  DESCRIPTOR = _SAVESOLUTIONREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:SaveSolutionRequest)
-  })
+  ))
 _sym_db.RegisterMessage(SaveSolutionRequest)
 
-SaveSolutionResponse = _reflection.GeneratedProtocolMessageType('SaveSolutionResponse', (_message.Message,), {
-  'DESCRIPTOR' : _SAVESOLUTIONRESPONSE,
-  '__module__' : 'core_pb2'
+SaveSolutionResponse = _reflection.GeneratedProtocolMessageType('SaveSolutionResponse', (_message.Message,), dict(
+  DESCRIPTOR = _SAVESOLUTIONRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:SaveSolutionResponse)
-  })
+  ))
 _sym_db.RegisterMessage(SaveSolutionResponse)
 
-LoadSolutionRequest = _reflection.GeneratedProtocolMessageType('LoadSolutionRequest', (_message.Message,), {
-  'DESCRIPTOR' : _LOADSOLUTIONREQUEST,
-  '__module__' : 'core_pb2'
+LoadSolutionRequest = _reflection.GeneratedProtocolMessageType('LoadSolutionRequest', (_message.Message,), dict(
+  DESCRIPTOR = _LOADSOLUTIONREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:LoadSolutionRequest)
-  })
+  ))
 _sym_db.RegisterMessage(LoadSolutionRequest)
 
-LoadSolutionResponse = _reflection.GeneratedProtocolMessageType('LoadSolutionResponse', (_message.Message,), {
-  'DESCRIPTOR' : _LOADSOLUTIONRESPONSE,
-  '__module__' : 'core_pb2'
+LoadSolutionResponse = _reflection.GeneratedProtocolMessageType('LoadSolutionResponse', (_message.Message,), dict(
+  DESCRIPTOR = _LOADSOLUTIONRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:LoadSolutionResponse)
-  })
+  ))
 _sym_db.RegisterMessage(LoadSolutionResponse)
 
-SaveFittedSolutionRequest = _reflection.GeneratedProtocolMessageType('SaveFittedSolutionRequest', (_message.Message,), {
-  'DESCRIPTOR' : _SAVEFITTEDSOLUTIONREQUEST,
-  '__module__' : 'core_pb2'
+SaveFittedSolutionRequest = _reflection.GeneratedProtocolMessageType('SaveFittedSolutionRequest', (_message.Message,), dict(
+  DESCRIPTOR = _SAVEFITTEDSOLUTIONREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:SaveFittedSolutionRequest)
-  })
+  ))
 _sym_db.RegisterMessage(SaveFittedSolutionRequest)
 
-SaveFittedSolutionResponse = _reflection.GeneratedProtocolMessageType('SaveFittedSolutionResponse', (_message.Message,), {
-  'DESCRIPTOR' : _SAVEFITTEDSOLUTIONRESPONSE,
-  '__module__' : 'core_pb2'
+SaveFittedSolutionResponse = _reflection.GeneratedProtocolMessageType('SaveFittedSolutionResponse', (_message.Message,), dict(
+  DESCRIPTOR = _SAVEFITTEDSOLUTIONRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:SaveFittedSolutionResponse)
-  })
+  ))
 _sym_db.RegisterMessage(SaveFittedSolutionResponse)
 
-LoadFittedSolutionRequest = _reflection.GeneratedProtocolMessageType('LoadFittedSolutionRequest', (_message.Message,), {
-  'DESCRIPTOR' : _LOADFITTEDSOLUTIONREQUEST,
-  '__module__' : 'core_pb2'
+LoadFittedSolutionRequest = _reflection.GeneratedProtocolMessageType('LoadFittedSolutionRequest', (_message.Message,), dict(
+  DESCRIPTOR = _LOADFITTEDSOLUTIONREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:LoadFittedSolutionRequest)
-  })
+  ))
 _sym_db.RegisterMessage(LoadFittedSolutionRequest)
 
-LoadFittedSolutionResponse = _reflection.GeneratedProtocolMessageType('LoadFittedSolutionResponse', (_message.Message,), {
-  'DESCRIPTOR' : _LOADFITTEDSOLUTIONRESPONSE,
-  '__module__' : 'core_pb2'
+LoadFittedSolutionResponse = _reflection.GeneratedProtocolMessageType('LoadFittedSolutionResponse', (_message.Message,), dict(
+  DESCRIPTOR = _LOADFITTEDSOLUTIONRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:LoadFittedSolutionResponse)
-  })
+  ))
 _sym_db.RegisterMessage(LoadFittedSolutionResponse)
 
-ListPrimitivesRequest = _reflection.GeneratedProtocolMessageType('ListPrimitivesRequest', (_message.Message,), {
-  'DESCRIPTOR' : _LISTPRIMITIVESREQUEST,
-  '__module__' : 'core_pb2'
+ListPrimitivesRequest = _reflection.GeneratedProtocolMessageType('ListPrimitivesRequest', (_message.Message,), dict(
+  DESCRIPTOR = _LISTPRIMITIVESREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:ListPrimitivesRequest)
-  })
+  ))
 _sym_db.RegisterMessage(ListPrimitivesRequest)
 
-ListPrimitivesResponse = _reflection.GeneratedProtocolMessageType('ListPrimitivesResponse', (_message.Message,), {
-  'DESCRIPTOR' : _LISTPRIMITIVESRESPONSE,
-  '__module__' : 'core_pb2'
+ListPrimitivesResponse = _reflection.GeneratedProtocolMessageType('ListPrimitivesResponse', (_message.Message,), dict(
+  DESCRIPTOR = _LISTPRIMITIVESRESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:ListPrimitivesResponse)
-  })
+  ))
 _sym_db.RegisterMessage(ListPrimitivesResponse)
 
-HelloRequest = _reflection.GeneratedProtocolMessageType('HelloRequest', (_message.Message,), {
-  'DESCRIPTOR' : _HELLOREQUEST,
-  '__module__' : 'core_pb2'
+HelloRequest = _reflection.GeneratedProtocolMessageType('HelloRequest', (_message.Message,), dict(
+  DESCRIPTOR = _HELLOREQUEST,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:HelloRequest)
-  })
+  ))
 _sym_db.RegisterMessage(HelloRequest)
 
-HelloResponse = _reflection.GeneratedProtocolMessageType('HelloResponse', (_message.Message,), {
-  'DESCRIPTOR' : _HELLORESPONSE,
-  '__module__' : 'core_pb2'
+HelloResponse = _reflection.GeneratedProtocolMessageType('HelloResponse', (_message.Message,), dict(
+  DESCRIPTOR = _HELLORESPONSE,
+  __module__ = 'core_pb2'
   # @@protoc_insertion_point(class_scope:HelloResponse)
-  })
+  ))
 _sym_db.RegisterMessage(HelloResponse)
 
 google_dot_protobuf_dot_descriptor__pb2.FileOptions.RegisterExtension(protocol_version)

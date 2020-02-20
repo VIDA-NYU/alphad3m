@@ -457,47 +457,47 @@ DESCRIPTOR.enum_types_by_name['ValueType'] = _VALUETYPE
 DESCRIPTOR.enum_types_by_name['NullValue'] = _NULLVALUE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-ValueError = _reflection.GeneratedProtocolMessageType('ValueError', (_message.Message,), {
-  'DESCRIPTOR' : _VALUEERROR,
-  '__module__' : 'value_pb2'
+ValueError = _reflection.GeneratedProtocolMessageType('ValueError', (_message.Message,), dict(
+  DESCRIPTOR = _VALUEERROR,
+  __module__ = 'value_pb2'
   # @@protoc_insertion_point(class_scope:ValueError)
-  })
+  ))
 _sym_db.RegisterMessage(ValueError)
 
-ValueList = _reflection.GeneratedProtocolMessageType('ValueList', (_message.Message,), {
-  'DESCRIPTOR' : _VALUELIST,
-  '__module__' : 'value_pb2'
+ValueList = _reflection.GeneratedProtocolMessageType('ValueList', (_message.Message,), dict(
+  DESCRIPTOR = _VALUELIST,
+  __module__ = 'value_pb2'
   # @@protoc_insertion_point(class_scope:ValueList)
-  })
+  ))
 _sym_db.RegisterMessage(ValueList)
 
-ValueDict = _reflection.GeneratedProtocolMessageType('ValueDict', (_message.Message,), {
+ValueDict = _reflection.GeneratedProtocolMessageType('ValueDict', (_message.Message,), dict(
 
-  'ItemsEntry' : _reflection.GeneratedProtocolMessageType('ItemsEntry', (_message.Message,), {
-    'DESCRIPTOR' : _VALUEDICT_ITEMSENTRY,
-    '__module__' : 'value_pb2'
+  ItemsEntry = _reflection.GeneratedProtocolMessageType('ItemsEntry', (_message.Message,), dict(
+    DESCRIPTOR = _VALUEDICT_ITEMSENTRY,
+    __module__ = 'value_pb2'
     # @@protoc_insertion_point(class_scope:ValueDict.ItemsEntry)
-    })
+    ))
   ,
-  'DESCRIPTOR' : _VALUEDICT,
-  '__module__' : 'value_pb2'
+  DESCRIPTOR = _VALUEDICT,
+  __module__ = 'value_pb2'
   # @@protoc_insertion_point(class_scope:ValueDict)
-  })
+  ))
 _sym_db.RegisterMessage(ValueDict)
 _sym_db.RegisterMessage(ValueDict.ItemsEntry)
 
-ValueRaw = _reflection.GeneratedProtocolMessageType('ValueRaw', (_message.Message,), {
-  'DESCRIPTOR' : _VALUERAW,
-  '__module__' : 'value_pb2'
+ValueRaw = _reflection.GeneratedProtocolMessageType('ValueRaw', (_message.Message,), dict(
+  DESCRIPTOR = _VALUERAW,
+  __module__ = 'value_pb2'
   # @@protoc_insertion_point(class_scope:ValueRaw)
-  })
+  ))
 _sym_db.RegisterMessage(ValueRaw)
 
-Value = _reflection.GeneratedProtocolMessageType('Value', (_message.Message,), {
-  'DESCRIPTOR' : _VALUE,
-  '__module__' : 'value_pb2'
+Value = _reflection.GeneratedProtocolMessageType('Value', (_message.Message,), dict(
+  DESCRIPTOR = _VALUE,
+  __module__ = 'value_pb2'
   # @@protoc_insertion_point(class_scope:Value)
-  })
+  ))
 _sym_db.RegisterMessage(Value)
 
 
