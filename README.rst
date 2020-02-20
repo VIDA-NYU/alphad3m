@@ -6,7 +6,8 @@ This repository is part of New York University's implementation of the `Data Dri
 Installation
 ------------
 
-You should use Docker::
+You should use Docker
+::
 
     docker build -t ta2:latest .
     # Or pull the image from GitLab

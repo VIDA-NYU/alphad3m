@@ -86,11 +86,11 @@ _PRIMITIVE = _descriptor.Descriptor(
 DESCRIPTOR.message_types_by_name['Primitive'] = _PRIMITIVE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-Primitive = _reflection.GeneratedProtocolMessageType('Primitive', (_message.Message,), {
-  'DESCRIPTOR' : _PRIMITIVE,
-  '__module__' : 'primitive_pb2'
+Primitive = _reflection.GeneratedProtocolMessageType('Primitive', (_message.Message,), dict(
+  DESCRIPTOR = _PRIMITIVE,
+  __module__ = 'primitive_pb2'
   # @@protoc_insertion_point(class_scope:Primitive)
-  })
+  ))
 _sym_db.RegisterMessage(Primitive)
 
 
