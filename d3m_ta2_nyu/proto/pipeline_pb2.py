@@ -1083,160 +1083,160 @@ DESCRIPTOR.message_types_by_name['PipelineDescription'] = _PIPELINEDESCRIPTION
 DESCRIPTOR.enum_types_by_name['PipelineContext'] = _PIPELINECONTEXT
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-ContainerArgument = _reflection.GeneratedProtocolMessageType('ContainerArgument', (_message.Message,), dict(
-  DESCRIPTOR = _CONTAINERARGUMENT,
-  __module__ = 'pipeline_pb2'
+ContainerArgument = _reflection.GeneratedProtocolMessageType('ContainerArgument', (_message.Message,), {
+  'DESCRIPTOR' : _CONTAINERARGUMENT,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:ContainerArgument)
-  ))
+  })
 _sym_db.RegisterMessage(ContainerArgument)
 
-ContainerArguments = _reflection.GeneratedProtocolMessageType('ContainerArguments', (_message.Message,), dict(
-  DESCRIPTOR = _CONTAINERARGUMENTS,
-  __module__ = 'pipeline_pb2'
+ContainerArguments = _reflection.GeneratedProtocolMessageType('ContainerArguments', (_message.Message,), {
+  'DESCRIPTOR' : _CONTAINERARGUMENTS,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:ContainerArguments)
-  ))
+  })
 _sym_db.RegisterMessage(ContainerArguments)
 
-DataArgument = _reflection.GeneratedProtocolMessageType('DataArgument', (_message.Message,), dict(
-  DESCRIPTOR = _DATAARGUMENT,
-  __module__ = 'pipeline_pb2'
+DataArgument = _reflection.GeneratedProtocolMessageType('DataArgument', (_message.Message,), {
+  'DESCRIPTOR' : _DATAARGUMENT,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:DataArgument)
-  ))
+  })
 _sym_db.RegisterMessage(DataArgument)
 
-DataArguments = _reflection.GeneratedProtocolMessageType('DataArguments', (_message.Message,), dict(
-  DESCRIPTOR = _DATAARGUMENTS,
-  __module__ = 'pipeline_pb2'
+DataArguments = _reflection.GeneratedProtocolMessageType('DataArguments', (_message.Message,), {
+  'DESCRIPTOR' : _DATAARGUMENTS,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:DataArguments)
-  ))
+  })
 _sym_db.RegisterMessage(DataArguments)
 
-PrimitiveArgument = _reflection.GeneratedProtocolMessageType('PrimitiveArgument', (_message.Message,), dict(
-  DESCRIPTOR = _PRIMITIVEARGUMENT,
-  __module__ = 'pipeline_pb2'
+PrimitiveArgument = _reflection.GeneratedProtocolMessageType('PrimitiveArgument', (_message.Message,), {
+  'DESCRIPTOR' : _PRIMITIVEARGUMENT,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:PrimitiveArgument)
-  ))
+  })
 _sym_db.RegisterMessage(PrimitiveArgument)
 
-PrimitiveArguments = _reflection.GeneratedProtocolMessageType('PrimitiveArguments', (_message.Message,), dict(
-  DESCRIPTOR = _PRIMITIVEARGUMENTS,
-  __module__ = 'pipeline_pb2'
+PrimitiveArguments = _reflection.GeneratedProtocolMessageType('PrimitiveArguments', (_message.Message,), {
+  'DESCRIPTOR' : _PRIMITIVEARGUMENTS,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:PrimitiveArguments)
-  ))
+  })
 _sym_db.RegisterMessage(PrimitiveArguments)
 
-ValueArgument = _reflection.GeneratedProtocolMessageType('ValueArgument', (_message.Message,), dict(
-  DESCRIPTOR = _VALUEARGUMENT,
-  __module__ = 'pipeline_pb2'
+ValueArgument = _reflection.GeneratedProtocolMessageType('ValueArgument', (_message.Message,), {
+  'DESCRIPTOR' : _VALUEARGUMENT,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:ValueArgument)
-  ))
+  })
 _sym_db.RegisterMessage(ValueArgument)
 
-PrimitiveStepArgument = _reflection.GeneratedProtocolMessageType('PrimitiveStepArgument', (_message.Message,), dict(
-  DESCRIPTOR = _PRIMITIVESTEPARGUMENT,
-  __module__ = 'pipeline_pb2'
+PrimitiveStepArgument = _reflection.GeneratedProtocolMessageType('PrimitiveStepArgument', (_message.Message,), {
+  'DESCRIPTOR' : _PRIMITIVESTEPARGUMENT,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:PrimitiveStepArgument)
-  ))
+  })
 _sym_db.RegisterMessage(PrimitiveStepArgument)
 
-PrimitiveStepHyperparameter = _reflection.GeneratedProtocolMessageType('PrimitiveStepHyperparameter', (_message.Message,), dict(
-  DESCRIPTOR = _PRIMITIVESTEPHYPERPARAMETER,
-  __module__ = 'pipeline_pb2'
+PrimitiveStepHyperparameter = _reflection.GeneratedProtocolMessageType('PrimitiveStepHyperparameter', (_message.Message,), {
+  'DESCRIPTOR' : _PRIMITIVESTEPHYPERPARAMETER,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:PrimitiveStepHyperparameter)
-  ))
+  })
 _sym_db.RegisterMessage(PrimitiveStepHyperparameter)
 
-StepInput = _reflection.GeneratedProtocolMessageType('StepInput', (_message.Message,), dict(
-  DESCRIPTOR = _STEPINPUT,
-  __module__ = 'pipeline_pb2'
+StepInput = _reflection.GeneratedProtocolMessageType('StepInput', (_message.Message,), {
+  'DESCRIPTOR' : _STEPINPUT,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:StepInput)
-  ))
+  })
 _sym_db.RegisterMessage(StepInput)
 
-StepOutput = _reflection.GeneratedProtocolMessageType('StepOutput', (_message.Message,), dict(
-  DESCRIPTOR = _STEPOUTPUT,
-  __module__ = 'pipeline_pb2'
+StepOutput = _reflection.GeneratedProtocolMessageType('StepOutput', (_message.Message,), {
+  'DESCRIPTOR' : _STEPOUTPUT,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:StepOutput)
-  ))
+  })
 _sym_db.RegisterMessage(StepOutput)
 
-PipelineSource = _reflection.GeneratedProtocolMessageType('PipelineSource', (_message.Message,), dict(
-  DESCRIPTOR = _PIPELINESOURCE,
-  __module__ = 'pipeline_pb2'
+PipelineSource = _reflection.GeneratedProtocolMessageType('PipelineSource', (_message.Message,), {
+  'DESCRIPTOR' : _PIPELINESOURCE,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:PipelineSource)
-  ))
+  })
 _sym_db.RegisterMessage(PipelineSource)
 
-PipelineDescriptionUser = _reflection.GeneratedProtocolMessageType('PipelineDescriptionUser', (_message.Message,), dict(
-  DESCRIPTOR = _PIPELINEDESCRIPTIONUSER,
-  __module__ = 'pipeline_pb2'
+PipelineDescriptionUser = _reflection.GeneratedProtocolMessageType('PipelineDescriptionUser', (_message.Message,), {
+  'DESCRIPTOR' : _PIPELINEDESCRIPTIONUSER,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:PipelineDescriptionUser)
-  ))
+  })
 _sym_db.RegisterMessage(PipelineDescriptionUser)
 
-PipelineDescriptionInput = _reflection.GeneratedProtocolMessageType('PipelineDescriptionInput', (_message.Message,), dict(
-  DESCRIPTOR = _PIPELINEDESCRIPTIONINPUT,
-  __module__ = 'pipeline_pb2'
+PipelineDescriptionInput = _reflection.GeneratedProtocolMessageType('PipelineDescriptionInput', (_message.Message,), {
+  'DESCRIPTOR' : _PIPELINEDESCRIPTIONINPUT,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:PipelineDescriptionInput)
-  ))
+  })
 _sym_db.RegisterMessage(PipelineDescriptionInput)
 
-PipelineDescriptionOutput = _reflection.GeneratedProtocolMessageType('PipelineDescriptionOutput', (_message.Message,), dict(
-  DESCRIPTOR = _PIPELINEDESCRIPTIONOUTPUT,
-  __module__ = 'pipeline_pb2'
+PipelineDescriptionOutput = _reflection.GeneratedProtocolMessageType('PipelineDescriptionOutput', (_message.Message,), {
+  'DESCRIPTOR' : _PIPELINEDESCRIPTIONOUTPUT,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:PipelineDescriptionOutput)
-  ))
+  })
 _sym_db.RegisterMessage(PipelineDescriptionOutput)
 
-PrimitivePipelineDescriptionStep = _reflection.GeneratedProtocolMessageType('PrimitivePipelineDescriptionStep', (_message.Message,), dict(
+PrimitivePipelineDescriptionStep = _reflection.GeneratedProtocolMessageType('PrimitivePipelineDescriptionStep', (_message.Message,), {
 
-  ArgumentsEntry = _reflection.GeneratedProtocolMessageType('ArgumentsEntry', (_message.Message,), dict(
-    DESCRIPTOR = _PRIMITIVEPIPELINEDESCRIPTIONSTEP_ARGUMENTSENTRY,
-    __module__ = 'pipeline_pb2'
+  'ArgumentsEntry' : _reflection.GeneratedProtocolMessageType('ArgumentsEntry', (_message.Message,), {
+    'DESCRIPTOR' : _PRIMITIVEPIPELINEDESCRIPTIONSTEP_ARGUMENTSENTRY,
+    '__module__' : 'pipeline_pb2'
     # @@protoc_insertion_point(class_scope:PrimitivePipelineDescriptionStep.ArgumentsEntry)
-    ))
+    })
   ,
 
-  HyperparamsEntry = _reflection.GeneratedProtocolMessageType('HyperparamsEntry', (_message.Message,), dict(
-    DESCRIPTOR = _PRIMITIVEPIPELINEDESCRIPTIONSTEP_HYPERPARAMSENTRY,
-    __module__ = 'pipeline_pb2'
+  'HyperparamsEntry' : _reflection.GeneratedProtocolMessageType('HyperparamsEntry', (_message.Message,), {
+    'DESCRIPTOR' : _PRIMITIVEPIPELINEDESCRIPTIONSTEP_HYPERPARAMSENTRY,
+    '__module__' : 'pipeline_pb2'
     # @@protoc_insertion_point(class_scope:PrimitivePipelineDescriptionStep.HyperparamsEntry)
-    ))
+    })
   ,
-  DESCRIPTOR = _PRIMITIVEPIPELINEDESCRIPTIONSTEP,
-  __module__ = 'pipeline_pb2'
+  'DESCRIPTOR' : _PRIMITIVEPIPELINEDESCRIPTIONSTEP,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:PrimitivePipelineDescriptionStep)
-  ))
+  })
 _sym_db.RegisterMessage(PrimitivePipelineDescriptionStep)
 _sym_db.RegisterMessage(PrimitivePipelineDescriptionStep.ArgumentsEntry)
 _sym_db.RegisterMessage(PrimitivePipelineDescriptionStep.HyperparamsEntry)
 
-SubpipelinePipelineDescriptionStep = _reflection.GeneratedProtocolMessageType('SubpipelinePipelineDescriptionStep', (_message.Message,), dict(
-  DESCRIPTOR = _SUBPIPELINEPIPELINEDESCRIPTIONSTEP,
-  __module__ = 'pipeline_pb2'
+SubpipelinePipelineDescriptionStep = _reflection.GeneratedProtocolMessageType('SubpipelinePipelineDescriptionStep', (_message.Message,), {
+  'DESCRIPTOR' : _SUBPIPELINEPIPELINEDESCRIPTIONSTEP,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:SubpipelinePipelineDescriptionStep)
-  ))
+  })
 _sym_db.RegisterMessage(SubpipelinePipelineDescriptionStep)
 
-PlaceholderPipelineDescriptionStep = _reflection.GeneratedProtocolMessageType('PlaceholderPipelineDescriptionStep', (_message.Message,), dict(
-  DESCRIPTOR = _PLACEHOLDERPIPELINEDESCRIPTIONSTEP,
-  __module__ = 'pipeline_pb2'
+PlaceholderPipelineDescriptionStep = _reflection.GeneratedProtocolMessageType('PlaceholderPipelineDescriptionStep', (_message.Message,), {
+  'DESCRIPTOR' : _PLACEHOLDERPIPELINEDESCRIPTIONSTEP,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:PlaceholderPipelineDescriptionStep)
-  ))
+  })
 _sym_db.RegisterMessage(PlaceholderPipelineDescriptionStep)
 
-PipelineDescriptionStep = _reflection.GeneratedProtocolMessageType('PipelineDescriptionStep', (_message.Message,), dict(
-  DESCRIPTOR = _PIPELINEDESCRIPTIONSTEP,
-  __module__ = 'pipeline_pb2'
+PipelineDescriptionStep = _reflection.GeneratedProtocolMessageType('PipelineDescriptionStep', (_message.Message,), {
+  'DESCRIPTOR' : _PIPELINEDESCRIPTIONSTEP,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:PipelineDescriptionStep)
-  ))
+  })
 _sym_db.RegisterMessage(PipelineDescriptionStep)
 
-PipelineDescription = _reflection.GeneratedProtocolMessageType('PipelineDescription', (_message.Message,), dict(
-  DESCRIPTOR = _PIPELINEDESCRIPTION,
-  __module__ = 'pipeline_pb2'
+PipelineDescription = _reflection.GeneratedProtocolMessageType('PipelineDescription', (_message.Message,), {
+  'DESCRIPTOR' : _PIPELINEDESCRIPTION,
+  '__module__' : 'pipeline_pb2'
   # @@protoc_insertion_point(class_scope:PipelineDescription)
-  ))
+  })
 _sym_db.RegisterMessage(PipelineDescription)
 
 
