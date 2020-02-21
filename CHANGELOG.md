@@ -3,12 +3,13 @@ Changelog
 
 Version 20.xx
 ------------------
+* Added support for clustering problems.
 
 Version 20.02 (2020.02.16)
 ------------------
 Submission for Winter evaluation.
 
-* Added data profiler to the workflow.
+* Added data profiler to the workflow. [#39](https://gitlab.com/ViDA-NYU/d3m/ta2/issues/39) [!47](https://gitlab.com/ViDA-NYU/d3m/ta2/-/merge_requests/47)
 * Added support for LUPI problems.
 * Added encoders to the search by AlphaD3M.
 * Changed versioning to CalVer format.

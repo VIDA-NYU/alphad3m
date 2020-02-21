@@ -121,9 +121,6 @@ def generate_by_templates(task_keywords, dataset, search_results, pipeline_templ
                                                                 search_result, DBSession=DBSession)
                 send(msg_queue, pipeline_id)
 
-    if 'TA2_DEBUG_BE_FAST' in os.environ:
-        sys.exit(0)
-
 
 def send(msg_queue, pipeline_id):
     msg_queue.send(('eval', pipeline_id))
@@ -225,8 +222,12 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     filtered_annotated_types = {k: v[0] for k, v in annotated_feature_types.items() if not v[1]}
     all_types = list(filtered_annotated_types.values()) + list(inferred_types.keys())
 
-    generate_by_templates(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets, features,
-                          all_types, inferred_types, timeout, msg_queue, DBSession)
+    if os.environ.get('SKIPTEMPLATES', 'not') == 'not':
+        generate_by_templates(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets,
+                              features, all_types, inferred_types, timeout, msg_queue, DBSession)
+
+    if 'TA2_DEBUG_BE_FAST' in os.environ:
+        sys.exit(0)
 
     builder = None
     task_name = 'CLASSIFICATION' if TaskKeyword.CLASSIFICATION in task_keywords else 'REGRESSION'
@@ -245,7 +246,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     if TaskKeyword.CLUSTERING in task_keywords:
         task_name = 'CLUSTERING'
         builder = BaseBuilder()
-    if TaskKeyword.SEMISUPERVISED in task_keywords:
+    elif TaskKeyword.SEMISUPERVISED in task_keywords:
         task_name = 'SEMISUPERVISED_CLASSIFICATION'
         builder = BaseBuilder()
     elif TaskKeyword.COLLABORATIVE_FILTERING in task_keywords:

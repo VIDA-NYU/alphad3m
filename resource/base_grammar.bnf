@@ -17,12 +17,12 @@ AUDIO_CLASSIFICATION_TASK -> AUDIO_PROCESSING GROUP_PREPROCESSING CLASSIFICATION
 TEXT_REGRESSION_TASK -> TEXT_PROCESSING GROUP_PREPROCESSING REGRESSION
 IMAGE_REGRESSION_TASK -> IMAGE_PROCESSING GROUP_PREPROCESSING REGRESSION
 AUDIO_REGRESSION_TASK -> AUDIO_PROCESSING GROUP_PREPROCESSING REGRESSION
-NA_TASK -> CLASSIFICATION_TASK | REGRESSION_TASK
 LUPI_TASK -> DATA_PREPROCESSING CLASSIFICATION
+NA_TASK -> CLASSIFICATION_TASK | REGRESSION_TASK
 TEXT_PROCESSING -> 'd3m.primitives.data_preprocessing.text_reader.Common' 'd3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn'
 IMAGE_PROCESSING -> 'd3m.primitives.data_preprocessing.image_reader.Common' 'd3m.primitives.feature_extraction.image_transfer.DistilImageTransfer'
 AUDIO_PROCESSING -> 'd3m.primitives.feature_extraction.audio_transfer.DistilAudioTransfer'
-GROUP_PREPROCESSING ->  'E' | 'd3m.primitives.data_preprocessing.robust_scaler.SKlearn' | DATA_PREPROCESSING
+GROUP_PREPROCESSING ->  'E' | DATA_PREPROCESSING
 DATA_PREPROCESSING -> 'primitive_terminal'
 DATA_CLEANING -> 'primitive_terminal' | 'E'
 DATA_TRANSFORMATION -> 'primitive_terminal' | 'E'

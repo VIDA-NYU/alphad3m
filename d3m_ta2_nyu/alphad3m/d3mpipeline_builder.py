@@ -14,12 +14,12 @@ logger = logging.getLogger(__name__)
 
 CONTAINER_CAST = {
     Dataset: {
-        DataFrame:'d3m.primitives.data_transformation.dataset_to_dataframe.Common',
+        DataFrame: 'd3m.primitives.data_transformation.dataset_to_dataframe.Common',
         ndarray: ('d3m.primitives.data_transformation.dataset_to_dataframe.Common'
                   '|d3m.primitives.data_transformation.dataframe_to_ndarray.Common'),
         matrix: "",
         List: ('d3m.primitives.data_transformation.dataset_to_dataframe.Common'
-                  '|d3m.primitives.data_transformation.dataframe_to_list.Common')
+               '|d3m.primitives.data_transformation.dataframe_to_list.Common')
     },
     DataFrame: {
         Dataset: "",
@@ -122,6 +122,8 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive):
         set_hyperparams(db, pipeline, primitive, return_result='new')
     elif primitive_name == 'd3m.primitives.data_preprocessing.image_reader.Common':
         set_hyperparams(db, pipeline, primitive, return_result='replace')
+    elif primitive_name == 'd3m.primitives.clustering.k_means.DistilKMeans':
+        set_hyperparams(db, pipeline, primitive, cluster_col_name='Class')
 
 
 def need_d3mindex(primitives):
@@ -138,38 +140,41 @@ def encode_features(pipeline, initial_step, feature_types, db):
     last_step = initial_step
 
     if 'http://schema.org/Integer' in feature_types or 'http://schema.org/Float' in feature_types:
-        step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                   'extract_columns_by_semantic_types.Common')
-        set_hyperparams(db, pipeline, step6,
+        step_extract = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                          'extract_columns_by_semantic_types.Common')
+        set_hyperparams(db, pipeline, step_extract,
                         semantic_types=['http://schema.org/Integer', 'http://schema.org/Float'])
-        connect(db, pipeline, initial_step, step6)
-        primitives_concatenate.append(step6)
-        last_step = step6
+        connect(db, pipeline, initial_step, step_extract)
+
+        step_scaler = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.robust_scaler.SKlearn')
+        connect(db, pipeline, step_extract, step_scaler)
+        primitives_concatenate.append(step_scaler)
+        last_step = step_scaler
 
     if 'https://metadata.datadrivendiscovery.org/types/CategoricalData' in feature_types or \
             'http://schema.org/DateTime' in feature_types or 'http://schema.org/Text' in feature_types or \
             'http://schema.org/Boolean' in feature_types:
-        step7 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                   'extract_columns_by_semantic_types.Common')
-        set_hyperparams(db, pipeline, step7,
+        step_extract = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                          'extract_columns_by_semantic_types.Common')
+        set_hyperparams(db, pipeline, step_extract,
                         semantic_types=['https://metadata.datadrivendiscovery.org/types/CategoricalData',
                                         'http://schema.org/DateTime', 'http://schema.org/Text',
                                         'http://schema.org/Boolean'])
-        connect(db, pipeline, initial_step, step7)
+        connect(db, pipeline, initial_step, step_extract)
 
-        step8 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')
-        set_hyperparams(db, pipeline, step8, handle_unknown='ignore')
-        connect(db, pipeline, step7, step8)
-        primitives_concatenate.append(step8)
-        last_step = step8
+        step_onehot = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')
+        set_hyperparams(db, pipeline, step_onehot, handle_unknown='ignore')
+        connect(db, pipeline, step_extract, step_onehot)
+        primitives_concatenate.append(step_onehot)
+        last_step = step_onehot
 
     if len(primitives_concatenate) > 1:
-        step9 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.horizontal_concat.TAMU')
+        step_concat = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.horizontal_concat.TAMU')
 
         for primitive_concatenate in primitives_concatenate:
-            connect(db, pipeline, primitive_concatenate, step9)
+            connect(db, pipeline, primitive_concatenate, step_concat)
 
-        last_step = step9
+        last_step = step_concat
 
     return last_step
 
@@ -304,7 +309,10 @@ class BaseBuilder:
             step5 = make_pipeline_module(db, pipeline, estimator)
             change_default_hyperparams(db, pipeline, estimator, step5)
             connect(db, pipeline, step, step5)
-            connect(db, pipeline, step4, step5, to_input='outputs')
+
+            to_module_primitive = index.get_primitive(estimator)
+            if 'outputs' in to_module_primitive.metadata.query()['primitive_code']['arguments']:
+                connect(db, pipeline, step4, step5, to_input='outputs')
 
             step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'construct_predictions.Common')
@@ -316,7 +324,7 @@ class BaseBuilder:
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
         except:
-            logger.exception('Error creating pipeline id=%s', pipeline.id)
+            logger.exception('Error creating pipeline id=%s, primitives=%s', pipeline.id, str(primitives))
             return None
         finally:
                 db.close()
@@ -405,17 +413,14 @@ class BaseBuilder:
                 connect(db, pipeline, step5, step_fallback)
                 prev_step = step_fallback
 
-            step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.robust_scaler.SKlearn')
+            step6 = make_pipeline_module(db, pipeline, estimator)
             connect(db, pipeline, prev_step, step6)
+            connect(db, pipeline, step4, step6, to_input='outputs')
 
-            step7 = make_pipeline_module(db, pipeline, estimator)
-            connect(db, pipeline, step6, step7)
-            connect(db, pipeline, step4, step7, to_input='outputs')
-
-            step8 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+            step7 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                         'construct_predictions.Common')
-            connect(db, pipeline, step7, step8)
-            connect(db, pipeline, step2, step8, to_input='reference')
+            connect(db, pipeline, step6, step7)
+            connect(db, pipeline, step2, step7, to_input='reference')
 
             db.add(pipeline)
             db.commit()
@@ -807,7 +812,7 @@ class TimeseriesForecastingBuilder(BaseBuilder):
                                                        targets, features, all_types, inferred_types, DBSession)
                 return pipeline_id
         except:
-            logger.exception('Error creating pipeline id=%s', pipeline.id)
+            logger.exception('Error creating pipeline id=%s, primitives=%s', pipeline.id, str(primitives))
             return None
         finally:
             db.close()
@@ -843,7 +848,7 @@ class CommunityDetectionBuilder(BaseBuilder):
                                                        targets, features, all_types, inferred_types, DBSession)
                 return pipeline_id
         except:
-            logger.exception('Error creating pipeline id=%s', pipeline.id)
+            logger.exception('Error creating pipeline id=%s, primitives=%s', pipeline.id, str(primitives))
             return None
         finally:
             db.close()
@@ -913,7 +918,7 @@ class GraphMatchingBuilder(BaseBuilder):
                                                        targets, features, all_types, inferred_types, DBSession)
                 return pipeline_id
         except:
-            logger.exception('Error creating pipeline id=%s', pipeline.id)
+            logger.exception('Error creating pipeline id=%s, primitives=%s', pipeline.id, str(primitives))
             return None
         finally:
             db.close()
@@ -946,7 +951,7 @@ class VertexClassificationBuilder(BaseBuilder):
                                                        targets, features, all_types, inferred_types, DBSession)
                 return pipeline_id
         except:
-            logger.exception('Error creating pipeline id=%s', pipeline.id)
+            logger.exception('Error creating pipeline id=%s, primitives=%s', pipeline.id, str(primitives))
             return None
         finally:
             db.close()
@@ -1008,7 +1013,7 @@ class ObjectDetectionBuilder(BaseBuilder):
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
         except:
-            logger.exception('Error creating pipeline id=%s', pipeline.id)
+            logger.exception('Error creating pipeline id=%s, primitives=%s', pipeline.id, str(primitives))
             return None
         finally:
             db.close()
@@ -1091,7 +1096,7 @@ class AudioBuilder(BaseBuilder):
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
         except:
-            logger.exception('Error creating pipeline id=%s', pipeline.id)
+            logger.exception('Error creating pipeline id=%s, primitives=%s', pipeline.id, str(primitives))
             return None
         finally:
             db.close()
@@ -1172,7 +1177,7 @@ class LupiBuilder(BaseBuilder):
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
         except:
-            logger.exception('Error creating pipeline id=%s', pipeline.id)
+            logger.exception('Error creating pipeline id=%s, primitives=%s', pipeline.id, str(primitives))
             return None
         finally:
             db.close()
