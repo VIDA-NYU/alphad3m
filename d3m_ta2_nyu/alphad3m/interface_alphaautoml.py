@@ -143,9 +143,6 @@ def denormalize_dataset(dataset, targets, features, DBSession):
 def generate(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout,
              msg_queue, DBSession):
 
-    import time
-    start = time.time()
-
     with open(dataset[7:]) as fin:
         dataset_doc = json.load(fin)
 
@@ -233,7 +230,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         config['PROBLEM'] = task_name
         config['DATA_TYPE'] = 'TABULAR'
         config['METRIC'] = metrics[0]['metric'].name
-        config['DATASET_METAFEATURES'] = [0] * 50 #  metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
+        config['DATASET_METAFEATURES'] = metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
         config['DATASET'] = dataset_doc['about']['datasetID']
         config['ARGS']['stepsfile'] = join(os.environ.get('D3MOUTPUTDIR'), 'ta2', config['DATASET'] + '_pipeline_steps.txt')
 
@@ -259,7 +256,5 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
 
     c = Coach(game, nnet, config['ARGS'])
     c.learn()
-
-    record_bestpipeline(config['DATASET'])
 
     sys.exit(0)
