@@ -3,7 +3,7 @@ import os
 import pkg_resources
 import d3m.metadata.base
 import d3m.runtime
-import d3m_ta2_nyu.proto.core_pb2 as pb_core
+import d3m_ta2_nyu.grpc_api.core_pb2 as pb_core
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from d3m_ta2_nyu.workflow import database, convert

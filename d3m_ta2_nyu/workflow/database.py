@@ -12,7 +12,7 @@ from sqlalchemy.sql import functions
 from sqlalchemy.types import Binary, Boolean, DateTime, Enum, Float, Integer, \
     String
 
-from d3m_ta2_nyu.sql_uuid import UUID, UuidMixin
+from d3m_ta2_nyu.workflow.sql_uuid import UUID, UuidMixin
 
 
 logger = logging.getLogger(__name__)

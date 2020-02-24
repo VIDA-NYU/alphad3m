@@ -3,8 +3,6 @@ import os
 import sys
 import operator
 import logging
-import datamart_profiler
-import pandas as pd
 
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
@@ -16,9 +14,10 @@ from alphaAutoMLEdit.pipeline.NNet import NNetWrapper
 from .d3mpipeline_builder import *
 from d3m_ta2_nyu.metafeature.metafeature_extractor import ComputeMetafeatures
 from d3m.metadata.problem import TaskKeyword
-from d3m.container.dataset import D3M_COLUMN_TYPE_CONSTANTS_TO_SEMANTIC_TYPES
 from os.path import join
 from d3m_ta2_nyu.pipeline_execute import execute
+from d3m_ta2_nyu.data_ingestion.data_profiler import profile_data
+
 logger = logging.getLogger(__name__)
 
 
@@ -140,65 +139,6 @@ def denormalize_dataset(dataset, targets, features, DBSession):
     return new_path
 
 
-def read_annotated_feature_types(dataset_doc):
-    feature_types = {}
-    try:
-        for data_res in dataset_doc['dataResources']:
-            if data_res['resType'] == 'table':
-                for column in data_res['columns']:
-                    if 'attribute' in column['role'] and column['colType'] != 'unknown':
-                        feature_types[column['colName']] = (D3M_COLUMN_TYPE_CONSTANTS_TO_SEMANTIC_TYPES[column['colType']],
-                                                            'refersTo' in column)
-    except:
-        logger.exception('Error reading the type of attributes')
-
-    logger.info('Features with annotated types: [%s]', ', '.join(feature_types.keys()))
-
-    return feature_types
-
-
-def select_unkown_feature_types(csv_path, annotated_features, target_names, index_name):
-    all_features = pd.read_csv(csv_path).columns
-    unkown_feature_types = []
-
-    for feature_name in all_features:
-        if feature_name not in target_names and feature_name != index_name and feature_name not in annotated_features:
-            unkown_feature_types.append(feature_name)
-
-    logger.info('Features with unknown types: [%s]', ', '.join(unkown_feature_types))
-
-    return unkown_feature_types
-
-
-def indentify_feature_types(csv_path, unkown_feature_types, target_names, index_name):
-    metadata = datamart_profiler.process_dataset(csv_path)
-    new_types = {'https://metadata.datadrivendiscovery.org/types/Attribute': []}
-
-    for index, item in enumerate(metadata['columns']):
-        column_name = item['name']
-        if column_name == index_name:
-            new_types['https://metadata.datadrivendiscovery.org/types/PrimaryKey'] = [(index, column_name)]
-        elif column_name in target_names:
-            new_types['https://metadata.datadrivendiscovery.org/types/TrueTarget'] = [(index, column_name)]
-        elif column_name in unkown_feature_types:
-            semantic_types = item['semantic_types'] if len(item['semantic_types']) > 0 else [item['structural_type']]
-            for semantic_type in semantic_types:
-                if semantic_type == 'http://schema.org/Enumeration':  # Changing to D3M format
-                    semantic_type = 'https://metadata.datadrivendiscovery.org/types/CategoricalData'
-                if semantic_type == 'http://schema.org/identifier':
-                    semantic_type = 'http://schema.org/Integer'
-                if semantic_type not in new_types:
-                    new_types[semantic_type] = []
-                new_types[semantic_type].append((index, column_name))
-
-            new_types['https://metadata.datadrivendiscovery.org/types/Attribute'].append((index, column_name))
-
-    logger.info('New feature types:\n%s',
-                '\n'.join(['%s = [%s]' % (k, ', '.join([i for _, i in v])) for k, v in new_types.items()]))
-
-    return {k: [i for i, _ in v] for k, v in new_types.items()}
-
-
 @database.with_sessionmaker
 def generate(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout,
              msg_queue, DBSession):
@@ -211,16 +151,8 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
 
     index_name = 'd3mIndex'
     target_names = [x[1] for x in targets]
-
     csv_path = denormalize_dataset(dataset, targets, features, DBSession)
-    annotated_feature_types = read_annotated_feature_types(dataset_doc)
-    unkown_feature_types = select_unkown_feature_types(csv_path, annotated_feature_types.keys(), target_names, index_name)
-    inferred_types = {}
-    if len(unkown_feature_types) > 0:
-        inferred_types = indentify_feature_types(csv_path, unkown_feature_types, target_names, index_name)
-    #  Filter out  types of features which are foreign keys of other tables
-    filtered_annotated_types = {k: v[0] for k, v in annotated_feature_types.items() if not v[1]}
-    all_types = list(filtered_annotated_types.values()) + list(inferred_types.keys())
+    inferred_types, all_types = profile_data(csv_path, index_name, target_names, dataset_doc)
 
     if os.environ.get('SKIPTEMPLATES', 'not') == 'not':
         generate_by_templates(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets,
@@ -307,27 +239,8 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
 
         return config
 
-    def record_bestpipeline(dataset):
-        end = time.time()
-
-        eval_dict = game.evaluations
-        eval_times = game.eval_times
-        for key, value in eval_dict.items():
-            if value == float('inf') and 'error' not in game.metric.lower():
-                eval_dict[key] = 0
-        evaluations = sorted(eval_dict.items(), key=operator.itemgetter(1))
-        if 'error' not in game.metric.lower():
-            evaluations.reverse()
-
-        out_p = open(join(os.environ.get('D3MOUTPUTDIR'), 'ta2', config['DATASET'] + '_best_pipelines.txt'), 'a')
-        out_p.write(
-            config['DATASET'] + ' ' + evaluations[0][0] + ' ' + str(evaluations[0][1]) + ' ' + str(
-                game.steps) + ' ' + str((eval_times[evaluations[0][0]] - start) / 60.0) + ' ' + str(
-                (end - start) / 60.0) + '\n')
-
     def signal_handler(signal, frame):
         logger.info('Receiving SIGTERM signal')
-        record_bestpipeline(config['DATASET'])
         sys.exit(0)
 
     signal.signal(signal.SIGTERM, signal_handler)

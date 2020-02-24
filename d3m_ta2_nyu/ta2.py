@@ -19,12 +19,12 @@ import shutil
 import subprocess
 import threading
 import time
-import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
-import d3m_ta2_nyu.proto.core_pb2 as pb_core
+import d3m_ta2_nyu.grpc_api.core_pb2_grpc as pb_core_grpc
+import d3m_ta2_nyu.grpc_api.core_pb2 as pb_core
 from uuid import uuid4, UUID
 from d3m_ta2_nyu import __version__
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
-from d3m_ta2_nyu import grpc_server
+from d3m_ta2_nyu.grpc_api import grpc_server
 from d3m_ta2_nyu.utils import Observable, ProgressStatus
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json

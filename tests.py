@@ -7,16 +7,16 @@ import uuid
 import shutil
 import tempfile
 import unittest
-import d3m_ta2_nyu.proto.core_pb2 as pb_core
-import d3m_ta2_nyu.proto.value_pb2 as pb_value
-import d3m_ta2_nyu.proto.pipeline_pb2 as pb_pipeline
-import d3m_ta2_nyu.proto.primitive_pb2 as pb_primitive
+import d3m_ta2_nyu.grpc_api.core_pb2 as pb_core
+import d3m_ta2_nyu.grpc_api.value_pb2 as pb_value
+import d3m_ta2_nyu.grpc_api.pipeline_pb2 as pb_pipeline
+import d3m_ta2_nyu.grpc_api.primitive_pb2 as pb_primitive
 
 from unittest import mock
 from d3m_ta2_nyu.ta2 import D3mTa2, Session, TuneHyperparamsJob
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow import convert
-from d3m_ta2_nyu.grpc_server import to_timestamp, CoreService
+from d3m_ta2_nyu.grpc_api.grpc_server import to_timestamp, CoreService
 
 
 class FakePrimitiveBuilder(object):

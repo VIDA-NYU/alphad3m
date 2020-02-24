@@ -3,7 +3,7 @@ import os
 import sys
 import shutil
 import pickle
-import d3m_ta2_nyu.proto.core_pb2 as pb_core
+import d3m_ta2_nyu.grpc_api.core_pb2 as pb_core
 from d3m import index
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset

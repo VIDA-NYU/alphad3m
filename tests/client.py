@@ -3,11 +3,11 @@ import json
 import logging
 import sys
 import datetime
-import d3m_ta2_nyu.proto.core_pb2 as pb_core
-import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
-import d3m_ta2_nyu.proto.value_pb2 as pb_value
+import d3m_ta2_nyu.grpc_api.core_pb2 as pb_core
+import d3m_ta2_nyu.grpc_api.core_pb2_grpc as pb_core_grpc
+import d3m_ta2_nyu.grpc_api.value_pb2 as pb_value
 from ta3ta2_api.utils import encode_problem_description, encode_performance_metric
-from d3m_ta2_nyu.grpc_logger import LoggingStub
+from d3m_ta2_nyu.grpc_api.grpc_logger import LoggingStub
 
 
 logger = logging.getLogger(__name__)

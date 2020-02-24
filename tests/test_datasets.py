@@ -5,15 +5,14 @@ import grpc
 import logging
 import subprocess
 import pandas as pd
-import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
+import d3m_ta2_nyu.grpc_api.core_pb2_grpc as pb_core_grpc
 from datetime import datetime
 from os.path import join
 from d3m.metadata.pipeline import Pipeline
-from d3m_ta2_nyu.grpc_logger import LoggingStub
+from d3m_ta2_nyu.grpc_api.grpc_logger import LoggingStub
 from ta3ta2_api.utils import encode_pipeline_description, ValueType, decode_value
 from d3m.metadata.problem import parse_problem_description, PerformanceMetric
-from client import do_search, do_score, do_train, do_test, do_export
-
+from client import do_search
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)

@@ -11,18 +11,18 @@ import grpc
 import logging
 import pickle
 import d3m_ta2_nyu.workflow.convert
-import d3m_ta2_nyu.proto.core_pb2 as pb_core
-import d3m_ta2_nyu.proto.core_pb2_grpc as pb_core_grpc
-import d3m_ta2_nyu.proto.problem_pb2 as pb_problem
-import d3m_ta2_nyu.proto.value_pb2 as pb_value
-import d3m_ta2_nyu.proto.pipeline_pb2 as pb_pipeline
-import d3m_ta2_nyu.proto.primitive_pb2 as pb_primitive
+import d3m_ta2_nyu.grpc_api.core_pb2 as pb_core
+import d3m_ta2_nyu.grpc_api.core_pb2_grpc as pb_core_grpc
+import d3m_ta2_nyu.grpc_api.problem_pb2 as pb_problem
+import d3m_ta2_nyu.grpc_api.value_pb2 as pb_value
+import d3m_ta2_nyu.grpc_api.pipeline_pb2 as pb_pipeline
+import d3m_ta2_nyu.grpc_api.primitive_pb2 as pb_primitive
 
 from uuid import UUID
-from . import __version__
+from d3m_ta2_nyu import __version__
 
 from google.protobuf.timestamp_pb2 import Timestamp
-from d3m_ta2_nyu.grpc_logger import log_service
+from d3m_ta2_nyu.grpc_api.grpc_logger import log_service
 from d3m_ta2_nyu.primitive_loader import D3MPrimitiveLoader
 from d3m_ta2_nyu.utils import PersistentQueue
 from ta3ta2_api.utils import decode_pipeline_description, decode_problem_description, decode_performance_metric
