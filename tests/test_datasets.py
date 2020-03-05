@@ -12,7 +12,8 @@ from d3m.metadata.pipeline import Pipeline
 from d3m_ta2_nyu.grpc_api.grpc_logger import LoggingStub
 from ta3ta2_api.utils import encode_pipeline_description, ValueType, decode_value
 from d3m.metadata.problem import parse_problem_description, PerformanceMetric
-from client import do_search
+from d3m.utils import yaml_load_all
+from client import do_search, do_score, do_train, do_test, do_export
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
@@ -70,15 +71,15 @@ def search_pipelines(datasets, use_template=False):
                 else:
                     pipeline_score = decode_value(pipeline[0].scores[0].value)['value']
                 all_scores.append({'id': pipeline_id, 'score': pipeline_score})
+                #do_score(core, problem, [pipeline_id], dataset_train_path)
+                #fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
+                #do_test(core, fitted_pipeline, dataset_train_path.replace('TRAIN', 'TEST'))
+                #do_export(core, fitted_pipeline)
 
             result['pipelines'] = number_pipelines
             result['best_time'] = best_time
             result['best_score'] = all_scores[0]['score']
             result['all_scores'] = all_scores
-            #do_score(core, problem, [pipeline_id], dataset_train_path)
-            #fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
-            #do_test(core, fitted_pipeline, dataset_train_path.replace('TRAIN', 'TEST'))
-            #do_export(core, fitted_pipeline)
 
         search_results[dataset] = result
 
@@ -86,7 +87,7 @@ def search_pipelines(datasets, use_template=False):
             json.dump(search_results, fout, indent=4)
 
 
-def evaluate_pipelines(datasets, top=5):
+def evaluate_pipelines(datasets, top=50):
     statistics_path = join(D3MOUTPUTDIR, 'ta2', 'statistics_datasets.csv')
     search_results_path = join(D3MOUTPUTDIR, 'ta2', 'search_results.json')
     search_results = load_search_results(search_results_path)
@@ -110,7 +111,7 @@ def evaluate_pipelines(datasets, top=5):
         for top_pipeline in search_results[dataset]['all_scores'][:top]:
             top_pipeline_id = top_pipeline['id']
             logger.info('Scoring top pipeline id=%s' % top_pipeline_id)
-            top_pipeline_path = join(D3MOUTPUTDIR, 'pipelines_searched', top_pipeline_id + '.json')
+            top_pipeline_path = join(D3MOUTPUTDIR, 'pipelines_searched', '%s.json' % top_pipeline_id)
             score_pipeline_path = join(D3MOUTPUTDIR, 'ta2', 'train_test', 'fit_score_%s.csv' % top_pipeline_id)
 
             command = [
@@ -125,8 +126,8 @@ def evaluate_pipelines(datasets, top=5):
                 '--input', dataset_train_path,
                 '--test-input', dataset_test_path,
                 '--score-input', dataset_score_path,
-                '--scores', score_pipeline_path
-                #'--output-run', join(D3MOUTPUTDIR, 'pipeline_runs', 'run.yaml')
+                '--scores', score_pipeline_path,
+                '--output-run', join(D3MOUTPUTDIR, 'pipeline_runs', 'run_%s.yaml' % top_pipeline_id)
                 ]
             try:
                 subprocess.call(command)
@@ -148,6 +149,7 @@ def evaluate_pipelines(datasets, top=5):
         row = [dataset, search_results[dataset]['pipelines'], search_results[dataset]['best_time'],
                search_results[dataset]['search_time'], best_score, metric, search_results[dataset]['task'], best_id]
         save_row(statistics_path, row)
+        create_dupms(performance_top_pipelines.keys())
 
 
 def save_row(file_path, row):
@@ -175,8 +177,31 @@ def load_template():
     return grpc_pipeline
 
 
+def create_dupms(top_pipelines):
+    pipelines_list = []
+    pipeline_runs_list = []
+
+    for top_pipeline in top_pipelines:
+        with open(join(D3MOUTPUTDIR, 'pipeline_runs', 'run_%s.yaml' % top_pipeline)) as fin:
+            for pipeline_run in yaml_load_all(fin):
+                digest = pipeline_run['pipeline']['digest']
+                pipeline_runs_list.append(json.dumps(pipeline_run))
+
+        with open(join(D3MOUTPUTDIR, 'pipelines_searched', '%s.json' % top_pipeline)) as fin:
+            pipeline = json.load(fin)
+            pipeline['digest'] = digest
+            pipeline['source'] = {'name': 'new_nyu'}
+            pipelines_list.append(json.dumps(pipeline))
+
+    with open(join(D3MOUTPUTDIR, 'ta2', 'pipelines.json'), 'w') as fout:
+        fout.write('\n'.join(pipelines_list))
+
+    with open(join(D3MOUTPUTDIR, 'ta2', 'pipeline_runs.json'), 'w') as fout:
+        fout.write('\n'.join(pipeline_runs_list))
+
+
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['185_baseball_MIN_METADATA']
+    datasets = ['185_baseball']
     search_pipelines(datasets)
     evaluate_pipelines(datasets)
