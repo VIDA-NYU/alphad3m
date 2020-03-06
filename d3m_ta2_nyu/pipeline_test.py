@@ -26,3 +26,4 @@ def test(pipeline_id, dataset, storage_dir, results_path, msg_queue, db):
         logger.info('Storing produce results at %s', results_path)
     except Exception:
         logger.exception('Error calling produce method for pipeline %s', pipeline_id)
+        raise RuntimeError
