@@ -79,7 +79,8 @@ class HyperparameterTuning(object):
                              "cutoff_time": cutoff,
                              "cs": self.cs,  # Configuration space
                              "deterministic": "true",
-                             "output_dir": "/tmp/"
+                             "output_dir": "/tmp/",
+                             "abort_on_first_run_crash": False
                              })
         smac = SMAC(scenario=scenario, rng=np.random.RandomState(42), tae_runner=runner)
 

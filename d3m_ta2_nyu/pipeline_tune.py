@@ -13,7 +13,6 @@ from d3m_ta2_nyu.parameter_tuning.primitive_config import is_tunable
 from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, hyperparams_from_config
 from d3m.metadata.problem import TaskKeyword
 
-
 logger = logging.getLogger(__name__)
 
 PRIMITIVES = index.search()
@@ -41,7 +40,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
         logger.info('No primitives to be tuned for pipeline %s', pipeline_id)
         sys.exit(1)
 
-    logger.info('Tuning primitives %s', ', '.join(tunable_primitives.values()))
+    logger.info('Tuning primitives: %s', ', '.join(tunable_primitives.values()))
 
     if sample_dataset_uri:
         dataset = Dataset.load(sample_dataset_uri)
@@ -56,15 +55,18 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
                       'number_of_folds': '2'}
 
     def evaluate_tune(hyperparameter_configuration):
+        new_hyperparams =[]
         for primitive_id, primitive_name in tunable_primitives.items():
             hy = hyperparams_from_config(primitive_name, hyperparameter_configuration)
-            db.add(database.PipelineParameter(
+            db_hyperparams = database.PipelineParameter(
                 pipeline=pipeline,
                 module_id=primitive_id,
                 name='hyperparams',
                 value=pickle.dumps(hy),
-            ))
+            )
+            new_hyperparams.append(db_hyperparams)
 
+        pipeline.parameters += new_hyperparams
         scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_config)
         first_metric = metrics[0]['metric'].name
         score_values = []
@@ -76,8 +78,6 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
         avg_score = sum(score_values) / len(score_values)
         cost = 1.0 - metrics[0]['metric'].normalize(avg_score)
         logger.info('Tuning results:\n%s, cost=%s', scores, cost)
-        # Don't store those runs
-        db.rollback()
 
         return cost
 
