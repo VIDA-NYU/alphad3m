@@ -14,49 +14,90 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformFloatH
 
 logger = logging.getLogger(__name__)
 PRIMITIVES = index.search()
-HYPERPARAMS_FROM_METALEARNING_PATH = os.path.join(os.path.dirname(__file__), '../../resource/hyperparams.json')
+HYPERPARAMETERS_FROM_METALEARNING_PATH = os.path.join(os.path.dirname(__file__), '../../resource/hyperparams.json')
+SKIP_HYPERPARAMETERS = ['use_inputs_columns', 'use_outputs_columns', 'exclude_inputs_columns', 'exclude_outputs_columns',
+                        'return_result', 'return_semantic_type', 'use_semantic_types', 'add_index_columns',
+                        'error_on_no_input', 'n_jobs', 'class_weight']
 
 
-def get_hyperparams_from_metalearnig():
-    with open(HYPERPARAMS_FROM_METALEARNING_PATH) as fin:
-        search_space = json.load(fin)
-        return  search_space
+def is_tunable(name):
+    if name not in PRIMITIVES:
+        return False
+    if name in {'d3m.primitives.feature_extraction.yolo.DSBOX'}:
+        # This primitive is not in the OBJECT_DETECTION family, so compares it by its name
+        return True
 
-def get_primitive_config(cs, primitive_name):
+    klass = index.get_primitive(name)
+    family = klass.metadata.to_json_structure()['primitive_family']
+
+    return family in {'CLASSIFICATION', 'REGRESSION', 'TIME_SERIES_CLASSIFICATION', 'TIME_SERIES_FORECASTING',
+                      'SEMISUPERVISED_CLASSIFICATION', 'COMMUNITY_DETECTION', 'VERTEX_CLASSIFICATION', 'GRAPH_MATCHING',
+                      'LINK_PREDICTION', 'FEATURE_SELECTION', 'OBJECT_DETECTION'}
+
+
+def load_hyperparameters(primitive_name, skip_hyperparameter=True):
     primitive_class = index.get_primitive(primitive_name)
     hyperparameter_class = typing.get_type_hints(primitive_class.__init__)['hyperparams']
-    default_config = get_default_configspace(primitive_name)
-    default_hyperparameters = set(default_config.get_hyperparameter_names())
+    hyperparameters = {}
 
     if hyperparameter_class:
-        config = hyperparameter_class.configuration
-        hyperparameters = []
-        for hp_name in config:
-            new_hp_name = primitive_name + '|' + hp_name
-            new_hp = None
-            if new_hp_name in default_hyperparameters and not isinstance(config[hp_name], Union):
-                new_hp = default_config.get_hyperparameter(new_hp_name)
-            casted_hp = cast_hyperparameters(config[hp_name], new_hp_name)
+        for hp_name, hp_value in hyperparameter_class.configuration.items():
+            if skip_hyperparameter:
+                if hp_name not in SKIP_HYPERPARAMETERS:
+                    hyperparameters[hp_name] = hp_value
+            else:
+                hyperparameters[hp_name] = hp_value
 
-            if casted_hp is not None:
-                if new_hp is not None and casted_hp.is_legal(new_hp.default_value):
-                    hyperparameters.append(new_hp)
-                else:
-                    hyperparameters.append(casted_hp)            
+    return hyperparameters
 
-        cs.add_hyperparameters(hyperparameters)
 
-        for condition in default_config.get_conditions():
-            try:
-                cs.add_condition(condition)
-            except Exception as e:
-                logger.warning('Not possible to add condition', e)
+def load_primitive_configspace(configspace, primitive_name):
+    default_configspace = load_default_configspace(primitive_name)
+    all_hyperparameters = load_hyperparameters(primitive_name)
+    default_hyperparameters = {}#set(default_config.get_hyperparameter_names())
+    casted_hyperparameters = []
 
-        for forbidden in default_config.get_forbiddens():
-            try:
-                cs.add_forbidden_clause(forbidden)
-            except Exception as e:
-                logger.warning('Not possible to add forbidden clause', e)
+    for hp_name in all_hyperparameters:
+        new_hp_name = primitive_name + '|' + hp_name
+        new_hp = None
+        if new_hp_name in default_hyperparameters and not isinstance(all_hyperparameters[hp_name], Union):
+            new_hp = default_configspace.get_hyperparameter(new_hp_name)
+        casted_hp = cast_hyperparameters(all_hyperparameters[hp_name], new_hp_name)
+
+        if casted_hp is not None:
+            if new_hp is not None and casted_hp.is_legal(new_hp.default_value):
+                casted_hyperparameters.append(new_hp)
+            else:
+                casted_hyperparameters.append(casted_hp)
+
+    configspace.add_hyperparameters(casted_hyperparameters)
+
+    for condition in default_configspace.get_conditions():
+        try:
+            configspace.add_condition(condition)
+        except Exception as e:
+            logger.warning('Not possible to add condition', e)
+
+    for forbidden in default_configspace.get_forbiddens():
+        try:
+            configspace.add_forbidden_clause(forbidden)
+        except Exception as e:
+            logger.warning('Not possible to add forbidden clause', e)
+
+
+def load_default_configspace(primitive):
+    default_config = ConfigurationSpace()
+
+    if primitive in get_hyperparameters_from_metalearnig():
+        default_config.add_configuration_space(
+            primitive,
+            get_configspace_from_metalearning(get_hyperparameters_from_metalearnig()[primitive]),
+            '|'
+        )
+    elif primitive in PRIMITIVES_DEFAULT_HYPERPARAMETERS:
+        default_config.add_configuration_space(primitive, PRIMITIVES_DEFAULT_HYPERPARAMETERS[primitive](), '|')
+
+    return default_config
 
 
 def cast_hyperparameters(hyperparameter, name):
@@ -113,34 +154,11 @@ def cast_hyperparameters(hyperparameter, name):
     return new_hyperparameter
 
 
-def is_tunable(name):
-    if name not in PRIMITIVES:
-        return False
-    if name in {'d3m.primitives.feature_extraction.yolo.DSBOX'}:
-        # This primitive is not in the OBJECT_DETECTION family, so compares it by its name
-        return True
+def get_hyperparameters_from_metalearnig():
+    with open(HYPERPARAMETERS_FROM_METALEARNING_PATH) as fin:
+        search_space = json.load(fin)
+        return search_space
 
-    klass = index.get_primitive(name)
-    family = klass.metadata.to_json_structure()['primitive_family']
-
-    return family in {'CLASSIFICATION', 'REGRESSION', 'TIME_SERIES_CLASSIFICATION', 'TIME_SERIES_FORECASTING',
-                      'SEMISUPERVISED_CLASSIFICATION', 'COMMUNITY_DETECTION', 'VERTEX_CLASSIFICATION', 'GRAPH_MATCHING',
-                      'LINK_PREDICTION', 'FEATURE_SELECTION', 'OBJECT_DETECTION'}
-
-
-def get_default_configspace(primitive):
-    default_config = ConfigurationSpace()
-
-    if primitive in get_hyperparams_from_metalearnig():
-        default_config.add_configuration_space(
-            primitive,
-            get_configspace_from_metalearning(get_hyperparams_from_metalearnig()[primitive]),
-            '|'
-        )
-    elif primitive in PRIMITIVES_DEFAULT_HYPERPARAMETERS:
-        default_config.add_configuration_space(primitive, PRIMITIVES_DEFAULT_HYPERPARAMETERS[primitive](), '|')
-
-    return default_config
 
 def get_configspace_from_metalearning(metalearning_entry):
     cs = ConfigurationSpace()
@@ -153,6 +171,7 @@ def get_configspace_from_metalearning(metalearning_entry):
     cs.add_hyperparameters(categorical_hyperparams)
 
     return cs
+
 
 # CLASSIFICATION
 def adaboost():

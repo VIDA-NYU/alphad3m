@@ -1,63 +1,48 @@
-import typing
 import logging
-import importlib
 import numpy as np
-# Import ConfigSpace and different types of parameters
 from smac.configspace import ConfigurationSpace
 from ConfigSpace.hyperparameters import IntegerHyperparameter, FloatHyperparameter, CategoricalHyperparameter, \
     OrdinalHyperparameter
 from smac.facade.smac_facade import SMAC
-# Import SMAC-utilities
 from smac.scenario.scenario import Scenario
+from d3m_ta2_nyu.parameter_tuning.primitive_config import load_primitive_configspace, load_hyperparameters
 
-from d3m_ta2_nyu.parameter_tuning.primitive_config import get_primitive_config
-from d3m import index
 
 MAX_RUNS = 100
 logger = logging.getLogger(__name__)
 
 
-def get_class(name):
-    package, classname = name.rsplit('.', 1)
-    return getattr(importlib.import_module(package), classname)
-
-
-def config_from_primitives(primitives):
+def build_configspace(primitives):
     # Build Configuration Space which defines all parameters and their ranges
-    cs = ConfigurationSpace()
+    configspace = ConfigurationSpace()
     for primitive in primitives:
-        get_primitive_config(cs, primitive)
+        load_primitive_configspace(configspace, primitive)
 
-    return cs
+    return configspace
 
 
-def hyperparams_from_config(name, cfg):
-    primitive_class = index.get_primitive(name)
-    hyperparameter_class = typing.get_type_hints(primitive_class.__init__)['hyperparams']
-    hyperparameter_config = hyperparameter_class.configuration
+def get_new_hyperparameters(primitive_name, configspace):
+    hyperparameters = load_hyperparameters(primitive_name)
+    new_hyperparameters = {}
 
-    kw_args = {}
-
-    for key in hyperparameter_config:
-        cfg_key = name + '|' + key
-        if cfg_key in cfg:
-            kw_args[key] = cfg[cfg_key]
+    for hyperparameter_name in hyperparameters:
+        hyperparameter_config_name = primitive_name + '|' + hyperparameter_name
+        if hyperparameter_config_name in configspace:
+            new_hyperparameters[hyperparameter_name] = configspace[hyperparameter_config_name]
         else:
-            kw_args[key] = hyperparameter_config[key].get_default()
-        logger.info('New values for hyperparameter %s=%s', cfg_key, kw_args[key])
+            new_hyperparameters[hyperparameter_name] = hyperparameters[hyperparameter_name].get_default()
+        logger.info('New value for %s=%s', hyperparameter_config_name, new_hyperparameters[hyperparameter_name])
 
-    hy = hyperparameter_class(**kw_args)
-
-    return hy
+    return new_hyperparameters
 
 
 class HyperparameterTuning(object):
     def __init__(self, primitives):
-        self.cs = config_from_primitives(primitives)
+        self.configspace = build_configspace(primitives)
         # Avoiding too many iterations
         self.runcount = 1
 
-        for param in self.cs.get_hyperparameters():
+        for param in self.configspace.get_hyperparameters():
             if isinstance(param, IntegerHyperparameter):
                 self.runcount *= (param.upper - param.lower)
             elif isinstance(param, CategoricalHyperparameter):
@@ -77,7 +62,7 @@ class HyperparameterTuning(object):
                              "runcount-limit": self.runcount,  # Maximum function evaluations
                              "wallclock-limit": wallclock,
                              "cutoff_time": cutoff,
-                             "cs": self.cs,  # Configuration space
+                             "cs": self.configspace,  # Configuration space
                              "deterministic": "true",
                              "output_dir": "/tmp/",
                              "abort_on_first_run_crash": False
