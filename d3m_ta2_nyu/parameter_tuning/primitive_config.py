@@ -17,7 +17,7 @@ PRIMITIVES = index.search()
 HYPERPARAMETERS_FROM_METALEARNING_PATH = os.path.join(os.path.dirname(__file__), '../../resource/hyperparams.json')
 SKIP_HYPERPARAMETERS = ['use_inputs_columns', 'use_outputs_columns', 'exclude_inputs_columns', 'exclude_outputs_columns',
                         'return_result', 'return_semantic_type', 'use_semantic_types', 'add_index_columns',
-                        'error_on_no_input', 'n_jobs', 'class_weight']
+                        'use_columns', 'exclude_columns', 'error_on_no_input', 'n_jobs', 'class_weight']
 
 
 def is_tunable(name):
@@ -54,7 +54,7 @@ def load_hyperparameters(primitive_name, skip_hyperparameter=True):
 def load_primitive_configspace(configspace, primitive_name):
     default_configspace = load_default_configspace(primitive_name)
     all_hyperparameters = load_hyperparameters(primitive_name)
-    default_hyperparameters = {}#set(default_config.get_hyperparameter_names())
+    default_hyperparameters = set(default_configspace.get_hyperparameter_names())
     casted_hyperparameters = []
 
     for hp_name in all_hyperparameters:
@@ -62,7 +62,7 @@ def load_primitive_configspace(configspace, primitive_name):
         new_hp = None
         if new_hp_name in default_hyperparameters and not isinstance(all_hyperparameters[hp_name], Union):
             new_hp = default_configspace.get_hyperparameter(new_hp_name)
-        casted_hp = cast_hyperparameters(all_hyperparameters[hp_name], new_hp_name)
+        casted_hp = cast_hyperparameter(all_hyperparameters[hp_name], new_hp_name)
 
         if casted_hp is not None:
             if new_hp is not None and casted_hp.is_legal(new_hp.default_value):
@@ -88,19 +88,19 @@ def load_primitive_configspace(configspace, primitive_name):
 def load_default_configspace(primitive):
     default_config = ConfigurationSpace()
 
-    if primitive in get_hyperparameters_from_metalearnig():
+    '''if primitive in get_hyperparameters_from_metalearnig():
         default_config.add_configuration_space(
             primitive,
             get_configspace_from_metalearning(get_hyperparameters_from_metalearnig()[primitive]),
             '|'
         )
     elif primitive in PRIMITIVES_DEFAULT_HYPERPARAMETERS:
-        default_config.add_configuration_space(primitive, PRIMITIVES_DEFAULT_HYPERPARAMETERS[primitive](), '|')
+        default_config.add_configuration_space(primitive, PRIMITIVES_DEFAULT_HYPERPARAMETERS[primitive](), '|')'''
 
     return default_config
 
 
-def cast_hyperparameters(hyperparameter, name):
+def cast_hyperparameter(hyperparameter, name):
     # From D3M hyperparameters to ConfigSpace hyperparameters
     # TODO: Include 'Union', 'Choice' and  'Set' (D3M hyperparameters)
     new_hyperparameter = None

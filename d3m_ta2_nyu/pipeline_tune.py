@@ -90,12 +90,18 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
     for primitive in new_pipeline.modules:
         if is_tunable(primitive.name):
             best_hyperparameters = get_new_hyperparameters(primitive.name, best_configuration)
-            db.add(database.PipelineParameter(
-                pipeline=new_pipeline,
-                module_id=primitive.id,
-                name='hyperparams',
-                value=pickle.dumps(best_hyperparameters),
-            ))
+            query = db.query(database.PipelineParameter).filter(database.PipelineParameter.module_id == primitive.id)\
+                .filter(database.PipelineParameter.pipeline_id == new_pipeline.id)\
+                .filter(database.PipelineParameter.name == 'hyperparams')
+            if query.first():
+                query.update({database.PipelineParameter.value: pickle.dumps(best_hyperparameters)})
+            else:
+                db.add(database.PipelineParameter(
+                    pipeline=new_pipeline,
+                    module_id=primitive.id,
+                    name='hyperparams',
+                    value=pickle.dumps(best_hyperparameters),
+                ))
     db.commit()
 
     logger.info('Tuning done, generated new pipeline %s', new_pipeline.id)

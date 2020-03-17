@@ -29,9 +29,7 @@ def get_new_hyperparameters(primitive_name, configspace):
         hyperparameter_config_name = primitive_name + '|' + hyperparameter_name
         if hyperparameter_config_name in configspace:
             new_hyperparameters[hyperparameter_name] = configspace[hyperparameter_config_name]
-        else:
-            new_hyperparameters[hyperparameter_name] = hyperparameters[hyperparameter_name].get_default()
-        logger.info('New value for %s=%s', hyperparameter_config_name, new_hyperparameters[hyperparameter_name])
+            logger.info('New value for %s=%s', hyperparameter_config_name, new_hyperparameters[hyperparameter_name])
 
     return new_hyperparameters
 
