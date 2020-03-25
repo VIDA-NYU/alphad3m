@@ -28,6 +28,7 @@ from d3m_ta2_nyu.grpc_api import grpc_server
 from d3m_ta2_nyu.utils import Observable, ProgressStatus
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json
+from d3m_ta2_nyu.data_ingestion.data_reader import create_d3mdataset, create_d3mproblem
 from d3m.container import Dataset
 from d3m.metadata.problem import TaskKeyword, parse_problem_description
 from sklearn.model_selection import train_test_split
@@ -703,25 +704,24 @@ class D3mTa2(Observable):
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
-    def run_search(self, dataset, problem_path, timeout=None):
-        """Run the search phase: create pipelines and score them.
+    def run_search(self, dataset_path, problem_path=None, problem_config=None, timeout=None):
+        if not dataset_path.endswith('datasetDoc.json'):  # Convert to D3M format
+            logger.info('Reiceving a raw dataset, converting to D3M format')
+            dataset_folder = os.path.join(self.output_folder, 'ta2', 'dataset_d3mformat', 'dataset')
+            problem_folder = os.path.join(self.output_folder, 'ta2', 'dataset_d3mformat', 'problem')
+            self.create_outputfolders(problem_folder)
+            problem_path = create_d3mproblem(problem_config, dataset_path, problem_folder)
+            dataset_path = create_d3mdataset(dataset_path, dataset_folder)
 
-                This is called by the ``ta2_search`` executable, it is part of the
-                evaluation.
-                """
-        if dataset[0] == '/':
-            dataset = 'file://' + dataset
-        # Read problem
-        try:
-            problem = parse_problem_description(os.path.join(problem_path, 'problemDoc.json'))
-        except:
-            logger.exception('Error parsing problem')
+        if dataset_path[0] == '/':
+            dataset_path = 'file://' + dataset_path
 
+        problem = parse_problem_description(problem_path)
         task_keywords = problem['problem']['task_keywords']
         # Create session
         session = Session(self, problem, self.DBSession, self.searched_pipelines, self.scored_pipelines,
                           self.ranked_pipelines)
-        logger.info('Dataset: %s, task: %s, metrics: %s', dataset, '_'.join([x.name for x in task_keywords]),
+        logger.info('Dataset: %s, task: %s, metrics: %s', dataset_path, '_'.join([x.name for x in task_keywords]),
                     session.metrics)
         self.sessions[session.id] = session
 
@@ -731,8 +731,8 @@ class D3mTa2(Observable):
 
         # Create pipelines, NO TUNING
         with session.with_observer_queue() as queue:
-            self.build_pipelines(session.id, task_keywords, dataset, None, session.metrics, tune=TUNE_PIPELINES_COUNT,
-                                 timeout=timeout)
+            self.build_pipelines(session.id, task_keywords, dataset_path, None, session.metrics, timeout=timeout,
+                                 tune=TUNE_PIPELINES_COUNT)
             while queue.get(True)[0] != 'done_searching':
                 pass
 
