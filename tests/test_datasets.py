@@ -24,7 +24,7 @@ D3MOUTPUTDIR = os.environ.get('D3MOUTPUTDIR')
 D3MSTATICDIR = os.environ.get('D3MSTATICDIR')
 
 
-def search_pipelines(datasets, use_template=False):
+def search_pipelines(datasets, time_bound, use_template=False):
     search_results_path = join(D3MOUTPUTDIR, 'ta2', 'search_results.json')
     search_results = load_search_results(search_results_path)
     channel = grpc.insecure_channel('localhost:45042')
@@ -53,7 +53,7 @@ def search_pipelines(datasets, use_template=False):
             continue
 
         task_keywords = '_'.join([x.name for x in problem['problem']['task_keywords']])
-        pipelines = do_search(core, problem, dataset_train_path, time_bound=10.0, pipelines_limit=0,
+        pipelines = do_search(core, problem, dataset_train_path, time_bound=time_bound, pipelines_limit=0,
                               pipeline_template=pipeline_template)
 
         number_pipelines = len(pipelines)
@@ -87,7 +87,7 @@ def search_pipelines(datasets, use_template=False):
             json.dump(search_results, fout, indent=4)
 
 
-def evaluate_pipelines(datasets, top=50):
+def evaluate_pipelines(datasets, top=5):
     statistics_path = join(D3MOUTPUTDIR, 'ta2', 'statistics_datasets.csv')
     search_results_path = join(D3MOUTPUTDIR, 'ta2', 'search_results.json')
     search_results = load_search_results(search_results_path)
@@ -202,6 +202,6 @@ def create_dupms(top_pipelines):
 
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['299_libras_move']
-    search_pipelines(datasets)
+    datasets = ['185_baseball_MIN_METADATA']#['uu10_posts_3_MIN_METADATA']
+    search_pipelines(datasets, 1)
     evaluate_pipelines(datasets)

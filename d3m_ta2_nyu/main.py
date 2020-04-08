@@ -35,12 +35,12 @@ def main_search():
 
     ta2 = D3mTa2(output_folder)
 
-    dataset = '/input/train.csv'
-    dataset = '/input/TRAIN/dataset_TRAIN/datasetDoc.json'
+    dataset = '/input/train1.csv'
+    #dataset = '/input/TRAIN/dataset_TRAIN/datasetDoc.json'
     problem_path = '/input/TRAIN/problem_TRAIN/problemDoc.json'
     problem_config = {'target_name': 'Hall_of_Fame', 'metric': 'f1Macro', 'task_keywords': ['classification', 'multiClass']}
-    problem_config = {'target_name': 'Fatalities', 'metric': 'f1Macro',
-                      'task_keywords': ['classification', 'multiClass']}
+    #problem_config = {'target_name': 'Fatalities', 'metric': 'f1Macro',
+    #                  'task_keywords': ['classification', 'multiClass']}
     ta2.run_search(dataset, problem_path=problem_path, problem_config=problem_config, timeout=timeout)
 
 

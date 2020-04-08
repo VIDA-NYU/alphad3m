@@ -9,7 +9,7 @@ set -eu
 
 OPTS=""
 TIMEOUT=1
-SKIPTEMPLATES="yes"
+SKIPTEMPLATES="not"
 while true; do
     if [ "$1" = "fast" ]; then
         OPTS="$OPTS -e TA2_DEBUG_BE_FAST=1"

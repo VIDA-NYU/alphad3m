@@ -736,13 +736,14 @@ class D3mTa2(Observable):
             while queue.get(True)[0] != 'done_searching':
                 pass
 
-        logger.info('Tuning pipelines...')
+        '''logger.info('Tuning pipelines...')
 
         # Now do tuning, when we already have written out some solutions
         with session.with_observer_queue() as queue:
             session.tune_when_ready()
             while queue.get(True)[0] != 'done_searching':
-                pass
+                pass'''
+        #print(session.get_top_pipelines(session.DBSession(),  session.metrics[0]['metric']))
 
     def run_server(self, port=None):
         """Spin up the gRPC server to receive requests from a TA3 system.

@@ -83,7 +83,7 @@ def list_primitives():
 
 
 def generate_by_templates(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets, features,
-                          all_types, inferred_types, timeout, msg_queue, DBSession):
+                          features_metadata, timeout, msg_queue, DBSession):
     task_keywords = set(task_keywords)
 
     if task_keywords & {TaskKeyword.GRAPH_MATCHING, TaskKeyword.LINK_PREDICTION, TaskKeyword.VERTEX_NOMINATION,
@@ -107,7 +107,7 @@ def generate_by_templates(task_keywords, dataset, search_results, pipeline_templ
     templates = BaseBuilder.TEMPLATES.get(template_name, [])
     for imputer, classifier in templates:
         pipeline_id = BaseBuilder.make_template(imputer, classifier, dataset, pipeline_template, targets, features,
-                                                all_types, inferred_types, DBSession=DBSession)
+                                                features_metadata, DBSession=DBSession)
         send(msg_queue, pipeline_id)
 
     # Augmentation
@@ -116,7 +116,7 @@ def generate_by_templates(task_keywords, dataset, search_results, pipeline_templ
             templates = BaseBuilder.TEMPLATES_AUGMENTATION.get(template_name, [])
             for datamart, imputer, classifier in templates:
                 pipeline_id = BaseBuilder.make_template_augment(datamart, imputer, classifier, dataset,
-                                                                pipeline_template, targets, features, all_types,
+                                                                pipeline_template, targets, features, features_metadata,
                                                                 search_result, DBSession=DBSession)
                 send(msg_queue, pipeline_id)
 
@@ -146,14 +146,13 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     with open(dataset[7:]) as fin:
         dataset_doc = json.load(fin)
 
-    index_name = 'd3mIndex'
     target_names = [x[1] for x in targets]
     csv_path = denormalize_dataset(dataset, targets, features, DBSession)
-    inferred_types, all_types = profile_data(csv_path, index_name, target_names, dataset_doc)
+    features_metadata = profile_data(csv_path, target_names, dataset_doc)
 
     if os.environ.get('SKIPTEMPLATES', 'not') == 'not':
         generate_by_templates(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets,
-                              features, all_types, inferred_types, timeout, msg_queue, DBSession)
+                              features, features_metadata, timeout, msg_queue, DBSession)
 
     if 'TA2_DEBUG_BE_FAST' in os.environ:
         sys.exit(0)
@@ -164,7 +163,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
         pipeline_id = builder.make_d3mpipeline(strings, origin, dataset, search_results, pipeline_template, targets,
-                                               features, all_types, inferred_types, DBSession=DBSession)
+                                               features, features_metadata, DBSession=DBSession)
         # Evaluate the pipeline if syntax is correct:
         if pipeline_id:
             msg_queue.send(('eval', pipeline_id))

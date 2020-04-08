@@ -17,3 +17,16 @@ def test_model(model_path, new_dataset_path, result_path):
     process.wait()
 
     return pandas.read_csv(result_path + 'predictions.csv')
+
+
+def search(csv_path, output_folder):
+    process = subprocess.Popen(
+                [
+                    'docker', 'run',
+                    '-v', '%s:/output' % output_folder,
+                    'ta2',
+                    'python3', '-m', 'd3m', 'runtime', 'produce', '--fitted-pipeline', '/input/model.pkl',
+                    '--test-input', '/data/datasetDoc.json', '--output', '/output/predictions.csv'
+                ]
+    )
+    process.wait()
