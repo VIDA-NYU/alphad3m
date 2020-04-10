@@ -71,7 +71,7 @@ def search_pipelines(datasets, time_bound, use_template=False):
                 else:
                     pipeline_score = decode_value(pipeline[0].scores[0].value)['value']
                 all_scores.append({'id': pipeline_id, 'score': pipeline_score})
-                #do_score(core, problem, [pipeline_id], dataset_train_path)
+                do_score(core, problem, [pipeline_id], dataset_train_path)
                 #fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
                 #do_test(core, fitted_pipeline, dataset_train_path.replace('TRAIN', 'TEST'))
                 #do_export(core, fitted_pipeline)
@@ -202,6 +202,6 @@ def create_dupms(top_pipelines):
 
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['185_baseball_MIN_METADATA']#['uu10_posts_3_MIN_METADATA']
-    search_pipelines(datasets, 1)
+    datasets = ['185_baseball']
+    search_pipelines(datasets, 5)
     evaluate_pipelines(datasets)

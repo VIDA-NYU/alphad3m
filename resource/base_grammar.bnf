@@ -2,7 +2,7 @@ S -> CLASSIFICATION_TASK | REGRESSION_TASK | TIME_SERIES_CLASSIFICATION_TASK | T
 CLASSIFICATION_TASK -> DATA_CLEANING GROUP_PREPROCESSING FEATURE_SELECTION CLASSIFICATION
 REGRESSION_TASK -> DATA_CLEANING GROUP_PREPROCESSING FEATURE_SELECTION REGRESSION
 TIME_SERIES_CLASSIFICATION_TASK -> 'd3m.primitives.data_preprocessing.time_series_to_list.DSBOX' 'd3m.primitives.feature_extraction.random_projection_timeseries_featurization.DSBOX' FEATURE_SELECTION CLASSIFICATION | TIME_SERIES_CLASSIFICATION
-TIME_SERIES_FORECASTING_TASK ->  REGRESSION_TASK
+TIME_SERIES_FORECASTING_TASK ->  DATA_CLEANING GROUP_PREPROCESSING TIME_SERIES_FORECASTING | FEATURE_SELECTION REGRESSION
 COMMUNITY_DETECTION_TASK -> COMMUNITY_DETECTION | CLASSIFICATION_TASK
 GRAPH_MATCHING_TASK -> GRAPH_MATCHING | CLASSIFICATION_TASK
 COLLABORATIVE_FILTERING_TASK -> COLLABORATIVE_FILTERING | REGRESSION_TASK
@@ -23,10 +23,10 @@ TEXT_PROCESSING -> 'd3m.primitives.data_preprocessing.text_reader.Common' 'd3m.p
 IMAGE_PROCESSING -> 'd3m.primitives.data_preprocessing.image_reader.Common' 'd3m.primitives.feature_extraction.image_transfer.DistilImageTransfer'
 AUDIO_PROCESSING -> 'd3m.primitives.feature_extraction.audio_transfer.DistilAudioTransfer'
 GROUP_PREPROCESSING -> DATA_PREPROCESSING
-DATA_PREPROCESSING -> 'primitive_terminal' | 'E'
-DATA_CLEANING -> 'primitive_terminal' | 'E'
-DATA_TRANSFORMATION -> 'primitive_terminal' | 'E'
-FEATURE_SELECTION ->  'primitive_terminal' | 'E'
+DATA_PREPROCESSING -> 'E' | 'primitive_terminal'
+DATA_CLEANING -> 'E' | 'primitive_terminal'
+DATA_TRANSFORMATION -> 'E' | 'primitive_terminal'
+FEATURE_SELECTION ->  'E' | 'primitive_terminal'
 CLASSIFICATION -> 'primitive_terminal'
 REGRESSION -> 'primitive_terminal'
 TIME_SERIES_CLASSIFICATION -> 'primitive_terminal'

@@ -1,5 +1,6 @@
 import logging
 import os
+import json
 import pkg_resources
 import d3m.metadata.base
 import d3m.runtime
@@ -20,6 +21,11 @@ with pkg_resources.resource_stream(
 
 with pkg_resources.resource_stream(
         'd3m_ta2_nyu',
+        '../resource/pipelines/kfold_timeseries_split.yaml') as fp:
+    kfold_timeseries_split = Pipeline.from_yaml(fp)
+
+with pkg_resources.resource_stream(
+        'd3m_ta2_nyu',
         '../resource/pipelines/train-test-tabular-split.yaml') as fp:
     train_test_tabular_split = Pipeline.from_yaml(fp)
 
@@ -29,11 +35,35 @@ with pkg_resources.resource_stream(
     scoring_pipeline = Pipeline.from_yaml(fp)
 
 
+def check_timeindicator(dataset_path):
+    with open(dataset_path) as fin:
+        dataset_doc = json.load(fin)
+
+    columns = dataset_doc['dataResources'][0]['columns']
+    timeindicator_index = None
+    has_timeindicator = False
+    for item in columns:
+        if item['colType'] == 'dateTime':
+            timeindicator_index = item['colIndex']
+            if 'timeIndicator' in item['role']:
+                has_timeindicator = True
+                break
+
+    if not has_timeindicator:
+        dataset_doc['dataResources'][0]['columns'][timeindicator_index]['role'].append('timeIndicator')
+        with open(dataset_path, 'w') as fout:
+            json.dump(dataset_doc, fout, indent=4)
+
+
 @database.with_db
 def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, do_rank, msg_queue, db):
     if sample_dataset_uri:
+        if TaskKeyword.FORECASTING in problem['problem']['task_keywords']:
+            check_timeindicator(sample_dataset_uri[7:])
         dataset = Dataset.load(sample_dataset_uri)  # Come from search
     else:
+        if TaskKeyword.FORECASTING in problem['problem']['task_keywords']:
+            check_timeindicator(dataset_uri[7:])
         dataset = Dataset.load(dataset_uri)
     # Get pipeline from database
     pipeline = (
@@ -57,11 +87,17 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
         logger.info("Cross-validation results for semisupervised binary:\n%s", scores)
 
     elif scoring_config['method'] == pb_core.EvaluationMethod.Value('K_FOLD'):
-        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_config)
+        pipeline_split = kfold_tabular_split
+        if TaskKeyword.FORECASTING in problem['problem']['task_keywords']:
+            pipeline_split = kfold_timeseries_split
+        scores = evaluate(pipeline, pipeline_split, dataset, metrics, problem, scoring_config)
         logger.info("Cross-validation results:\n%s", scores)
 
     elif scoring_config['method'] == pb_core.EvaluationMethod.Value('HOLDOUT'):
-        scores = evaluate(pipeline, train_test_tabular_split, dataset, metrics, problem, scoring_config)
+        pipeline_split = train_test_tabular_split
+        if TaskKeyword.FORECASTING in problem['problem']['task_keywords']:
+            pipeline_split = kfold_timeseries_split
+        scores = evaluate(pipeline, pipeline_split, dataset, metrics, problem, scoring_config)
         logger.info("Holdout results:\n%s", scores)
 
     elif scoring_config['method'] == pb_core.EvaluationMethod.Value('RANKING'):  # For TA2 only evaluation

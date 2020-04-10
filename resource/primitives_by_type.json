@@ -31,18 +31,14 @@
         "d3m.primitives.data_preprocessing.greedy_imputation.DSBOX": 77,
         "d3m.primitives.data_preprocessing.iterative_regression_imputation.DSBOX": 78,
         "d3m.primitives.data_preprocessing.label_encoder.Common": 80,
-        "d3m.primitives.data_preprocessing.low_rank_imputer.Cornell": 82,
         "d3m.primitives.data_preprocessing.max_abs_scaler.SKlearn": 84,
         "d3m.primitives.data_preprocessing.mean_imputation.DSBOX": 85,
         "d3m.primitives.data_preprocessing.min_max_scaler.SKlearn": 86,
         "d3m.primitives.data_preprocessing.normalizer.SKlearn": 87,
-        "d3m.primitives.data_preprocessing.numeric_range_filter.Common": 88,
         "d3m.primitives.data_preprocessing.one_hot_encoder.PandasCommon": 91,
         "d3m.primitives.data_preprocessing.polynomial_features.SKlearn": 92,
         "d3m.primitives.data_preprocessing.quantile_transformer.SKlearn": 93,
-        "d3m.primitives.data_preprocessing.random_sampling_imputer.BYU": 94,
         "d3m.primitives.data_preprocessing.random_trees_embedding.SKlearn": 95,
-        "d3m.primitives.data_preprocessing.rbf_sampler.SKlearn": 96,
         "d3m.primitives.data_preprocessing.regex_filter.Common": 97,
         "d3m.primitives.data_preprocessing.standard_scaler.SKlearn": 100,
         "d3m.primitives.data_preprocessing.unary_encoder.DSBOX": 102,
@@ -76,11 +72,7 @@
         "d3m.primitives.data_augmentation.datamart_download.Common": 56
     },
     "DATA_CLEANING": {
-        "d3m.primitives.data_cleaning.cleaning_featurizer.DSBOX": 58,
-        "d3m.primitives.data_cleaning.data_cleaning.Datacleaning": 60,
-        "d3m.primitives.data_cleaning.imputer.SKlearn": 63,
-        "d3m.primitives.data_cleaning.missing_indicator.SKlearn": 65,
-        "d3m.primitives.data_cleaning.string_imputer.SKlearn": 66
+        "d3m.primitives.data_cleaning.imputer.SKlearn": 63
     },
     "DATA_COMPRESSION": {
         "d3m.primitives.data_compression.grasta.Umich": 69
@@ -194,10 +186,12 @@
         "d3m.primitives.feature_construction.zero_count.TPOT": 178
     },
     "FEATURE_SELECTION": {
-        "d3m.primitives.feature_selection.joint_mutual_information.AutoRPI": 197,
-        "d3m.primitives.feature_selection.simultaneous_markov_blanket.AutoRPI": 198,
+        "d3m.primitives.feature_selection.generic_univariate_select.SKlearn": 196,
         "d3m.primitives.feature_selection.pca_features.Pcafeatures": 199,
-        "d3m.primitives.feature_selection.score_based_markov_blanket.RPI": 201
+        "d3m.primitives.feature_selection.select_fwe.SKlearn": 202,
+        "d3m.primitives.feature_selection.select_percentile.SKlearn": 203,
+        "d3m.primitives.feature_selection.skfeature.TAMU": 204,
+        "d3m.primitives.feature_selection.variance_threshold.SKlearn": 205
     },
     "GRAPH_CLUSTERING": {
         "d3m.primitives.graph_clustering.gaussian_clustering.JHU": 206
@@ -298,17 +292,13 @@
         "d3m.primitives.regression.linear_svr.SKlearn": 280,
         "d3m.primitives.regression.mlp.SKlearn": 281,
         "d3m.primitives.regression.monomial.Test": 282,
-        "d3m.primitives.regression.owl_regression.Umich": 283,
         "d3m.primitives.regression.passive_aggressive.SKlearn": 284,
         "d3m.primitives.regression.random_forest.SKlearn": 285,
-        "d3m.primitives.regression.rfm_precondition_ed_gaussian_krr.RFMPreconditionedGaussianKRR": 286,
-        "d3m.primitives.regression.rfm_precondition_ed_polynomial_krr.RFMPreconditionedPolynomialKRR": 287,
         "d3m.primitives.regression.ridge.SKlearn": 288,
         "d3m.primitives.regression.search_hybrid_numeric.Find_projections": 289,
         "d3m.primitives.regression.search_numeric.Find_projections": 290,
         "d3m.primitives.regression.sgd.SKlearn": 291,
         "d3m.primitives.regression.svr.SKlearn": 292,
-        "d3m.primitives.regression.tensor_machines_regularized_least_squares.TensorMachinesRegularizedLeastSquares": 293,
         "d3m.primitives.regression.xgboost_gbtree.Common": 294
     },
     "SCHEMA_DISCOVERY": {
@@ -324,10 +314,7 @@
         "d3m.primitives.time_series_classification.k_neighbors.Kanine": 300
     },
     "TIME_SERIES_FORECASTING": {
-        "d3m.primitives.time_series_forecasting.arima.DSBOX": 301,
-        "d3m.primitives.time_series_forecasting.esrnn.RNN": 302,
-        "d3m.primitives.time_series_forecasting.lstm.DeepAR": 303,
-        "d3m.primitives.time_series_forecasting.vector_autoregression.VAR": 304
+        "d3m.primitives.time_series_forecasting.vector_autoregression.VAR": 301
     },
     "VERTEX_NOMINATION": {
         "d3m.primitives.vertex_nomination.vertex_nomination.DistilVertexNomination": 305
