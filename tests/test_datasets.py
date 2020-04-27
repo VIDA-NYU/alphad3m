@@ -24,7 +24,7 @@ D3MOUTPUTDIR = os.environ.get('D3MOUTPUTDIR')
 D3MSTATICDIR = os.environ.get('D3MSTATICDIR')
 
 
-def search_pipelines(datasets, time_bound, use_template=False):
+def search_pipelines(datasets, time_bound=10, use_template=False):
     search_results_path = join(D3MOUTPUTDIR, 'ta2', 'search_results.json')
     search_results = load_search_results(search_results_path)
     channel = grpc.insecure_channel('localhost:45042')
@@ -71,8 +71,8 @@ def search_pipelines(datasets, time_bound, use_template=False):
                 else:
                     pipeline_score = decode_value(pipeline[0].scores[0].value)['value']
                 all_scores.append({'id': pipeline_id, 'score': pipeline_score})
-                do_score(core, problem, [pipeline_id], dataset_train_path)
-                #fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
+                #do_score(core, problem, [pipeline_id], dataset_train_path)
+                ##fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
                 #do_test(core, fitted_pipeline, dataset_train_path.replace('TRAIN', 'TEST'))
                 #do_export(core, fitted_pipeline)
 
@@ -87,7 +87,7 @@ def search_pipelines(datasets, time_bound, use_template=False):
             json.dump(search_results, fout, indent=4)
 
 
-def evaluate_pipelines(datasets, top=5):
+def evaluate_pipelines(datasets, top=10):
     statistics_path = join(D3MOUTPUTDIR, 'ta2', 'statistics_datasets.csv')
     search_results_path = join(D3MOUTPUTDIR, 'ta2', 'search_results.json')
     search_results = load_search_results(search_results_path)
@@ -203,5 +203,5 @@ def create_dupms(top_pipelines):
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
     datasets = ['185_baseball']
-    search_pipelines(datasets, 5)
+    search_pipelines(datasets, 100)
     evaluate_pipelines(datasets)

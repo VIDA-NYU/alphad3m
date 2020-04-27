@@ -15,9 +15,6 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformFloatH
 logger = logging.getLogger(__name__)
 PRIMITIVES = index.search()
 HYPERPARAMETERS_FROM_METALEARNING_PATH = os.path.join(os.path.dirname(__file__), '../../resource/hyperparams.json')
-SKIP_HYPERPARAMETERS = ['use_inputs_columns', 'use_outputs_columns', 'exclude_inputs_columns', 'exclude_outputs_columns',
-                        'return_result', 'return_semantic_type', 'use_semantic_types', 'add_index_columns',
-                        'use_columns', 'exclude_columns', 'error_on_no_input', 'n_jobs', 'class_weight']
 
 
 def is_tunable(name):
@@ -27,26 +24,24 @@ def is_tunable(name):
         # This primitive is not in the OBJECT_DETECTION family, so compares it by its name
         return True
 
-    klass = index.get_primitive(name)
-    family = klass.metadata.to_json_structure()['primitive_family']
+    primitive = index.get_primitive(name)
+    family = primitive.metadata.to_json_structure()['primitive_family']
 
     return family in {'CLASSIFICATION', 'REGRESSION', 'TIME_SERIES_CLASSIFICATION', 'TIME_SERIES_FORECASTING',
                       'SEMISUPERVISED_CLASSIFICATION', 'COMMUNITY_DETECTION', 'VERTEX_CLASSIFICATION', 'GRAPH_MATCHING',
                       'LINK_PREDICTION', 'FEATURE_SELECTION', 'OBJECT_DETECTION'}
 
 
-def load_hyperparameters(primitive_name, skip_hyperparameter=True):
-    primitive_class = index.get_primitive(primitive_name)
-    hyperparameter_class = typing.get_type_hints(primitive_class.__init__)['hyperparams']
+def load_hyperparameters(primitive_name):
+    primitive = index.get_primitive(primitive_name)
+    hyperparameters_metadata = primitive.metadata.query()['primitive_code']['hyperparams']
+    hyperparameter_class = typing.get_type_hints(primitive.__init__)['hyperparams']
     hyperparameters = {}
 
     if hyperparameter_class:
         for hp_name, hp_value in hyperparameter_class.configuration.items():
-            if skip_hyperparameter:
-                if hp_name not in SKIP_HYPERPARAMETERS:
+            if 'https://metadata.datadrivendiscovery.org/types/TuningParameter' in hyperparameters_metadata[hp_name]['semantic_types']:
                     hyperparameters[hp_name] = hp_value
-            else:
-                hyperparameters[hp_name] = hp_value
 
     return hyperparameters
 

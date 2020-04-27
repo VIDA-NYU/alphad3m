@@ -8,6 +8,7 @@ from concurrent import futures
 import datetime
 import grpc
 import json
+import csv
 import logging
 import os
 import pickle
@@ -15,6 +16,7 @@ from queue import Empty, Queue
 from sqlalchemy import select
 from sqlalchemy.orm import aliased, joinedload, lazyload
 from sqlalchemy.sql import func
+from os.path import join
 import shutil
 import subprocess
 import threading
@@ -743,7 +745,16 @@ class D3mTa2(Observable):
             session.tune_when_ready()
             while queue.get(True)[0] != 'done_searching':
                 pass'''
-        #print(session.get_top_pipelines(session.DBSession(),  session.metrics[0]['metric']))
+        top_pipelines = session.get_top_pipelines(session.DBSession(),  session.metrics[0]['metric'])
+        with open(join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'search_results.csv'), 'w') as fout:
+            writer = csv.writer(fout, delimiter=',')
+            writer.writerow(['ranking', 'pipeline_id', session.metrics[0]['metric'].name.lower(), 'description', 'time (sec)'])
+            for index, (pipeline, score) in enumerate(top_pipelines, 1):
+                created = pipeline.created_date - session.start
+                writer.writerow([index, pipeline.id, score, pipeline.origin, round(created.total_seconds(), 2)])
+
+    def run_test(self):
+        pass
 
     def run_server(self, port=None):
         """Spin up the gRPC server to receive requests from a TA3 system.
@@ -1130,7 +1141,7 @@ class D3mTa2(Observable):
         logger.info('About to sample dataset %s', dataset_uri)
         task_keywords = problem['problem']['task_keywords']
 
-        if any(tk in [TaskKeyword.OBJECT_DETECTION] for tk in task_keywords):
+        if any(tk in [TaskKeyword.OBJECT_DETECTION, TaskKeyword.FORECASTING] for tk in task_keywords):
             logger.info('Not doing sampling for task %s', '_'.join([x.name for x in task_keywords]))
             return None
 

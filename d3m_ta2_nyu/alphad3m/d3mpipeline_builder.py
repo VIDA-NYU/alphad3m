@@ -357,8 +357,9 @@ class BaseBuilder:
     @staticmethod
     def make_template(imputer, estimator, dataset, pipeline_template, targets, features, features_metadata, DBSession=None):
         db = DBSession()
-        pipeline = database.Pipeline(origin="template(imputer=%s, estimator=%s)" % (imputer, estimator),
-                                     dataset=dataset)
+        origin_name = 'Template (%s, %s)' % (imputer, estimator)
+        origin_name = origin_name.replace('d3m.primitives.', '')
+        pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
 
         try:
             # TODO: Use pipeline input for this

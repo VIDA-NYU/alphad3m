@@ -17,7 +17,7 @@ def create_d3mdataset(csv_path, destination_path, version='4.0.0'):
         dataset_id='internal_dataset',
         destination=destination_path,
         metadata=metadata,
-        format_options={'version': version},
+        format_options={'need_d3mindex': True, 'version': version},
     )
     with open(csv_path, 'rb') as source:
         with writer.open_file('wb') as dest:

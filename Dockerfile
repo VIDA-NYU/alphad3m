@@ -42,6 +42,8 @@ RUN pip3 install nltk==3.4.5
 RUN pip3 install datamart-profiler
 RUN pip3 install datamart-materialize
 
+COPY cli.py /usr/src/app/cli.py
+
 COPY eval.sh /usr/local/bin/eval.sh
 
 CMD "/usr/local/bin/eval.sh"

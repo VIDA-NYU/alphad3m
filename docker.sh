@@ -8,12 +8,12 @@
 set -eu
 
 OPTS=""
-TIMEOUT=1
+TIMEOUT=10
 SKIPTEMPLATES="not"
 while true; do
     if [ "$1" = "fast" ]; then
         OPTS="$OPTS -e TA2_DEBUG_BE_FAST=1"
-        TIMEOUT=5
+        TIMEOUT=1
         shift
     else
         break
@@ -54,6 +54,7 @@ docker run -ti --rm \
     -v "$PWD/resource:/usr/src/app/resource" \
     -v "$PWD/tests:/usr/src/app/tests"\
     -v "$PWD/tests.py:/usr/src/app/tests.py"\
+    -v "$PWD/cli.py:/usr/src/app/cli.py"\
     -v "$PWD/eval.sh:/usr/local/bin/eval.sh"\
     -v "$LOCAL_INPUT_ROOT/${INPUT}:/input" \
     -v "$LOCAL_OUTPUT_ROOT:/output" \

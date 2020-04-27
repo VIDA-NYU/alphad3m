@@ -314,7 +314,11 @@
         "d3m.primitives.time_series_classification.k_neighbors.Kanine": 300
     },
     "TIME_SERIES_FORECASTING": {
-        "d3m.primitives.time_series_forecasting.vector_autoregression.VAR": 301
+        "d3m.primitives.time_series_forecasting.arima.DSBOX": 301,
+        "d3m.primitives.time_series_forecasting.esrnn.RNN": 302,
+        "d3m.primitives.time_series_forecasting.lstm.DeepAR": 303,
+        "d3m.primitives.time_series_forecasting.vector_autoregression.VAR": 304
+
     },
     "VERTEX_NOMINATION": {
         "d3m.primitives.vertex_nomination.vertex_nomination.DistilVertexNomination": 305
