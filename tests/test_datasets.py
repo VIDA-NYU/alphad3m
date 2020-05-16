@@ -168,7 +168,7 @@ def load_search_results(file_path):
 
 
 def load_template():
-    with open(os.path.join(os.path.dirname(__file__), '../resource/pipelines/example_metalearningdb.json')) as fin:
+    with open(join(os.path.dirname(__file__), '../resource/pipelines/example_metalearningdb.json')) as fin:
         json_pipeline = json.load(fin)
 
     d3m_pipeline = Pipeline.from_json_structure(json_pipeline, )
@@ -203,5 +203,5 @@ def create_dupms(top_pipelines):
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
     datasets = ['185_baseball']
-    search_pipelines(datasets, 100)
+    search_pipelines(datasets, 10)
     evaluate_pipelines(datasets)
