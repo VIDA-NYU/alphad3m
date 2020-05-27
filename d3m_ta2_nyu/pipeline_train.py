@@ -49,5 +49,5 @@ def train(pipeline_id, dataset, problem, storage_dir, results_path, msg_queue, d
     else:
         logger.info('NOT storing fit results')
 
-    with open(os.path.join(storage_dir, 'fitted_pipeline_%s.pkl' % pipeline_id), 'wb') as fout:
+    with open(os.path.join(storage_dir, 'fitted_solution_%s.pkl' % pipeline_id), 'wb') as fout:
         pickle.dump(fitted_pipeline, fout)
