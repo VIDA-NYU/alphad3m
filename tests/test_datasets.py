@@ -182,7 +182,7 @@ def create_dupms(top_pipelines):
     pipeline_runs_list = []
 
     for top_pipeline in top_pipelines:
-        with open(join(D3MOUTPUTDIR, 'pipeline_runs', 'run_%s.yaml' % top_pipeline)) as fin:
+        with open(join(D3MOUTPUTDIR, 'pipeline_runs', 'run_%s.yml' % top_pipeline)) as fin:
             for pipeline_run in yaml_load_all(fin):
                 digest = pipeline_run['pipeline']['digest']
                 pipeline_runs_list.append(json.dumps(pipeline_run))

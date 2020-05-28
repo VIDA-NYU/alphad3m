@@ -161,7 +161,7 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config)
     )
 
     run_results.check_success()
-    #save_pipeline_runs(run_results.pipelines_runs)  # TODO: It should work, but has some bugs
+    save_pipeline_runs(run_results.pipeline_runs)
     combined_folds = d3m.runtime.combine_folds([fold for fold in run_scores])
     scores = {}
 
@@ -198,5 +198,6 @@ def save_pipeline_runs(pipelines_runs):
     for pipeline_run in pipelines_runs:
         save_run_path = os.path.join(os.environ['D3MOUTPUTDIR'], 'pipeline_runs',
                                      pipeline_run.to_json_structure()['id'] + '.yml')
+
         with open(save_run_path, 'w') as fin:
             pipeline_run.to_yaml(fin, indent=2)
