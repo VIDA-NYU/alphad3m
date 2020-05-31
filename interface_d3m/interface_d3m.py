@@ -3,9 +3,8 @@ import time
 import logging
 import subprocess
 import pandas as pd
-from os import listdir
+import datetime
 from os.path import join, split, isdir
-from d3m.utils import yaml_load_all
 from client import BasicTA3
 
 logging.basicConfig(level=logging.ERROR, format='%(asctime)s %(levelname)s %(message)s')
@@ -13,6 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 TA2_DOCKER_IMAGES = {'NYU': 'ta2:latest', 'TAMU': 'dmartinez05/tamuta2:latest'}
+IGNORE_PRIMITIVES = {'d3m.primitives.data_transformation.construct_predictions.Common',
+                     'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common',
+                     'd3m.primitives.data_transformation.dataset_to_dataframe.Common',
+                     'd3m.primitives.data_transformation.denormalize.Common',
+                     'd3m.primitives.data_transformation.column_parser.Common'}
 
 
 class Automl:
@@ -24,16 +28,31 @@ class Automl:
         self.leaderboard = pd.DataFrame()
         self.pipelines = []
         self.ta2 = ta2
+        self.dataset = None
 
-    def search_pipelines(self, dataset_path, time_bound=1):
+    def search_pipelines(self, dataset_path, time_bound=10):
         self.start_ta2(dataset_path, self.output_folder)
+        self.dataset = dataset_path
         dataset_train_path = '/input/dataset/TRAIN/dataset_TRAIN/datasetDoc.json'
         problem_path = join(dataset_path, 'problem_TRAIN/problemDoc.json')
+        start_time = datetime.datetime.utcnow()
         pipelines = self.client.do_search(dataset_train_path, problem_path, time_bound, pipelines_limit=0)
 
         for pipeline in pipelines:
-            print('Found pipeline, id=%s %s=%s time=%s' % (pipeline['id'],  pipeline['metric'], pipeline['score'],
-                                                           pipeline['time']))
+            end_time = datetime.datetime.utcnow()
+            pipeline_json_id = self.client.do_describe(pipeline['id'])
+
+            with open(join(self.output_folder, 'pipelines_searched', '%s.json' % pipeline_json_id)) as fin:
+                pipeline_json = json.load(fin)
+                summary_pipeline = self.get_summary_pipeline(pipeline_json)
+                pipeline['json_representation'] = pipeline_json
+                pipeline['summary'] = summary_pipeline
+                pipeline['found_time'] = end_time.isoformat() + 'Z'
+
+            duration = str(end_time - start_time)
+            print('Found pipeline, id=%s, summary=%s, %s=%s, time=%s' % (pipeline['id'], pipeline['summary'],
+                                                                    pipeline['metric'], pipeline['score'], duration))
+
             self.pipelines.append(pipeline)
 
         if len(self.pipelines) > 0:
@@ -41,11 +60,21 @@ class Automl:
             sorted_pipelines = sorted(self.pipelines, key=lambda x: x['normalized_score'], reverse=True)
             metric = sorted_pipelines[0]['metric']
             for position, pipeline_data in enumerate(sorted_pipelines, 1):
-                leaderboard.append([position, pipeline_data['id'], pipeline_data['score']])
+                leaderboard.append([position, pipeline_data['id'], pipeline_data['summary'],  pipeline_data['score']])
 
-            self.leaderboard = pd.DataFrame(leaderboard, columns=['ranking', 'id', metric]).style.hide_index()
+            self.leaderboard = pd.DataFrame(leaderboard, columns=['ranking', 'id', 'summary', metric]).style.hide_index()
 
         return self.pipelines
+
+    def get_summary_pipeline(self, pipeline_json):
+        primitives = []
+        for primitive in pipeline_json['steps']:
+            primitive_name = primitive['primitive']['python_path']
+            if primitive_name not in IGNORE_PRIMITIVES:
+                primitive_name = '.'.join(primitive_name.split('.')[-2:]).lower()
+                primitives.append(primitive_name)
+
+        return ', '.join(primitives)
 
     def train(self, solution_id):
         dataset_train_path = '/input/dataset/TRAIN/dataset_TRAIN/datasetDoc.json'
@@ -114,69 +143,34 @@ class Automl:
         return (metric, score)
 
     def create_profiler_inputs(self):
-        pipeline_ids = {p['id'] for p in self.pipelines}
-        pipeline_runs_folder = join(self.output_folder, 'pipeline_runs')
         profiler_inputs = []
-        pipeline_runs = {}
 
-        if not isdir(pipeline_runs_folder):
-            print('Folder "%s" does not exist' % pipeline_runs_folder)
-            return profiler_inputs
+        for pipeline in self.pipelines:
+            if 'digest' not in pipeline['json_representation']:
+                pipeline['json_representation']['digest'] = ''  # TODO: Compute digest
 
-        print('Loading pipeline runs...')
-        #  Loading YAML files
-        file_names = [f for f in listdir(pipeline_runs_folder) if f.endswith('.yml')]
-        for file_name in file_names:
-            with open(join(pipeline_runs_folder, file_name)) as fin:
-                for pipeline_run in yaml_load_all(fin):
-                    pipeline_id = pipeline_run['pipeline']['id']
-                    if pipeline_id in pipeline_ids and pipeline_run['run']['phase'] == 'PRODUCE':
-                        run_data = {
-                            'problem': pipeline_run['problem'],
-                            'start': pipeline_run['start'],
-                            'end': pipeline_run['end'],
-                            'scores': pipeline_run['run']['results']['scores'],
-                            'digest': pipeline_run['pipeline']['digest']
-                        }
-                        if pipeline_id not in pipeline_runs:
-                            pipeline_runs[pipeline_id] = []
-                        pipeline_runs[pipeline_id].append(run_data)
+            pipeline['score'] = [{'metric': {'metric': pipeline['metric']}, 'value': pipeline['score'],
+                                  'normalized': pipeline['normalized_score']}]
 
-        #  Loading JSON files
-        for pipeline_id in pipeline_ids:
-            with open(join(self.output_folder, 'pipelines_searched', '%s.json' % pipeline_id)) as fin:
-                pipeline = json.load(fin)
-                if len(pipeline_runs[pipeline_id]) > 1:  # There was used cross validation, so calculate avg of scores
-                    scores = []
-                    for fold_run in pipeline_runs[pipeline_id]:
-                        scores.append(fold_run['scores'][0]['value'])
-                    avg_score = sum(scores) / len(scores)
+            profiler_data = {
+                'pipeline_id': pipeline['json_representation']['id'],
+                'inputs': pipeline['json_representation']['inputs'],
+                'steps': pipeline['json_representation']['steps'],
+                'outputs': pipeline['json_representation']['outputs'],
+                'pipeline_digest': pipeline['json_representation']['digest'],
+                'problem': self.dataset,
+                'start': pipeline['json_representation']['created'],
+                'end': pipeline['found_time'],
+                'scores': pipeline['score'],
+                'pipeline_source': {'name': self.ta2},
+            }
+            profiler_inputs.append(profiler_data)
 
-                pipeline_run = pipeline_runs[pipeline_id][0]
-                pipeline_run['scores'][0]['value'] = avg_score
-
-                if 'normalized' not in pipeline_run['scores'][0]:  # For pipeline_runs without normalized metric
-                    pipeline_run['scores'][0]['normalized'] = pipeline_run['scores'][0]['value']
-
-                profiler_data = {
-                    'pipeline_id': pipeline['id'],
-                    'inputs': pipeline['inputs'],
-                    'steps': pipeline['steps'],
-                    'outputs': pipeline['outputs'],
-                    'pipeline_digest': pipeline_run['digest'],
-                    'problem': pipeline_run['problem'],
-                    'start': pipeline_run['start'],
-                    'end': pipeline_run['end'],
-                    'scores': pipeline_run['scores'],
-                    'pipeline_source': {'name': self.ta2},
-                }
-                profiler_inputs.append(profiler_data)
-
-        print('Loading finished!')
         return profiler_inputs
 
     def start_ta2(self, dataset_path, output_path):
         print('Initializing TA2...')
+        # TODO: Verify if other TA2 is running
         dataset_path = split(dataset_path)[0]
         self.container = subprocess.Popen(
             [
@@ -199,7 +193,6 @@ class Automl:
                 print('TA2 initialized!')
                 break
             except:
-                print('Trying again to initialize TA2...')
                 if self.client.channel is not None:
                     self.client.channel.close()
                     self.client = None
@@ -220,11 +213,11 @@ if __name__ == '__main__':
     train_dataset = '/Users/rlopez/D3M/datasets/seed_datasets_current/185_baseball/TRAIN'
     test_dataset = '/Users/rlopez/D3M/datasets/seed_datasets_current/185_baseball/TEST'
 
-    automl = Automl(output_path)
-    pipelines = automl.search_pipelines(train_dataset)
+    automl = Automl(output_path, 'TAMU')
+    pipelines = automl.search_pipelines(train_dataset, time_bound=1)
     #model = automl.train(pipelines[0]['id'])
     #predictions = automl.test(model, test_dataset)
     #automl.create_profiler_inputs()
-    automl.test_score('71c560ae-542f-42e2-93ec-a70374b1dd62', test_dataset)
-    #automl.end_session()
+    #automl.test_score('71c560ae-542f-42e2-93ec-a70374b1dd62', test_dataset)
+    automl.end_session()
 

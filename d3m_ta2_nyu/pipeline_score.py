@@ -161,7 +161,7 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config)
     )
 
     run_results.check_success()
-    save_pipeline_runs(run_results.pipeline_runs)
+    #save_pipeline_runs(run_results.pipeline_runs)
     combined_folds = d3m.runtime.combine_folds([fold for fold in run_scores])
     scores = {}
 

@@ -1,11 +1,11 @@
 import grpc
 import logging
-import datetime
 import ta3ta2_api.core_pb2 as pb_core
 import ta3ta2_api.core_pb2_grpc as pb_core_grpc
 import ta3ta2_api.value_pb2 as pb_value
-from ta3ta2_api.utils import encode_problem_description, encode_performance_metric, decode_performance_metric, decode_value
-from d3m.metadata.problem import parse_problem_description
+from d3m.metadata.problem import parse_problem_description, PerformanceMetric
+from ta3ta2_api.utils import encode_problem_description, encode_performance_metric, decode_performance_metric, \
+    decode_value
 
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class BasicTA3:
         version = pb_core.DESCRIPTOR.GetOptions().Extensions[pb_core.protocol_version]
 
         search = self.core.SearchSolutions(pb_core.SearchSolutionsRequest(
-            user_agent='ta3_stub',
+            user_agent='basicta3_stub',
             version=version,
             time_bound_search=time_bound,
             rank_solutions_limit=pipelines_limit,
@@ -43,23 +43,28 @@ class BasicTA3:
             )],
         ))
 
-        start_time = datetime.datetime.now()
         results = self.core.GetSearchSolutionsResults(
             pb_core.GetSearchSolutionsResultsRequest(
                 search_id=search.search_id,
             )
         )
 
+        target_metric = problem['problem']['performance_metrics'][0]['metric']
         for result in results:
             if result.solution_id:
-                time_search = str(datetime.datetime.now() - start_time)
                 pipeline_id = result.solution_id
-                score = round(decode_value(result.scores[0].scores[0].value)['value'], 5)
-                metric = decode_performance_metric(result.scores[0].scores[0].metric)['metric'].name.lower()
-                internal_score = result.internal_score
+                scores = []
+                for fold_score in result.scores:
+                    for metric_score in fold_score.scores:
+                        metric = decode_performance_metric(metric_score.metric)['metric']
+                        if metric == target_metric:
+                            score = decode_value(metric_score.value)['value']
+                            scores.append(score)
+                avg_score = round(sum(scores) / len(scores), 5)
+                normalized_score = PerformanceMetric[target_metric.name].normalize(avg_score)
 
-                yield {'id': pipeline_id, 'score': score, 'normalized_score': internal_score, 'metric': metric,
-                       'time': time_search}
+                yield {'id': pipeline_id, 'score': avg_score, 'normalized_score': normalized_score,
+                       'metric': target_metric.name.lower()}
 
     def do_score(self, problem, solutions, dataset_path):
         metrics = []
@@ -155,11 +160,15 @@ class BasicTA3:
             except Exception:
                 logger.exception("Exception exporting %r", fitted_solution)
 
-    def do_describe(self, solutions):
-        for solution in solutions:
-            try:
-                self.core.DescribeSolution(pb_core.DescribeSolutionRequest(
-                    solution_id=solution,
-                ))
-            except Exception:
-                logger.exception("Exception during describe %r", solution)
+    def do_describe(self, solution_id):
+        pipeline_description = None
+        try:
+            pipeline_description = self.core.DescribeSolution(pb_core.DescribeSolutionRequest(
+                solution_id=solution_id,
+            )).pipeline
+        except Exception:
+            logger.exception("Exception during describe %r", solution_id)
+        #  TODO: Use decode_pipeline_description, the current problem is it needs installed primitives to work
+        #  #decode_pipeline_description(pipeline_description, pipeline_module.Resolver())
+
+        return pipeline_description.id

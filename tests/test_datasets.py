@@ -13,7 +13,7 @@ from d3m_ta2_nyu.grpc_api.grpc_logger import LoggingStub
 from ta3ta2_api.utils import encode_pipeline_description, ValueType, decode_value
 from d3m.metadata.problem import parse_problem_description, PerformanceMetric
 from d3m.utils import yaml_load_all
-from client import do_search, do_score, do_train, do_test, do_export
+from client import do_search, do_score, do_train, do_test, do_export, do_describe
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
@@ -72,9 +72,10 @@ def search_pipelines(datasets, time_bound=10, use_template=False):
                     pipeline_score = decode_value(pipeline[0].scores[0].value)['value']
                 all_scores.append({'id': pipeline_id, 'score': pipeline_score})
                 #do_score(core, problem, [pipeline_id], dataset_train_path)
-                ##fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
+                #fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
                 #do_test(core, fitted_pipeline, dataset_train_path.replace('TRAIN', 'TEST'))
                 #do_export(core, fitted_pipeline)
+                #do_describe(core, [pipeline_id])
 
             result['pipelines'] = number_pipelines
             result['best_time'] = best_time
@@ -127,7 +128,7 @@ def evaluate_pipelines(datasets, top=10):
                 '--test-input', dataset_test_path,
                 '--score-input', dataset_score_path,
                 '--scores', score_pipeline_path,
-                '--output-run', join(D3MOUTPUTDIR, 'pipeline_runs', 'run_%s.yaml' % top_pipeline_id)
+                '--output-run', join(D3MOUTPUTDIR, 'pipeline_runs', 'run_%s.yml' % top_pipeline_id)
                 ]
             try:
                 subprocess.call(command)
@@ -203,5 +204,5 @@ def create_dupms(top_pipelines):
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
     datasets = ['185_baseball']
-    search_pipelines(datasets, 10)
+    search_pipelines(datasets, 3)
     evaluate_pipelines(datasets)

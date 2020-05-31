@@ -54,7 +54,6 @@ docker run -ti --rm \
     -v "$PWD/resource:/usr/src/app/resource" \
     -v "$PWD/tests:/usr/src/app/tests"\
     -v "$PWD/tests.py:/usr/src/app/tests.py"\
-    -v "$PWD/cli.py:/usr/src/app/cli.py"\
     -v "$PWD/eval.sh:/usr/local/bin/eval.sh"\
     -v "$LOCAL_INPUT_ROOT/${INPUT}:/input" \
     -v "$LOCAL_OUTPUT_ROOT:/output" \
