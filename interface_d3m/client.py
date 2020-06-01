@@ -169,6 +169,6 @@ class BasicTA3:
         except Exception:
             logger.exception("Exception during describe %r", solution_id)
         #  TODO: Use decode_pipeline_description, the current problem is it needs installed primitives to work
-        #  #decode_pipeline_description(pipeline_description, pipeline_module.Resolver())
+        #  decode_pipeline_description(pipeline_description, pipeline_module.Resolver())
 
         return pipeline_description.id
