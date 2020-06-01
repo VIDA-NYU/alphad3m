@@ -10,7 +10,7 @@ from client import BasicTA3
 logging.basicConfig(level=logging.ERROR, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
-
+pd.set_option('display.max_colwidth', -1)
 TA2_DOCKER_IMAGES = {'NYU': 'ta2:latest', 'TAMU': 'dmartinez05/tamuta2:latest',
                      'CMU': 'registry.datadrivendiscovery.org/sheath/cmu-ta2:live'}
 
@@ -63,7 +63,7 @@ class Automl:
             for position, pipeline_data in enumerate(sorted_pipelines, 1):
                 leaderboard.append([position, pipeline_data['id'], pipeline_data['summary'],  pipeline_data['score']])
 
-            self.leaderboard = pd.DataFrame(leaderboard, columns=['ranking', 'id', 'summary', metric]).style.hide_index()
+            self.leaderboard = pd.DataFrame(leaderboard, columns=['ranking', 'id', 'summary', metric])
 
         return self.pipelines
 
