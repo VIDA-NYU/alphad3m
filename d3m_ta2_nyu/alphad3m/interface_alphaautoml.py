@@ -3,6 +3,7 @@ import os
 import sys
 import operator
 import logging
+import json
 
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'

@@ -265,7 +265,7 @@ class Session(Observable):
                     if len(tune) > 0:
                         # Found some pipelines to tune, do that
                         logger.warning("Found %d pipelines to tune", len(tune))
-                        timeout_per_pipeline = self.timeout_tuning / len(tune)
+                        timeout_per_pipeline = self.timeout_tuning
                         for pipeline_id in tune:
                             logger.info("    %s", pipeline_id)
                             self._ta2._run_queue.put(TuneHyperparamsJob(self, pipeline_id, self.problem,

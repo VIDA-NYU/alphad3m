@@ -83,14 +83,14 @@ def load_primitive_configspace(configspace, primitive_name):
 def load_default_configspace(primitive):
     default_config = ConfigurationSpace()
 
-    '''if primitive in get_hyperparameters_from_metalearnig():
+    if primitive in get_hyperparameters_from_metalearnig():
         default_config.add_configuration_space(
             primitive,
             get_configspace_from_metalearning(get_hyperparameters_from_metalearnig()[primitive]),
             '|'
         )
     elif primitive in PRIMITIVES_DEFAULT_HYPERPARAMETERS:
-        default_config.add_configuration_space(primitive, PRIMITIVES_DEFAULT_HYPERPARAMETERS[primitive](), '|')'''
+        default_config.add_configuration_space(primitive, PRIMITIVES_DEFAULT_HYPERPARAMETERS[primitive](), '|')
 
     return default_config
 
@@ -117,9 +117,9 @@ def cast_hyperparameter(hyperparameter, name):
                 new_hyperparameter = UniformIntegerHyperparameter(name, lower, upper, default_value=default)
             else:
                 if  not hyperparameter.lower_inclusive:
-                    lower += 0.1
+                    lower += 1e-20
                 if  not hyperparameter.upper_inclusive:
-                    upper -= 0.1
+                    upper -= 1e-20
                 new_hyperparameter = UniformFloatHyperparameter(name, lower, upper, default_value=default)
         elif isinstance(hyperparameter, UniformBool):
             default = hyperparameter.get_default()

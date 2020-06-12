@@ -53,7 +53,7 @@ class HyperparameterTuning(object):
 
         self.runcount = min(self.runcount, MAX_RUNS)
 
-    def tune(self, runner, wallclock):
+    def tune(self, runner, wallclock, output_dir):
         # Scenario object
         cutoff = wallclock / (self.runcount / 10)  # Allow long pipelines to try to execute one fourth of the iterations limit
         scenario = Scenario({"run_obj": "quality",  # We optimize quality (alternatively runtime)
@@ -62,7 +62,7 @@ class HyperparameterTuning(object):
                              "cutoff_time": cutoff,
                              "cs": self.configspace,  # Configuration space
                              "deterministic": "true",
-                             "output_dir": "/tmp/",
+                             "output_dir": output_dir,
                              "abort_on_first_run_crash": False
                              })
         smac = SMAC(scenario=scenario, rng=np.random.RandomState(42), tae_runner=runner)
