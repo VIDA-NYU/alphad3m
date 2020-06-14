@@ -999,7 +999,7 @@ class D3mTa2(Observable):
             pass  # Not included in this evaluation
 
         sample_dataset_uri = self._get_sample_uri(dataset_uri, session.problem)
-        do_rank = True if top_pipelines > 0 else False
+        do_rank = True if top_pipelines > 0 else False  # TODO: it should order pipelines but it only adds RANK metric
         timeout_search = timeout * 0.85  # TODO: Do it dynamic
         timeout_tuning = timeout * 0.15
 
