@@ -181,7 +181,7 @@ class ComputeMetafeatures():
         try:
             # TODO Improve the sending of parameters
             outputs = execute(pipeline_id, self.dataset_uri, None, None, None,
-                              db_filename=os.path.join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'db.sqlite3'))
+                              db_filename=os.path.join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'db.sqlite3'))
                              # TODO: Change this static string path
             for key, value in outputs.items():
                 metafeature_results = value.metadata.query(())['data_metafeatures']

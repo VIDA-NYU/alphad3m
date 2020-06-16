@@ -85,7 +85,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
     best_configuration = tuning.tune(evaluate_tune, wallclock=timeout, output_dir=join('/tmp', str(pipeline_id)))
 
     # Duplicate pipeline in database
-    new_pipeline = database.duplicate_pipeline(db, pipeline, 'Hyperparameter tuning from pipeline %s' % pipeline_id)
+    new_pipeline = database.duplicate_pipeline(db, pipeline, 'HyperparameterTuning from pipeline %s' % pipeline_id)
 
     for primitive in new_pipeline.modules:
         if is_tunable(primitive.name):
@@ -111,7 +111,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
             shutil.rmtree(os.path.join('/tmp', f))
 
     score(new_pipeline.id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, do_rank, None,
-          db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'db.sqlite3'))
+          db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'db.sqlite3'))
     # TODO: Change this static string path
 
     msg_queue.send(('tuned_pipeline_id', new_pipeline.id))

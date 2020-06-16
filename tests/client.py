@@ -53,7 +53,7 @@ def do_search(core, problem, dataset_path, time_bound=30.0, pipelines_limit=0, p
                 str(end_time - start_time)
             )
 
-    return solutions
+    return str(search.search_id), solutions
 
 
 def do_score(core, problem, solutions, dataset_path):

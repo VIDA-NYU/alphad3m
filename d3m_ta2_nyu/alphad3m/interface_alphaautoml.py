@@ -61,9 +61,9 @@ config = {
         'arenaCompare': 40,
         'cpuct': 1,
 
-        'checkpoint': join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'nn_models'),
+        'checkpoint': join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'nn_models'),
         'load_model': False,
-        'load_folder_file': (join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'nn_models'), 'best.pth.tar'),
+        'load_folder_file': (join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'nn_models'), 'best.pth.tar'),
         'metafeatures_path': '/d3m/data/metafeatures',
         'verbose': True
     }
@@ -128,11 +128,11 @@ def send(msg_queue, pipeline_id):
 
 
 def denormalize_dataset(dataset, targets, features, DBSession):
-    new_path = join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'denormalized_dataset.csv')
+    new_path = join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'denormalized_dataset.csv')
     pipeline_id = BaseBuilder.make_denormalize_pipeline(dataset, targets, features, DBSession=DBSession)
     try:
         execute(pipeline_id, dataset, None, new_path, None,
-                db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'db.sqlite3'))  # TODO: Change this static path
+                db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'db.sqlite3'))  # TODO: Change this static path
     except:
         new_path = os.path.dirname(dataset[7:]) + '/tables/learningData.csv'
         logger.exception('Error denormalizing dataset, using only learningData.csv file')
@@ -232,7 +232,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         config['METRIC'] = metrics[0]['metric'].name
         config['DATASET_METAFEATURES'] = [0] * 50 #metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
         config['DATASET'] = dataset_doc['about']['datasetID']
-        config['ARGS']['stepsfile'] = join(os.environ.get('D3MOUTPUTDIR'), 'ta2', config['DATASET'] + '_pipeline_steps.txt')
+        config['ARGS']['stepsfile'] = join(os.environ.get('D3MOUTPUTDIR'), 'temp', config['DATASET'] + '_pipeline_steps.txt')
 
         return config
 
