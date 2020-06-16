@@ -5,12 +5,12 @@ import grpc
 import logging
 import subprocess
 import pandas as pd
-import d3m_ta2_nyu.grpc_api.core_pb2_grpc as pb_core_grpc
+import ta3ta2_api.core_pb2_grpc as pb_core_grpc
 from datetime import datetime
 from os.path import join
 from d3m.metadata.pipeline import Pipeline
 from d3m_ta2_nyu.grpc_api.grpc_logger import LoggingStub
-from ta3ta2_api.utils import encode_pipeline_description, ValueType, decode_value
+from ta3ta2_api.utils import encode_pipeline_description, decode_value
 from d3m.metadata.problem import parse_problem_description, PerformanceMetric
 from d3m.utils import yaml_load_all
 from client import do_search, do_score, do_train, do_test, do_export, do_describe
@@ -173,7 +173,7 @@ def load_template():
         json_pipeline = json.load(fin)
 
     d3m_pipeline = Pipeline.from_json_structure(json_pipeline, )
-    grpc_pipeline = encode_pipeline_description(d3m_pipeline, [ValueType.RAW], '/tmp')
+    grpc_pipeline = encode_pipeline_description(d3m_pipeline, ['RAW'], '/tmp')
 
     return grpc_pipeline
 
@@ -203,6 +203,6 @@ def create_dupms(top_pipelines):
 
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['uu10_posts_3']# 'LL1_MITLL_synthetic_vora_E_2538' '313_spectrometer', '38_sick', '299_libras_move', 'LL1_GS_process_classification_tabular', '27_wordLevels_MIN_METADATA', 'LL1_h1b_visa_apps_7480']
-    search_pipelines(datasets, 5)
+    datasets = ['185_baseball']# 'LL1_MITLL_synthetic_vora_E_2538' '313_spectrometer', '38_sick', '299_libras_move', 'LL1_GS_process_classification_tabular', '27_wordLevels_MIN_METADATA', 'LL1_h1b_visa_apps_7480']
+    search_pipelines(datasets, 1)
     evaluate_pipelines(datasets)

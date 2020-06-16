@@ -5,7 +5,7 @@ import pickle
 import itertools
 from d3m_ta2_nyu.workflow import database
 from d3m import index
-from d3m.container import Dataset, DataFrame, ndarray, matrix, List
+from d3m.container import Dataset, DataFrame, ndarray, List
 
 
 # Use a headless matplotlib backend
@@ -17,33 +17,23 @@ CONTAINER_CAST = {
         DataFrame: 'd3m.primitives.data_transformation.dataset_to_dataframe.Common',
         ndarray: ('d3m.primitives.data_transformation.dataset_to_dataframe.Common'
                   '|d3m.primitives.data_transformation.dataframe_to_ndarray.Common'),
-        matrix: "",
         List: ('d3m.primitives.data_transformation.dataset_to_dataframe.Common'
                '|d3m.primitives.data_transformation.dataframe_to_list.Common')
     },
     DataFrame: {
         Dataset: "",
         ndarray: 'd3m.primitives.data_transformation.dataframe_to_ndarray.Common',
-        matrix: "",
         List: 'd3m.primitives.data_transformation.dataframe_to_list.Common'
     },
     ndarray: {
         Dataset: "",
         DataFrame: 'd3m.primitives.data_transformation.ndarray_to_dataframe.Common',
-        matrix: "",
         List: 'd3m.primitives.data_transformation.ndarray_to_list.Common'
-    },
-    matrix: {
-        Dataset: "",
-        DataFrame: "",
-        ndarray: "",
-        List: ""
     },
     List: {
         Dataset: "",
         DataFrame: 'd3m.primitives.data_transformation.list_to_dataframe.Common',
         ndarray: 'd3m.primitives.data_transformation.list_to_ndarray.Common',
-        matrix: ""
     }
 }
 

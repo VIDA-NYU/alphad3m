@@ -21,8 +21,7 @@ import shutil
 import subprocess
 import threading
 import time
-import d3m_ta2_nyu.grpc_api.core_pb2_grpc as pb_core_grpc
-import d3m_ta2_nyu.grpc_api.core_pb2 as pb_core
+import ta3ta2_api.core_pb2_grpc as pb_core_grpc
 from uuid import uuid4, UUID
 from d3m_ta2_nyu import __version__
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
@@ -51,7 +50,7 @@ DATAMART_URL = {
 }
 
 
-TUNE_PIPELINES_COUNT = 0
+TUNE_PIPELINES_COUNT = 1
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0
@@ -1086,7 +1085,7 @@ class D3mTa2(Observable):
 
         scoring_config = {'shuffle': 'true',
                           'stratified': 'true' if TaskKeyword.CLASSIFICATION in task_keywords else 'false',
-                          'method': pb_core.EvaluationMethod.Value('K_FOLD'),
+                          'method': 'K_FOLD',
                           'number_of_folds': '2'}
 
         # Add the pipeline to the session, score it

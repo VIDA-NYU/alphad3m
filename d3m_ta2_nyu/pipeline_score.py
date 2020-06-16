@@ -4,7 +4,6 @@ import json
 import pkg_resources
 import d3m.metadata.base
 import d3m.runtime
-import d3m_ta2_nyu.grpc_api.core_pb2 as pb_core
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from d3m_ta2_nyu.workflow import database, convert
@@ -81,13 +80,13 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
     if TaskKeyword.FORECASTING in problem['problem']['task_keywords']:
         pipeline_split = kfold_timeseries_split
 
-    elif scoring_config['method'] == pb_core.EvaluationMethod.Value('K_FOLD'):
+    elif scoring_config['method'] == 'K_FOLD':
         pipeline_split = kfold_tabular_split
 
-    elif scoring_config['method'] == pb_core.EvaluationMethod.Value('HOLDOUT'):
+    elif scoring_config['method'] == 'HOLDOUT':
         pipeline_split = train_test_tabular_split
 
-    elif scoring_config['method'] == pb_core.EvaluationMethod.Value('RANKING'):  # For TA2 only evaluation
+    elif scoring_config['method'] == 'RANKING':  # For TA2 only evaluation
         scoring_config['number_of_folds'] = '4'
         do_rank = True
         pipeline_split = kfold_tabular_split

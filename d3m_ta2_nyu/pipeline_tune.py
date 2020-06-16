@@ -3,7 +3,6 @@ import os
 import sys
 import shutil
 import pickle
-import d3m_ta2_nyu.grpc_api.core_pb2 as pb_core
 from os.path import join
 from d3m import index
 from sqlalchemy.orm import joinedload
@@ -51,7 +50,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
     task_keywords = problem['problem']['task_keywords']
     scoring_config = {'shuffle': 'true',
                       'stratified': 'true' if TaskKeyword.CLASSIFICATION in task_keywords else 'false',
-                      'method': pb_core.EvaluationMethod.Value('K_FOLD'),
+                      'method': 'K_FOLD',
                       'number_of_folds': '2'}
 
     def evaluate_tune(hyperparameter_configuration):

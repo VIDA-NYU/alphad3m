@@ -3,9 +3,9 @@ import json
 import logging
 import sys
 import datetime
-import d3m_ta2_nyu.grpc_api.core_pb2 as pb_core
-import d3m_ta2_nyu.grpc_api.core_pb2_grpc as pb_core_grpc
-import d3m_ta2_nyu.grpc_api.value_pb2 as pb_value
+import ta3ta2_api.core_pb2 as pb_core
+import ta3ta2_api.core_pb2_grpc as pb_core_grpc
+import ta3ta2_api.value_pb2 as pb_value
 from ta3ta2_api.utils import encode_problem_description, encode_performance_metric
 from d3m_ta2_nyu.grpc_api.grpc_logger import LoggingStub
 
@@ -29,7 +29,7 @@ def do_search(core, problem, dataset_path, time_bound=30.0, pipelines_limit=0, p
         version=version,
         time_bound_search=time_bound,
         rank_solutions_limit=pipelines_limit,
-        allowed_value_types=[pb_value.CSV_URI],
+        allowed_value_types=['CSV_URI'],
         problem=encode_problem_description(problem),
         template=pipeline_template,
         inputs=[pb_value.Value(
@@ -72,7 +72,7 @@ def do_score(core, problem, solutions, dataset_path):
                 performance_metrics=metrics,
                 users=[],
                 configuration=pb_core.ScoringConfiguration(
-                    method=pb_core.EvaluationMethod.Value('K_FOLD'),
+                    method='K_FOLD',
                     folds=4,
                     train_test_ratio=0.75,
                     shuffle=True,
@@ -100,7 +100,7 @@ def do_train(core, solutions, dataset_path):
                     dataset_uri='file://%s' % dataset_path,
                 )],
                 expose_outputs=[],
-                expose_value_types=[pb_value.CSV_URI],
+                expose_value_types=['CSV_URI'],
                 users=[],
             ))
             results = core.GetFitSolutionResults(
@@ -126,7 +126,7 @@ def do_test(core, fitted, dataset_path):
                     dataset_uri='file://%s' % dataset_path,
                 )],
                 expose_outputs=[],
-                expose_value_types=[pb_value.CSV_URI],
+                expose_value_types=['CSV_URI'],
                 users=[],
             ))
             results = core.GetProduceSolutionResults(
