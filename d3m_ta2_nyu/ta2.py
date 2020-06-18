@@ -21,8 +21,7 @@ import shutil
 import subprocess
 import threading
 import time
-import d3m_ta2_nyu.grpc_api.core_pb2_grpc as pb_core_grpc
-import d3m_ta2_nyu.grpc_api.core_pb2 as pb_core
+import ta3ta2_api.core_pb2_grpc as pb_core_grpc
 from uuid import uuid4, UUID
 from d3m_ta2_nyu import __version__
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
@@ -65,15 +64,24 @@ class Session(Observable):
 
     This corresponds to a search in which pipelines are created.
     """
-    def __init__(self, ta2, problem, DBSession, searched_pipelines_dir, scored_pipelines_dir, ranked_pipelines_dir):
+    def __init__(self, ta2, problem, output_folder, DBSession):
         Observable.__init__(self)
         self.id = uuid4()
         self._ta2 = ta2
         self.problem = problem
         self.DBSession = DBSession
-        self._searched_pipelines_dir = searched_pipelines_dir
-        self._scored_pipelines_dir = scored_pipelines_dir
-        self._ranked_pipelines_dir = ranked_pipelines_dir
+
+        # D3M folders
+        str_id = str(self.id)
+        self._searched_pipelines_dir = os.path.join(output_folder, str_id, 'pipelines_searched')
+        self._scored_pipelines_dir = os.path.join(output_folder, str_id, 'pipelines_scored')
+        self._ranked_pipelines_dir = os.path.join(output_folder, str_id, 'pipelines_ranked')
+        self._run_pipelines_dir = os.path.join(output_folder, str_id, 'pipeline_runs')
+        create_outputfolders(self._searched_pipelines_dir)
+        create_outputfolders(self._scored_pipelines_dir)
+        create_outputfolders(self._ranked_pipelines_dir)
+        create_outputfolders(self._run_pipelines_dir)
+
         self.metrics = []
         self.do_rank = False
         self.timeout_tuning = 0
@@ -265,7 +273,7 @@ class Session(Observable):
                     if len(tune) > 0:
                         # Found some pipelines to tune, do that
                         logger.warning("Found %d pipelines to tune", len(tune))
-                        timeout_per_pipeline = self.timeout_tuning #/ len(tune)
+                        timeout_per_pipeline = self.timeout_tuning
                         for pipeline_id in tune:
                             logger.info("    %s", pipeline_id)
                             self._ta2._run_queue.put(TuneHyperparamsJob(self, pipeline_id, self.problem,
@@ -499,8 +507,8 @@ class TrainJob(Job):
                                 pipeline_id=self.pipeline_id,
                                 dataset=self.dataset,
                                 problem=self.problem,
-                                storage_dir=self.ta2.traintest_folder,
-                                results_path=os.path.join(self.ta2.traintest_folder,
+                                storage_dir=self.ta2.runtime_folder,
+                                results_path=os.path.join(self.ta2.runtime_folder,
                                                           'fit_%s.csv' % UUID(int=id(self))),
                                 db_filename=db_filename)
         self.ta2.notify('training_start',
@@ -516,7 +524,7 @@ class TrainJob(Job):
         if self.proc.returncode == 0:
             self.ta2.notify('training_success',
                             pipeline_id=self.pipeline_id,
-                            results_path=os.path.join(self.ta2.traintest_folder,
+                            results_path=os.path.join(self.ta2.runtime_folder,
                                                       'fit_%s.csv' % UUID(int=id(self))),
                             job_id=id(self))
         else:
@@ -539,8 +547,8 @@ class TestJob(Job):
         self.proc = run_process('d3m_ta2_nyu.pipeline_test.test', 'test', self.msg,
                                 pipeline_id=self.pipeline_id,
                                 dataset=self.dataset,
-                                storage_dir=self.ta2.traintest_folder,
-                                results_path=os.path.join(self.ta2.traintest_folder,
+                                storage_dir=self.ta2.runtime_folder,
+                                results_path=os.path.join(self.ta2.runtime_folder,
                                                           'produce_%s.csv' % UUID(int=id(self))),
                                 db_filename=db_filename)
         self.ta2.notify('testing_start',
@@ -556,7 +564,7 @@ class TestJob(Job):
         if self.proc.returncode == 0:
             self.ta2.notify('testing_success',
                             pipeline_id=self.pipeline_id,
-                            results_path=os.path.join(self.ta2.traintest_folder,
+                            results_path=os.path.join(self.ta2.runtime_folder,
                                                       'produce_%s.csv' % UUID(int=id(self))),
                             job_id=id(self))
         else:
@@ -576,13 +584,13 @@ class TuneHyperparamsJob(Job):
         self.timeout = timeout
 
     def start(self, db_filename, predictions_root, **kwargs):
-        self.traintest_folder = predictions_root
+        self.runtime_folder = predictions_root
         logger.info("Running tuning for %s "
                     "(session %s has %d pipelines left to tune)",
                     self.pipeline_id, self.session.id,
                     len(self.session.pipelines_tuning))
-        if self.store_results and self.traintest_folder is not None:
-            subdir = os.path.join(self.traintest_folder, str(self.pipeline_id))
+        if self.store_results and self.runtime_folder is not None:
+            subdir = os.path.join(self.runtime_folder, str(self.pipeline_id))
             if not os.path.exists(subdir):
                 os.mkdir(subdir)
 
@@ -654,40 +662,13 @@ class ThreadPoolExecutor(futures.ThreadPoolExecutor):
 class D3mTa2(Observable):
     def __init__(self, output_folder):
         Observable.__init__(self)
-        if 'TA2_DEBUG_BE_FAST' in os.environ:
-            logger.warning("**************************************************"
-                           "*****")
-            logger.warning("***   DEBUG mode is on, will try fewer pipelines  "
-                           "  ***")
-            logger.warning("*** If this is not wanted, unset $TA2_DEBUG_BE_FAS"
-                           "T ***")
-            logger.warning("**************************************************"
-                           "*****")
-
         self.output_folder = output_folder
-        self.searched_pipelines = None
-        self.scored_pipelines = None
-        self.ranked_pipelines = None
-        self.run_pipelines = None
-
-        if self.output_folder is not None:
-            self.create_outputfolders(self.output_folder)
-            # D3M folders
-            self.searched_pipelines = os.path.join(self.output_folder, 'pipelines_searched')
-            self.scored_pipelines = os.path.join(self.output_folder, 'pipelines_scored')
-            self.ranked_pipelines = os.path.join(self.output_folder, 'pipelines_ranked')
-            self.run_pipelines = os.path.join(self.output_folder, 'pipeline_runs')
-            self.create_outputfolders(self.searched_pipelines)
-            self.create_outputfolders(self.scored_pipelines)
-            self.create_outputfolders(self.ranked_pipelines)
-            self.create_outputfolders(self.run_pipelines)
-
-            #  Internal folders
-            self.internal_folder = os.path.join(self.output_folder, 'ta2')
-            self.traintest_folder = os.path.join(self.output_folder, 'ta2', 'train_test')
-            self.create_outputfolders(self.internal_folder)
-            self.create_outputfolders(self.traintest_folder)
-            self.db_filename = os.path.join(self.internal_folder, 'db.sqlite3')
+        #  Internal folders
+        self.internal_folder = os.path.join(self.output_folder, 'temp')
+        self.runtime_folder = os.path.join(self.output_folder, 'temp', 'runtime_output')
+        create_outputfolders(self.internal_folder)
+        create_outputfolders(self.runtime_folder)
+        self.db_filename = os.path.join(self.internal_folder, 'db.sqlite3')
 
         logger.info("output_folder=%r", self.output_folder)
 
@@ -702,16 +683,12 @@ class D3mTa2(Observable):
 
         logger.warning("TA2 started, version=%s", __version__)
 
-    def create_outputfolders(self, folder_path):
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-
     def run_search(self, dataset_path, problem_path=None, problem_config=None, timeout=None):
         if not dataset_path.endswith('datasetDoc.json'):  # Convert to D3M format
             logger.info('Reiceving a raw dataset, converting to D3M format')
-            dataset_folder = os.path.join(self.output_folder, 'ta2', 'dataset_d3mformat', 'dataset')
-            problem_folder = os.path.join(self.output_folder, 'ta2', 'dataset_d3mformat', 'problem')
-            self.create_outputfolders(problem_folder)
+            dataset_folder = os.path.join(self.output_folder, 'temp', 'dataset_d3mformat', 'dataset')
+            problem_folder = os.path.join(self.output_folder, 'temp', 'dataset_d3mformat', 'problem')
+            create_outputfolders(problem_folder)
             problem_path = create_d3mproblem(problem_config, dataset_path, problem_folder)
             dataset_path = create_d3mdataset(dataset_path, dataset_folder)
 
@@ -721,8 +698,7 @@ class D3mTa2(Observable):
         problem = parse_problem_description(problem_path)
         task_keywords = problem['problem']['task_keywords']
         # Create session
-        session = Session(self, problem, self.DBSession, self.searched_pipelines, self.scored_pipelines,
-                          self.ranked_pipelines)
+        session = Session(self, problem, self.output_folder, self.DBSession)
         logger.info('Dataset: %s, task: %s, metrics: %s', dataset_path, '_'.join([x.name for x in task_keywords]),
                     session.metrics)
         self.sessions[session.id] = session
@@ -745,16 +721,6 @@ class D3mTa2(Observable):
             session.tune_when_ready()
             while queue.get(True)[0] != 'done_searching':
                 pass'''
-        top_pipelines = session.get_top_pipelines(session.DBSession(),  session.metrics[0]['metric'])
-        with open(join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'search_results.csv'), 'w') as fout:
-            writer = csv.writer(fout, delimiter=',')
-            writer.writerow(['ranking', 'pipeline_id', session.metrics[0]['metric'].name.lower(), 'description', 'time (sec)'])
-            for index, (pipeline, score) in enumerate(top_pipelines, 1):
-                created = pipeline.created_date - session.start
-                writer.writerow([index, pipeline.id, score, pipeline.origin, round(created.total_seconds(), 2)])
-
-    def run_test(self):
-        pass
 
     def run_server(self, port=None):
         """Spin up the gRPC server to receive requests from a TA3 system.
@@ -775,9 +741,9 @@ class D3mTa2(Observable):
             time.sleep(60)
 
     def new_session(self, problem):
-        session = Session(self, problem, self.DBSession,
-                          self.searched_pipelines, self.scored_pipelines, self.ranked_pipelines)
+        session = Session(self, problem, self.output_folder, self.DBSession)
         self.sessions[session.id] = session
+
         return session.id
 
     def finish_session(self, session_id):
@@ -1086,7 +1052,7 @@ class D3mTa2(Observable):
 
         scoring_config = {'shuffle': 'true',
                           'stratified': 'true' if TaskKeyword.CLASSIFICATION in task_keywords else 'false',
-                          'method': pb_core.EvaluationMethod.Value('K_FOLD'),
+                          'method': 'K_FOLD',
                           'number_of_folds': '2'}
 
         # Add the pipeline to the session, score it
@@ -1202,9 +1168,14 @@ class D3mTa2(Observable):
                     pass
                 else:
                     job.start(db_filename=self.db_filename,
-                              predictions_root=self.traintest_folder)
+                              predictions_root=self.runtime_folder)
                     running_jobs[id(job)] = job
 
             time.sleep(3)
+
+
+def create_outputfolders(folder_path):
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
 
 

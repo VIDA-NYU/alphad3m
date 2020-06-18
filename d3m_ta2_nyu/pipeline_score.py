@@ -4,7 +4,6 @@ import json
 import pkg_resources
 import d3m.metadata.base
 import d3m.runtime
-import d3m_ta2_nyu.grpc_api.core_pb2 as pb_core
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from d3m_ta2_nyu.workflow import database, convert
@@ -57,14 +56,13 @@ def check_timeindicator(dataset_path):
 
 @database.with_db
 def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, do_rank, msg_queue, db):
+    dataset_uri_touse = dataset_uri
     if sample_dataset_uri:
-        if TaskKeyword.FORECASTING in problem['problem']['task_keywords']:
-            check_timeindicator(sample_dataset_uri[7:])
-        dataset = Dataset.load(sample_dataset_uri)  # Come from search
-    else:
-        if TaskKeyword.FORECASTING in problem['problem']['task_keywords']:
-            check_timeindicator(dataset_uri[7:])
-        dataset = Dataset.load(dataset_uri)
+        dataset_uri_touse = sample_dataset_uri
+    if TaskKeyword.FORECASTING in problem['problem']['task_keywords']:
+        check_timeindicator(dataset_uri_touse[7:])
+
+    dataset = Dataset.load(dataset_uri_touse)
     # Get pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -77,58 +75,39 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
 
     scores = {}
     scores_db = []
+    pipeline_split = None
 
-    # FIXME: Temporal solution for semi-supervised binary classification problems
-    if TaskKeyword.SEMISUPERVISED in problem['problem']['task_keywords'] and \
-            metrics[0]['metric'] == PerformanceMetric.F1:
-        new_metrics = [{'metric': PerformanceMetric.F1_MICRO}]
-        scores = evaluate(pipeline, kfold_tabular_split, dataset, new_metrics, problem, scoring_config)
-        scores = create_new_metric(scores, new_metrics, new_metric=metrics[0]['metric'].name)
-        logger.info("Cross-validation results for semisupervised binary:\n%s", scores)
+    if TaskKeyword.FORECASTING in problem['problem']['task_keywords']:
+        pipeline_split = kfold_timeseries_split
 
-    elif scoring_config['method'] == pb_core.EvaluationMethod.Value('K_FOLD'):
+    elif scoring_config['method'] == 'K_FOLD':
         pipeline_split = kfold_tabular_split
-        if TaskKeyword.FORECASTING in problem['problem']['task_keywords']:
-            pipeline_split = kfold_timeseries_split
-        scores = evaluate(pipeline, pipeline_split, dataset, metrics, problem, scoring_config)
-        logger.info("Cross-validation results:\n%s", scores)
 
-    elif scoring_config['method'] == pb_core.EvaluationMethod.Value('HOLDOUT'):
+    elif scoring_config['method'] == 'HOLDOUT':
         pipeline_split = train_test_tabular_split
-        if TaskKeyword.FORECASTING in problem['problem']['task_keywords']:
-            pipeline_split = kfold_timeseries_split
-        scores = evaluate(pipeline, pipeline_split, dataset, metrics, problem, scoring_config)
-        logger.info("Holdout results:\n%s", scores)
 
-    elif scoring_config['method'] == pb_core.EvaluationMethod.Value('RANKING'):  # For TA2 only evaluation
+    elif scoring_config['method'] == 'RANKING':  # For TA2 only evaluation
         scoring_config['number_of_folds'] = '4'
-        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_config)
-        logger.info("Ranking-D3M results:\n%s", scores)
-        if not do_rank:
-            scores_db = add_scores_db(scores, scores_db)
-        scores = create_new_metric(scores, metrics)
-        logger.info("Ranking-D3M new metric results:\n%s", scores)
+        do_rank = True
+        pipeline_split = kfold_tabular_split
+    else:
+        logger.warning('Unknown evaluation method, using K_FOLD')
+        pipeline_split = kfold_tabular_split
+
+    if metrics[0]['metric'] != PerformanceMetric.F1:
+        scores = evaluate(pipeline, pipeline_split, dataset, metrics, problem, scoring_config)
+    else:  # FIXME: Temporal solution to avoid: "Target is multiclass but average='binary'"
+        new_metrics = [{'metric': PerformanceMetric.F1_MACRO}]
+        scores = evaluate(pipeline, kfold_tabular_split, dataset, new_metrics, problem, scoring_config)
+        scores = change_name_metric(scores, new_metrics, new_metric=metrics[0]['metric'].name)
+
+    logger.info("Evalution results:\n%s", scores)
 
     if len(scores) > 0:  # It's a valid pipeline
-        if do_rank:  # Need to rank too during the search
+        scores_db = add_scores_db(scores, scores_db)
+        if do_rank:
             logger.info("Calculating RANK in search solution for pipeline %s", pipeline_id)
-            if sample_dataset_uri is not None:
-                #entire_dataset = Dataset.load(dataset_uri)  # load complete dataset
-                scoring_config['number_of_folds'] = '4'
-                # FIXME: Temporal solution for semi-supervised binary classification problems
-                if TaskKeyword.SEMISUPERVISED in problem['problem']['task_keywords'] and \
-                        metrics[0]['metric'] == PerformanceMetric.F1:
-                    new_metrics = [{'metric': PerformanceMetric.F1_MICRO}]
-                    scores = evaluate(pipeline, kfold_tabular_split, dataset, new_metrics, problem, scoring_config)
-                    scores = create_new_metric(scores, new_metrics, new_metric=metrics[0]['metric'].name)
-                else:
-                    scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_config)
-            logger.info("Ranking-D3M (whole dataset) results:\n%s", scores)
-            scores_db = add_scores_db(scores, scores_db)
-            scores = create_new_metric(scores, metrics)
-            logger.info("Ranking-D3M (whole dataset) new metric results:\n%s", scores)
-            scores_db = add_scores_db(scores, scores_db)
-        else:
+            scores = create_rank_metric(scores, metrics)
             scores_db = add_scores_db(scores, scores_db)
 
     # TODO Should we rename CrossValidation table?
@@ -161,7 +140,7 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config)
     )
 
     run_results.check_success()
-    #save_pipeline_runs(run_results.pipelines_runs)  # TODO: It should work, but has some bugs
+    #save_pipeline_runs(run_results.pipeline_runs)
     combined_folds = d3m.runtime.combine_folds([fold for fold in run_scores])
     scores = {}
 
@@ -173,7 +152,7 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config)
     return scores
 
 
-def create_new_metric(scores, metrics, new_metric='RANK'):
+def create_rank_metric(scores, metrics):
     scores_tmp = {}
 
     for fold, fold_scores in scores.items():
@@ -181,7 +160,19 @@ def create_new_metric(scores, metrics, new_metric='RANK'):
         for metric, current_score in fold_scores.items():
             if metric == metrics[0]['metric'].name:
                 new_score = 1.0 - metrics[0]['metric'].normalize(current_score)
-                scores_tmp[fold][new_metric] = new_score
+                scores_tmp[fold]['RANK'] = new_score
+
+    return scores_tmp
+
+
+def change_name_metric(scores, metrics, new_metric):
+    scores_tmp = {}
+
+    for fold, fold_scores in scores.items():
+        scores_tmp[fold] = {}
+        for metric, current_score in fold_scores.items():
+            if metric == metrics[0]['metric'].name:
+                scores_tmp[fold][new_metric] = current_score
 
     return scores_tmp
 
@@ -198,5 +189,6 @@ def save_pipeline_runs(pipelines_runs):
     for pipeline_run in pipelines_runs:
         save_run_path = os.path.join(os.environ['D3MOUTPUTDIR'], 'pipeline_runs',
                                      pipeline_run.to_json_structure()['id'] + '.yml')
+
         with open(save_run_path, 'w') as fin:
             pipeline_run.to_yaml(fin, indent=2)

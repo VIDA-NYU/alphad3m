@@ -3,7 +3,7 @@ import os
 import sys
 import shutil
 import pickle
-import d3m_ta2_nyu.grpc_api.core_pb2 as pb_core
+from os.path import join
 from d3m import index
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
@@ -50,7 +50,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
     task_keywords = problem['problem']['task_keywords']
     scoring_config = {'shuffle': 'true',
                       'stratified': 'true' if TaskKeyword.CLASSIFICATION in task_keywords else 'false',
-                      'method': pb_core.EvaluationMethod.Value('K_FOLD'),
+                      'method': 'K_FOLD',
                       'number_of_folds': '2'}
 
     def evaluate_tune(hyperparameter_configuration):
@@ -82,10 +82,10 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
 
     # Run tuning, gets best configuration
     tuning = HyperparameterTuning(tunable_primitives.values())
-    best_configuration = tuning.tune(evaluate_tune, wallclock=timeout,output_dir=os.path.join('/tmp', str(pipeline_id)))
+    best_configuration = tuning.tune(evaluate_tune, wallclock=timeout, output_dir=join('/tmp', str(pipeline_id)))
 
     # Duplicate pipeline in database
-    new_pipeline = database.duplicate_pipeline(db, pipeline, 'Hyperparameter tuning from pipeline %s' % pipeline_id)
+    new_pipeline = database.duplicate_pipeline(db, pipeline, 'HyperparameterTuning from pipeline %s' % pipeline_id)
 
     for primitive in new_pipeline.modules:
         if is_tunable(primitive.name):
@@ -111,7 +111,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
     #         shutil.rmtree(os.path.join('/tmp', f))
     shutil.rmtree(os.path.join('/tmp', str(pipeline_id)))
     score(new_pipeline.id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, do_rank, None,
-          db_filename=os.path.join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'db.sqlite3'))
+          db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'db.sqlite3'))
     # TODO: Change this static string path
 
     msg_queue.send(('tuned_pipeline_id', new_pipeline.id))

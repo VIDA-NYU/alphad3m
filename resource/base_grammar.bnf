@@ -24,7 +24,7 @@ IMAGE_PROCESSING -> 'd3m.primitives.data_preprocessing.image_reader.Common' 'd3m
 AUDIO_PROCESSING -> 'd3m.primitives.feature_extraction.audio_transfer.DistilAudioTransfer'
 GROUP_PREPROCESSING -> DATA_PREPROCESSING
 DATA_PREPROCESSING -> 'E' | 'primitive_terminal'
-DATA_CLEANING -> 'E' | 'primitive_terminal'
+DATA_CLEANING -> 'primitive_terminal' | 'E'
 DATA_TRANSFORMATION -> 'E' | 'primitive_terminal'
 FEATURE_SELECTION ->  'E' | 'primitive_terminal'
 CLASSIFICATION -> 'primitive_terminal'
