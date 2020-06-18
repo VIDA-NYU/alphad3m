@@ -24,7 +24,7 @@ D3MOUTPUTDIR = os.environ.get('D3MOUTPUTDIR')
 D3MSTATICDIR = os.environ.get('D3MSTATICDIR')
 
 
-def search_pipelines(datasets, time_bound=10, use_template=False):
+def search_pipelines(datasets, time_bound=360, use_template=False):
     search_results_path = join(D3MOUTPUTDIR, 'ta2', 'search_results.json')
     search_results = load_search_results(search_results_path)
     channel = grpc.insecure_channel('localhost:45042')

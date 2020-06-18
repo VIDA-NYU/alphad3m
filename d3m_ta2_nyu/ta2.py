@@ -51,7 +51,7 @@ DATAMART_URL = {
 }
 
 
-TUNE_PIPELINES_COUNT = 0
+TUNE_PIPELINES_COUNT = 5
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0
@@ -265,7 +265,7 @@ class Session(Observable):
                     if len(tune) > 0:
                         # Found some pipelines to tune, do that
                         logger.warning("Found %d pipelines to tune", len(tune))
-                        timeout_per_pipeline = self.timeout_tuning / len(tune)
+                        timeout_per_pipeline = self.timeout_tuning #/ len(tune)
                         for pipeline_id in tune:
                             logger.info("    %s", pipeline_id)
                             self._ta2._run_queue.put(TuneHyperparamsJob(self, pipeline_id, self.problem,
@@ -1000,8 +1000,8 @@ class D3mTa2(Observable):
 
         sample_dataset_uri = self._get_sample_uri(dataset_uri, session.problem)
         do_rank = True if top_pipelines > 0 else False
-        timeout_search = timeout * 0.85  # TODO: Do it dynamic
-        timeout_tuning = timeout * 0.15
+        timeout_search = timeout * 0.55  # TODO: Do it dynamic
+        timeout_tuning = timeout * 0.45
 
         self._build_pipelines_from_generator(session, task, dataset_uri, sample_dataset_uri, search_results,
                                              pipeline_template, metrics, timeout_search, do_rank)

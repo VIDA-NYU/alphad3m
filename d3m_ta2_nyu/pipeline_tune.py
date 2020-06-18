@@ -82,7 +82,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
 
     # Run tuning, gets best configuration
     tuning = HyperparameterTuning(tunable_primitives.values())
-    best_configuration = tuning.tune(evaluate_tune, wallclock=timeout)
+    best_configuration = tuning.tune(evaluate_tune, wallclock=timeout,output_dir=os.path.join('/tmp', str(pipeline_id)))
 
     # Duplicate pipeline in database
     new_pipeline = database.duplicate_pipeline(db, pipeline, 'Hyperparameter tuning from pipeline %s' % pipeline_id)
@@ -106,10 +106,10 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
 
     logger.info('Tuning done, generated new pipeline %s', new_pipeline.id)
 
-    for f in os.listdir('/tmp'):
-        if 'run_1' in f:
-            shutil.rmtree(os.path.join('/tmp', f))
-
+    # for f in os.listdir('/tmp'):
+    #     if 'run_1' in f:
+    #         shutil.rmtree(os.path.join('/tmp', f))
+    shutil.rmtree(os.path.join('/tmp', str(pipeline_id)))
     score(new_pipeline.id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, do_rank, None,
           db_filename=os.path.join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'db.sqlite3'))
     # TODO: Change this static string path
