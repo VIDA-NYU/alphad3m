@@ -282,7 +282,7 @@ class BaseBuilder:
             set_hyperparams(db, pipeline, step4,
                             semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
                             )
-            connect(db, pipeline, step2, step4)
+            connect(db, pipeline, step1, step4)
 
             if skip_encoding(primitives):
                 encoder_step = step3
@@ -395,7 +395,7 @@ class BaseBuilder:
             set_hyperparams(db, pipeline, step4,
                             semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
                             )
-            connect(db, pipeline, step2, step4)
+            connect(db, pipeline, step1, step4)
 
             step5 = make_pipeline_module(db, pipeline, imputer)
             set_hyperparams(db, pipeline, step5, strategy='most_frequent')
@@ -493,7 +493,7 @@ class BaseBuilder:
             set_hyperparams(db, pipeline, step4,
                             semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
                             )
-            connect(db, pipeline, step2, step4)
+            connect(db, pipeline, step1, step4)
 
             step5 = make_pipeline_module(db, pipeline, imputer)
             set_hyperparams(db, pipeline, step5, strategy='most_frequent')
@@ -807,7 +807,7 @@ class TimeseriesClassificationBuilder(BaseBuilder):
                                                 'https://metadata.datadrivendiscovery.org/types/SuggestedTarget'
                                                 ]
                                 )
-                connect(db, pipeline, step2, step4)
+                connect(db, pipeline, step1, step4)
 
                 step5 = make_pipeline_module(db, pipeline, primitives[0])
                 connect(db, pipeline, step1, step5)
@@ -1072,7 +1072,7 @@ class AudioBuilder(BaseBuilder):
             set_hyperparams(db, pipeline, step2,
                             semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
                             )
-            connect(db, pipeline, step1, step2)
+            connect(db, pipeline, step0, step2)
 
             step3 = make_pipeline_module(db, pipeline, primitives[0])
             db.add(database.PipelineConnection(pipeline=pipeline,
