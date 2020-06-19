@@ -161,6 +161,7 @@ def encode_features(pipeline, attribute_step, target_step, feature_types, db):
 
     if 'http://schema.org/Text' in feature_types:
         text_step = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.encoder.DistilTextEncoder')
+        set_hyperparams(db, pipeline, text_step, encoder_type='tfidf')
         connect(db, pipeline, last_step, text_step)
         connect(db, pipeline, target_step, text_step, to_input='outputs')
         last_step = text_step
@@ -580,93 +581,6 @@ class BaseBuilder:
         finally:
             db.close()
 
-    @staticmethod
-    def make_fitexample_pipeline(dataset, targets, features, DBSession=None):
-        db = DBSession()
-        pipeline = database.Pipeline(origin="denormalize", dataset=dataset)
-
-        try:
-            input_data = make_data_module(db, pipeline, targets, features)
-
-            step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
-            connect(db, pipeline, input_data, step0, from_output='dataset')
-
-            step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
-            connect(db, pipeline, step0, step1)
-
-            step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'column_parser.Common')
-            connect(db, pipeline, step1, step2)
-
-            step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'extract_columns_by_semantic_types.Common')
-            set_hyperparams(db, pipeline, step3,
-                            semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute'])
-            connect(db, pipeline, step2, step3)
-
-            '''step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'extract_columns_by_semantic_types.Common')
-            set_hyperparams(db, pipeline, step4,
-                            semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget',
-                                            'https://metadata.datadrivendiscovery.org/types/SuggestedTarget']
-                            )
-            connect(db, pipeline, step2, step4)
-
-            step5 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.encoder.DistilTextEncoder')
-            set_hyperparams(db, pipeline, step5)
-            connect(db, pipeline, step3, step5)
-            connect(db, pipeline, step4, step5, to_input='outputs')'''
-
-            '''step_onehot = make_pipeline_module(db, pipeline,
-                                               'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')
-            set_hyperparams(db, pipeline, step_onehot, return_result='replace', use_semantic_types=True, handle_unknown='ignore')
-            connect(db, pipeline, step3, step_onehot)
-            #step_onehot = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.encoder.DSBOX')
-            #connect(db, pipeline, step3, step_onehot)
-
-            step_scaler = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.robust_scaler.SKlearn')
-            set_hyperparams(db, pipeline, step_scaler)
-            connect(db, pipeline, step_onehot, step_scaler)'''
-
-            step_extract = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                              'extract_columns_by_semantic_types.Common')
-            set_hyperparams(db, pipeline, step_extract,
-                            semantic_types=['http://schema.org/Integer', 'http://schema.org/Float'])
-            connect(db, pipeline, step3, step_extract)
-
-            step_scaler = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.robust_scaler.SKlearn')
-            connect(db, pipeline, step_extract, step_scaler)
-
-            step_extract = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                              'extract_columns_by_semantic_types.Common')
-            set_hyperparams(db, pipeline, step_extract,
-                            semantic_types=['https://metadata.datadrivendiscovery.org/types/CategoricalData'])
-            connect(db, pipeline, step3, step_extract)
-
-            step_onehot = make_pipeline_module(db, pipeline,
-                                               'd3m.primitives.data_transformation.one_hot_encoder.SKlearn')
-            set_hyperparams(db, pipeline, step_onehot, handle_unknown='ignore')
-            connect(db, pipeline, step_extract, step_onehot)
-
-            step_concat = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.horizontal_concat.'
-                                                             'DataFrameCommon')
-
-            connect(db, pipeline, step_scaler, step_concat, to_input='left')
-            connect(db, pipeline, step_onehot, step_concat, to_input='right')
-
-            #step_estimator = make_pipeline_module(db, pipeline, 'd3m.primitives.classification.random_forest.SKlearn')
-            #connect(db, pipeline, step_concat, step_estimator)
-            #connect(db, pipeline, step4, step_estimator, to_input='outputs')
-
-            db.add(pipeline)
-            db.commit()
-            return pipeline.id
-        except:
-            logger.exception('Error creating pipeline id=%s', pipeline.id)
-            return None
-        finally:
-            db.close()
-
     TEMPLATES_AUGMENTATION = {
         'CLASSIFICATION': list(itertools.product(
             # DATAMART
@@ -728,7 +642,7 @@ class BaseBuilder:
             # Classifier
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
-                'd3m.primitives.classification.k_neighbors.SKlearn',
+                'd3m.primitives.classification.extra_trees.SKlearn',
                 'd3m.primitives.classification.gradient_boosting.SKlearn',
                 'd3m.primitives.classification.linear_svc.SKlearn',
                 'd3m.primitives.classification.sgd.SKlearn'
@@ -740,7 +654,7 @@ class BaseBuilder:
             # Classifier
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
-                'd3m.primitives.classification.k_neighbors.SKlearn'
+                'd3m.primitives.classification.extra_trees.SKlearn'
             ],
         )),
         'REGRESSION': list(itertools.product(
@@ -749,8 +663,8 @@ class BaseBuilder:
             # Classifier
             [
                 'd3m.primitives.regression.random_forest.SKlearn',
+                'd3m.primitives.regression.extra_trees.SKlearn',
                 'd3m.primitives.regression.sgd.SKlearn',
-                'd3m.primitives.regression.decision_tree.SKlearn',
                 'd3m.primitives.regression.gradient_boosting.SKlearn',
                 'd3m.primitives.regression.lasso.SKlearn'
             ],
