@@ -116,8 +116,6 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive):
         set_hyperparams(db, pipeline, primitive, cluster_col_name='Class')
     elif primitive_name == 'd3m.primitives.feature_selection.simultaneous_markov_blanket.AutoRPI':
         set_hyperparams(db, pipeline, primitive, nbins=3)
-    elif primitive_name == 'd3m.primitives.classification.extra_trees.SKlearn':
-        set_hyperparams(db, pipeline, primitive, n_estimators=25, bootstrap='disabled')
     elif primitive_name == 'd3m.primitives.time_series_forecasting.lstm.DeepAR':
         set_hyperparams(db, pipeline, primitive, epochs=1)
 
@@ -189,7 +187,7 @@ def encode_features(pipeline, attribute_step, target_step, feature_types, db):
 class BaseBuilder:
 
     def make_d3mpipeline(self, primitives, origin, dataset, search_results, pipeline_template, targets, features,
-                         features_metadata, DBSession=None):
+                         features_metadata, privileged_data=[], DBSession=None):
         # TODO parameters 'features and 'targets' are not needed
         db = DBSession()
         origin_name = '%s (%s)' % (origin, ', '.join([p.replace('d3m.primitives.', '') for p in primitives]))
@@ -275,7 +273,7 @@ class BaseBuilder:
             if need_target(primitives):  # Some primitives need the target, so we can't filter out it
                 semantic_type_list.append('https://metadata.datadrivendiscovery.org/types/TrueTarget')
 
-            set_hyperparams(db, pipeline, step3, semantic_types=semantic_type_list)
+            set_hyperparams(db, pipeline, step3, semantic_types=semantic_type_list, exclude_columns=privileged_data)
             connect(db, pipeline, step2, step3)
 
             step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
@@ -328,7 +326,8 @@ class BaseBuilder:
                 db.close()
 
     @staticmethod
-    def make_template(imputer, estimator, dataset, pipeline_template, targets, features, features_metadata, DBSession=None):
+    def make_template(imputer, estimator, dataset, pipeline_template, targets, features, features_metadata,
+                      privileged_data, DBSession=None):
         db = DBSession()
         origin_name = 'Template (%s, %s)' % (imputer, estimator)
         origin_name = origin_name.replace('d3m.primitives.', '')
@@ -379,11 +378,6 @@ class BaseBuilder:
                     set_hyperparams(db, pipeline, step_add_type, columns=columns, semantic_types=[semantic_type])
                     connect(db, pipeline, prev_step, step_add_type)
                     prev_step = step_add_type
-                '''step_profiler = make_pipeline_module(db, pipeline, 'd3m.primitives.schema_discovery.profiler.Common')
-                set_hyperparams(db, pipeline, step_profiler, categorical_max_absolute_distinct_values=None, categorical_max_ratio_distinct_values=1)
-                connect(db, pipeline, prev_step, step_profiler)
-                prev_step = step_profiler'''
-
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
@@ -392,7 +386,8 @@ class BaseBuilder:
             step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'extract_columns_by_semantic_types.Common')
             set_hyperparams(db, pipeline, step3,
-                            semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute']
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute'],
+                            exclude_columns=privileged_data
                             )
             connect(db, pipeline, step2, step3)
 

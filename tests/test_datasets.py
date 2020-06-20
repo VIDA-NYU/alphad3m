@@ -36,7 +36,7 @@ def search_pipelines(datasets, time_bound=10, use_template=False):
         pipeline_template = load_template()
 
     for i, dataset in enumerate(datasets):
-        logger.info('Processing dataset "%s" (%d/%d)' % (dataset, i+1, size))
+        #logger.info('Processing dataset "%s" (%d/%d)' % (dataset, i+1, size))
         start_time = datetime.now()
 
         dataset_train_path = join(D3MINPUTDIR, dataset, 'TRAIN/dataset_TRAIN/datasetDoc.json')
@@ -52,10 +52,11 @@ def search_pipelines(datasets, time_bound=10, use_template=False):
             logger.exception('Error parsing problem')
             continue
 
+
         task_keywords = '_'.join([x.name for x in problem['problem']['task_keywords']])
         search_id, pipelines = do_search(core, problem, dataset_train_path, time_bound=time_bound, pipelines_limit=0,
                                          pipeline_template=pipeline_template)
-
+        #print(dataset, problem['problem']['performance_metrics'][0]['metric'].name, task_keywords)
         number_pipelines = len(pipelines)
         result = {'search_id': search_id, 'task': task_keywords, 'search_time': str(datetime.now() - start_time), 'pipelines': number_pipelines,
                   'best_time': 'None', 'best_score': 'None', 'all_scores': []}
@@ -204,6 +205,6 @@ def create_dupms(search_id, top_pipelines):
 
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['185_baseball_MIN_METADATA', '313_spectrometer_MIN_METADATA']# 'uu10_posts_3', 'LL1_MITLL_synthetic_vora_E_2538' '313_spectrometer', '38_sick', '299_libras_move', 'LL1_GS_process_classification_tabular', '27_wordLevels_MIN_METADATA', 'LL1_h1b_visa_apps_7480']
-    search_pipelines(datasets, 1)
+    datasets = ['185_baseball_MIN_METADATA']#, '38_sick_MIN_METADATA']
+    search_pipelines(datasets, 3)
     evaluate_pipelines(datasets)
