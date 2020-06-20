@@ -283,22 +283,22 @@ class BaseBuilder:
             set_hyperparams(db, pipeline, step4,
                             semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
                             )
-            connect(db, pipeline, step1, step4)
+            connect(db, pipeline, prev_step, step4)
 
             if skip_encoding(primitives):
                 encoder_step = step3
             else:
                 encoder_step = encode_features(pipeline, step3, step4, features_metadata['only_attribute_types'], db)
 
-            step = prev_step = encoder_step
+            step = otherprev_step = encoder_step
             preprocessors = primitives[:-1]
             estimator = primitives[-1]
 
             for preprocessor in preprocessors:
                 step = make_pipeline_module(db, pipeline, preprocessor)
                 change_default_hyperparams(db, pipeline, preprocessor, step)
-                connect(db, pipeline, prev_step, step)
-                prev_step = step
+                connect(db, pipeline, otherprev_step, step)
+                otherprev_step = step
 
                 to_module_primitive = index.get_primitive(preprocessor)
                 if 'outputs' in to_module_primitive.metadata.query()['primitive_code']['arguments']:
@@ -315,7 +315,7 @@ class BaseBuilder:
             step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'construct_predictions.Common')
             connect(db, pipeline, step5, step6)
-            connect(db, pipeline, step2, step6, to_input='reference')
+            connect(db, pipeline, prev_step, step6, to_input='reference')
 
             db.add(pipeline)
             db.commit()
@@ -379,6 +379,11 @@ class BaseBuilder:
                     set_hyperparams(db, pipeline, step_add_type, columns=columns, semantic_types=[semantic_type])
                     connect(db, pipeline, prev_step, step_add_type)
                     prev_step = step_add_type
+                '''step_profiler = make_pipeline_module(db, pipeline, 'd3m.primitives.schema_discovery.profiler.Common')
+                set_hyperparams(db, pipeline, step_profiler, categorical_max_absolute_distinct_values=None, categorical_max_ratio_distinct_values=1)
+                connect(db, pipeline, prev_step, step_profiler)
+                prev_step = step_profiler'''
+
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
@@ -396,29 +401,29 @@ class BaseBuilder:
             set_hyperparams(db, pipeline, step4,
                             semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
                             )
-            connect(db, pipeline, step1, step4)
+            connect(db, pipeline, prev_step, step4)
 
             step5 = make_pipeline_module(db, pipeline, imputer)
             set_hyperparams(db, pipeline, step5, strategy='most_frequent')
             connect(db, pipeline, step3, step5)
 
             encoder_step = encode_features(pipeline, step5, step4, features_metadata['only_attribute_types'], db)
-            prev_step = encoder_step
+            other_prev_step = encoder_step
 
             if encoder_step == step5:  # Encoders were not applied, so use one_hot_encoder for all features
                 step_fallback = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.encoder.DSBOX')
                 set_hyperparams(db, pipeline, step_fallback, n_limit=50)
                 connect(db, pipeline, step5, step_fallback)
-                prev_step = step_fallback
+                other_prev_step = step_fallback
 
             step6 = make_pipeline_module(db, pipeline, estimator)
-            connect(db, pipeline, prev_step, step6)
+            connect(db, pipeline, other_prev_step, step6)
             connect(db, pipeline, step4, step6, to_input='outputs')
 
             step7 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'construct_predictions.Common')
             connect(db, pipeline, step6, step7)
-            connect(db, pipeline, step2, step7, to_input='reference')
+            connect(db, pipeline, prev_step, step7, to_input='reference')
 
             db.add(pipeline)
             db.commit()
