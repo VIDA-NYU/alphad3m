@@ -14,7 +14,7 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformFloatH
 
 logger = logging.getLogger(__name__)
 PRIMITIVES = index.search()
-HYPERPARAMETERS_FROM_METALEARNING_PATH = os.path.join(os.path.dirname(__file__), '../../resource/hyperparams_new.json')
+HYPERPARAMETERS_FROM_METALEARNING_PATH = os.path.join(os.path.dirname(__file__), '../../resource/hyperparams.json')
 
 
 def is_tunable(name):

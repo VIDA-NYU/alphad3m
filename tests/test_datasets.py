@@ -204,6 +204,6 @@ def create_dupms(search_id, top_pipelines):
 
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['185_baseball_MIN_METADATA', '313_spectrometer_MIN_METADATA']# 'uu10_posts_3', 'LL1_MITLL_synthetic_vora_E_2538' '313_spectrometer', '38_sick', '299_libras_move', 'LL1_GS_process_classification_tabular', '27_wordLevels_MIN_METADATA', 'LL1_h1b_visa_apps_7480']
-    search_pipelines(datasets, 1)
+    datasets = ['59_LP_karate_MIN_METADATA']# '185_baseball_MIN_METADATA' '313_spectrometer_MIN_METADATA' 'uu10_posts_3', 'LL1_MITLL_synthetic_vora_E_2538' '313_spectrometer', '38_sick', '299_libras_move', 'LL1_GS_process_classification_tabular', '27_wordLevels_MIN_METADATA', 'LL1_h1b_visa_apps_7480']
+    search_pipelines(datasets, 10)
     evaluate_pipelines(datasets)

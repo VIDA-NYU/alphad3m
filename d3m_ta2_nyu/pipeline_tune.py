@@ -11,6 +11,7 @@ from d3m_ta2_nyu.pipeline_score import evaluate, kfold_tabular_split, score
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.parameter_tuning.primitive_config import is_tunable
 from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, get_new_hyperparameters
+from d3m_ta2_nyu.ta2 import create_outputfolders
 from d3m.metadata.problem import TaskKeyword
 
 logger = logging.getLogger(__name__)
@@ -82,7 +83,10 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
 
     # Run tuning, gets best configuration
     tuning = HyperparameterTuning(tunable_primitives.values())
-    best_configuration = tuning.tune(evaluate_tune, wallclock=timeout, output_dir=join('/tmp', str(pipeline_id)))
+    create_outputfolders(join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'tuning'))
+    best_configuration = tuning.tune(evaluate_tune, wallclock=timeout,
+                                     output_dir=join(os.environ.get('D3MOUTPUTDIR'),
+                                                     'temp', 'tuning', str(pipeline_id)))
 
     # Duplicate pipeline in database
     new_pipeline = database.duplicate_pipeline(db, pipeline, 'HyperparameterTuning from pipeline %s' % pipeline_id)
@@ -106,10 +110,8 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
 
     logger.info('Tuning done, generated new pipeline %s', new_pipeline.id)
 
-    # for f in os.listdir('/tmp'):
-    #     if 'run_1' in f:
-    #         shutil.rmtree(os.path.join('/tmp', f))
-    shutil.rmtree(os.path.join('/tmp', str(pipeline_id)))
+    shutil.rmtree(join(os.environ.get('D3MOUTPUTDIR'),'temp', 'tuning', str(pipeline_id)))
+
     score(new_pipeline.id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, do_rank, None,
           db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'db.sqlite3'))
     # TODO: Change this static string path
