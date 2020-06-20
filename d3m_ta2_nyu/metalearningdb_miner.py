@@ -292,9 +292,9 @@ if __name__ == '__main__':
     pipelines_file = '/Users/rlopez/Downloads/metalearningdb_dump_20200304/pipelines-1583354358.json'
     pipeline_runs_file = '/Users/rlopez/Downloads/metalearningdb_dump_20200304/pipeline_runs-1583354387.json'
     problems_file = '/Users/rlopez/Downloads/metalearningdb_dump_20200304/problems-1583354357.json'
-    merge_pipeline_files(pipelines_file, pipeline_runs_file, problems_file)
+    #merge_pipeline_files(pipelines_file, pipeline_runs_file, problems_file)
     #create_grammar_from_metalearningdb(task)
-    #analyze_distribution(load_metalearningdb(task))
+    analyze_distribution(load_metalearningdb(task))
     non_terminals = {x:i+1 for i, x in enumerate(set(load_primitives_by_type().values()))}
     terminals = {x:len(non_terminals)+ i for i, x in enumerate(load_primitives_by_name().keys())}
     terminals['E'] = 0

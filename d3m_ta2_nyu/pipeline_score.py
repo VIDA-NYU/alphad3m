@@ -101,14 +101,14 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
         scores = evaluate(pipeline, kfold_tabular_split, dataset, new_metrics, problem, scoring_config)
         scores = change_name_metric(scores, new_metrics, new_metric=metrics[0]['metric'].name)
 
-    logger.info("Evalution results:\n%s", scores)
+    logger.info("Evaluation results:\n%s", scores)
 
     if len(scores) > 0:  # It's a valid pipeline
         scores_db = add_scores_db(scores, scores_db)
         if do_rank:
-            logger.info("Calculating RANK in search solution for pipeline %s", pipeline_id)
             scores = create_rank_metric(scores, metrics)
             scores_db = add_scores_db(scores, scores_db)
+            logger.info("Evaluation results for RANK metric: \n%s", scores)
 
     # TODO Should we rename CrossValidation table?
     record_db = database.CrossValidation(pipeline_id=pipeline_id, scores=scores_db)  # Store scores

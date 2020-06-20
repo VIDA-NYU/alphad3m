@@ -254,7 +254,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
             nnet.load_checkpoint(config['ARGS'].get('load_folder_file')[0],
                                  config['ARGS'].get('load_folder_file')[1])
 
-    c = Coach(game, nnet, config['ARGS'], config)
+    c = Coach(game, nnet, config['ARGS'])
     c.learn()
 
     sys.exit(0)
