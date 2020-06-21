@@ -3,7 +3,6 @@
         "d3m.primitives.classification.ada_boost.SKlearn": 1,
         "d3m.primitives.classification.bagging.SKlearn": 2,
         "d3m.primitives.classification.bernoulli_naive_bayes.SKlearn": 3,
-        "d3m.primitives.classification.canonical_correlation_forests.UBC": 5,
         "d3m.primitives.classification.cover_tree.Fastlvm": 6,
         "d3m.primitives.classification.decision_tree.SKlearn": 7,
         "d3m.primitives.classification.dummy.SKlearn": 8,
@@ -367,8 +366,7 @@
     },
     "TEXT": {
         "d3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn": 10,
-        "d3m.primitives.data_transformation.encoder.DistilTextEncoder": 11,
-        "d3m.primitives.feature_extraction.nk_sent2vec.Sent2Vec": 12
+        "d3m.primitives.data_transformation.encoder.DistilTextEncoder": 11
     }
 
 }
