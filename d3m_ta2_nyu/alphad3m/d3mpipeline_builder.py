@@ -800,7 +800,6 @@ class LinkPredictionBuilder(BaseBuilder):
                 connect(db, pipeline, input_data, step0, from_output='dataset')
 
                 step1 = make_pipeline_module(db, pipeline, primitives[0])
-                set_hyperparams(db,pipeline, step1, metric='accuracy')
 
                 connect(db, pipeline, step0, step1)
                 connect(db, pipeline, step0, step1, to_input='outputs', from_output='produce_target')
@@ -825,27 +824,22 @@ class GraphMatchingBuilder(BaseBuilder):
                          features_metadata, privileged_data=[], DBSession=None):
         db = DBSession()
         origin_name = '%s (%s)' % (origin, ', '.join([p.replace('d3m.primitives.', '') for p in primitives]))
-        pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
-
         try:
             if len(primitives) == 1:
+                origin_name = 'MtLDB ' + origin_name
+                pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
+
                 input_data = make_data_module(db, pipeline, targets, features)
 
-                step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'load_graphs.DistilGraphLoader')
-                connect(db, pipeline, input_data, step0, from_output='dataset')
-
-                step1 = make_pipeline_module(db, pipeline, primitives[0])
-                set_hyperparams(db, pipeline, step1, metric='accuracy')
-
-                connect(db, pipeline, step0, step1)
-                connect(db, pipeline, step0, step1, to_input='outputs', from_output='produce_target')
+                step0 = make_pipeline_module(db, pipeline, primitives[0])
+                connect(db, pipeline, input_data, step0)
 
                 db.add(pipeline)
                 db.commit()
                 logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
                 return pipeline.id
             else:
+                pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
                 pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, search_results, pipeline_template,
                                                        targets, features, features_metadata, DBSession=DBSession)
                 return pipeline_id

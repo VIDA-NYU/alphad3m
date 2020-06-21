@@ -223,7 +223,6 @@
         "d3m.primitives.graph_clustering.gaussian_clustering.JHU": 214
     },
     "GRAPH_MATCHING": {
-        "d3m.primitives.graph_matching.seeded_graph_matching.DistilSeededGraphMatcher": 215,
         "d3m.primitives.graph_matching.seeded_graph_matching.JHU": 216
     },
     "LAYER": {
@@ -253,9 +252,7 @@
         "d3m.primitives.learner.random_forest.DistilEnsembleForest": 238
     },
     "LINK_PREDICTION": {
-        "d3m.primitives.link_prediction.data_conversion.JHU": 239,
-        "d3m.primitives.link_prediction.link_prediction.DistilLinkPrediction": 240,
-        "d3m.primitives.link_prediction.rank_classification.JHU": 241
+        "d3m.primitives.link_prediction.link_prediction.DistilLinkPrediction": 240
     },
     "LOSS_FUNCTION": {
         "d3m.primitives.loss_function.binary_crossentropy.KerasWrap": 242,
