@@ -5,13 +5,14 @@ import shutil
 import pickle
 from os.path import join
 from d3m import index
+from copy import deepcopy
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from d3m_ta2_nyu.pipeline_score import evaluate, kfold_tabular_split, score
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.parameter_tuning.primitive_config import is_tunable
 from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, get_new_hyperparameters
-from d3m.metadata.problem import TaskKeyword
+from d3m.metadata.problem import PerformanceMetric, TaskKeyword
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,10 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
                       'method': 'K_FOLD',
                       'number_of_folds': '2'}
 
+    metrics_to_use = deepcopy(metrics)
+    if metrics[0]['metric'] == PerformanceMetric.F1:
+        metrics_to_use = [{'metric': PerformanceMetric.F1_MACRO}]
+
     def evaluate_tune(hyperparameter_configuration):
         new_hyperparams = []
         for primitive_id, primitive_name in tunable_primitives.items():
@@ -66,8 +71,8 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
             new_hyperparams.append(db_hyperparams)
 
         pipeline.parameters += new_hyperparams
-        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_config)
-        first_metric = metrics[0]['metric'].name
+        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics_to_use, problem, scoring_config)
+        first_metric = metrics_to_use[0]['metric'].name
         score_values = []
         for fold_scores in scores.values():
             for metric, score_value in fold_scores.items():
@@ -75,7 +80,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
                     score_values.append(score_value)
 
         avg_score = sum(score_values) / len(score_values)
-        cost = 1.0 - metrics[0]['metric'].normalize(avg_score)
+        cost = 1.0 - metrics_to_use[0]['metric'].normalize(avg_score)
         logger.info('Tuning results:\n%s, cost=%s', scores, cost)
 
         return cost

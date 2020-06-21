@@ -2,6 +2,7 @@ import logging
 import os
 import json
 import pkg_resources
+import random
 import d3m.metadata.base
 import d3m.runtime
 from sqlalchemy.orm import joinedload
@@ -159,7 +160,7 @@ def create_rank_metric(scores, metrics):
         scores_tmp[fold] = {}
         for metric, current_score in fold_scores.items():
             if metric == metrics[0]['metric'].name:
-                new_score = 1.0 - metrics[0]['metric'].normalize(current_score)
+                new_score = (1.0 - metrics[0]['metric'].normalize(current_score)) + random.random() * 1.e-12
                 scores_tmp[fold]['RANK'] = new_score
 
     return scores_tmp
