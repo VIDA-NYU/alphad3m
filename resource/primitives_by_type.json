@@ -32,7 +32,6 @@
         "d3m.primitives.classification.sgd.SKlearn": 36,
         "d3m.primitives.classification.simple_cnaps.UBC": 37,
         "d3m.primitives.classification.svc.SKlearn": 38,
-        "d3m.primitives.classification.xgboost_dart.Common": 42,
         "d3m.primitives.classification.xgboost_gbtree.Common": 43
     },
     "DATA_PREPROCESSING": {
