@@ -156,6 +156,7 @@ def get_hyperparameters_from_metalearnig():
 
 
 def get_configspace_from_metalearning(metalearning_entry):
+    print('primitive entry', metalearning_entry)
     cs = ConfigurationSpace()
     categorical_hyperparams = [
         CategoricalHyperparameter(
