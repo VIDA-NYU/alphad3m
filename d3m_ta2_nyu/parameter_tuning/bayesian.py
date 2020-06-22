@@ -8,7 +8,7 @@ from smac.scenario.scenario import Scenario
 from d3m_ta2_nyu.parameter_tuning.primitive_config import load_primitive_configspace, load_hyperparameters
 
 
-MAX_RUNS = 200
+MAX_RUNS = 100
 logger = logging.getLogger(__name__)
 
 

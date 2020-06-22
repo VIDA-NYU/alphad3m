@@ -724,6 +724,8 @@ class TimeseriesClassificationBuilder(BaseBuilder):
                 connect(db, pipeline, step1, step4)
 
                 step5 = make_pipeline_module(db, pipeline, primitives[0])
+                if primitives[0] == 'd3m.primitives.time_series_classification.convolutional_neural_net.LSTM_FCN':
+                    set_hyperparams(db, pipeline, step5, epochs=5)
                 connect(db, pipeline, step1, step5)
                 connect(db, pipeline, step4, step5, to_input='outputs')
 
