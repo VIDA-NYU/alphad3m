@@ -83,8 +83,8 @@ def list_primitives():
     return all_primitives
 
 
-def generate_by_templates(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets, features,
-                          features_metadata, timeout, msg_queue, DBSession):
+def generate_by_templates(task_keywords, dataset, search_results, pipeline_template, targets, features,
+                          features_metadata, privileged_data, msg_queue, DBSession):
     task_keywords = set(task_keywords)
 
     if task_keywords & {TaskKeyword.GRAPH_MATCHING, TaskKeyword.LINK_PREDICTION, TaskKeyword.VERTEX_NOMINATION,
@@ -108,7 +108,7 @@ def generate_by_templates(task_keywords, dataset, search_results, pipeline_templ
     templates = BaseBuilder.TEMPLATES.get(template_name, [])
     for imputer, classifier in templates:
         pipeline_id = BaseBuilder.make_template(imputer, classifier, dataset, pipeline_template, targets, features,
-                                                features_metadata, DBSession=DBSession)
+                                                features_metadata, privileged_data, DBSession=DBSession)
         send(msg_queue, pipeline_id)
 
     # Augmentation
@@ -140,6 +140,15 @@ def denormalize_dataset(dataset, targets, features, DBSession):
     return new_path
 
 
+def get_privileged_data(problem, task_keywords):
+    privileged_data = []
+    if TaskKeyword.LUPI in task_keywords and 'privileged_data' in problem['inputs'][0]:
+        for column in problem['inputs'][0]['privileged_data']:
+            privileged_data.append(column['column_index'])
+
+    return privileged_data
+
+
 @database.with_sessionmaker
 def generate(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout,
              msg_queue, DBSession):
@@ -150,10 +159,11 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     target_names = [x[1] for x in targets]
     csv_path = denormalize_dataset(dataset, targets, features, DBSession)
     features_metadata = profile_data(csv_path, target_names, dataset_doc)
+    privileged_data = get_privileged_data(problem, task_keywords)
 
     if os.environ.get('SKIPTEMPLATES', 'not') == 'not':
-        generate_by_templates(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets,
-                              features, features_metadata, timeout, msg_queue, DBSession)
+        generate_by_templates(task_keywords, dataset, search_results, pipeline_template, targets,
+                              features, features_metadata, privileged_data, msg_queue, DBSession)
 
     if 'TA2_DEBUG_BE_FAST' in os.environ:
         sys.exit(0)
@@ -164,7 +174,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
         pipeline_id = builder.make_d3mpipeline(strings, origin, dataset, search_results, pipeline_template, targets,
-                                               features, features_metadata, DBSession=DBSession)
+                                               features, features_metadata, privileged_data, DBSession=DBSession)
         # Evaluate the pipeline if syntax is correct:
         if pipeline_id:
             msg_queue.send(('eval', pipeline_id))
@@ -202,9 +212,6 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     elif TaskKeyword.VERTEX_CLASSIFICATION in task_keywords or TaskKeyword.VERTEX_NOMINATION in task_keywords:
         task_name = 'VERTEX_CLASSIFICATION'
         builder = VertexClassificationBuilder()
-    elif TaskKeyword.LUPI in task_keywords:
-        task_name = 'LUPI'
-        builder = LupiBuilder()
     elif TaskKeyword.TEXT in task_keywords and (
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'TEXT_' + task_name

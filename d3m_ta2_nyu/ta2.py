@@ -1107,7 +1107,7 @@ class D3mTa2(Observable):
         logger.info('About to sample dataset %s', dataset_uri)
         task_keywords = problem['problem']['task_keywords']
 
-        if any(tk in [TaskKeyword.OBJECT_DETECTION, TaskKeyword.FORECASTING] for tk in task_keywords):
+        if any(tk in [TaskKeyword.OBJECT_DETECTION, TaskKeyword.FORECASTING, TaskKeyword.IMAGE] for tk in task_keywords):
             logger.info('Not doing sampling for task %s', '_'.join([x.name for x in task_keywords]))
             return None
 

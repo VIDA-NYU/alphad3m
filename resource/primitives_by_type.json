@@ -3,24 +3,19 @@
         "d3m.primitives.classification.ada_boost.SKlearn": 1,
         "d3m.primitives.classification.bagging.SKlearn": 2,
         "d3m.primitives.classification.bernoulli_naive_bayes.SKlearn": 3,
-        "d3m.primitives.classification.bert_classifier.DistilBertPairClassification": 4,
-        "d3m.primitives.classification.canonical_correlation_forests.UBC": 5,
         "d3m.primitives.classification.cover_tree.Fastlvm": 6,
         "d3m.primitives.classification.decision_tree.SKlearn": 7,
         "d3m.primitives.classification.dummy.SKlearn": 8,
         "d3m.primitives.classification.extra_trees.SKlearn": 10,
-        "d3m.primitives.classification.gaussian_classification.JHU": 11,
         "d3m.primitives.classification.gaussian_naive_bayes.SKlearn": 12,
         "d3m.primitives.classification.general_relational_dataset.GeneralRelationalDataset": 13,
         "d3m.primitives.classification.global_causal_discovery.RPI": 14,
         "d3m.primitives.classification.gradient_boosting.SKlearn": 15,
-        "d3m.primitives.classification.inceptionV3_image_feature.Gator": 16,
         "d3m.primitives.classification.k_neighbors.SKlearn": 17,
         "d3m.primitives.classification.light_gbm.Common": 18,
         "d3m.primitives.classification.linear_discriminant_analysis.SKlearn": 19,
         "d3m.primitives.classification.linear_svc.SKlearn": 20,
         "d3m.primitives.classification.logistic_regression.SKlearn": 21,
-        "d3m.primitives.classification.logistic_regression.UBC": 22,
         "d3m.primitives.classification.lstm.DSBOX": 23,
         "d3m.primitives.classification.mlp.BBNMLPClassifier": 24,
         "d3m.primitives.classification.mlp.SKlearn": 25,
@@ -37,27 +32,18 @@
         "d3m.primitives.classification.sgd.SKlearn": 36,
         "d3m.primitives.classification.simple_cnaps.UBC": 37,
         "d3m.primitives.classification.svc.SKlearn": 38,
-        "d3m.primitives.classification.text_classifier.DistilTextClassifier": 39,
-        "d3m.primitives.classification.tree_augmented_naive_bayes.BayesianInfRPI": 40,
-        "d3m.primitives.classification.xgboost_dart.Common": 42,
         "d3m.primitives.classification.xgboost_gbtree.Common": 43
     },
     "DATA_PREPROCESSING": {
         "d3m.primitives.classification.ensemble_voting.DSBOX": 9,
-        "d3m.primitives.data_preprocessing.audio_reader.AudioReader": 66,
-        "d3m.primitives.data_preprocessing.audio_reader.DistilAudioDatasetLoader": 67,
         "d3m.primitives.data_preprocessing.binarizer.SKlearn": 68,
         "d3m.primitives.data_preprocessing.channel_averager.ChannelAverager": 69,
         "d3m.primitives.data_preprocessing.count_vectorizer.SKlearn": 70,
-        "d3m.primitives.data_preprocessing.csv_reader.CSVReader": 71,
-        "d3m.primitives.data_preprocessing.datetime_range_filter.Common": 72,
         "d3m.primitives.data_preprocessing.encoder.DSBOX": 73,
         "d3m.primitives.data_preprocessing.feature_agglomeration.SKlearn": 74,
         "d3m.primitives.data_preprocessing.greedy_imputation.DSBOX": 75,
         "d3m.primitives.data_preprocessing.iterative_regression_imputation.DSBOX": 76,
-        "d3m.primitives.data_preprocessing.label_decoder.Common": 77,
         "d3m.primitives.data_preprocessing.label_encoder.Common": 78,
-        "d3m.primitives.data_preprocessing.largest_connected_component.JHU": 79,
         "d3m.primitives.data_preprocessing.max_abs_scaler.SKlearn": 80,
         "d3m.primitives.data_preprocessing.mean_imputation.DSBOX": 81,
         "d3m.primitives.data_preprocessing.min_max_scaler.SKlearn": 82,
@@ -68,16 +54,10 @@
         "d3m.primitives.data_preprocessing.one_hot_encoder.PandasCommon": 87,
         "d3m.primitives.data_preprocessing.polynomial_features.SKlearn": 88,
         "d3m.primitives.data_preprocessing.quantile_transformer.SKlearn": 89,
-        "d3m.primitives.data_preprocessing.random_sampling_imputer.BYU": 90,
         "d3m.primitives.data_preprocessing.random_trees_embedding.SKlearn": 91,
-        "d3m.primitives.data_preprocessing.rbf_sampler.SKlearn": 92,
-        "d3m.primitives.data_preprocessing.regex_filter.Common": 93,
         "d3m.primitives.data_preprocessing.robust_scaler.SKlearn": 94,
-        "d3m.primitives.data_preprocessing.satellite_image_loader.DistilSatelliteImageLoader": 95,
-        "d3m.primitives.data_preprocessing.signal_dither.SignalDither": 96,
         "d3m.primitives.data_preprocessing.splitter.DSBOX": 97,
         "d3m.primitives.data_preprocessing.standard_scaler.SKlearn": 98,
-        "d3m.primitives.data_preprocessing.targets_reader.TargetsReader": 99,
         "d3m.primitives.data_preprocessing.term_filter.Common": 100,
         "d3m.primitives.data_preprocessing.unary_encoder.DSBOX": 101,
         "d3m.primitives.feature_selection.mutual_info_classif.DistilMIRanking": 206
@@ -106,15 +86,7 @@
         "d3m.primitives.data_augmentation.datamart_download.Common": 55
     },
     "DATA_CLEANING": {
-        "d3m.primitives.data_cleaning.clean_augmentation.AutonBox": 56,
-        "d3m.primitives.data_cleaning.cleaning_featurizer.DSBOX": 57,
-        "d3m.primitives.data_cleaning.column_type_profiler.Simon": 58,
-        "d3m.primitives.data_cleaning.data_cleaning.Datacleaning": 59,
-        "d3m.primitives.data_cleaning.imputer.SKlearn": 60,
-        "d3m.primitives.data_cleaning.label_encoder.DSBOX": 61,
-        "d3m.primitives.data_cleaning.missing_indicator.SKlearn": 62,
-        "d3m.primitives.data_cleaning.string_imputer.SKlearn": 63,
-        "d3m.primitives.data_cleaning.tabular_extractor.Common": 64
+        "d3m.primitives.data_cleaning.imputer.SKlearn": 60
     },
     "DATA_GENERATION": {
         "d3m.primitives.data_generation.random.Test": 65
@@ -250,7 +222,6 @@
         "d3m.primitives.graph_clustering.gaussian_clustering.JHU": 214
     },
     "GRAPH_MATCHING": {
-        "d3m.primitives.graph_matching.seeded_graph_matching.DistilSeededGraphMatcher": 215,
         "d3m.primitives.graph_matching.seeded_graph_matching.JHU": 216
     },
     "LAYER": {
@@ -280,9 +251,7 @@
         "d3m.primitives.learner.random_forest.DistilEnsembleForest": 238
     },
     "LINK_PREDICTION": {
-        "d3m.primitives.link_prediction.data_conversion.JHU": 239,
-        "d3m.primitives.link_prediction.link_prediction.DistilLinkPrediction": 240,
-        "d3m.primitives.link_prediction.rank_classification.JHU": 241
+        "d3m.primitives.link_prediction.link_prediction.DistilLinkPrediction": 240
     },
     "LOSS_FUNCTION": {
         "d3m.primitives.loss_function.binary_crossentropy.KerasWrap": 242,
@@ -390,5 +359,10 @@
     },
     "VERTEX_NOMINATION": {
         "d3m.primitives.vertex_nomination.vertex_nomination.DistilVertexNomination": 320
+    },
+    "TEXT": {
+        "d3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn": 10,
+        "d3m.primitives.data_transformation.encoder.DistilTextEncoder": 11
     }
+
 }
