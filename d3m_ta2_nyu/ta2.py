@@ -1112,7 +1112,7 @@ class D3mTa2(Observable):
             return None
 
         dataset = Dataset.load(dataset_uri)
-        dataset_sample_folder = 'file://%s/ta2/dataset_sample/' % os.environ.get('D3MOUTPUTDIR')
+        dataset_sample_folder = 'file://%s/temp/dataset_sample/' % os.environ.get('D3MOUTPUTDIR')
         dataset_sample_uri = None
 
         if os.path.exists(dataset_sample_folder[6:]):
