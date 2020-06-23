@@ -1,9 +1,9 @@
 {
-  "id": "5083b0fa-ac78-4482-841b-783a06444343",
-  "name": "5083b0fa-ac78-4482-841b-783a06444343",
-  "description": "AlphaZero eval",
+  "id": "a03745d4-12c9-43e0-9b7a-aef9ca811805",
+  "name": "a03745d4-12c9-43e0-9b7a-aef9ca811805",
+  "description": "AlphaZero (data_preprocessing.time_series_to_list.DSBOX, feature_extraction.random_projection_timeseries_featurization.DSBOX, classification.search.Find_projections)",
   "schema": "https://metadata.datadrivendiscovery.org/schemas/v0/pipeline.json",
-  "created": "2019-10-16T18:11:59Z",
+  "created": "2020-06-22T02:17:29Z",
   "context": "TESTING",
   "inputs": [
     {
@@ -12,7 +12,7 @@
   ],
   "outputs": [
     {
-      "data": "steps.7.produce",
+      "data": "steps.12.produce",
       "name": "predictions"
     }
   ],
@@ -24,7 +24,7 @@
         "version": "0.2.0",
         "name": "Denormalize datasets",
         "python_path": "d3m.primitives.data_transformation.denormalize.Common",
-        "digest": "6a80776d244347f0d29f4358df1cd0286c25f67e03a7e2ee517c6e853e6a9d1f"
+        "digest": "5ec2ce5eeaaada3fad7735605b8d481a8b101d4d3d8cff87fc619ade414901e7"
       },
       "arguments": {
         "inputs": {
@@ -45,7 +45,7 @@
         "version": "0.3.0",
         "name": "Extract a DataFrame from a Dataset",
         "python_path": "d3m.primitives.data_transformation.dataset_to_dataframe.Common",
-        "digest": "a141e6821de7ae586968b0986237745a5510850e6940cf946db9d50d3828b030"
+        "digest": "f64a23466b0e4490b5fdef630a5d1ecb5cfd9bbd0c34c8ccb3dbd557b4d5a918"
       },
       "arguments": {
         "inputs": {
@@ -62,11 +62,11 @@
     {
       "type": "PRIMITIVE",
       "primitive": {
-        "id": "d510cb7a-1782-4f51-b44c-58f0236e47c7",
-        "version": "0.5.0",
-        "name": "Parses strings into their types",
-        "python_path": "d3m.primitives.data_transformation.column_parser.DataFrameCommon",
-        "digest": "d95eb0ea8a5e6f9abc0965a97e9c4f5d8f74a3df591c11c4145faea3e581cd06"
+        "id": "d7e14b12-abeb-42d8-942f-bdb077b4fd37",
+        "version": "0.1.0",
+        "name": "Add semantic types to columns",
+        "python_path": "d3m.primitives.data_transformation.add_semantic_types.Common",
+        "digest": "8842e297ebc0ef388d8377ab8eb89adba3b0fbdffd49ec995a876ebbc216b0a7"
       },
       "arguments": {
         "inputs": {
@@ -78,16 +78,30 @@
         {
           "id": "produce"
         }
-      ]
+      ],
+      "hyperparams": {
+        "columns": {
+          "type": "VALUE",
+          "data": [
+            1
+          ]
+        },
+        "semantic_types": {
+          "type": "VALUE",
+          "data": [
+            "https://metadata.datadrivendiscovery.org/types/Attribute"
+          ]
+        }
+      }
     },
     {
       "type": "PRIMITIVE",
       "primitive": {
-        "id": "4503a4c6-42f7-45a1-a1d4-ed69699cf5e1",
-        "version": "0.3.0",
-        "name": "Extracts columns by semantic type",
-        "python_path": "d3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon",
-        "digest": "2dda31ef0452060bc55070204c5328927e2b2537a03afa6333607e3e4828ab26"
+        "id": "d7e14b12-abeb-42d8-942f-bdb077b4fd37",
+        "version": "0.1.0",
+        "name": "Add semantic types to columns",
+        "python_path": "d3m.primitives.data_transformation.add_semantic_types.Common",
+        "digest": "8842e297ebc0ef388d8377ab8eb89adba3b0fbdffd49ec995a876ebbc216b0a7"
       },
       "arguments": {
         "inputs": {
@@ -101,10 +115,16 @@
         }
       ],
       "hyperparams": {
+        "columns": {
+          "type": "VALUE",
+          "data": [
+            1
+          ]
+        },
         "semantic_types": {
           "type": "VALUE",
           "data": [
-            "https://metadata.datadrivendiscovery.org/types/Attribute"
+            "http://schema.org/Text"
           ]
         }
       }
@@ -112,11 +132,11 @@
     {
       "type": "PRIMITIVE",
       "primitive": {
-        "name": "sklearn.preprocessing.data.OneHotEncoder",
-        "python_path": "d3m.primitives.data_transformation.one_hot_encoder.SKlearn",
-        "version": "2019.6.7",
-        "id": "c977e879-1bf5-3829-b5b0-39b00233aff5",
-        "digest": "24da929ef41fa43ca4a50c1b99d97733cb2b0bebb33ab8f82ebdc16cf7675524"
+        "id": "d7e14b12-abeb-42d8-942f-bdb077b4fd37",
+        "version": "0.1.0",
+        "name": "Add semantic types to columns",
+        "python_path": "d3m.primitives.data_transformation.add_semantic_types.Common",
+        "digest": "8842e297ebc0ef388d8377ab8eb89adba3b0fbdffd49ec995a876ebbc216b0a7"
       },
       "arguments": {
         "inputs": {
@@ -130,9 +150,52 @@
         }
       ],
       "hyperparams": {
-        "handle_unknown": {
+        "columns": {
           "type": "VALUE",
-          "data": "ignore"
+          "data": [
+            2
+          ]
+        },
+        "semantic_types": {
+          "type": "VALUE",
+          "data": [
+            "http://schema.org/Integer"
+          ]
+        }
+      }
+    },
+    {
+      "type": "PRIMITIVE",
+      "primitive": {
+        "id": "d7e14b12-abeb-42d8-942f-bdb077b4fd37",
+        "version": "0.1.0",
+        "name": "Add semantic types to columns",
+        "python_path": "d3m.primitives.data_transformation.add_semantic_types.Common",
+        "digest": "8842e297ebc0ef388d8377ab8eb89adba3b0fbdffd49ec995a876ebbc216b0a7"
+      },
+      "arguments": {
+        "inputs": {
+          "type": "CONTAINER",
+          "data": "steps.4.produce"
+        }
+      },
+      "outputs": [
+        {
+          "id": "produce"
+        }
+      ],
+      "hyperparams": {
+        "columns": {
+          "type": "VALUE",
+          "data": [
+            2
+          ]
+        },
+        "semantic_types": {
+          "type": "VALUE",
+          "data": [
+            "https://metadata.datadrivendiscovery.org/types/TrueTarget"
+          ]
         }
       }
     },
@@ -140,15 +203,15 @@
       "type": "PRIMITIVE",
       "primitive": {
         "id": "4503a4c6-42f7-45a1-a1d4-ed69699cf5e1",
-        "version": "0.3.0",
+        "version": "0.4.0",
         "name": "Extracts columns by semantic type",
-        "python_path": "d3m.primitives.data_transformation.extract_columns_by_semantic_types.DataFrameCommon",
-        "digest": "2dda31ef0452060bc55070204c5328927e2b2537a03afa6333607e3e4828ab26"
+        "python_path": "d3m.primitives.data_transformation.extract_columns_by_semantic_types.Common",
+        "digest": "cf44b2f5af90f10ef9935496655a202bfc8a4a0fa24b8e9d733ee61f096bda87"
       },
       "arguments": {
         "inputs": {
           "type": "CONTAINER",
-          "data": "steps.2.produce"
+          "data": "steps.5.produce"
         }
       },
       "outputs": [
@@ -168,20 +231,117 @@
     {
       "type": "PRIMITIVE",
       "primitive": {
-        "name": "sklearn.ensemble.forest.RandomForestRegressor",
-        "python_path": "d3m.primitives.regression.random_forest.SKlearn",
-        "version": "2019.6.7",
-        "id": "f0fd7a62-09b5-3abc-93bb-f5f999f7cc80",
-        "digest": "3c3999474f76c67c6a30eed8b9a2cdb450e232ae99369ee31cff75cb5044eb11"
+        "id": "d510cb7a-1782-4f51-b44c-58f0236e47c7",
+        "version": "0.6.0",
+        "name": "Parses strings into their types",
+        "python_path": "d3m.primitives.data_transformation.column_parser.Common",
+        "digest": "70ea3dd0b6a98696dc416a20400dcad3809fe06e360edfe534325036d688af7c"
       },
       "arguments": {
         "inputs": {
           "type": "CONTAINER",
-          "data": "steps.4.produce"
+          "data": "steps.5.produce"
+        }
+      },
+      "outputs": [
+        {
+          "id": "produce"
+        }
+      ]
+    },
+    {
+      "type": "PRIMITIVE",
+      "primitive": {
+        "id": "4503a4c6-42f7-45a1-a1d4-ed69699cf5e1",
+        "version": "0.4.0",
+        "name": "Extracts columns by semantic type",
+        "python_path": "d3m.primitives.data_transformation.extract_columns_by_semantic_types.Common",
+        "digest": "cf44b2f5af90f10ef9935496655a202bfc8a4a0fa24b8e9d733ee61f096bda87"
+      },
+      "arguments": {
+        "inputs": {
+          "type": "CONTAINER",
+          "data": "steps.7.produce"
+        }
+      },
+      "outputs": [
+        {
+          "id": "produce"
+        }
+      ],
+      "hyperparams": {
+        "semantic_types": {
+          "type": "VALUE",
+          "data": [
+            "https://metadata.datadrivendiscovery.org/types/Attribute",
+            "https://metadata.datadrivendiscovery.org/types/PrimaryKey"
+          ]
+        },
+        "exclude_columns": {
+          "type": "VALUE",
+          "data": []
+        }
+      }
+    },
+    {
+      "type": "PRIMITIVE",
+      "primitive": {
+        "id": "dsbox-featurizer-timeseries-to-dataframe",
+        "version": "1.5.3",
+        "name": "DSBox Timeseries Featurizer dataframe to List Transformer",
+        "python_path": "d3m.primitives.data_preprocessing.time_series_to_list.DSBOX",
+        "digest": "96efd24d6fe8c1a26f0840e70884f27355516adb119fafde1940a8ced485a563"
+      },
+      "arguments": {
+        "inputs": {
+          "type": "CONTAINER",
+          "data": "steps.8.produce"
+        }
+      },
+      "outputs": [
+        {
+          "id": "produce"
+        }
+      ]
+    },
+    {
+      "type": "PRIMITIVE",
+      "primitive": {
+        "id": "dsbox.timeseries_featurization.random_projection",
+        "version": "1.5.3",
+        "name": "DSBox random projection timeseries featurization ",
+        "python_path": "d3m.primitives.feature_extraction.random_projection_timeseries_featurization.DSBOX",
+        "digest": "408e114cb5e3297c182919ebb004b3c7fe7e3fe2cb219276c6de03421ce8464c"
+      },
+      "arguments": {
+        "inputs": {
+          "type": "CONTAINER",
+          "data": "steps.9.produce"
+        }
+      },
+      "outputs": [
+        {
+          "id": "produce"
+        }
+      ]
+    },
+    {
+      "type": "PRIMITIVE",
+      "primitive": {
+        "digest": "3a425bf05b7fd450f7942426f19cef07becc5437ae52f30e6153f09abc2f6937",
+        "id": "a323b46a-6c15-373e-91b4-20efbd65402f",
+        "name": "sklearn.discriminant_analysis.LinearDiscriminantAnalysis",
+        "python_path": "d3m.primitives.classification.linear_discriminant_analysis.SKlearn",
+        "version": "2020.6.10"
+      },
+      "arguments": {
+        "inputs": {
+          "type": "CONTAINER",
+          "data": "steps.10.produce"
         },
         "outputs": {
           "type": "CONTAINER",
-          "data": "steps.5.produce"
+          "data": "steps.6.produce"
         }
       },
       "outputs": [
@@ -196,17 +356,17 @@
         "id": "8d38b340-f83f-4877-baaa-162f8e551736",
         "version": "0.3.0",
         "name": "Construct pipeline predictions output",
-        "python_path": "d3m.primitives.data_transformation.construct_predictions.DataFrameCommon",
-        "digest": "96382129c2d9e87a2c0ab0b477b410947e5644d4dfae24e905d16a72d32dc41b"
+        "python_path": "d3m.primitives.data_transformation.construct_predictions.Common",
+        "digest": "77da1bc7ef57cf3bf6c0d72a8917fb5d337fd05b151a20b31836ddd0c041824b"
       },
       "arguments": {
         "inputs": {
           "type": "CONTAINER",
-          "data": "steps.6.produce"
+          "data": "steps.11.produce"
         },
         "reference": {
           "type": "CONTAINER",
-          "data": "steps.2.produce"
+          "data": "steps.5.produce"
         }
       },
       "outputs": [

@@ -34,9 +34,9 @@ def main_search():
                 os.environ['D3MOUTPUTDIR'], os.environ.get('D3MTIMEOUT'))
 
     ta2 = D3mTa2(output_folder)
-    ta2.run_search(dataset='/input/dataset_TRAIN/datasetDoc.json',
-                   problem_path='/input/problem_TRAIN',
-                   timeout=timeout)
+    dataset = '/input/TRAIN/dataset_TRAIN/datasetDoc.json'
+    problem_path = '/input/TRAIN/problem_TRAIN/problemDoc.json'
+    ta2.run_search(dataset, problem_path=problem_path, timeout=timeout)
 
 
 def main_serve():

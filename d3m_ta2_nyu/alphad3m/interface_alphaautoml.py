@@ -3,6 +3,7 @@ import os
 import sys
 import operator
 import logging
+import json
 
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
@@ -60,9 +61,9 @@ config = {
         'arenaCompare': 40,
         'cpuct': 1,
 
-        'checkpoint': join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'nn_models'),
+        'checkpoint': join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'nn_models'),
         'load_model': False,
-        'load_folder_file': (join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'nn_models'), 'best.pth.tar'),
+        'load_folder_file': (join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'nn_models'), 'best.pth.tar'),
         'metafeatures_path': '/d3m/data/metafeatures',
         'verbose': True
     }
@@ -82,8 +83,8 @@ def list_primitives():
     return all_primitives
 
 
-def generate_by_templates(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets, features,
-                          all_types, inferred_types, timeout, msg_queue, DBSession):
+def generate_by_templates(task_keywords, dataset, search_results, pipeline_template, targets, features,
+                          features_metadata, privileged_data, msg_queue, DBSession):
     task_keywords = set(task_keywords)
 
     if task_keywords & {TaskKeyword.GRAPH_MATCHING, TaskKeyword.LINK_PREDICTION, TaskKeyword.VERTEX_NOMINATION,
@@ -107,7 +108,7 @@ def generate_by_templates(task_keywords, dataset, search_results, pipeline_templ
     templates = BaseBuilder.TEMPLATES.get(template_name, [])
     for imputer, classifier in templates:
         pipeline_id = BaseBuilder.make_template(imputer, classifier, dataset, pipeline_template, targets, features,
-                                                all_types, inferred_types, DBSession=DBSession)
+                                                features_metadata, privileged_data, DBSession=DBSession)
         send(msg_queue, pipeline_id)
 
     # Augmentation
@@ -116,7 +117,7 @@ def generate_by_templates(task_keywords, dataset, search_results, pipeline_templ
             templates = BaseBuilder.TEMPLATES_AUGMENTATION.get(template_name, [])
             for datamart, imputer, classifier in templates:
                 pipeline_id = BaseBuilder.make_template_augment(datamart, imputer, classifier, dataset,
-                                                                pipeline_template, targets, features, all_types,
+                                                                pipeline_template, targets, features, features_metadata,
                                                                 search_result, DBSession=DBSession)
                 send(msg_queue, pipeline_id)
 
@@ -127,16 +128,25 @@ def send(msg_queue, pipeline_id):
 
 
 def denormalize_dataset(dataset, targets, features, DBSession):
-    new_path = join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'denormalized_dataset.csv')
+    new_path = join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'denormalized_dataset.csv')
     pipeline_id = BaseBuilder.make_denormalize_pipeline(dataset, targets, features, DBSession=DBSession)
     try:
         execute(pipeline_id, dataset, None, new_path, None,
-                db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'db.sqlite3'))  # TODO: Change this static path
+                db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'db.sqlite3'))  # TODO: Change this static path
     except:
         new_path = os.path.dirname(dataset[7:]) + '/tables/learningData.csv'
         logger.exception('Error denormalizing dataset, using only learningData.csv file')
 
     return new_path
+
+
+def get_privileged_data(problem, task_keywords):
+    privileged_data = []
+    if TaskKeyword.LUPI in task_keywords and 'privileged_data' in problem['inputs'][0]:
+        for column in problem['inputs'][0]['privileged_data']:
+            privileged_data.append(column['column_index'])
+
+    return privileged_data
 
 
 @database.with_sessionmaker
@@ -146,14 +156,14 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     with open(dataset[7:]) as fin:
         dataset_doc = json.load(fin)
 
-    index_name = 'd3mIndex'
     target_names = [x[1] for x in targets]
     csv_path = denormalize_dataset(dataset, targets, features, DBSession)
-    inferred_types, all_types = profile_data(csv_path, index_name, target_names, dataset_doc)
+    features_metadata = profile_data(csv_path, target_names, dataset_doc)
+    privileged_data = get_privileged_data(problem, task_keywords)
 
     if os.environ.get('SKIPTEMPLATES', 'not') == 'not':
-        generate_by_templates(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets,
-                              features, all_types, inferred_types, timeout, msg_queue, DBSession)
+        generate_by_templates(task_keywords, dataset, search_results, pipeline_template, targets,
+                              features, features_metadata, privileged_data, msg_queue, DBSession)
 
     if 'TA2_DEBUG_BE_FAST' in os.environ:
         sys.exit(0)
@@ -164,7 +174,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     def eval_pipeline(strings, origin):
         # Create the pipeline in the database
         pipeline_id = builder.make_d3mpipeline(strings, origin, dataset, search_results, pipeline_template, targets,
-                                               features, all_types, inferred_types, DBSession=DBSession)
+                                               features, features_metadata, privileged_data, DBSession=DBSession)
         # Evaluate the pipeline if syntax is correct:
         if pipeline_id:
             msg_queue.send(('eval', pipeline_id))
@@ -195,16 +205,13 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         builder = GraphMatchingBuilder()
     elif TaskKeyword.FORECASTING in task_keywords:
         task_name = 'TIME_SERIES_FORECASTING'
-        builder = TimeseriesForecastingBuilder()
+        builder = BaseBuilder()
     elif TaskKeyword.TIME_SERIES in task_keywords and TaskKeyword.CLASSIFICATION in task_keywords:
         task_name = 'TIME_SERIES_CLASSIFICATION'
         builder = TimeseriesClassificationBuilder()
     elif TaskKeyword.VERTEX_CLASSIFICATION in task_keywords or TaskKeyword.VERTEX_NOMINATION in task_keywords:
         task_name = 'VERTEX_CLASSIFICATION'
         builder = VertexClassificationBuilder()
-    elif TaskKeyword.LUPI in task_keywords:
-        task_name = 'LUPI'
-        builder = LupiBuilder()
     elif TaskKeyword.TEXT in task_keywords and (
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'TEXT_' + task_name
@@ -230,9 +237,9 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         config['PROBLEM'] = task_name
         config['DATA_TYPE'] = 'TABULAR'
         config['METRIC'] = metrics[0]['metric'].name
-        config['DATASET_METAFEATURES'] = metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
+        config['DATASET_METAFEATURES'] = [0] * 50 #metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
         config['DATASET'] = dataset_doc['about']['datasetID']
-        config['ARGS']['stepsfile'] = join(os.environ.get('D3MOUTPUTDIR'), 'ta2', config['DATASET'] + '_pipeline_steps.txt')
+        config['ARGS']['stepsfile'] = join(os.environ.get('D3MOUTPUTDIR'), 'temp', config['DATASET'] + '_pipeline_steps.txt')
 
         return config
 

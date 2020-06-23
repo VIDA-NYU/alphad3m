@@ -3,16 +3,17 @@ import os
 import sys
 import shutil
 import pickle
-import d3m_ta2_nyu.grpc_api.core_pb2 as pb_core
+from os.path import join
 from d3m import index
+from copy import deepcopy
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from d3m_ta2_nyu.pipeline_score import evaluate, kfold_tabular_split, score
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.parameter_tuning.primitive_config import is_tunable
-from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, hyperparams_from_config
-from d3m.metadata.problem import TaskKeyword
-
+from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, get_new_hyperparameters
+from d3m.metadata.problem import PerformanceMetric, TaskKeyword
+from d3m_ta2_nyu.ta2 import create_outputfolders
 
 logger = logging.getLogger(__name__)
 
@@ -41,71 +42,83 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
         logger.info('No primitives to be tuned for pipeline %s', pipeline_id)
         sys.exit(1)
 
-    logger.info('Tuning primitives %s', ', '.join(tunable_primitives.values()))
+    logger.info('Tuning primitives: %s', ', '.join(tunable_primitives.values()))
 
     if sample_dataset_uri:
         dataset = Dataset.load(sample_dataset_uri)
     else:
         dataset = Dataset.load(dataset_uri)
-    tuning = HyperparameterTuning(tunable_primitives.values())
-    task_keywords = problem['problem']['task_keywords']
 
+    task_keywords = problem['problem']['task_keywords']
     scoring_config = {'shuffle': 'true',
                       'stratified': 'true' if TaskKeyword.CLASSIFICATION in task_keywords else 'false',
-                      'method': pb_core.EvaluationMethod.Value('K_FOLD'),
+                      'method': 'K_FOLD',
                       'number_of_folds': '2'}
 
+    metrics_to_use = deepcopy(metrics)
+    if metrics[0]['metric'] == PerformanceMetric.F1:
+        metrics_to_use = [{'metric': PerformanceMetric.F1_MACRO}]
+
     def evaluate_tune(hyperparameter_configuration):
+        new_hyperparams = []
         for primitive_id, primitive_name in tunable_primitives.items():
-            hy = hyperparams_from_config(primitive_name, hyperparameter_configuration)
-            db.add(database.PipelineParameter(
+            hy = get_new_hyperparameters(primitive_name, hyperparameter_configuration)
+            db_hyperparams = database.PipelineParameter(
                 pipeline=pipeline,
                 module_id=primitive_id,
                 name='hyperparams',
                 value=pickle.dumps(hy),
-            ))
+            )
+            new_hyperparams.append(db_hyperparams)
 
-        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics, problem, scoring_config)
-        first_metric = metrics[0]['metric'].name
+        pipeline.parameters += new_hyperparams
+        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics_to_use, problem, scoring_config)
+        first_metric = metrics_to_use[0]['metric'].name
         score_values = []
         for fold_scores in scores.values():
-            for metric, score in fold_scores.items():
+            for metric, score_value in fold_scores.items():
                 if metric == first_metric:
-                    score_values.append(score)
+                    score_values.append(score_value)
 
         avg_score = sum(score_values) / len(score_values)
-        cost = 1.0 - metrics[0]['metric'].normalize(avg_score)
+        cost = 1.0 - metrics_to_use[0]['metric'].normalize(avg_score)
         logger.info('Tuning results:\n%s, cost=%s', scores, cost)
-        # Don't store those runs
-        db.rollback()
 
         return cost
 
     # Run tuning, gets best configuration
-    best_configuration = tuning.tune(evaluate_tune, wallclock=timeout)
+    tuning = HyperparameterTuning(tunable_primitives.values())
+    create_outputfolders(join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'tuning'))
+    best_configuration = tuning.tune(evaluate_tune, wallclock=timeout,
+                                     output_dir=join(os.environ.get('D3MOUTPUTDIR'),
+                                                     'temp', 'tuning', str(pipeline_id)))
 
     # Duplicate pipeline in database
-    new_pipeline = database.duplicate_pipeline(db, pipeline, 'Hyperparameter tuning from pipeline %s' % pipeline_id)
+    new_pipeline = database.duplicate_pipeline(db, pipeline, 'HyperparameterTuning from pipeline %s' % pipeline_id)
 
-    for primitive_id, primitive_name in tunable_primitives.items():
-        best_hy = hyperparams_from_config(primitive_name, best_configuration)
-
-        db.add(database.PipelineParameter(
-            pipeline=new_pipeline,
-            module_id=primitive_id,
-            name='hyperparams',
-            value=pickle.dumps(best_hy),
-        ))
+    for primitive in new_pipeline.modules:
+        if is_tunable(primitive.name):
+            best_hyperparameters = get_new_hyperparameters(primitive.name, best_configuration)
+            query = db.query(database.PipelineParameter).filter(database.PipelineParameter.module_id == primitive.id)\
+                .filter(database.PipelineParameter.pipeline_id == new_pipeline.id)\
+                .filter(database.PipelineParameter.name == 'hyperparams')
+            if query.first():
+                query.update({database.PipelineParameter.value: pickle.dumps(best_hyperparameters)})
+            else:
+                db.add(database.PipelineParameter(
+                    pipeline=new_pipeline,
+                    module_id=primitive.id,
+                    name='hyperparams',
+                    value=pickle.dumps(best_hyperparameters),
+                ))
     db.commit()
 
     logger.info('Tuning done, generated new pipeline %s', new_pipeline.id)
 
-    for f in os.listdir('/tmp'):
-        if 'run_1' in f:
-            shutil.rmtree(os.path.join('/tmp', f))
+    shutil.rmtree(join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'tuning', str(pipeline_id)))
 
     score(new_pipeline.id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, do_rank, None,
-          db_filename=os.path.join(os.environ.get('D3MOUTPUTDIR'), 'ta2', 'db.sqlite3'))
+          db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'db.sqlite3'))
     # TODO: Change this static string path
 
     msg_queue.send(('tuned_pipeline_id', new_pipeline.id))

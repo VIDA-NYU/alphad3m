@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Example search: ./docker.sh fast search seed_datasets_current/185_baseball/TRAIN ta2:latest
+# Example search: ./docker.sh fast search seed_datasets_current/185_baseball/ ta2:latest
 # Example ta2ta3: ./docker.sh ta2ta3 seed_datasets_current/185_baseball/ ta2:latest
 
 # You should have defined these enviroment variables: $LOCAL_INPUT_ROOT, $LOCAL_OUTPUT_ROOT and $LOCAL_STATIC_ROOT
@@ -13,7 +13,7 @@ SKIPTEMPLATES="not"
 while true; do
     if [ "$1" = "fast" ]; then
         OPTS="$OPTS -e TA2_DEBUG_BE_FAST=1"
-        TIMEOUT=5
+        TIMEOUT=1
         shift
     else
         break

@@ -11,12 +11,12 @@ import grpc
 import logging
 import pickle
 import d3m_ta2_nyu.workflow.convert
-import d3m_ta2_nyu.grpc_api.core_pb2 as pb_core
-import d3m_ta2_nyu.grpc_api.core_pb2_grpc as pb_core_grpc
-import d3m_ta2_nyu.grpc_api.problem_pb2 as pb_problem
-import d3m_ta2_nyu.grpc_api.value_pb2 as pb_value
-import d3m_ta2_nyu.grpc_api.pipeline_pb2 as pb_pipeline
-import d3m_ta2_nyu.grpc_api.primitive_pb2 as pb_primitive
+import ta3ta2_api.core_pb2 as pb_core
+import ta3ta2_api.core_pb2_grpc as pb_core_grpc
+import ta3ta2_api.problem_pb2 as pb_problem
+import ta3ta2_api.value_pb2 as pb_value
+import ta3ta2_api.pipeline_pb2 as pb_pipeline
+import ta3ta2_api.primitive_pb2 as pb_primitive
 
 from uuid import UUID
 from d3m_ta2_nyu import __version__
@@ -55,10 +55,6 @@ def error(context, code, format, *args):
 
 @log_service(logger)
 class CoreService(pb_core_grpc.CoreServicer):
-    grpc2metric = {k: v for v, k in pb_problem.PerformanceMetric.items()
-                   if k != pb_problem.METRIC_UNDEFINED}
-    metric2grpc = dict(pb_problem.PerformanceMetric.items())
-
     installed_primitives = D3MPrimitiveLoader.get_primitives_by_name()
 
     def __init__(self, ta2):
@@ -82,8 +78,12 @@ class CoreService(pb_core_grpc.CoreServicer):
         return pb_core.HelloResponse(
             user_agent=user_agent,
             version=version,
-            allowed_value_types=[pb_value.RAW, pb_value.DATASET_URI, pb_value.CSV_URI],
-            supported_extensions=[]
+            allowed_value_types=['RAW', 'DATASET_URI', 'CSV_URI'],
+            supported_extensions=[],
+            supported_task_keywords=[],  # TODO: Add supported_task_keywords using core package enums
+            supported_performance_metrics=[],  # TODO: Add supported_performance_metrics using core package enums
+            supported_evaluation_methods=['K_FOLD', 'HOLDOUT', 'RANKING'],
+            supported_search_features=[]
         )
 
     def ListPrimitives(self, request, context):
@@ -92,7 +92,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         for primitive in self.installed_primitives:
             primitives.append(pb_primitive.Primitive(id=primitive['id'], version=primitive['version'],
                                                      python_path=primitive['python_path'], name=primitive['name'],
-                                                     digest=None))
+                                                     digest=primitive['digest']))
 
         return pb_core.ListPrimitivesResponse(primitives=primitives)
 
@@ -180,7 +180,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 scores = [
                     pb_core.Score(
                         metric=pb_problem.ProblemPerformanceMetric(
-                            metric=self.metric2grpc[m],
+                            metric=m,
                             k=0,
                             pos_label=''),
                         value=pb_value.Value(
@@ -188,7 +188,6 @@ class CoreService(pb_core_grpc.CoreServicer):
                         ),
                     )
                     for m, s in scores.items()
-                    if m in self.metric2grpc
                 ]
                 scores = [pb_core.SolutionSearchScore(scores=scores)]
                 return pb_core.GetSearchSolutionsResultsResponse(
@@ -300,7 +299,6 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         metrics = []
         for metric in request.performance_metrics:
-            if metric.metric in self.grpc2metric:
                 metrics.append(decode_performance_metric(metric))
 
         logger.info("Got ScoreSolution request, dataset=%s, "
@@ -321,7 +319,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                         'shuffle': str(request.configuration.shuffle).lower(),
                         'stratified': str(request.configuration.stratified).lower()
                         }
-        if scoring_config['method'] == pb_core.EvaluationMethod.Value('K_FOLD'):
+        if scoring_config['method'] == 'K_FOLD':
             scoring_config['number_of_folds'] = str(request.configuration.folds)
 
         job_id = self._ta2.score_pipeline(pipeline_id, metrics, dataset, problem, scoring_config)
@@ -359,7 +357,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 scores = [
                     pb_core.Score(
                         metric=pb_problem.ProblemPerformanceMetric(
-                            metric=self.metric2grpc[m],
+                            metric=m,
                             k=0,
                             pos_label=''),
                         value=pb_value.Value(
@@ -367,7 +365,6 @@ class CoreService(pb_core_grpc.CoreServicer):
                         ),
                     )
                     for m, s in scores.items()
-                    if m in self.metric2grpc
                 ]
                 yield pb_core.GetScoreSolutionResultsResponse(
                     progress=pb_core.Progress(
@@ -564,7 +561,6 @@ class CoreService(pb_core_grpc.CoreServicer):
                 name=str(pipeline.id),
                 description=pipeline.origin or '',
                 created=to_timestamp(pipeline.created_date),
-                context=pb_pipeline.TESTING,
                 inputs=[
                     pb_pipeline.PipelineDescriptionInput(
                         name="input dataset"

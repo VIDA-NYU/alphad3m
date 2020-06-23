@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
-with open('../../leaderboardsummer.html') as fin:
+with open('../../leaderboardwinter2020.html') as fin:
     html_doc = fin.read()
 
 soup = BeautifulSoup(html_doc, 'html.parser')
@@ -18,6 +18,7 @@ for item in items:
     datasets.append(dataset_name[:dataset_name.find('(')].rstrip())
 
 tables = soup.find_all('table', {'class': 'dataTable no-footer'})
+tables = tables[1:]
 logger.info('Found %d tables', len(tables))
 target_team = 'NYU-TA2'
 leaderboard_data = []

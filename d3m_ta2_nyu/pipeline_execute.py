@@ -47,7 +47,7 @@ def execute(pipeline_id, dataset, problem, results_path, msg_queue, db):
 
     if results_path is not None:
         logger.info('Storing fit results at %s', results_path)
-        fit_results.values['outputs.0'].sort_values(by=['d3mIndex']).to_csv(results_path, index=False)
+        fit_results.values['outputs.0'].to_csv(results_path)
     else:
         logger.info('NOT storing fit results')
 
