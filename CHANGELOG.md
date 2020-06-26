@@ -1,17 +1,17 @@
 Changelog
 =========
 
-Version 20.xx
+Version v2020.xx.xx
 ------------------
 
-Version 20.06 (2020.06.21)
+Version v2020.06.21
 ------------------
 * Added support for clustering problems.
 * Created NN inputs for AlphaD3M from the metalearningDB [#46](https://gitlab.com/ViDA-NYU/d3m/ta2/-/issues/46) [!49](https://gitlab.com/ViDA-NYU/d3m/ta2/-/merge_requests/49)
 * Changed the structure of the preprocessing module. Added text and datetime encoders.
 * Updated to core package v2020.5.18 and TA2-TA3 API v2020.6.2.
 
-Version 20.02 (2020.02.16)
+Version v2020.02.16
 ------------------
 Submission for Winter evaluation.
 
