@@ -25,7 +25,8 @@ from google.protobuf.timestamp_pb2 import Timestamp
 from d3m_ta2_nyu.grpc_api.grpc_logger import log_service
 from d3m_ta2_nyu.primitive_loader import D3MPrimitiveLoader
 from d3m_ta2_nyu.utils import PersistentQueue
-from ta3ta2_api.utils import decode_pipeline_description, decode_problem_description, decode_performance_metric
+from ta3ta2_api.utils import decode_pipeline_description, decode_problem_description, decode_performance_metric, \
+    encode_raw_value
 from d3m.metadata import pipeline as pipeline_module
 
 logger = logging.getLogger(__name__)
@@ -627,10 +628,11 @@ class CoreService(pb_core_grpc.CoreServicer):
                 step_hyperparams[k] = pb_pipeline.PrimitiveStepHyperparameter(
                     value=pb_pipeline.ValueArgument(
                         data=pb_value.Value(
-                            raw=pb_value.ValueRaw(string=str(v))
+                            raw=encode_raw_value(v)
                         )
                     )
                 )
+
 
         # Create step description
         step = pb_pipeline.PipelineDescriptionStep(
