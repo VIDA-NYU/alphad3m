@@ -4,7 +4,7 @@ stages:
 
 variables:
   DOCKER_DRIVER: overlay2
-  IMAGE: $CI_REGISTRY_IMAGE:git-$CI_COMMIT_SHA
+  IMAGE: $CI_REGISTRY_IMAGE:devel
   GIT_SUBMODULE_STRATEGY: recursive
 
 services:
@@ -29,13 +29,7 @@ build_image:
       echo "Docker cache: $CACHE_FROM"
     - docker build $CACHE_FROM -t $IMAGE .
     - |
-      REV=$(git describe)
-      REV="$CI_COMMIT_REF_NAME-$REV"
-      docker tag $IMAGE $CI_REGISTRY_IMAGE:$REV
-      docker tag $IMAGE $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
     - docker push $IMAGE
-    - docker push $CI_REGISTRY_IMAGE:$REV
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
     - |
       if [ "$CI_COMMIT_REF_NAME" = master ]; then
         docker tag $IMAGE $CI_REGISTRY_IMAGE:latest
