@@ -46,14 +46,17 @@ def check_timeindicator(dataset_path):
     for item in columns:
         if item['colType'] == 'dateTime':
             timeindicator_index = item['colIndex']
-            if 'timeIndicator' in item['role']:
-                has_timeindicator = True
-                break
+        if 'timeIndicator' in item['role']:
+            has_timeindicator = True
+            break
 
     if not has_timeindicator:
         dataset_doc['dataResources'][0]['columns'][timeindicator_index]['role'].append('timeIndicator')
-        with open(dataset_path, 'w') as fout:
-            json.dump(dataset_doc, fout, indent=4)
+        try:
+            with open(dataset_path, 'w') as fout:
+                json.dump(dataset_doc, fout, indent=4)
+        except:
+            logger.error('Saving timeIndicator on dataset')
 
 
 @database.with_db
