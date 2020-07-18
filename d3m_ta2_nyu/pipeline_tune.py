@@ -72,7 +72,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
             new_hyperparams.append(db_hyperparams)
 
         pipeline.parameters += new_hyperparams
-        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics_to_use, problem, scoring_config)
+        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics_to_use, problem, scoring_config, dataset_uri)
         first_metric = metrics_to_use[0]['metric'].name
         score_values = []
         for fold_scores in scores.values():

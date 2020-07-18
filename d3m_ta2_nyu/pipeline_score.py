@@ -8,6 +8,7 @@ import d3m.runtime
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from d3m_ta2_nyu.workflow import database, convert
+from d3m_ta2_nyu.utils import is_collection
 from d3m.metadata.pipeline import Pipeline
 from d3m.metadata.problem import PerformanceMetric, TaskKeyword
 from sklearn.model_selection import train_test_split
@@ -100,10 +101,10 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
         pipeline_split = kfold_tabular_split
 
     if metrics[0]['metric'] != PerformanceMetric.F1:
-        scores = evaluate(pipeline, pipeline_split, dataset, metrics, problem, scoring_config)
-    else:  # FIXME: Temporal solution to avoid: "Target is multiclass but average='binary'"
+        scores = evaluate(pipeline, pipeline_split, dataset, metrics, problem, scoring_config, dataset_uri)
+    else:
         new_metrics = [{'metric': PerformanceMetric.F1_MACRO}]
-        scores = evaluate(pipeline, kfold_tabular_split, dataset, new_metrics, problem, scoring_config)
+        scores = evaluate(pipeline, kfold_tabular_split, dataset, new_metrics, problem, scoring_config, dataset_uri)
         scores = change_name_metric(scores, new_metrics, new_metric=metrics[0]['metric'].name)
 
     logger.info("Evaluation results:\n%s", scores)
@@ -121,8 +122,8 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
     db.commit()
 
 
-def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config):
-    if TaskKeyword.IMAGE in problem['problem']['task_keywords']:
+def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config, dataset_uri):
+    if is_collection(dataset_uri[7:]):
         dataset = get_sample(dataset, problem)
     json_pipeline = convert.to_d3m_json(pipeline)
 

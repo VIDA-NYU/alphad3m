@@ -81,7 +81,8 @@ def load_metalearningdb(task):
             all_pipelines.append(json.loads(line))
 
     for ignore_primitive in IGNORE_PRIMITIVES:
-        ignore_primitives_ids.add(primitives_by_name[ignore_primitive])
+        if ignore_primitive in primitives_by_name:
+            ignore_primitives_ids.add(primitives_by_name[ignore_primitive])
 
     for pipeline_run in all_pipelines:
         pipeline_primitives = pipeline_run['steps']
