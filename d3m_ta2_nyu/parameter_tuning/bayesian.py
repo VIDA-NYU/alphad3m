@@ -27,8 +27,18 @@ def get_new_hyperparameters(primitive_name, configspace):
 
     for hyperparameter_name in hyperparameters:
         hyperparameter_config_name = primitive_name + '|' + hyperparameter_name
+        hyperparameter_config_name_case  = hyperparameter_config_name + '|case'
         if hyperparameter_config_name in configspace:
-            new_hyperparameters[hyperparameter_name] = configspace[hyperparameter_config_name]
+            value = None if configspace[hyperparameter_config_name] == 'None' \
+                else configspace[hyperparameter_config_name]
+            new_hyperparameters[hyperparameter_name] = value
+            logger.info('New value for %s=%s', hyperparameter_config_name, new_hyperparameters[hyperparameter_name])
+        elif hyperparameter_config_name_case in configspace:
+            case = configspace[hyperparameter_config_name_case]
+            value = None if configspace[hyperparameter_config_name + '|' + case] == 'None' \
+                else configspace[hyperparameter_config_name + '|' + case]
+            new_hyperparameters[hyperparameter_name] = {'case': case,
+                                                        'value': value}
             logger.info('New value for %s=%s', hyperparameter_config_name, new_hyperparameters[hyperparameter_name])
 
     return new_hyperparameters

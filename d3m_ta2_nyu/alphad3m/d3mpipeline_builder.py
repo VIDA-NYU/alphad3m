@@ -58,36 +58,37 @@ def make_data_module(db, pipeline, targets, features):
 
 
 def connect(db, pipeline, from_module, to_module, from_output='produce', to_input='inputs'):
-    if not from_module.name.startswith('dataset'):
-        from_module_primitive = index.get_primitive(from_module.name)
-        from_module_output = from_module_primitive.metadata.query()['primitive_code']['class_type_arguments'][
-            'Outputs']
-    else:
-        from_module_output = Dataset
-
-    to_module_primitive = index.get_primitive(to_module.name)
-    to_module_input = to_module_primitive.metadata.query()['primitive_code']['class_type_arguments'][
-        'Inputs']
-
-    arguments = to_module_primitive.metadata.query()['primitive_code']['arguments']
-
-    if to_input not in arguments:
-         raise NameError('Argument %s not found in %s' % (to_input, to_module.name))
-
-    if from_module_output != to_module_input and \
-            to_module.name != 'd3m.primitives.data_transformation.horizontal_concat.TAMU':  # TODO Find a better way
-        cast_module_steps = CONTAINER_CAST[from_module_output][to_module_input]
-        if cast_module_steps:
-            for cast_step in cast_module_steps.split('|'):
-                cast_module = make_pipeline_module(db, pipeline,cast_step)
-                db.add(database.PipelineConnection(pipeline=pipeline,
-                                                   from_module=from_module,
-                                                   to_module=cast_module,
-                                                   from_output_name=from_output,
-                                                   to_input_name='inputs'))
-                from_module = cast_module
+    if 'index' not in from_output:
+        if not from_module.name.startswith('dataset'):
+            from_module_primitive = index.get_primitive(from_module.name)
+            from_module_output = from_module_primitive.metadata.query()['primitive_code']['class_type_arguments'][
+                'Outputs']
         else:
-            raise TypeError('Incompatible connection types: %s and %s' % (str(from_module_output), str(to_module_input)))
+            from_module_output = Dataset
+
+        to_module_primitive = index.get_primitive(to_module.name)
+        to_module_input = to_module_primitive.metadata.query()['primitive_code']['class_type_arguments'][
+            'Inputs']
+
+        arguments = to_module_primitive.metadata.query()['primitive_code']['arguments']
+
+        if to_input not in arguments:
+             raise NameError('Argument %s not found in %s' % (to_input, to_module.name))
+
+        if from_module_output != to_module_input and \
+                to_module.name != 'd3m.primitives.data_transformation.horizontal_concat.TAMU':  # TODO Find a better way
+            cast_module_steps = CONTAINER_CAST[from_module_output][to_module_input]
+            if cast_module_steps:
+                for cast_step in cast_module_steps.split('|'):
+                    cast_module = make_pipeline_module(db, pipeline,cast_step)
+                    db.add(database.PipelineConnection(pipeline=pipeline,
+                                                       from_module=from_module,
+                                                       to_module=cast_module,
+                                                       from_output_name=from_output,
+                                                       to_input_name='inputs'))
+                    from_module = cast_module
+            else:
+                raise TypeError('Incompatible connection types: %s and %s' % (str(from_module_output), str(to_module_input)))
 
     db.add(database.PipelineConnection(pipeline=pipeline,
                                        from_module=from_module,
@@ -183,6 +184,52 @@ def encode_features(pipeline, attribute_step, target_step, feature_types, db):
 
     return last_step
 
+def process_template(db, input_data, pipeline, pipeline_template, prev_step=None):
+    if pipeline_template:
+        prev_steps = {}
+        count_template_steps = 0
+        for pipeline_step in pipeline_template['steps']:
+            if pipeline_step['type'] == 'PRIMITIVE':
+                step = make_pipeline_module(db, pipeline, pipeline_step['primitive']['python_path'])
+                if 'outputs' in pipeline_step:
+                    for output in pipeline_step['outputs']:
+                        prev_steps['steps.%d.%s' % (count_template_steps, output['id'])] = step
+
+                count_template_steps += 1
+                if 'hyperparams' in pipeline_step:
+                    hyperparams = {}
+                    for hyper, desc in pipeline_step['hyperparams'].items():
+                        hyperparams[hyper] = {'type': desc['type'], 'data': desc['data']}
+                    set_hyperparams(db, pipeline, step, **hyperparams)
+            else:
+                # TODO In the future we should be able to handle subpipelines
+                break
+            if prev_step:
+                if 'arguments' in pipeline_step:
+                    for argument, desc in pipeline_step['arguments'].items():
+                        connect(db, pipeline, prev_steps[desc['data']], step,
+                                from_output=desc['data'].split('.')[-1], to_input=argument)
+                # index is a special connection to keep the order of steps in fixed pipeline templates
+                connect(db, pipeline, prev_step, step, from_output='index', to_input='index')
+            else:
+                connect(db, pipeline, input_data, step, from_output='dataset')
+            prev_step = step
+    return prev_step
+
+def add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step):
+    if pipeline_template is None:
+        for semantic_type, columns in features_metadata['semantictypes_indices'].items():
+            step_add_type = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                               'add_semantic_types.Common')
+            set_hyperparams(db, pipeline, step_add_type, columns=columns, semantic_types=[semantic_type])
+            connect(db, pipeline, prev_step, step_add_type)
+            prev_step = step_add_type
+    else:
+        step_add_type = make_pipeline_module(db, pipeline, 'd3m.primitives.schema_discovery.'
+                                                           'profiler.Common')
+        connect(db, pipeline, prev_step, step_add_type)
+        prev_step = step_add_type
+    return prev_step
 
 class BaseBuilder:
 
@@ -196,31 +243,7 @@ class BaseBuilder:
             # TODO: Use pipeline input for this
             input_data = make_data_module(db, pipeline, targets, features)
 
-            prev_step = None
-            if pipeline_template:
-                prev_steps = {}
-                count_template_steps = 0
-                for pipeline_step in pipeline_template['steps']:
-                    if pipeline_step['type'] == 'PRIMITIVE':
-                        step = make_pipeline_module(db, pipeline, pipeline_step['primitive']['python_path'])
-                        for output in pipeline_step['outputs']:
-                            prev_steps['steps.%d.%s' % (count_template_steps, output['id'])] = step
-
-                        count_template_steps += 1
-                        if 'hyperparams' in pipeline_step:
-                            hyperparams = {}
-                            for hyper, desc in pipeline_step['hyperparams'].items():
-                                hyperparams[hyper] = desc['data']
-                            set_hyperparams(db, pipeline, step, **hyperparams)
-                    else:
-                        # TODO In the future we should be able to handle subpipelines
-                        break
-                    if prev_step:
-                        for argument, desc in pipeline_step['arguments'].items():
-                            connect(db, pipeline, prev_steps[desc['data']], step, from_output=desc['data'].split('.')[-1], to_input=argument)
-                    else:
-                        connect(db, pipeline, input_data, step, from_output='dataset')
-                    prev_step = step
+            prev_step = process_template(db, input_data, pipeline, pipeline_template)
 
             # Check if ALphaD3M is trying to augment
             search_result = None
@@ -253,12 +276,7 @@ class BaseBuilder:
 
             prev_step = step1
             if len(features_metadata['semantictypes_indices']) > 0:
-                for semantic_type, columns in features_metadata['semantictypes_indices'].items():
-                    step_add_type = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                                       'add_semantic_types.Common')
-                    set_hyperparams(db, pipeline, step_add_type, columns=columns, semantic_types=[semantic_type])
-                    connect(db, pipeline, prev_step, step_add_type)
-                    prev_step = step_add_type
+                prev_step = add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step)
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
@@ -325,6 +343,8 @@ class BaseBuilder:
         finally:
                 db.close()
 
+
+
     @staticmethod
     def make_template(imputer, estimator, dataset, pipeline_template, targets, features, features_metadata,
                       privileged_data, DBSession=None):
@@ -337,29 +357,7 @@ class BaseBuilder:
             # TODO: Use pipeline input for this
             input_data = make_data_module(db, pipeline, targets, features)
 
-            prev_step = None
-            if pipeline_template:
-                prev_steps = {}
-                count_template_steps = 0
-                for pipeline_step in pipeline_template['steps']:
-                    if pipeline_step['type'] == 'PRIMITIVE':
-                        step = make_pipeline_module(db, pipeline, pipeline_step['primitive']['python_path'])
-                        prev_steps['steps.%d.produce' % (count_template_steps)] = step
-                        count_template_steps += 1
-                        if 'hyperparams' in pipeline_step:
-                            hyperparams = {}
-                            for hyper, desc in pipeline_step['hyperparams'].items():
-                                hyperparams[hyper] = desc['data']
-                            set_hyperparams(db, pipeline, step, **hyperparams)
-                    else:
-                        # TODO In the future we should be able to handle subpipelines
-                        break
-                    if prev_step:
-                        for argument, desc in pipeline_step['arguments'].items():
-                            connect(db, pipeline, prev_steps[desc['data']], step, to_input=argument)
-                    else:
-                        connect(db, pipeline, input_data, step, from_output='dataset')
-                    prev_step = step
+            prev_step = process_template(db, input_data, pipeline, pipeline_template)
 
             step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
             if prev_step:
@@ -372,12 +370,7 @@ class BaseBuilder:
 
             prev_step = step1
             if len(features_metadata['semantictypes_indices']) > 0:
-                for semantic_type, columns in features_metadata['semantictypes_indices'].items():
-                    step_add_type = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                                       'add_semantic_types.Common')
-                    set_hyperparams(db, pipeline, step_add_type, columns=columns, semantic_types=[semantic_type])
-                    connect(db, pipeline, prev_step, step_add_type)
-                    prev_step = step_add_type
+                prev_step = add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step)
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
@@ -441,29 +434,8 @@ class BaseBuilder:
             # TODO: Use pipeline input for this
             input_data = make_data_module(db, pipeline, targets, features)
 
-            prev_step = None
-            if pipeline_template:
-                prev_steps = {}
-                count_template_steps = 0
-                for pipeline_step in pipeline_template['steps']:
-                    if pipeline_step['type'] == 'PRIMITIVE':
-                        step = make_pipeline_module(db, pipeline, pipeline_step['primitive']['python_path'])
-                        prev_steps['steps.%d.produce' % (count_template_steps)] = step
-                        count_template_steps += 1
-                        if 'hyperparams' in pipeline_step:
-                            hyperparams = {}
-                            for hyper, desc in pipeline_step['hyperparams'].items():
-                                hyperparams[hyper] = desc['data']
-                            set_hyperparams(db, pipeline, step, **hyperparams)
-                    else:
-                        # TODO In the future we should be able to handle subpipelines
-                        break
-                    if prev_step:
-                        for argument, desc in pipeline_step['arguments'].items():
-                            connect(db, pipeline, prev_steps[desc['data']], step, to_input=argument)
-                    else:
-                        connect(db, pipeline, input_data, step, from_output='dataset')
-                    prev_step = step
+            prev_step = process_template(db, input_data, pipeline, pipeline_template)
+
             step_aug = make_pipeline_module(db, pipeline,
                                             'd3m.primitives.data_augmentation.datamart_augmentation.Common')
             if prev_step:
@@ -1053,12 +1025,7 @@ class LupiBuilder(BaseBuilder):
             connect(db, pipeline, step0, step1)
             prev_step = step1
             if len(features_metadata['semantictypes_indices']) > 0:
-                for semantic_type, columns in features_metadata['semantictypes_indices'].items():
-                    step_add_type = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                                       'add_semantic_types.Common')
-                    set_hyperparams(db, pipeline, step_add_type, columns=columns, semantic_types=[semantic_type])
-                    connect(db, pipeline, prev_step, step_add_type)
-                    prev_step = step_add_type
+                prev_step = add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step)
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
@@ -1116,3 +1083,5 @@ class LupiBuilder(BaseBuilder):
             return None
         finally:
             db.close()
+
+

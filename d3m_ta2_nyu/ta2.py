@@ -50,7 +50,7 @@ DATAMART_URL = {
 }
 
 
-TUNE_PIPELINES_COUNT = 3
+TUNE_PIPELINES_COUNT = 4
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0
@@ -884,20 +884,24 @@ class D3mTa2(Observable):
             for pipeline_step in pipeline_template['steps']:
                 if pipeline_step['type'] == 'PRIMITIVE':
                     step = make_primitive_module(pipeline_step['primitive']['python_path'])
-                    for output in pipeline_step['outputs']:
-                        prev_steps['steps.%d.%s' % (count_template_steps,output['id'])] = step
+                    if 'outputs' in pipeline_step:
+                        for output in pipeline_step['outputs']:
+                            prev_steps['steps.%d.%s' % (count_template_steps,output['id'])] = step
+
                     count_template_steps += 1
                     if 'hyperparams' in pipeline_step:
                         hyperparams = {}
                         for hyper, desc in pipeline_step['hyperparams'].items():
-                            hyperparams[hyper] = desc['data']
+                            hyperparams[hyper] = {'type':desc['type'] ,'data':desc['data']}
                         set_hyperparams(step, **hyperparams)
                 else:
                     # TODO In the future we should be able to handle subpipelines
                     break
                 if prev_step:
-                    for argument, desc in pipeline_step['arguments'].items():
-                        connect(prev_steps[desc['data']], step, from_output=desc['data'].split('.')[-1], to_input=argument)
+                    if 'arguments' in pipeline_step:
+                        for argument, desc in pipeline_step['arguments'].items():
+                            connect(prev_steps[desc['data']], step, from_output=desc['data'].split('.')[-1], to_input=argument)
+                    connect(prev_step, step, from_output='index', to_input='index')
                 else:
                     connect(input_data, step, from_output='dataset')
                 prev_step = step
