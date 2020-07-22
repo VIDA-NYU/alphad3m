@@ -58,6 +58,8 @@ def indentify_feature_types(csv_path, unkown_feature_types, target_names):
                 elif semantic_type == 'http://schema.org/identifier':  # Changing to D3M format
                     #semantic_type = 'https://metadata.datadrivendiscovery.org/types/PrimaryKey'
                     semantic_type = 'http://schema.org/Integer'
+                elif semantic_type == 'https://metadata.datadrivendiscovery.org/types/MissingData':
+                    semantic_type = 'http://schema.org/Text'
                 d3m_semantic_types.append(semantic_type)
 
             role = 'https://metadata.datadrivendiscovery.org/types/Attribute'

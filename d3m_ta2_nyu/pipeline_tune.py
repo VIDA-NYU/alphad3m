@@ -56,7 +56,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
                       'number_of_folds': '2'}
 
     metrics_to_use = deepcopy(metrics)
-    if metrics[0]['metric'] == PerformanceMetric.F1:
+    if metrics[0]['metric'] == PerformanceMetric.F1 and TaskKeyword.SEMISUPERVISED in problem['problem']['task_keywords']:
         metrics_to_use = [{'metric': PerformanceMetric.F1_MACRO}]
 
     def evaluate_tune(hyperparameter_configuration):
