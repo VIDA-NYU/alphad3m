@@ -76,7 +76,8 @@ def connect(db, pipeline, from_module, to_module, from_output='produce', to_inpu
              raise NameError('Argument %s not found in %s' % (to_input, to_module.name))
 
         if from_module_output != to_module_input and \
-                to_module.name != 'd3m.primitives.data_transformation.horizontal_concat.TAMU':  # TODO Find a better way
+                to_module.name != 'd3m.primitives.data_transformation.horizontal_concat.TAMU'\
+                and from_module.name != 'd3m.primitives.data_preprocessing.audio_reader.DistilAudioDatasetLoader':  # TODO Find a better way
             cast_module_steps = CONTAINER_CAST[from_module_output][to_module_input]
             if cast_module_steps:
                 for cast_step in cast_module_steps.split('|'):
@@ -155,15 +156,22 @@ def skip_encoding(primitives):
     return False
 
 
-def encode_features(pipeline, attribute_step, target_step, feature_types, db):
+def encode_features(pipeline, attribute_step, target_step, features_metadata, db):
     last_step = attribute_step
+    feature_types = features_metadata['only_attribute_types']
 
     if 'http://schema.org/Text' in feature_types:
-        text_step = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.encoder.DistilTextEncoder')
-        set_hyperparams(db, pipeline, text_step, encoder_type='tfidf')
-        connect(db, pipeline, last_step, text_step)
-        connect(db, pipeline, target_step, text_step, to_input='outputs')
-        last_step = text_step
+        if len(features_metadata['semantictypes_indices']) > 1:
+            text_step = make_pipeline_module(db, pipeline,
+                                             'd3m.primitives.feature_construction.corex_text.DSBOX')
+            connect(db, pipeline, last_step, text_step)
+            last_step = text_step
+        else:
+            text_step = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.encoder.DistilTextEncoder')
+            set_hyperparams(db, pipeline, text_step, encoder_type='tfidf')
+            connect(db, pipeline, last_step, text_step)
+            connect(db, pipeline, target_step, text_step, to_input='outputs')
+            last_step = text_step
 
     if 'http://schema.org/DateTime' in feature_types:
         time_step = make_pipeline_module(db, pipeline,
@@ -304,7 +312,7 @@ class BaseBuilder:
             if skip_encoding(primitives):
                 encoder_step = step3
             else:
-                encoder_step = encode_features(pipeline, step3, step4, features_metadata['only_attribute_types'], db)
+                encoder_step = encode_features(pipeline, step3, step4, features_metadata, db)
 
             step = otherprev_step = encoder_step
             preprocessors = primitives[:-1]
@@ -395,7 +403,7 @@ class BaseBuilder:
             set_hyperparams(db, pipeline, step5, strategy='most_frequent')
             connect(db, pipeline, step3, step5)
 
-            encoder_step = encode_features(pipeline, step5, step4, features_metadata['only_attribute_types'], db)
+            encoder_step = encode_features(pipeline, step5, step4, features_metadata, db)
             other_prev_step = encoder_step
 
             if encoder_step == step5:  # Encoders were not applied, so use one_hot_encoder for all features
