@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-v2020.5.18-20200612-000030
+FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-v2020.5.18-20200630-050709
 
 MAINTAINER "remi.rampin@nyu.edu, raoni@nyu.edu, rlopez@nyu.edu"
 
