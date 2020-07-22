@@ -28,6 +28,9 @@ def _add_step(steps, modules, params, module_to_step, mod):
     for conn in sorted(mod.connections_to, key=lambda c: c.to_input_name):
         step = _add_step(steps, modules, params, module_to_step, modules[conn.from_module_id])
 
+        # index is a special connection to keep the order of steps in fixed pipeline templates
+        if 'index' in conn.to_input_name: continue
+
         if step.startswith('inputs.'):
             inputs[conn.to_input_name] = step
         else:
@@ -51,24 +54,32 @@ def _add_step(steps, modules, params, module_to_step, mod):
                if v['kind'] == 'PRODUCE']
 
     # Create step description
-    step = {
-        'type': 'PRIMITIVE',
-        'primitive': primitive_desc,
-        'arguments': {
-            name: {
-                'type': 'CONTAINER',
-                'data': data,
-            }
-            for name, data in inputs.items()
-        },
-        'outputs': outputs
-    }
+    if len(inputs) > 0:
+        step = {
+            'type': 'PRIMITIVE',
+            'primitive': primitive_desc,
+            'arguments': {
+                name: {
+                    'type': 'CONTAINER',
+                    'data': data,
+                }
+                for name, data in inputs.items()
+            },
+            'outputs': outputs
+        }
+    else:
+        step = {
+            'type': 'PRIMITIVE',
+            'primitive': primitive_desc,
+        }
 
     # If hyperparameters are set, export them
     if mod.id in params and 'hyperparams' in params[mod.id]:
         hyperparams = pickle.loads(params[mod.id]['hyperparams'])
+        # We check whether the hyperparameters have a value or the complete description
         hyperparams = {
-            k: {'type': 'VALUE', 'data': v}
+            k: {'type': v['type'] if isinstance(v,dict) and 'type' in v else 'VALUE',
+                'data': v['data'] if isinstance(v,dict) and 'data' in v else v}
             for k, v in hyperparams.items()
         }
         step['hyperparams'] = hyperparams
