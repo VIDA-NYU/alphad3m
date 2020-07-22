@@ -7,7 +7,6 @@ from d3m.metadata.hyperparams import Bounded, Enumeration, UniformInt, UniformBo
     Constant as ConstantD3M
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.conditions import EqualsCondition, InCondition
-from ConfigSpace.forbidden import ForbiddenEqualsClause, ForbiddenAndConjunction
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformFloatHyperparameter, \
      UniformIntegerHyperparameter, UnParametrizedHyperparameter, Constant, NormalFloatHyperparameter
 

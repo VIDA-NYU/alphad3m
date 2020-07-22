@@ -26,7 +26,7 @@ from uuid import uuid4, UUID
 from d3m_ta2_nyu import __version__
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu.grpc_api import grpc_server
-from d3m_ta2_nyu.utils import Observable, ProgressStatus
+from d3m_ta2_nyu.utils import Observable, ProgressStatus, is_collection
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json
 from d3m_ta2_nyu.data_ingestion.data_reader import create_d3mdataset, create_d3mproblem
@@ -50,7 +50,7 @@ DATAMART_URL = {
 }
 
 
-TUNE_PIPELINES_COUNT = 4
+TUNE_PIPELINES_COUNT = 3
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0
@@ -1111,11 +1111,16 @@ class D3mTa2(Observable):
         logger.info('About to sample dataset %s', dataset_uri)
         task_keywords = problem['problem']['task_keywords']
 
-        if any(tk in [TaskKeyword.OBJECT_DETECTION, TaskKeyword.FORECASTING, TaskKeyword.IMAGE] for tk in task_keywords):
+        if any(tk in [TaskKeyword.OBJECT_DETECTION, TaskKeyword.FORECASTING] for tk in task_keywords):
             logger.info('Not doing sampling for task %s', '_'.join([x.name for x in task_keywords]))
             return None
 
         dataset = Dataset.load(dataset_uri)
+
+        if is_collection(dataset_uri[7:]):
+            logger.info('Not doing sampling for collections')
+            return None
+
         dataset_sample_folder = 'file://%s/temp/dataset_sample/' % os.environ.get('D3MOUTPUTDIR')
         dataset_sample_uri = None
 

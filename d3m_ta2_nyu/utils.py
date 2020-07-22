@@ -3,6 +3,7 @@
 
 import contextlib
 import logging
+import json
 from queue import Empty, Queue
 import threading
 
@@ -128,3 +129,13 @@ class ProgressStatus(object):
     @property
     def percentage(self):
         return '%d%%' % int(self.current / self.total)
+
+
+def is_collection(dataset_path):
+    with open(dataset_path) as fin:
+        dataset_doc = json.load(fin)
+        for data_resource in dataset_doc['dataResources']:
+            if data_resource.get('isCollection', False):
+                return True
+
+    return False
