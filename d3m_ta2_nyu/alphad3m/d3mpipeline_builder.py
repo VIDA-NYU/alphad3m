@@ -116,8 +116,6 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive):
         set_hyperparams(db, pipeline, primitive, return_result='replace')
     elif primitive_name == 'd3m.primitives.clustering.k_means.DistilKMeans':
         set_hyperparams(db, pipeline, primitive, cluster_col_name='Class')
-    elif primitive_name == 'd3m.primitives.feature_selection.simultaneous_markov_blanket.AutoRPI':
-        set_hyperparams(db, pipeline, primitive, nbins=3)
     elif primitive_name == 'd3m.primitives.time_series_forecasting.lstm.DeepAR':
         set_hyperparams(db, pipeline, primitive, epochs=1)
 
