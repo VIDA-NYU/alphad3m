@@ -202,5 +202,5 @@ def create_dupms(search_id, top_pipelines):
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
     datasets = ['185_baseball_MIN_METADATA']
-    search_pipelines(datasets, 1)
+    search_pipelines(datasets, 5)
     evaluate_pipelines(datasets)
