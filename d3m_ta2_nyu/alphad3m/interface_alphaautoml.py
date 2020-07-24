@@ -18,6 +18,7 @@ from d3m.metadata.problem import TaskKeyword
 from os.path import join
 from d3m_ta2_nyu.pipeline_execute import execute
 from d3m_ta2_nyu.data_ingestion.data_profiler import profile_data
+from d3m_ta2_nyu.utils import is_text_collection
 
 logger = logging.getLogger(__name__)
 
@@ -175,6 +176,8 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         # Create the pipeline in the database
         pipeline_id = builder.make_d3mpipeline(strings, origin, dataset, search_results, pipeline_template, targets,
                                                features, features_metadata, privileged_data, DBSession=DBSession)
+        #execute(pipeline_id, dataset, problem, join(os.environ.get('D3MOUTPUTDIR'), 'output_dataframe.csv'), None,
+        #        db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'db.sqlite3'))
         # Evaluate the pipeline if syntax is correct:
         if pipeline_id:
             msg_queue.send(('eval', pipeline_id))
@@ -212,10 +215,10 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     elif TaskKeyword.VERTEX_CLASSIFICATION in task_keywords or TaskKeyword.VERTEX_NOMINATION in task_keywords:
         task_name = 'VERTEX_CLASSIFICATION'
         builder = VertexClassificationBuilder()
-    elif TaskKeyword.TEXT in task_keywords and (
-            TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
+    elif is_text_collection(dataset[7:]) or (TaskKeyword.TEXT in task_keywords and (
+            TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords)):
         task_name = 'TEXT_' + task_name
-        builder = BaseBuilder()
+        builder = TextBuilder()
     elif TaskKeyword.IMAGE in task_keywords and (
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'IMAGE_' + task_name

@@ -19,7 +19,7 @@ IMAGE_REGRESSION_TASK -> IMAGE_PROCESSING REGRESSION
 AUDIO_REGRESSION_TASK -> AUDIO_PROCESSING REGRESSION
 LUPI_TASK -> DATA_PREPROCESSING CLASSIFICATION
 NA_TASK -> CLASSIFICATION_TASK | REGRESSION_TASK
-TEXT_PROCESSING -> 'd3m.primitives.data_preprocessing.text_reader.Common' TEXT
+TEXT_PROCESSING -> 'primitive_terminal'
 IMAGE_PROCESSING -> 'd3m.primitives.data_preprocessing.image_reader.Common' 'd3m.primitives.feature_extraction.image_transfer.DistilImageTransfer'
 AUDIO_PROCESSING -> 'd3m.primitives.feature_extraction.audio_transfer.DistilAudioTransfer'
 DATA_PREPROCESSING -> 'E' | 'primitive_terminal'
@@ -37,4 +37,3 @@ VERTEX_CLASSIFICATION -> 'primitive_terminal'
 LINK_PREDICTION -> 'primitive_terminal'
 SEMISUPERVISED_CLASSIFICATION -> 'primitive_terminal'
 CLUSTERING -> 'primitive_terminal'
-TEXT -> 'primitive_terminal'
