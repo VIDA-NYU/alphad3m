@@ -313,7 +313,7 @@ class BaseBuilder:
 
             prev_step = step1
             if len(features_metadata['semantictypes_indices']) > 0:
-                prev_step,_ = add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step)
+                prev_step, _ = add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step)
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
@@ -407,7 +407,7 @@ class BaseBuilder:
 
             prev_step = step1
             if len(features_metadata['semantictypes_indices']) > 0:
-                prev_step,_ = add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step)
+                prev_step, _ = add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step)
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
@@ -757,7 +757,7 @@ class TimeseriesClassificationBuilder(BaseBuilder):
 
                 prev_step = step1
                 if len(features_metadata['semantictypes_indices']) > 0:
-                    prev_step = add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step)
+                    prev_step, _ = add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step)
 
                 step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                            'extract_columns_by_semantic_types.Common')
@@ -1121,7 +1121,7 @@ class LupiBuilder(BaseBuilder):
             connect(db, pipeline, step0, step1)
             prev_step = step1
             if len(features_metadata['semantictypes_indices']) > 0:
-                prev_step,_ = add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step)
+                prev_step, _ = add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step)
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
@@ -1192,13 +1192,8 @@ class TextBuilder:
         try:
             # TODO: Use pipeline input for this
             input_data = make_data_module(db, pipeline, targets, features)
-            prev_step = process_template(db, input_data, pipeline, pipeline_template)
-
             step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
-            if prev_step:
-                connect(db, pipeline, prev_step, step0)
-            else:
-                connect(db, pipeline, input_data, step0, from_output='dataset')
+            connect(db, pipeline, input_data, step0, from_output='dataset')
 
             step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
             connect(db, pipeline, step0, step1)
@@ -1209,7 +1204,7 @@ class TextBuilder:
 
             prev_step = step11
             if len(features_metadata['semantictypes_indices']) > 0:
-                prev_step = add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step)
+                prev_step, _ = add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step)
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'column_parser.Common')
