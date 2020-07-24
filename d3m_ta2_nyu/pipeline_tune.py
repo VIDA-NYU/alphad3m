@@ -103,6 +103,8 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
                 .filter(database.PipelineParameter.pipeline_id == new_pipeline.id)\
                 .filter(database.PipelineParameter.name == 'hyperparams')
             if query.first():
+                original_parameters = pickle.loads(query.first().value)
+                best_hyperparameters.update(original_parameters)
                 query.update({database.PipelineParameter.value: pickle.dumps(best_hyperparameters)})
             else:
                 db.add(database.PipelineParameter(
