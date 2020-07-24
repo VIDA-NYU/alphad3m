@@ -1353,8 +1353,7 @@ class SemisupervisedClassificationBuilder(BaseBuilder):
                 if skip_encoding(primitives):
                     encoder_step = step3
                 else:
-                    encoder_step = encode_features(pipeline, step3, step4, features_metadata['only_attribute_types'],
-                                                   db)
+                    encoder_step = encode_features(pipeline, step3, step4, features_metadata, db)
                     count_steps += 1
 
                 step = otherprev_step = encoder_step
