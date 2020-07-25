@@ -7,7 +7,6 @@
         "d3m.primitives.classification.decision_tree.SKlearn": 7,
         "d3m.primitives.classification.dummy.SKlearn": 8,
         "d3m.primitives.classification.extra_trees.SKlearn": 10,
-        "d3m.primitives.classification.gaussian_classification.JHU": 11,
         "d3m.primitives.classification.gaussian_naive_bayes.SKlearn": 12,
         "d3m.primitives.classification.global_causal_discovery.ClassifierRPI": 13,
         "d3m.primitives.classification.gradient_boosting.SKlearn": 14,

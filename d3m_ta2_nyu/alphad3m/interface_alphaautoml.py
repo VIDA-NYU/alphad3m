@@ -42,8 +42,9 @@ config = {
                       'TEXT_REGRESSION': 16,
                       'IMAGE_REGRESSION': 17,
                       'AUDIO_REGRESSION': 18,
-                      'LUPI': 19,
-                      'NA': 20
+                      'VIDEO_CLASSIFICATION': 19,
+                      'LUPI': 20,
+                      'NA': 21
                       },
 
     'DATA_TYPES': {'TABULAR': 1,
@@ -96,11 +97,11 @@ def generate_by_templates(task_keywords, dataset, search_results, pipeline_templ
         template_name = 'DEBUG_REGRESSION'
     elif TaskKeyword.REGRESSION in task_keywords:
         template_name = 'REGRESSION'
-        if task_keywords & {TaskKeyword.IMAGE, TaskKeyword.TEXT, TaskKeyword.AUDIO}:
+        if task_keywords & {TaskKeyword.IMAGE, TaskKeyword.TEXT, TaskKeyword.AUDIO, TaskKeyword.VIDEO}:
             template_name = 'DEBUG_REGRESSION'
     else:
         template_name = 'CLASSIFICATION'
-        if task_keywords & {TaskKeyword.IMAGE, TaskKeyword.TEXT, TaskKeyword.AUDIO}:
+        if task_keywords & {TaskKeyword.IMAGE, TaskKeyword.TEXT, TaskKeyword.AUDIO, TaskKeyword.VIDEO}:
             template_name = 'DEBUG_CLASSIFICATION'
 
     logger.info("Creating pipelines from template %s" % template_name)
@@ -227,6 +228,10 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'AUDIO_' + task_name
         builder = AudioBuilder()
+    elif TaskKeyword.VIDEO in task_keywords and (
+            TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
+        task_name = 'VIDEO_' + task_name
+        builder = BaseBuilder()
     elif TaskKeyword.CLASSIFICATION in task_keywords or TaskKeyword.REGRESSION in task_keywords:
         builder = BaseBuilder()
     else:
