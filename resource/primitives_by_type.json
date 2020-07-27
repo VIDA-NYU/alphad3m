@@ -8,7 +8,6 @@
         "d3m.primitives.classification.dummy.SKlearn": 8,
         "d3m.primitives.classification.extra_trees.SKlearn": 10,
         "d3m.primitives.classification.gaussian_naive_bayes.SKlearn": 12,
-        "d3m.primitives.classification.global_causal_discovery.ClassifierRPI": 13,
         "d3m.primitives.classification.gradient_boosting.SKlearn": 14,
         "d3m.primitives.classification.k_neighbors.SKlearn": 16,
         "d3m.primitives.classification.light_gbm.Common": 17,
@@ -29,7 +28,6 @@
         "d3m.primitives.classification.search_hybrid.Find_projections": 34,
         "d3m.primitives.classification.sgd.SKlearn": 35,
         "d3m.primitives.classification.svc.SKlearn": 37,
-        "d3m.primitives.classification.tree_augmented_naive_bayes.BayesianInfRPI": 39,
         "d3m.primitives.classification.xgboost_dart.Common": 40,
         "d3m.primitives.classification.xgboost_gbtree.Common": 41
     },

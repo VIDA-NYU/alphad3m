@@ -18,7 +18,7 @@ req = [
     'pandas',
     'smac']
 setup(name='d3m_ta2_nyu',
-      version='2020.06.21',
+      version='2020.07.24',
       packages=['d3m_ta2_nyu'],
       package_data={'d3m_ta2_nyu': ['pipelines/*.yaml']},
       entry_points={

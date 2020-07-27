@@ -3,6 +3,11 @@ Changelog
 
 Version v2020.xx.xx
 ------------------
+Version v2020.07.24
+------------------
+* Added support for video data type.
+* Improved support for semi-supervised task through SemisupervisedClassificationBuilder class.
+* Updated license to Apache-2.0.
 
 Version v2020.06.21
 ------------------
