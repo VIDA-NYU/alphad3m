@@ -33,4 +33,8 @@ setup(name='d3m_ta2_nyu',
       author_email='remi.rampin@nyu.edu, raoni@nyu.edu, rlopez@nyu.edu',
       maintainer="Remi Rampin, Raoni Lourenco, Roque Lopez",
       maintainer_email='remi.rampin@nyu.edu, raoni@nyu.edu, rlopez@nyu.edu',
-      keywords=['datadrivendiscovery', 'automl', 'd3m', 'ta2', 'nyu'])
+      keywords=['datadrivendiscovery', 'automl', 'd3m', 'ta2', 'nyu'],
+      license='Apache-2.0',
+      classifiers=[
+          'License :: OSI Approved :: Apache Software License',
+      ])
