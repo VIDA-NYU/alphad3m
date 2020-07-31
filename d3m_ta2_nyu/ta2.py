@@ -33,21 +33,11 @@ from d3m_ta2_nyu.data_ingestion.data_reader import create_d3mdataset, create_d3m
 from d3m.container import Dataset
 from d3m.metadata.problem import TaskKeyword, parse_problem_description
 from sklearn.model_selection import train_test_split
-#import datamart
-#import datamart_nyu
-#from datamart_isi.entries import Datamart
 
 
 MAX_RUNNING_PROCESSES = 4
 SAMPLE_SIZE = 2000
 RANDOM_SEED = 42
-
-DATAMART_URL = {
-    'NYU': os.environ['DATAMART_URL_NYU'] if 'DATAMART_URL_NYU' in os.environ
-                                          else 'https://datamart.d3m.vida-nyu.org/',
-    'ISI': os.environ['DATAMART_URL_ISI'] if 'DATAMART_URL_ISI' in os.environ
-                                          else 'http://dsbox02.isi.edu:9000/'
-}
 
 
 TUNE_PIPELINES_COUNT = 3
@@ -941,40 +931,13 @@ class D3mTa2(Observable):
             # gets created
             session.working = True
 
-        # Search for data augmentation
-        search_results = []
-
-        if 'dataAugmentation' in session.problem:
-            '''dc = Dataset.load(dataset_uri)
-            keywords = []
-            for aug in session.problem['dataAugmentation']:
-                keywords += aug['keywords']
-
-            # Search with NYU's Datamart
-            try:
-                dm = datamart_nyu.RESTDatamart(DATAMART_URL['NYU'])
-                cursor = dm.search_with_data(query=datamart.DatamartQuery(
-                    keywords=keywords,
-                    variables=[],
-                ), supplied_data=dc)
-                next_page = cursor.get_next_page()
-            except Exception:
-                logger.exception("Error when searching for data to augment")
-                next_page = None
-
-            if next_page:
-                if len(next_page) > 5:
-                    next_page = next_page[:5]
-                search_results = [result.serialize() for result in next_page]'''
-            pass  # Not included in this evaluation
-
         sample_dataset_uri = self._get_sample_uri(dataset_uri, session.problem)
         do_rank = True if top_pipelines > 0 else False
-        timeout_search = timeout * 0.85  # TODO: Do it dynamic
+        timeout_search = timeout * 0.85
         now = time.time()
         timeout_tuning = now + timeout
-        self._build_pipelines_from_generator(session, task, dataset_uri, sample_dataset_uri, search_results,
-                                             pipeline_template, metrics, timeout_search, do_rank)
+        self._build_pipelines_from_generator(session, task, dataset_uri, sample_dataset_uri, pipeline_template,
+                                             metrics, timeout_search, do_rank)
 
         # For tuning
         session.dataset_uri = dataset_uri
@@ -983,8 +946,8 @@ class D3mTa2(Observable):
         session.timeout_tuning = timeout_tuning
         session.tune_when_ready(tune)
 
-    def _build_pipelines_from_generator(self, session, task, dataset_uri, sample_dataset_uri, search_results,
-                                        pipeline_template, metrics, timeout, do_rank):
+    def _build_pipelines_from_generator(self, session, task, dataset_uri, sample_dataset_uri, pipeline_template,
+                                        metrics, timeout, do_rank):
         logger.info("Starting AlphaD3M process, timeout is %s", timeout)
         msg_queue = Receiver()
         proc = run_process(
@@ -993,7 +956,6 @@ class D3mTa2(Observable):
             msg_queue,
             task_keywords=task,
             dataset=dataset_uri,
-            search_results=search_results,
             pipeline_template=pipeline_template,
             metrics=metrics,
             problem=session.problem,
