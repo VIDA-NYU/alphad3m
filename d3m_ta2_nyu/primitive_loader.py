@@ -1,5 +1,3 @@
-"""Class that retrieves installed D3M primitives.
-"""
 import os
 import logging
 import json
@@ -11,133 +9,106 @@ logger = logging.getLogger(__name__)
 PRIMITIVES_BY_NAME_PATH = os.path.join(os.path.dirname(__file__), '../resource/primitives_by_name.json')
 PRIMITIVES_BY_TYPE_PATH = os.path.join(os.path.dirname(__file__), '../resource/primitives_by_type.json')
 
+INSTALLED_PRIMITIVES = index.search()
 
-black_list = {
-    'd3m.primitives.data_preprocessing.audio_loader.DistilAudioDatasetLoader',
-    'd3m.primitives.data_preprocessing.audio_reader.BBN',
-    'd3m.primitives.data_preprocessing.audio_reader.Common',
-    'd3m.primitives.data_preprocessing.audio_slicer.Umich',
-    'd3m.primitives.data_preprocessing.dataframe_to_tensor.DSBOX'
-    'd3m.primitives.data_preprocessing.do_nothing.DSBOX',
-    'd3m.primitives.data_preprocessing.do_nothing_for_dataset.DSBOX',
-    'd3m.primitives.data_preprocessing.do_nothing.DSBOX',
-    'd3m.primitives.data_preprocessing.do_nothing_for_dataset.DSBOX',
-    'd3m.primitives.data_preprocessing.image_reader.Common'
-    'd3m.primitives.data_preprocessing.signal_dither.BBN',
-    'd3m.primitives.data_preprocessing.time_series_to_list.DSBOX',
-    'd3m.primitives.data_preprocessing.truncated_svd.SKlearn',
-    'd3m.primitives.data_preprocessing.vertical_concatenate.DSBOX',
-    'd3m.primitives.data_preprocessing.video_reader.Common',
-    'd3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn',
-    'd3m.primitives.data_preprocessing.text_reader.Common',
-    'd3m.primitives.data_preprocessing.image_reader.Common',
-    'd3m.primitives.data_preprocessing.horizontal_concat.DSBOX',
-    'd3m.primitives.data_preprocessing.dataset_text_reader.DatasetTextReader',
-    'd3m.primitives.data_preprocessing.dataset_sample.Common',
-    'd3m.primitives.data_preprocessing.dataframe_to_tensor.DSBOX',
-    'd3m.primitives.data_preprocessing.data_cleaning.DistilTimeSeriesFormatter',
-    'd3m.primitives.data_preprocessing.audio_reader.Common',
-    'd3m.primitives.data_preprocessing.csv_reader.Common',
-    'd3m.primitives.data_preprocessing.flatten.DataFrameCommon',
-    'd3m.primitives.data_cleaning.geocoding.Goat_forward',
-    'd3m.primitives.data_cleaning.geocoding.Goat_reverse',
-    'd3m.primitives.data_cleaning.text_summarization.Duke',
-    'd3m.primitives.feature_selection.simultaneous_markov_blanket.AutoRPI'
+BLACK_LIST = {
+    'd3m.primitives.classification.canonical_correlation_forests.UBC',
+    'd3m.primitives.classification.global_causal_discovery.ClassifierRPI',
+    'd3m.primitives.classification.inceptionV3_image_feature.Gator',
+    'd3m.primitives.classification.tree_augmented_naive_bayes.BayesianInfRPI'
 }
 
 
-class D3MPrimitiveLoader():
+def get_primitive_class(name):
+    return index.get_primitive(name)
 
-    INSTALLED_PRIMITIVES = index.search()
 
-    @staticmethod
-    def get_primitive_class(name):
-        """
-        Returns the class object given a primitive name
-        """
-        return index.get_primitive(name)
+def get_primitive_family(name):
+    return get_primitive_class(name).metadata.to_json_structure()['primitive_family']
 
-    @staticmethod
-    def get_family(name):
-        """
-        Returns the family (DATA_PREPROCESSING, CLASSIFICATION, REGRESSION ...) object given a primitive name
-        """
-        return D3MPrimitiveLoader.get_primitive_class(name).metadata.to_json_structure()['primitive_family']
 
-    @staticmethod
-    def get_primitive_names():
-        """
-        Returns a list with the name of the available primitives
-        """
-        return list(D3MPrimitiveLoader.INSTALLED_PRIMITIVES.keys())
+def get_primitive_algorithms(name):
+    return get_primitive_class(name).metadata.to_json_structure()['algorithm_types']
 
-    @staticmethod
-    def get_primitives_by_type():
-        """
-        Returns a dictionary grouping primitive names by family and associating each primitive to a distinct number
-        """
 
-        if os.path.isfile(PRIMITIVES_BY_TYPE_PATH):
-            with open(PRIMITIVES_BY_TYPE_PATH) as fin:
-                primitives = json.load(fin)
-            logger.info('Loading primitives info from file')
-        else:
-            primitives = {}
-            count = 1
-            for name in D3MPrimitiveLoader.INSTALLED_PRIMITIVES:
-                if name in black_list:
-                    continue
-                try:
-                    family = D3MPrimitiveLoader.get_family(name)
-                except:
-                    logger.error('No information about primitive %s', name)
-                    continue
-                if family in primitives:
-                    primitives[family][name] = count
-                else:
-                    primitives[family] = {}
-                    primitives[family][name] = count
-                count += 1
+def get_primitive_info(name):
+    primitive_dict =  get_primitive_class(name).metadata.to_json_structure()
 
-            with open(PRIMITIVES_BY_TYPE_PATH, 'w') as fout:
-                json.dump(primitives, fout, indent=4)
-            logger.info('Loading primitives info from D3M index')
+    return {
+            'id': primitive_dict['id'],
+            'name': primitive_dict['name'],
+            'version': primitive_dict['version'],
+            'python_path': primitive_dict['python_path'],
+            'digest': primitive_dict['digest']
+    }
+
+
+def get_primitives_by_type():
+    if os.path.isfile(PRIMITIVES_BY_TYPE_PATH):
+        with open(PRIMITIVES_BY_TYPE_PATH) as fin:
+            primitives = json.load(fin)
+        logger.info('Loading primitives info from file')
 
         return primitives
 
-    @staticmethod
-    def get_primitives_by_name():
-        if os.path.isfile(PRIMITIVES_BY_NAME_PATH):
-            with open(PRIMITIVES_BY_NAME_PATH) as fin:
-                primitives = json.load(fin)
-            logger.info('Loading primitives info from file')
-        else:
-            primitives = []
+    primitives = {}
+    count = 1
+    for primitive_name in INSTALLED_PRIMITIVES:
+        if primitive_name not in BLACK_LIST:
+            try:
+                family = get_primitive_family(primitive_name)
+                algorithm_types = get_primitive_algorithms(primitive_name)
+            except:
+                logger.error('Loading metadata about primitive %s', primitive_name)
+                continue
+            #  Use the algorithm types as families since they are more descriptive
+            if family in {'DATA_TRANSFORMATION', 'DATA_PREPROCESSING', 'DATA_CLEANING'}:
+                family = algorithm_types[0]
 
-            for primitive_name in D3MPrimitiveLoader.INSTALLED_PRIMITIVES:
-                if primitive_name in black_list:
-                    continue
-                try:
-                    primitive_obj = index.get_primitive(primitive_name)
-                except:
-                    logger.error('Error loading primitive %s' % primitive_name)
-                    continue
+            # Changing the primitive families using some predefined rules
+            if primitive_name in {'d3m.primitives.feature_construction.corex_text.DSBOX',
+                                  'd3m.primitives.data_transformation.encoder.DistilTextEncoder',
+                                  'd3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn',
+                                  'd3m.primitives.data_preprocessing.count_vectorizer.SKlearn'}:
+                family = 'TEXT_ENCODER'
+            if primitive_name in {'d3m.primitives.data_transformation.data_cleaning.DistilEnrichDates'}:
+                family = 'DATETIME_ENCODER'
+            if family == 'ENCODE_ONE_HOT':
+                family = 'CATEGORICAL_ENCODER'
 
-                if hasattr(primitive_obj, 'metadata'):
-                    try:
-                        primitive = {
-                            'id': primitive_obj.metadata.query()['id'],
-                            'name': primitive_obj.metadata.query()['name'],
-                            'version': primitive_obj.metadata.query()['version'],
-                            'python_path': primitive_obj.metadata.query()['python_path'],
-                            'digest': primitive_obj.metadata.query()['digest']
-                        }
-                    except:
-                        continue
-                primitives.append(primitive)
+            if family not in primitives:
+                primitives[family] = {}
+            primitives[family][primitive_name] = count
+            count += 1
 
-            with open(PRIMITIVES_BY_NAME_PATH, 'w') as fout:
-                json.dump(primitives, fout, indent=4)
-            logger.info('Loading primitives info from D3M index')
+    with open(PRIMITIVES_BY_TYPE_PATH, 'w') as fout:
+        json.dump(primitives, fout, indent=4)
+    logger.info('Loading primitives info from D3M index')
+
+    return primitives
+
+
+def get_primitives_by_name():
+    if os.path.isfile(PRIMITIVES_BY_NAME_PATH):
+        with open(PRIMITIVES_BY_NAME_PATH) as fin:
+            primitives = json.load(fin)
+        logger.info('Loading primitives info from file')
 
         return primitives
+
+    primitives = []
+
+    for primitive_name in INSTALLED_PRIMITIVES:
+        if primitive_name not in BLACK_LIST:
+            try:
+                primitive_info = get_primitive_info(primitive_name)
+            except:
+                logger.error('Loading metadata about primitive %s', primitive_name)
+                continue
+            primitives.append(primitive_info)
+
+    with open(PRIMITIVES_BY_NAME_PATH, 'w') as fout:
+        json.dump(primitives, fout, indent=4)
+    logger.info('Loading primitives info from D3M index')
+
+    return primitives

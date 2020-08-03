@@ -44,7 +44,7 @@ def create_completegrammar(primitives):
     return complete_grammar
 
 
-def create_taskgrammar(grammar, task, filters=[]):
+def create_taskgrammar(grammar, task, encoders):
     logger.info('Creating specific grammar for task %s' % task)
     productions = grammar.productions(Nonterminal(task))
     start_token = Nonterminal('S')
@@ -59,10 +59,15 @@ def create_taskgrammar(grammar, task, filters=[]):
             new_productions.append(Production(start_token, start_production.rhs()))
 
     for production in grammar.productions():
-        # TODO: filter productions, e.g. augmentation
         for new_production in new_productions:
             if production.lhs() in new_production.rhs() and production not in new_productions:
-                new_productions.append(production)
+                if production.lhs().symbol() == 'ENCODERS':  # Use encoders only for types of features in the dataset
+                    if len(encoders) > 0:
+                        new_productions.append(Production(production.lhs(), [Nonterminal(e) for e in encoders]))
+                    else:
+                        new_productions.append(Production(production.lhs(), ['E']))
+                else:
+                    new_productions.append(production)
 
     task_grammar = CFG(start_token, new_productions)
 
@@ -72,9 +77,9 @@ def create_taskgrammar(grammar, task, filters=[]):
     return task_grammar
 
 
-def format_grammar(task, primitives):
+def format_grammar(task, primitives, encoders=[]):
     grammar = create_completegrammar(primitives)
-    grammar = create_taskgrammar(grammar, task)
+    grammar = create_taskgrammar(grammar, task, encoders)
     formatted_grammar = {'NON_TERMINALS': {}, 'TERMINALS': {}, 'RULES': {}, 'RULES_LOOKUP': {}}
     formatted_grammar['START'] = grammar.start().symbol()
     terminals = []
@@ -97,7 +102,7 @@ def format_grammar(task, primitives):
             if is_terminal(token) and token != 'E' and token not in terminals:
                 terminals.append(token)
 
-    formatted_grammar['TERMINALS'] = {t: i+len(formatted_grammar['NON_TERMINALS']) for i,t in enumerate(terminals, 1)}
+    formatted_grammar['TERMINALS'] = {t: i+len(formatted_grammar['NON_TERMINALS']) for i, t in enumerate(terminals, 1)}
     formatted_grammar['TERMINALS']['E'] = 0  # Special case for the empty symbol
 
     return formatted_grammar

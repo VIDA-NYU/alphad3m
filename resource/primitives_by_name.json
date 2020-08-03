@@ -686,6 +686,13 @@
         "digest": "3ee2f0cbe217ff2d570d1c42372efb3fb87769e556919c453ab60480cfd8c162"
     },
     {
+        "id": "1f7ce2c7-1ec8-3483-9a65-eedd4b5811d6",
+        "name": "sklearn.feature_extraction.text.TfidfVectorizer",
+        "version": "2020.6.24",
+        "python_path": "d3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn",
+        "digest": "b43056cc4a0d85d261299dd1ae05a3bed363135ba159178661390c1f5b7b18ca"
+    },
+    {
         "id": "DSBox-unary-encoder",
         "name": "DSBox Unary Data Encoder",
         "version": "1.5.3",

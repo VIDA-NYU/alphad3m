@@ -23,7 +23,7 @@ from d3m_ta2_nyu import __version__
 
 from google.protobuf.timestamp_pb2 import Timestamp
 from d3m_ta2_nyu.grpc_api.grpc_logger import log_service
-from d3m_ta2_nyu.primitive_loader import D3MPrimitiveLoader
+from d3m_ta2_nyu.primitive_loader import get_primitives_by_name
 from d3m_ta2_nyu.utils import PersistentQueue
 from ta3ta2_api.utils import decode_pipeline_description, decode_problem_description, decode_performance_metric, \
     encode_raw_value
@@ -56,7 +56,7 @@ def error(context, code, format, *args):
 
 @log_service(logger)
 class CoreService(pb_core_grpc.CoreServicer):
-    installed_primitives = D3MPrimitiveLoader.get_primitives_by_name()
+    installed_primitives = get_primitives_by_name()
 
     def __init__(self, ta2):
         self._ta2 = ta2

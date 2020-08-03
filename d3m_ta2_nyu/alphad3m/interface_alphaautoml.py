@@ -7,7 +7,7 @@ import json
 
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
-from d3m_ta2_nyu.primitive_loader import D3MPrimitiveLoader
+from d3m_ta2_nyu.primitive_loader import get_primitives_by_type
 from d3m_ta2_nyu.grammar_loader import format_grammar
 from alphaAutoMLEdit.Coach import Coach
 from alphaAutoMLEdit.pipeline.PipelineGame import PipelineGame
@@ -18,7 +18,6 @@ from d3m.metadata.problem import TaskKeyword
 from os.path import join
 from d3m_ta2_nyu.pipeline_execute import execute
 from d3m_ta2_nyu.data_ingestion.data_profiler import profile_data
-from d3m_ta2_nyu.utils import is_text_collection
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +50,7 @@ config = {
                    'GRAPH': 2,
                    'IMAGE': 3},
 
-    'PIPELINE_SIZE': 5,
+    'PIPELINE_SIZE': 7,
 
     'ARGS': {
         'numIters': 25,
@@ -70,63 +69,6 @@ config = {
         'verbose': True
     }
 }
-
-
-def list_primitives():
-    sklearn_primitives = {}
-    all_primitives = D3MPrimitiveLoader.get_primitives_by_type()
-
-    for group in list(all_primitives.keys()):
-        sklearn_primitives[group] = {}
-        for primitive in list(all_primitives[group].keys()):
-            if primitive.endswith('.SKlearn'):
-                sklearn_primitives[group][primitive] = all_primitives[group][primitive]
-
-    return all_primitives
-
-
-def generate_by_templates(task_keywords, dataset, search_results, pipeline_template, targets, features,
-                          features_metadata, privileged_data, msg_queue, DBSession):
-    task_keywords = set(task_keywords)
-
-    if task_keywords & {TaskKeyword.GRAPH_MATCHING, TaskKeyword.LINK_PREDICTION, TaskKeyword.VERTEX_NOMINATION,
-                        TaskKeyword.VERTEX_CLASSIFICATION, TaskKeyword.CLUSTERING, TaskKeyword.OBJECT_DETECTION,
-                        TaskKeyword.COMMUNITY_DETECTION, TaskKeyword.SEMISUPERVISED, TaskKeyword.LUPI}:
-        template_name = 'DEBUG_CLASSIFICATION'
-    elif task_keywords & {TaskKeyword.COLLABORATIVE_FILTERING, TaskKeyword.FORECASTING}:
-        template_name = 'DEBUG_REGRESSION'
-    elif TaskKeyword.REGRESSION in task_keywords:
-        template_name = 'REGRESSION'
-        if task_keywords & {TaskKeyword.IMAGE, TaskKeyword.TEXT, TaskKeyword.AUDIO, TaskKeyword.VIDEO}:
-            template_name = 'DEBUG_REGRESSION'
-    else:
-        template_name = 'CLASSIFICATION'
-        if task_keywords & {TaskKeyword.IMAGE, TaskKeyword.TEXT, TaskKeyword.AUDIO, TaskKeyword.VIDEO}:
-            template_name = 'DEBUG_CLASSIFICATION'
-
-    logger.info("Creating pipelines from template %s" % template_name)
-
-    # No Augmentation
-    templates = BaseBuilder.TEMPLATES.get(template_name, [])
-    for imputer, classifier in templates:
-        pipeline_id = BaseBuilder.make_template(imputer, classifier, dataset, pipeline_template, targets, features,
-                                                features_metadata, privileged_data, DBSession=DBSession)
-        send(msg_queue, pipeline_id)
-
-    # Augmentation
-    if search_results and len(search_results) > 0:
-        for search_result in search_results:
-            templates = BaseBuilder.TEMPLATES_AUGMENTATION.get(template_name, [])
-            for datamart, imputer, classifier in templates:
-                pipeline_id = BaseBuilder.make_template_augment(datamart, imputer, classifier, dataset,
-                                                                pipeline_template, targets, features, features_metadata,
-                                                                search_result, DBSession=DBSession)
-                send(msg_queue, pipeline_id)
-
-
-def send(msg_queue, pipeline_id):
-    msg_queue.send(('eval', pipeline_id))
-    return msg_queue.recv()
 
 
 def denormalize_dataset(dataset, targets, features, DBSession):
@@ -151,10 +93,54 @@ def get_privileged_data(problem, task_keywords):
     return privileged_data
 
 
-@database.with_sessionmaker
-def generate(task_keywords, dataset, search_results, pipeline_template, metrics, problem, targets, features, timeout,
-             msg_queue, DBSession):
+def select_encoders(feature_types):
+    encoders = []
+    mapping_feature_types = {'https://metadata.datadrivendiscovery.org/types/CategoricalData': 'CATEGORICAL_ENCODER',
+                             'http://schema.org/Text': 'TEXT_ENCODER', 'http://schema.org/DateTime': 'DATETIME_ENCODER'}
 
+    for features_type in feature_types:
+        if features_type in mapping_feature_types:
+            encoders.append(mapping_feature_types[features_type])
+
+    return encoders
+
+
+def send(msg_queue, pipeline_id):
+    msg_queue.send(('eval', pipeline_id))
+    return msg_queue.recv()
+
+
+def generate_by_templates(task_keywords, dataset, pipeline_template, targets, features,
+                          features_metadata, privileged_data, msg_queue, DBSession):
+    task_keywords = set(task_keywords)
+
+    if task_keywords & {TaskKeyword.GRAPH_MATCHING, TaskKeyword.LINK_PREDICTION, TaskKeyword.VERTEX_NOMINATION,
+                        TaskKeyword.VERTEX_CLASSIFICATION, TaskKeyword.CLUSTERING, TaskKeyword.OBJECT_DETECTION,
+                        TaskKeyword.COMMUNITY_DETECTION, TaskKeyword.SEMISUPERVISED, TaskKeyword.LUPI}:
+        template_name = 'DEBUG_CLASSIFICATION'
+    elif task_keywords & {TaskKeyword.COLLABORATIVE_FILTERING, TaskKeyword.FORECASTING}:
+        template_name = 'DEBUG_REGRESSION'
+    elif TaskKeyword.REGRESSION in task_keywords:
+        template_name = 'REGRESSION'
+        if task_keywords & {TaskKeyword.IMAGE, TaskKeyword.TEXT, TaskKeyword.AUDIO, TaskKeyword.VIDEO}:
+            template_name = 'DEBUG_REGRESSION'
+    else:
+        template_name = 'CLASSIFICATION'
+        if task_keywords & {TaskKeyword.IMAGE, TaskKeyword.TEXT, TaskKeyword.AUDIO, TaskKeyword.VIDEO}:
+            template_name = 'DEBUG_CLASSIFICATION'
+
+    logger.info("Creating pipelines from template %s" % template_name)
+
+    templates = BaseBuilder.TEMPLATES.get(template_name, [])
+    for imputer, classifier in templates:
+        pipeline_id = BaseBuilder.make_template(imputer, classifier, dataset, pipeline_template, targets, features,
+                                                features_metadata, privileged_data, DBSession=DBSession)
+        send(msg_queue, pipeline_id)
+
+
+@database.with_sessionmaker
+def generate(task_keywords, dataset, pipeline_template, metrics, problem, targets, features, timeout,
+             msg_queue, DBSession):
     with open(dataset[7:]) as fin:
         dataset_doc = json.load(fin)
 
@@ -164,7 +150,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     privileged_data = get_privileged_data(problem, task_keywords)
 
     if os.environ.get('SKIPTEMPLATES', 'not') == 'not':
-        generate_by_templates(task_keywords, dataset, search_results, pipeline_template, targets,
+        generate_by_templates(task_keywords, dataset, pipeline_template, targets,
                               features, features_metadata, privileged_data, msg_queue, DBSession)
 
     if 'TA2_DEBUG_BE_FAST' in os.environ:
@@ -173,9 +159,8 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     builder = None
     task_name = 'CLASSIFICATION' if TaskKeyword.CLASSIFICATION in task_keywords else 'REGRESSION'
 
-    def eval_pipeline(strings, origin):
-        # Create the pipeline in the database
-        pipeline_id = builder.make_d3mpipeline(strings, origin, dataset, search_results, pipeline_template, targets,
+    def eval_pipeline(primitive_names, origin):
+        pipeline_id = builder.make_d3mpipeline(primitive_names, origin, dataset, pipeline_template, targets,
                                                features, features_metadata, privileged_data, DBSession=DBSession)
         #execute(pipeline_id, dataset, problem, join(os.environ.get('D3MOUTPUTDIR'), 'output_dataframe.csv'), None,
         #        db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'db.sqlite3'))
@@ -216,10 +201,10 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
     elif TaskKeyword.VERTEX_CLASSIFICATION in task_keywords or TaskKeyword.VERTEX_NOMINATION in task_keywords:
         task_name = 'VERTEX_CLASSIFICATION'
         builder = VertexClassificationBuilder()
-    elif is_text_collection(dataset[7:]) or (TaskKeyword.TEXT in task_keywords and (
-            TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords)):
+    elif TaskKeyword.TEXT in task_keywords and (
+            TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'TEXT_' + task_name
-        builder = TextBuilder()
+        builder = BaseBuilder()
     elif TaskKeyword.IMAGE in task_keywords and (
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'IMAGE_' + task_name
@@ -239,9 +224,11 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
         task_name = 'NA'
         builder = BaseBuilder()
 
-    def update_config(selected_primitves, task_name):
+    encoders = select_encoders(features_metadata['only_attribute_types'])
+
+    def update_config(primitives, task_name):
         metafeatures_extractor = ComputeMetafeatures(dataset, targets, features, DBSession)
-        config['GRAMMAR'] = format_grammar(task_name + '_TASK', selected_primitves)
+        config['GRAMMAR'] = format_grammar(task_name + '_TASK', primitives, encoders)
         config['PROBLEM'] = task_name
         config['DATA_TYPE'] = 'TABULAR'
         config['METRIC'] = metrics[0]['metric'].name
@@ -257,7 +244,7 @@ def generate(task_keywords, dataset, search_results, pipeline_template, metrics,
 
     signal.signal(signal.SIGTERM, signal_handler)
 
-    primitives = list_primitives()
+    primitives = get_primitives_by_type()
     config_updated = update_config(primitives, task_name)
     game = PipelineGame(config_updated, eval_pipeline)
     nnet = NNetWrapper(game)
