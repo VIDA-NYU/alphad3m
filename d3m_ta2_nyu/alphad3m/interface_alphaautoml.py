@@ -18,7 +18,6 @@ from d3m.metadata.problem import TaskKeyword
 from os.path import join
 from d3m_ta2_nyu.pipeline_execute import execute
 from d3m_ta2_nyu.data_ingestion.data_profiler import profile_data
-from d3m_ta2_nyu.utils import is_text_collection
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +50,7 @@ config = {
                    'GRAPH': 2,
                    'IMAGE': 3},
 
-    'PIPELINE_SIZE': 6,
+    'PIPELINE_SIZE': 7,
 
     'ARGS': {
         'numIters': 25,
@@ -202,10 +201,10 @@ def generate(task_keywords, dataset, pipeline_template, metrics, problem, target
     elif TaskKeyword.VERTEX_CLASSIFICATION in task_keywords or TaskKeyword.VERTEX_NOMINATION in task_keywords:
         task_name = 'VERTEX_CLASSIFICATION'
         builder = VertexClassificationBuilder()
-    elif is_text_collection(dataset[7:]) or (TaskKeyword.TEXT in task_keywords and (
-            TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords)):
+    elif TaskKeyword.TEXT in task_keywords and (
+            TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'TEXT_' + task_name
-        builder = TextBuilder()
+        builder = BaseBuilder()
     elif TaskKeyword.IMAGE in task_keywords and (
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'IMAGE_' + task_name

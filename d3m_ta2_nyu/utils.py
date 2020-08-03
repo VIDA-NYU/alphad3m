@@ -141,11 +141,11 @@ def is_collection(dataset_path):
     return False
 
 
-def is_text_collection(dataset_path):
+def get_collection_type(dataset_path):
     with open(dataset_path) as fin:
         dataset_doc = json.load(fin)
         for data_resource in dataset_doc['dataResources']:
-            if data_resource.get('isCollection', False) and data_resource['resType'] == "text":
-                return True
+            if data_resource.get('isCollection', False):
+                return data_resource['resType']
 
-    return False
+    return None
