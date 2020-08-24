@@ -12,8 +12,11 @@ from d3m_ta2_nyu.utils import is_collection
 from d3m.metadata.pipeline import Pipeline
 from d3m.metadata.problem import PerformanceMetric, TaskKeyword
 from sklearn.model_selection import train_test_split
+from multiprocessing import Manager, Process
 
 logger = logging.getLogger(__name__)
+
+MINUTES_TO_SCORE = 15
 
 
 with pkg_resources.resource_stream(
@@ -125,6 +128,7 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
 def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config, dataset_uri):
     if is_collection(dataset_uri[7:]):
         dataset = get_sample(dataset, problem)
+
     json_pipeline = convert.to_d3m_json(pipeline)
 
     if TaskKeyword.GRAPH in problem['problem']['task_keywords'] and json_pipeline['description'].startswith('MtLDB'):
@@ -137,6 +141,27 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config,
     if 'method' in scoring_config:
         scoring_config.pop('method')
 
+    manager = Manager()
+    return_dict = manager.dict()
+    p = Process(target=worker, args=(d3m_pipeline, data_pipeline, scoring_pipeline, problem, dataset, scoring_config, metrics, return_dict))
+    p.start()
+    p.join(MINUTES_TO_SCORE * 60)  # Max seconds to score a pipeline
+    run_results = return_dict['run_results']
+    run_scores = return_dict['run_scores']
+    run_results.check_success()
+    #save_pipeline_runs(run_results.pipeline_runs)
+    combined_folds = d3m.runtime.combine_folds([fold for fold in run_scores])
+    scores = {}
+
+    for _, row in combined_folds.iterrows():
+        if row['fold'] not in scores:
+            scores[row['fold']] = {}
+        scores[row['fold']][row['metric']] = row['value']
+
+    return scores
+
+
+def worker(d3m_pipeline, data_pipeline, scoring_pipeline, problem, dataset, scoring_config, metrics, return_dict):
     run_scores, run_results = d3m.runtime.evaluate(
         pipeline=d3m_pipeline,
         data_pipeline=data_pipeline,
@@ -149,18 +174,8 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config,
         context=d3m.metadata.base.Context.TESTING,
         random_seed=0,
     )
-
-    run_results.check_success()
-    #save_pipeline_runs(run_results.pipeline_runs)
-    combined_folds = d3m.runtime.combine_folds([fold for fold in run_scores])
-    scores = {}
-
-    for _, row in combined_folds.iterrows():
-        if row['fold'] not in scores:
-            scores[row['fold']] = {}
-        scores[row['fold']][row['metric']] = row['value']
-
-    return scores
+    return_dict['run_scores'] = run_scores
+    return_dict['run_results'] = run_results
 
 
 def create_rank_metric(scores, metrics):
