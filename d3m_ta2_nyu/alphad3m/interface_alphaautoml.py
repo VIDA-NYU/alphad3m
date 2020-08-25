@@ -18,6 +18,7 @@ from d3m.metadata.problem import TaskKeyword
 from os.path import join
 from d3m_ta2_nyu.pipeline_execute import execute
 from d3m_ta2_nyu.data_ingestion.data_profiler import profile_data
+from d3m_ta2_nyu.metalearningdb_miner import create_vectors_from_metalearningdb
 
 logger = logging.getLogger(__name__)
 
@@ -246,8 +247,31 @@ def generate(task_keywords, dataset, pipeline_template, metrics, problem, target
 
     primitives = get_primitives_by_type()
     config_updated = update_config(primitives, task_name)
+
+    ############
+    '''metalearning_pipelines = create_vectors_from_metalearningdb(task_name, config_updated['GRAMMAR'])
+    def my_eval(primitive_names, origin):
+        pipeline_representation = ' '.join(sorted(primitive_names))
+        if pipeline_representation in metalearning_pipelines:
+            score = metalearning_pipelines[pipeline_representation]
+            print('>>>>>>>>>>yes', pipeline_representation, score)
+        else:
+            print('>>>>>>>>>>no', pipeline_representation)
+            score = None
+        return score
+
+    game = PipelineGame(config_updated, my_eval)'''
+    ############
     game = PipelineGame(config_updated, eval_pipeline)
     nnet = NNetWrapper(game)
+
+    ########
+    '''train_examples = create_vectors_from_metalearningdb(task_name, config_updated['GRAMMAR'])
+    nnet.train(train_examples)
+    nnet.save_checkpoint(join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'nn_models'))
+    print('saved')
+    sys.exit(0)'''
+    #######
 
     if config['ARGS'].get('load_model'):
         model_file = join(config['ARGS'].get('load_folder_file')[0],

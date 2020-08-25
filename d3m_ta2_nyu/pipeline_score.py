@@ -16,7 +16,7 @@ from multiprocessing import Manager, Process
 
 logger = logging.getLogger(__name__)
 
-MINUTES_TO_SCORE = 15
+MINUTES_TO_SCORE = 10
 
 
 with pkg_resources.resource_stream(
@@ -70,6 +70,7 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
         dataset_uri_touse = sample_dataset_uri
     if TaskKeyword.FORECASTING in problem['problem']['task_keywords']:
         check_timeindicator(dataset_uri_touse[7:])
+
 
     dataset = Dataset.load(dataset_uri_touse)
     # Get pipeline from database
@@ -146,6 +147,11 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config,
     p = Process(target=worker, args=(d3m_pipeline, data_pipeline, scoring_pipeline, problem, dataset, scoring_config, metrics, return_dict))
     p.start()
     p.join(MINUTES_TO_SCORE * 60)  # Max seconds to score a pipeline
+    p.terminate()
+
+    if 'run_results' not in return_dict or 'run_scores' not in return_dict:
+        raise TimeoutError('Reached timeout (%d minutes) to score a pipeline' % MINUTES_TO_SCORE)
+
     run_results = return_dict['run_results']
     run_scores = return_dict['run_scores']
     run_results.check_success()

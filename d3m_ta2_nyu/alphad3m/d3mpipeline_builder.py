@@ -110,6 +110,8 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive):
         set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace')
     elif primitive_name == 'd3m.primitives.data_preprocessing.count_vectorizer.SKlearn':
         set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace')
+    elif primitive_name == 'd3m.primitives.data_preprocessing.feature_agglomeration.SKlearn':
+        set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace')
     elif primitive_name == 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn':
         set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace', handle_unknown='ignore')
     elif primitive_name == 'd3m.primitives.data_cleaning.imputer.SKlearn':

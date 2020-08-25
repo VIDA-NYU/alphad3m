@@ -12,10 +12,23 @@ PRIMITIVES_BY_TYPE_PATH = os.path.join(os.path.dirname(__file__), '../resource/p
 INSTALLED_PRIMITIVES = index.search()
 
 BLACK_LIST = {
-    'd3m.primitives.classification.canonical_correlation_forests.UBC',
     'd3m.primitives.classification.global_causal_discovery.ClassifierRPI',
+    'd3m.primitives.classification.tree_augmented_naive_bayes.BayesianInfRPI',
+    'd3m.primitives.classification.simple_cnaps.UBC',
+    'd3m.primitives.classification.logistic_regression.UBC',
+    'd3m.primitives.classification.multilayer_perceptron.UBC',
+    'd3m.primitives.classification.canonical_correlation_forests.UBC',
+    'd3m.primitives.regression.multilayer_perceptron.UBC',
+    'd3m.primitives.regression.canonical_correlation_forests.UBC',
+    'd3m.primitives.regression.linear_regression.UBC',
     'd3m.primitives.classification.inceptionV3_image_feature.Gator',
-    'd3m.primitives.classification.tree_augmented_naive_bayes.BayesianInfRPI'
+    'd3m.primitives.classification.gaussian_classification.JHU',
+    'd3m.primitives.classification.bert_classifier.DistilBertPairClassification',
+    'd3m.primitives.classification.search.Find_projections',
+    'd3m.primitives.classification.search_hybrid.Find_projections',
+    'd3m.primitives.regression.search_hybrid_numeric.Find_projections',
+    'd3m.primitives.regression.search_numeric.Find_projections',
+    'd3m.primitives.data_preprocessing.binarizer.SKlearn'
 }
 
 
@@ -32,7 +45,7 @@ def get_primitive_algorithms(name):
 
 
 def get_primitive_info(name):
-    primitive_dict =  get_primitive_class(name).metadata.to_json_structure()
+    primitive_dict = get_primitive_class(name).metadata.to_json_structure()
 
     return {
             'id': primitive_dict['id'],

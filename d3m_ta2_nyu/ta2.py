@@ -35,12 +35,12 @@ from d3m.metadata.problem import TaskKeyword, parse_problem_description
 from sklearn.model_selection import train_test_split
 
 
-MAX_RUNNING_PROCESSES = 4
+MAX_RUNNING_PROCESSES = 6
 SAMPLE_SIZE = 2000
 RANDOM_SEED = 42
 
 
-TUNE_PIPELINES_COUNT = 3
+TUNE_PIPELINES_COUNT = 5
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0

@@ -199,8 +199,49 @@ def create_dupms(search_id, top_pipelines):
         fout.write('\n'.join(pipeline_runs_list))
 
 
+def create_inputs_pofiler(dataset):
+    search_results_path = join(D3MOUTPUTDIR, 'temp', 'search_results.json')
+    search_results = load_search_results(search_results_path)
+    search_id = search_results[dataset]['search_id']
+    pipelines = search_results[dataset]['all_scores']
+    profiler_inputs = []
+
+    for pipeline_info in pipelines:
+        with open(join(D3MOUTPUTDIR, search_id, 'pipelines_searched/%s.json' % pipeline_info['id'])) as fin:
+            json_pipeline = json.load(fin)
+
+        score = float(pipeline_info['score'])
+        problem = dataset
+        start_time = datetime.utcnow().isoformat() + 'Z'
+        metric = 'f1'
+        end_time = datetime.utcnow().isoformat() + 'Z'
+        normalized_score = PerformanceMetric[metric.upper()].normalize(score)
+        pipeline_score = [{'metric': {'metric': metric}, 'value': score,
+                           'normalized': normalized_score}]
+        if 'digest' not in json_pipeline:
+            json_pipeline['digest'] = json_pipeline['id']
+
+        profiler_data = {
+            'pipeline_id': json_pipeline['id'],
+            'inputs': json_pipeline['inputs'],
+            'steps': json_pipeline['steps'],
+            'outputs': json_pipeline['outputs'],
+            'pipeline_digest': json_pipeline['digest'],
+            'problem': problem,
+            'start': start_time,
+            'end': end_time,
+            'scores': pipeline_score,
+            'pipeline_source': {'name': 'NYU'},
+        }
+        profiler_inputs.append(profiler_data)
+
+        with open(join(D3MOUTPUTDIR, 'pipeline_profiler.json'), 'w') as fout:
+            json.dump(profiler_inputs, fout)
+
+
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
     datasets = ['185_baseball_MIN_METADATA']
     search_pipelines(datasets, 5)
     evaluate_pipelines(datasets)
+
