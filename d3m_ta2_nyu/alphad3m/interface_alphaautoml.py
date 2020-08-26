@@ -140,8 +140,7 @@ def generate_by_templates(task_keywords, dataset, pipeline_template, targets, fe
 
 
 @database.with_sessionmaker
-def generate(task_keywords, dataset, pipeline_template, metrics, problem, targets, features, timeout,
-             msg_queue, DBSession):
+def generate(task_keywords, dataset, pipeline_template, metrics, problem, targets, features, msg_queue, DBSession):
     with open(dataset[7:]) as fin:
         dataset_doc = json.load(fin)
 

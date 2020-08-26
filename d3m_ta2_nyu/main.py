@@ -25,7 +25,7 @@ def main_search():
     output_folder = None
 
     if 'D3MTIMEOUT' in os.environ:
-        timeout = int(os.environ.get('D3MTIMEOUT')) * 60
+        timeout = int(os.environ.get('D3MTIMEOUT'))
 
     if 'D3MOUTPUTDIR' in os.environ:
         output_folder = os.environ['D3MOUTPUTDIR']

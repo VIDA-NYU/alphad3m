@@ -21,8 +21,9 @@ PRIMITIVES = index.search()
 
 
 @database.with_db
-def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank, timeout, targets, msg_queue, db):
-    timeout = timeout * 0.9  # FIXME: Save 10% of timeout to score the best config
+def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, report_rank, timeout_tuning, timeout_run,
+         msg_queue, db):
+    timeout_tuning = timeout_tuning * 0.9  # FIXME: Save 10% of timeout to score the best config
     # Load pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -31,7 +32,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
                  joinedload(database.Pipeline.connections))
     ).one()
 
-    logger.info('About to tune pipeline, id=%s, dataset=%r, timeout=%d secs', pipeline_id, dataset_uri, timeout)
+    logger.info('About to tune pipeline, id=%s, dataset=%r, timeout=%d secs', pipeline_id, dataset_uri, timeout_tuning)
     tunable_primitives = {}
 
     for primitive in pipeline.modules:
@@ -72,7 +73,8 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
             new_hyperparams.append(db_hyperparams)
 
         pipeline.parameters += new_hyperparams
-        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics_to_use, problem, scoring_config, dataset_uri)
+        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics_to_use, problem, scoring_config, dataset_uri,
+                          timeout_run)
         first_metric = metrics_to_use[0]['metric'].name
         score_values = []
         for fold_scores in scores.values():
@@ -89,7 +91,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
     # Run tuning, gets best configuration
     tuning = HyperparameterTuning(tunable_primitives.values())
     create_outputfolders(join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'tuning'))
-    best_configuration = tuning.tune(evaluate_tune, wallclock=timeout,
+    best_configuration = tuning.tune(evaluate_tune, wallclock=timeout_tuning,
                                      output_dir=join(os.environ.get('D3MOUTPUTDIR'),
                                                      'temp', 'tuning', str(pipeline_id)))
 
@@ -119,7 +121,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, do_rank
 
     shutil.rmtree(join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'tuning', str(pipeline_id)))
 
-    score(new_pipeline.id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, do_rank, None,
+    score(new_pipeline.id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, timeout_run, report_rank, None,
           db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'db.sqlite3'))
     # TODO: Change this static string path
 

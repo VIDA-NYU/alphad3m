@@ -37,9 +37,8 @@ from sklearn.model_selection import train_test_split
 
 MAX_RUNNING_PROCESSES = 6
 SAMPLE_SIZE = 2000
+MINUTES_SCORE_PIPELINE = 5
 RANDOM_SEED = 42
-
-
 TUNE_PIPELINES_COUNT = 5
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
@@ -73,8 +72,7 @@ class Session(Observable):
         create_outputfolders(self._run_pipelines_dir)
 
         self.metrics = []
-        self.do_rank = False
-        self.timeout_tuning = 0
+        self.report_rank = False
 
         self._observer = self._ta2.add_observer(self._ta2_event)
 
@@ -105,6 +103,8 @@ class Session(Observable):
         self._features = None
         self.dataset_uri = None
         self.sample_dataset_uri = None
+        self.timeout_run = None
+        self.expected_search_end = None
 
     @property
     def problem_id(self):
@@ -263,11 +263,11 @@ class Session(Observable):
                     if len(tune) > 0:
                         # Found some pipelines to tune, do that
                         logger.warning("Found %d pipelines to tune", len(tune))
-                        timeout_per_pipeline = self.timeout_tuning - time.time()
+                        timeout_tuning = self.expected_search_end - time.time()
                         for pipeline_id in tune:
                             logger.info("    %s", pipeline_id)
                             self._ta2._run_queue.put(TuneHyperparamsJob(self, pipeline_id, self.problem,
-                                                                        timeout=timeout_per_pipeline))
+                                                                        timeout_tuning=timeout_tuning))
                             self.pipelines_tuning.add(pipeline_id)
                         return
                     logger.info("Found no pipeline to tune")
@@ -426,9 +426,9 @@ class Job(object):
 
 
 class ScoreJob(Job):
-    timeout = 8 * 60
+    timeout = 10 * 60
 
-    def __init__(self, ta2, pipeline_id, dataset_uri, metrics, problem, scoring_config, do_rank=False,
+    def __init__(self, ta2, pipeline_id, dataset_uri, metrics, problem, scoring_config, timeout_run, report_rank=False,
                  sample_dataset_uri=None):
         Job.__init__(self)
         self.ta2 = ta2
@@ -438,7 +438,8 @@ class ScoreJob(Job):
         self.metrics = metrics
         self.problem = problem
         self.scoring_config = scoring_config
-        self.do_rank = do_rank
+        self.timeout_run = timeout_run
+        self.report_rank = report_rank
 
     def start(self, db_filename, **kwargs):
         self.msg = Receiver()
@@ -449,7 +450,8 @@ class ScoreJob(Job):
                                 metrics=self.metrics,
                                 problem=self.problem,
                                 scoring_config=self.scoring_config,
-                                do_rank=self.do_rank,
+                                timeout_run=self.timeout_run,
+                                report_rank=self.report_rank,
                                 db_filename=db_filename)
         self.started = time.time()
         self.ta2.notify('scoring_start',
@@ -565,13 +567,13 @@ class TestJob(Job):
 
 
 class TuneHyperparamsJob(Job):
-    def __init__(self, session, pipeline_id, problem, store_results=True, timeout=60):
+    def __init__(self, session, pipeline_id, problem, store_results=True, timeout_tuning=60):
         Job.__init__(self)
         self.session = session
         self.pipeline_id = pipeline_id
         self.problem = problem
         self.store_results = store_results
-        self.timeout = timeout
+        self.timeout_tuning = timeout_tuning
 
     def start(self, db_filename, predictions_root, **kwargs):
         self.runtime_folder = predictions_root
@@ -591,11 +593,11 @@ class TuneHyperparamsJob(Job):
                                 pipeline_id=self.pipeline_id,
                                 metrics=self.session.metrics,
                                 problem=self.problem,
-                                do_rank=self.session.do_rank,
+                                report_rank=self.session.report_rank,
                                 dataset_uri=self.session.dataset_uri,
                                 sample_dataset_uri=self.session.sample_dataset_uri,
-                                timeout=self.timeout,
-                                targets=self.session.targets,
+                                timeout_tuning=self.timeout_tuning,
+                                timeout_run=MINUTES_SCORE_PIPELINE * 60,
                                 db_filename=db_filename)
         self.session.notify('tuning_start',
                             pipeline_id=self.pipeline_id,
@@ -693,14 +695,11 @@ class D3mTa2(Observable):
                     session.metrics)
         self.sessions[session.id] = session
 
-        if timeout:
-            # Save 2 minutes to finish scoring
-            timeout = max(timeout - 2 * 60, 0.8 * timeout)
-
         # Create pipelines, NO TUNING
         with session.with_observer_queue() as queue:
-            self.build_pipelines(session.id, task_keywords, dataset_path, None, session.metrics, timeout=timeout,
+            self.build_pipelines(session.id, dataset_path, task_keywords, session.metrics, timeout, None,
                                  tune=TUNE_PIPELINES_COUNT)
+
             while queue.get(True)[0] != 'done_searching':
                 pass
 
@@ -782,8 +781,8 @@ class D3mTa2(Observable):
         finally:
             db.close()
 
-    def score_pipeline(self, pipeline_id, metrics, dataset_uri, problem, scoring_config):
-        job = ScoreJob(self, pipeline_id, dataset_uri, metrics, problem, scoring_config)
+    def score_pipeline(self, pipeline_id, metrics, dataset_uri, problem, scoring_config, timeout_run):
+        job = ScoreJob(self, pipeline_id, dataset_uri, metrics, problem, scoring_config, timeout_run)
         self._run_queue.put(job)
         return id(job)
 
@@ -797,13 +796,13 @@ class D3mTa2(Observable):
         self._run_queue.put(job)
         return id(job)
 
-    def build_pipelines(self, session_id, task, dataset, template, metrics, targets=None, features=None, timeout=None,
-                        top_pipelines=0, tune=None):
+    def build_pipelines(self, session_id, dataset, task_keywords, metrics, timeout_search, timeout_run, template=None,
+                        targets=None, features=None, tune=None, report_rank=False):
         if not metrics:
             raise ValueError("no metrics")
 
-        self.executor.submit(self._build_pipelines, session_id, task, dataset, template, metrics, targets, features, timeout,
-                             top_pipelines, tune)
+        self.executor.submit(self._build_pipelines, session_id, dataset, task_keywords, metrics, timeout_search, timeout_run,
+                             template, targets, features, tune, report_rank)
 
     def build_fixed_pipeline(self, session_id, pipeline, dataset, targets=None, features=None):
         self.executor.submit(self._build_fixed_pipeline, session_id, pipeline, dataset, targets, features)
@@ -911,7 +910,8 @@ class D3mTa2(Observable):
             db.close()
 
     # Runs in a worker thread from executor
-    def _build_pipelines(self, session_id, task, dataset_uri, pipeline_template, metrics, targets, features, timeout, top_pipelines, tune):
+    def _build_pipelines(self, session_id, dataset_uri, task_keywords, metrics, timeout_search, timeout_run, pipeline_template,
+                         targets, features, tune, report_rank):
         """Generates pipelines for the session, using the generator process.
         """
         session = self.sessions[session_id]
@@ -931,24 +931,33 @@ class D3mTa2(Observable):
             # gets created
             session.working = True
 
-        sample_dataset_uri = self._get_sample_uri(dataset_uri, session.problem)
-        do_rank = True if top_pipelines > 0 else False
-        timeout_search = timeout * 0.85
-        now = time.time()
-        timeout_tuning = now + timeout
-        self._build_pipelines_from_generator(session, task, dataset_uri, sample_dataset_uri, pipeline_template,
-                                             metrics, timeout_search, do_rank)
+        if timeout_run is not None:
+            timeout_run = timeout_run * 60  # Minutes to seconds
 
-        # For tuning
+        timeout_search_internal = None
+        expected_search_end = None
+        if timeout_search is not None:
+            timeout_search = timeout_search * 60  # Minutes to seconds
+            timeout_search_internal = timeout_search * 0.85
+            now = time.time()
+            expected_search_end = now + timeout_search
+
+        sample_dataset_uri = self._get_sample_uri(dataset_uri, session.problem)
+
         session.dataset_uri = dataset_uri
         session.sample_dataset_uri = sample_dataset_uri
-        session.do_rank = do_rank
-        session.timeout_tuning = timeout_tuning
+        session.report_rank = report_rank
+        session.timeout_run = timeout_run
+        session.expected_search_end = expected_search_end
+
+        self._build_pipelines_from_generator(session, task_keywords, dataset_uri, sample_dataset_uri, pipeline_template,
+                                             metrics, timeout_search_internal)
+
         session.tune_when_ready(tune)
 
     def _build_pipelines_from_generator(self, session, task, dataset_uri, sample_dataset_uri, pipeline_template,
-                                        metrics, timeout, do_rank):
-        logger.info("Starting AlphaD3M process, timeout is %s", timeout)
+                                        metrics, timeout_search):
+        logger.info("Starting AlphaD3M process, timeout is %s", timeout_search)
         msg_queue = Receiver()
         proc = run_process(
             'd3m_ta2_nyu.alphad3m.interface_alphaautoml.generate',
@@ -961,7 +970,6 @@ class D3mTa2(Observable):
             problem=session.problem,
             targets=session.targets,
             features=session.features,
-            timeout=timeout,
             db_filename=self.db_filename,
         )
 
@@ -977,10 +985,10 @@ class D3mTa2(Observable):
                     proc.terminate()
                     stopped = True
 
-                if timeout is not None and time.time() > start + timeout:
+                if timeout_search is not None and time.time() > start + timeout_search:
                     logger.error("Reached search timeout (%d > %d seconds), "
                                  "sending SIGTERM to generator process",
-                                 time.time() - start, timeout)
+                                 time.time() - start, timeout_search)
                     proc.terminate()
                     stopped = True
 
@@ -995,7 +1003,7 @@ class D3mTa2(Observable):
                 pipeline_id, = args
                 logger.info("Got pipeline %s from generator process",
                             pipeline_id)
-                score = self.run_pipeline(session, dataset_uri, sample_dataset_uri, task, pipeline_id, do_rank)
+                score = self.run_pipeline(session, dataset_uri, sample_dataset_uri, task, pipeline_id)
 
                 logger.info("Sending score to generator process")
                 try:  # Fixme, just to avoid Broken pipe error
@@ -1009,13 +1017,13 @@ class D3mTa2(Observable):
 
         logger.warning("Generator process exited with %r", proc.returncode)
 
-    def run_pipeline(self, session, dataset_uri, sample_dataset_uri, task_keywords, pipeline_id, do_rank):
+    def run_pipeline(self, session, dataset_uri, sample_dataset_uri, task_keywords, pipeline_id):
 
         """Score a single pipeline.
 
         This is used by the pipeline synthesis code.
         """
-
+        timeout_run = MINUTES_SCORE_PIPELINE * 60
         scoring_config = {'shuffle': 'true',
                           'stratified': 'true' if TaskKeyword.CLASSIFICATION in task_keywords else 'false',
                           'method': 'K_FOLD',
@@ -1026,7 +1034,7 @@ class D3mTa2(Observable):
             session.add_scoring_pipeline(pipeline_id)
             logger.info("Created pipeline %s", pipeline_id)
             self._run_queue.put(ScoreJob(self, pipeline_id, dataset_uri, session.metrics, session.problem,
-                                         scoring_config, do_rank, sample_dataset_uri))
+                                         scoring_config, timeout_run, session.report_rank, sample_dataset_uri))
             session.notify('new_pipeline', pipeline_id=pipeline_id)
 
             while True:

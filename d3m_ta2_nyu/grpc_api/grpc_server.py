@@ -138,21 +138,23 @@ class CoreService(pb_core_grpc.CoreServicer):
             dataset = 'file://' + dataset
 
         problem = decode_problem_description(request.problem)
-        top_pipelines = request.rank_solutions_limit
-        timeout = request.time_bound_search
-        if timeout < 0.000001:
-            timeout = None  # No limit
-        else:
-            timeout = max(timeout, 1.0)  # At least one minute
-            timeout = timeout * 60.0  # Minutes to seconds
+        timeout_search = request.time_bound_search
+        timeout_run = request.time_bound_run
+        report_rank = True if request.rank_solutions_limit > 0 else False
+
+        if timeout_search <= 0.0:
+            timeout_search = None
+
+        if timeout_run <= 0.0:
+            timeout_run = None
 
         search_id = self._ta2.new_session(problem)
-
         session = self._ta2.sessions[search_id]
         task_keywords = session.problem['problem']['task_keywords']
+        metrics = session.metrics
 
-        self._ta2.build_pipelines(search_id, task_keywords, dataset, template, session.metrics, timeout=timeout,
-                                  top_pipelines=top_pipelines)
+        self._ta2.build_pipelines(search_id, dataset, task_keywords, metrics, timeout_search, timeout_run, template,
+                                  report_rank=report_rank)
 
         return pb_core.SearchSolutionsResponse(
             search_id=str(search_id),
@@ -307,12 +309,13 @@ class CoreService(pb_core_grpc.CoreServicer):
                     dataset, metrics)
 
         problem = None
+        timeout_run = None
         for session_id in self._ta2.sessions.keys():
             if pipeline_id in self._ta2.sessions[session_id].pipelines:
                 problem = self._ta2.sessions[session_id].problem
+                timeout_run = self._ta2.sessions[session_id].timeout_run
                 break
 
-        #  TODO Improve how to cast request.configuration to dict
         scoring_config = {
                         'method': request.configuration.method,
                         'train_score_ratio': str(request.configuration.train_test_ratio),
@@ -323,7 +326,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         if scoring_config['method'] == 'K_FOLD':
             scoring_config['number_of_folds'] = str(request.configuration.folds)
 
-        job_id = self._ta2.score_pipeline(pipeline_id, metrics, dataset, problem, scoring_config)
+        job_id = self._ta2.score_pipeline(pipeline_id, metrics, dataset, problem, scoring_config, timeout_run)
         self._requests[job_id] = PersistentQueue()
 
         return pb_core.ScoreSolutionResponse(

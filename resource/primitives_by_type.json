@@ -25,7 +25,6 @@
         "d3m.primitives.classification.random_forest.SKlearn": 25,
         "d3m.primitives.classification.sgd.SKlearn": 26,
         "d3m.primitives.classification.svc.SKlearn": 27,
-        "d3m.primitives.classification.text_classifier.DistilTextClassifier": 28,
         "d3m.primitives.classification.xgboost_dart.Common": 29,
         "d3m.primitives.classification.xgboost_gbtree.Common": 30
     },
