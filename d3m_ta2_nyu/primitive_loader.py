@@ -9,9 +9,10 @@ logger = logging.getLogger(__name__)
 PRIMITIVES_BY_NAME_PATH = os.path.join(os.path.dirname(__file__), '../resource/primitives_by_name.json')
 PRIMITIVES_BY_TYPE_PATH = os.path.join(os.path.dirname(__file__), '../resource/primitives_by_type.json')
 
-INSTALLED_PRIMITIVES = index.search()
+INSTALLED_PRIMITIVES = sorted(index.search(), key=lambda x: x.endswith('SKlearn'), reverse=True)
 
 BLACK_LIST = {
+    'd3m.primitives.classification.random_classifier.Test',
     'd3m.primitives.classification.global_causal_discovery.ClassifierRPI',
     'd3m.primitives.classification.tree_augmented_naive_bayes.BayesianInfRPI',
     'd3m.primitives.classification.simple_cnaps.UBC',
@@ -23,14 +24,18 @@ BLACK_LIST = {
     'd3m.primitives.regression.linear_regression.UBC',
     'd3m.primitives.classification.inceptionV3_image_feature.Gator',
     'd3m.primitives.classification.gaussian_classification.JHU',
-    'd3m.primitives.classification.bert_classifier.DistilBertPairClassification',
     'd3m.primitives.classification.search.Find_projections',
     'd3m.primitives.classification.search_hybrid.Find_projections',
     'd3m.primitives.regression.search_hybrid_numeric.Find_projections',
     'd3m.primitives.regression.search_numeric.Find_projections',
     'd3m.primitives.data_preprocessing.binarizer.SKlearn',
     'd3m.primitives.feature_selection.rffeatures.Rffeatures',
-    'd3m.primitives.data_cleaning.string_imputer.SKlearn'
+    'd3m.primitives.feature_selection.mutual_info_classif.DistilMIRanking',
+    'd3m.primitives.dimensionality_reduction.t_distributed_stochastic_neighbor_embedding.Tsne',
+    'd3m.primitives.data_cleaning.string_imputer.SKlearn',
+    'd3m.primitives.data_transformation.gaussian_random_projection.SKlearn',
+    'd3m.primitives.data_transformation.sparse_random_projection.SKlearn',
+    'd3m.primitives.data_preprocessing.unary_encoder.DSBOX'
 }
 
 
@@ -67,7 +72,6 @@ def get_primitives_by_type():
         return primitives
 
     primitives = {}
-    count = 1
     for primitive_name in INSTALLED_PRIMITIVES:
         if primitive_name not in BLACK_LIST:
             try:
@@ -76,7 +80,7 @@ def get_primitives_by_type():
             except:
                 logger.error('Loading metadata about primitive %s', primitive_name)
                 continue
-            #  Use the algorithm types as families since they are more descriptive
+            #  Use the algorithm types as families because they are more descriptive
             if family in {'DATA_TRANSFORMATION', 'DATA_PREPROCESSING', 'DATA_CLEANING'}:
                 family = algorithm_types[0]
 
@@ -86,8 +90,37 @@ def get_primitives_by_type():
                                   'd3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn',
                                   'd3m.primitives.data_preprocessing.count_vectorizer.SKlearn'}:
                 family = 'TEXT_ENCODER'
-            elif primitive_name in {'d3m.primitives.data_transformation.data_cleaning.DistilEnrichDates'}:
+
+            elif primitive_name in {'d3m.primitives.data_preprocessing.quantile_transformer.SKlearn',
+                                    'd3m.primitives.data_preprocessing.normalizer.SKlearn',
+                                    'd3m.primitives.normalization.iqr_scaler.DSBOX'}:
+                family = 'FEATURE_SCALING'
+
+            elif primitive_name in {'d3m.primitives.data_preprocessing.feature_agglomeration.SKlearn',
+                                    'd3m.primitives.feature_selection.mutual_info_classif.DistilMIRanking'}:
+                family = 'FEATURE_SELECTION'
+
+            elif primitive_name in {'d3m.primitives.feature_extraction.pca.SKlearn',
+                                    'd3m.primitives.data_preprocessing.truncated_svd.SKlearn',
+                                    'd3m.primitives.feature_extraction.pca_features.RandomizedPolyPCA',
+                                    'd3m.primitives.data_transformation.gaussian_random_projection.SKlearn',
+                                    'd3m.primitives.data_transformation.sparse_random_projection.SKlearn'}:
+                family = 'DIMENSIONALITY_REDUCTION'  # Or should it be FEATURE_SELECTION ?
+
+            elif primitive_name in {'d3m.primitives.feature_extraction.boc.UBC',
+                                    'd3m.primitives.feature_extraction.bow.UBC',
+                                    'd3m.primitives.feature_extraction.nk_sent2vec.Sent2Vec',
+                                    'd3m.primitives.feature_extraction.tfidf_vectorizer.BBNTfidfTransformer'}:
+                family = 'NATURAL_LANGUAGE_PROCESSING'
+
+            elif primitive_name in {'d3m.primitives.classification.bert_classifier.DistilBertPairClassification',
+                                    'd3m.primitives.classification.text_classifier.DistilTextClassifier'}:
+                family = 'TEXT_CLASSIFIER'
+
+            elif primitive_name in {'d3m.primitives.data_transformation.data_cleaning.DistilEnrichDates',
+                                    'd3m.primitives.data_cleaning.cleaning_featurizer.DSBOX'}:
                 family = 'DATETIME_ENCODER'
+
             elif primitive_name in {'d3m.primitives.feature_extraction.yolo.DSBOX'}:
                 family = 'OBJECT_DETECTION'
 
@@ -95,9 +128,8 @@ def get_primitives_by_type():
                 family = 'CATEGORICAL_ENCODER'
 
             if family not in primitives:
-                primitives[family] = {}
-            primitives[family][primitive_name] = count
-            count += 1
+                primitives[family] = []
+            primitives[family].append(primitive_name)
 
     with open(PRIMITIVES_BY_TYPE_PATH, 'w') as fout:
         json.dump(primitives, fout, indent=4)

@@ -3,6 +3,7 @@ import logging
 import json
 import os
 from d3m import index
+from d3m_ta2_nyu.primitive_loader import get_primitives_by_type
 from d3m.metadata.hyperparams import Bounded, Enumeration, UniformInt, UniformBool, Uniform, Normal, Union, \
     Constant as ConstantD3M
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -12,15 +13,12 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformFloatH
 
 
 HYPERPARAMETERS_FROM_METALEARNING_PATH = os.path.join(os.path.dirname(__file__), '../../resource/hyperparams.json')
-PRIMITIVES_PATH = os.path.join(os.path.dirname(__file__), '../../resource/primitives_by_type.json')
-PRIMITIVES = {}
 
-with open(PRIMITIVES_PATH) as fin:
-    primitives_info = json.load(fin)
-    for primitive_type in primitives_info:
-        primitive_names = primitives_info[primitive_type].keys()
-        for primitive_name in primitive_names:
-            PRIMITIVES[primitive_name] = primitive_type
+PRIMITIVES = {}
+primitives_info = get_primitives_by_type()
+for primitive_type in primitives_info:
+    for primitive_name in primitives_info[primitive_type]:
+        PRIMITIVES[primitive_name] = primitive_type
 
 logger = logging.getLogger(__name__)
 

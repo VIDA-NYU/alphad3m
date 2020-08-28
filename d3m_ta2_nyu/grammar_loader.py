@@ -25,10 +25,9 @@ def create_completegrammar(primitives):
         primitive_type = production.lhs().symbol()
         if primitive_type in primitives:
             new_rhs_list = []
-            sorted_primitives = sorted(primitives[primitive_type], key=lambda x: x.endswith('SKlearn'), reverse=True)
             for token in production.rhs():
                 if isinstance(token, str) and token.startswith('primitive_'):
-                    new_rhs_list.append(sorted_primitives)
+                    new_rhs_list.append(primitives[primitive_type])
                 else:
                     new_rhs_list.append([token])
             for new_rhs in itertools.product(*new_rhs_list):

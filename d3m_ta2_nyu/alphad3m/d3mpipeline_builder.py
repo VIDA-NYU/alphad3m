@@ -124,6 +124,8 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive):
         set_hyperparams(db, pipeline, primitive, epochs=1)
     elif primitive_name == 'd3m.primitives.data_preprocessing.encoder.DSBOX':
         set_hyperparams(db, pipeline, primitive, n_limit=50)
+    elif primitive_name == 'd3m.primitives.data_cleaning.cleaning_featurizer.DSBOX':
+        set_hyperparams(db, pipeline, primitive, features='split_date_column')
     elif primitive_name == 'd3m.primitives.data_transformation.encoder.DistilTextEncoder':
         set_hyperparams(db, pipeline, primitive, encoder_type='tfidf')
 
