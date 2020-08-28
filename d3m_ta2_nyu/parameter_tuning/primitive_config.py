@@ -11,24 +11,29 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformFloatH
      UniformIntegerHyperparameter, UnParametrizedHyperparameter, Constant, NormalFloatHyperparameter
 
 
-logger = logging.getLogger(__name__)
-PRIMITIVES = index.search()
 HYPERPARAMETERS_FROM_METALEARNING_PATH = os.path.join(os.path.dirname(__file__), '../../resource/hyperparams.json')
+PRIMITIVES_PATH = os.path.join(os.path.dirname(__file__), '../../resource/primitives_by_type.json')
+PRIMITIVES = {}
+
+with open(PRIMITIVES_PATH) as fin:
+    primitives_info = json.load(fin)
+    for primitive_type in primitives_info:
+        primitive_names = primitives_info[primitive_type].keys()
+        for primitive_name in primitive_names:
+            PRIMITIVES[primitive_name] = primitive_type
+
+logger = logging.getLogger(__name__)
 
 
-def is_tunable(name):
-    if name not in PRIMITIVES:
-        return False
-    if name in {'d3m.primitives.feature_extraction.yolo.DSBOX'}:
-        # This primitive is not in the OBJECT_DETECTION family, so compares it by its name
+def is_tunable(primitive_name):
+    primitive_type = PRIMITIVES.get(primitive_name, None)
+
+    if primitive_type in {'CLASSIFICATION', 'REGRESSION', 'TIME_SERIES_CLASSIFICATION', 'TIME_SERIES_FORECASTING',
+                          'SEMISUPERVISED_CLASSIFICATION', 'COMMUNITY_DETECTION', 'GRAPH_MATCHING', 'LINK_PREDICTION',
+                          'VERTEX_CLASSIFICATION', 'OBJECT_DETECTION', 'FEATURE_SELECTION'}:
         return True
 
-    primitive = index.get_primitive(name)
-    family = primitive.metadata.to_json_structure()['primitive_family']
-
-    return family in {'CLASSIFICATION', 'REGRESSION', 'TIME_SERIES_CLASSIFICATION', 'TIME_SERIES_FORECASTING',
-                      'SEMISUPERVISED_CLASSIFICATION', 'COMMUNITY_DETECTION', 'VERTEX_CLASSIFICATION', 'GRAPH_MATCHING',
-                      'LINK_PREDICTION', 'FEATURE_SELECTION', 'OBJECT_DETECTION'}
+    return False
 
 
 def load_hyperparameters(primitive_name):

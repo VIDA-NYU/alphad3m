@@ -28,7 +28,9 @@ BLACK_LIST = {
     'd3m.primitives.classification.search_hybrid.Find_projections',
     'd3m.primitives.regression.search_hybrid_numeric.Find_projections',
     'd3m.primitives.regression.search_numeric.Find_projections',
-    'd3m.primitives.data_preprocessing.binarizer.SKlearn'
+    'd3m.primitives.data_preprocessing.binarizer.SKlearn',
+    'd3m.primitives.feature_selection.rffeatures.Rffeatures',
+    'd3m.primitives.data_cleaning.string_imputer.SKlearn'
 }
 
 
@@ -84,8 +86,11 @@ def get_primitives_by_type():
                                   'd3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn',
                                   'd3m.primitives.data_preprocessing.count_vectorizer.SKlearn'}:
                 family = 'TEXT_ENCODER'
-            if primitive_name in {'d3m.primitives.data_transformation.data_cleaning.DistilEnrichDates'}:
+            elif primitive_name in {'d3m.primitives.data_transformation.data_cleaning.DistilEnrichDates'}:
                 family = 'DATETIME_ENCODER'
+            elif primitive_name in {'d3m.primitives.feature_extraction.yolo.DSBOX'}:
+                family = 'OBJECT_DETECTION'
+
             if family == 'ENCODE_ONE_HOT':
                 family = 'CATEGORICAL_ENCODER'
 

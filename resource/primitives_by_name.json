@@ -406,13 +406,6 @@
         "digest": "e4f5b66a3b02ce9b2d36b13980f4262fdede28468a8253c6078d88ae793b3c6e"
     },
     {
-        "id": "13777068-9dc0-3c5b-b4da-99350d67ee3f",
-        "name": "sklearn.preprocessing.data.Binarizer",
-        "version": "2020.6.24",
-        "python_path": "d3m.primitives.data_preprocessing.binarizer.SKlearn",
-        "digest": "0399c9b23f800f4b38f5935837464ac826fbeb8fc948ef4dd02491427b747f5d"
-    },
-    {
         "id": "35afd4db-e11d-4e2d-a780-9e123b752bd7",
         "name": "Channel Averager",
         "version": "0.1.4",
@@ -1974,13 +1967,6 @@
         "digest": "f31ac9cbefdf17e222656e591ee609bcc9ab79a1746eec53bad766079be6c8a7"
     },
     {
-        "id": "23b044e9-32df-4bf8-aedd-9040d928416c",
-        "name": "Canonical Correlation Forests Regressor",
-        "version": "0.1.0",
-        "python_path": "d3m.primitives.regression.canonical_correlation_forests.UBC",
-        "digest": "8091fb259ad5a2637402892c2c2d7de74c2e37108a40c65c2cb1929a1e3fccf7"
-    },
-    {
         "id": "92360c43-6e6f-4ff3-b1e6-5851792d8fcc",
         "name": "Nearest Neighbor Regressor with Cover Trees",
         "version": "3.1.1",
@@ -2079,13 +2065,6 @@
         "digest": "3f8d6a28fe849e18688fd3f342993cb0a10493d0ee9b7a2240195b851b7eb93a"
     },
     {
-        "id": "7288e169-5c2b-434a-96f8-cb2144e7f9cc",
-        "name": "Bayesian Linear Regression",
-        "version": "0.1.0",
-        "python_path": "d3m.primitives.regression.linear_regression.UBC",
-        "digest": "0799d679838c9f939414efb6f8298e70d2fcd5a9a8b2acbb2b711407e6ee2853"
-    },
-    {
         "id": "f40ffdc0-1d6d-3234-8fd0-a3e4d7a136a7",
         "name": "sklearn.svm.classes.LinearSVR",
         "version": "2020.6.24",
@@ -2105,13 +2084,6 @@
         "version": "0.1.0",
         "python_path": "d3m.primitives.regression.monomial.Test",
         "digest": "551d9f06074d8782fa658e261f92ca906db62194692bf7c1f22b6ff793fb4892"
-    },
-    {
-        "id": "73c21d0c-8364-4bd2-ab6b-06c53f251674",
-        "name": "Neural Network Regressor",
-        "version": "0.1.0",
-        "python_path": "d3m.primitives.regression.multilayer_perceptron.UBC",
-        "digest": "0302d1d5f5bfd34e9393c706719ea4adb6840ddd818ffd91f23f0efc918864c1"
     },
     {
         "id": "50ce5919-a155-3c72-a230-f4ab4b5babba",
@@ -2147,20 +2119,6 @@
         "version": "2020.6.24",
         "python_path": "d3m.primitives.regression.ridge.SKlearn",
         "digest": "235b9cc237a578f2b0c4d2357ba485266506a1977cc811b725eb070d22a337bf"
-    },
-    {
-        "id": "2a581b8d-baf0-4278-842e-082b796f3edd",
-        "name": "find projections",
-        "version": "2.3.1",
-        "python_path": "d3m.primitives.regression.search_hybrid_numeric.Find_projections",
-        "digest": "fd09e72134dbab10e2b6b87fc98904535b0ea6f6e51656c2ffb7754a3518e7e0"
-    },
-    {
-        "id": "fbc8d328-a553-4289-a21c-b1407a21a900",
-        "name": "find projections numeric",
-        "version": "2.3.1",
-        "python_path": "d3m.primitives.regression.search_numeric.Find_projections",
-        "digest": "05db14b364d9a2e68582e0125ec3665265eabdb1a4b983df3aeb97824d8e7716"
     },
     {
         "id": "db3a7669-72e1-3c95-91c1-0c2a3f137d78",
