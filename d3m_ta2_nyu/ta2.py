@@ -26,19 +26,16 @@ from uuid import uuid4, UUID
 from d3m_ta2_nyu import __version__
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu.grpc_api import grpc_server
-from d3m_ta2_nyu.utils import Observable, ProgressStatus, is_collection
+from d3m_ta2_nyu.utils import Observable, ProgressStatus, is_collection, get_dataset_sample
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json
 from d3m_ta2_nyu.data_ingestion.data_reader import create_d3mdataset, create_d3mproblem
 from d3m.container import Dataset
 from d3m.metadata.problem import TaskKeyword, parse_problem_description
-from sklearn.model_selection import train_test_split
 
 
 MAX_RUNNING_PROCESSES = 6
-SAMPLE_SIZE = 2000
 MINUTES_SCORE_PIPELINE = 3
-RANDOM_SEED = 42
 TUNE_PIPELINES_COUNT = 5
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
@@ -1097,33 +1094,10 @@ class D3mTa2(Observable):
         if os.path.exists(dataset_sample_folder[6:]):
             shutil.rmtree(dataset_sample_folder[6:])
 
-        try:
-            target_name = problem['inputs'][0]['targets'][0]['column_name']
-            for res_id in dataset:
-                if ('https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
-                        in dataset.metadata.query([res_id])['semantic_types']):
-                    break
-            else:
-                res_id = next(iter(dataset))
+        dataset_sample = get_dataset_sample(dataset, problem, dataset_sample_folder)
 
-            original_size = len(dataset[res_id])
-            if hasattr(dataset[res_id], 'columns') and original_size > SAMPLE_SIZE:
-                labels = dataset[res_id].get(target_name)
-                ratio = SAMPLE_SIZE / original_size
-                stratified_labels = None
-                if TaskKeyword.CLASSIFICATION in task_keywords:
-                    stratified_labels = labels
-
-                x_train, x_test, y_train, y_test = train_test_split(dataset[res_id], labels, random_state=RANDOM_SEED,
-                                                                    test_size=ratio, stratify=stratified_labels)
-                dataset[res_id] = x_test
-                dataset.save(dataset_sample_folder + 'datasetDoc.json')
-                dataset_sample_uri = dataset_sample_folder + 'datasetDoc.json'
-                logger.info('Sampled data, from %d to %d', original_size, len(dataset[res_id]))
-            else:
-                logger.info('Not doing sampling for small dataset (size = %d)', original_size)
-        except Exception:
-            logger.exception('Error sampling in datatset, using whole dataset %s', dataset_uri)
+        if isinstance(dataset_sample, str):  # Was the dataset sampled?
+            dataset_sample_uri = dataset_sample
 
         return dataset_sample_uri
 

@@ -6,6 +6,13 @@ import logging
 import json
 from queue import Empty, Queue
 import threading
+from d3m.metadata.problem import TaskKeyword
+from sklearn.model_selection import train_test_split
+
+SAMPLE_SIZE = 2000
+RANDOM_SEED = 0
+
+logger = logging.getLogger(__name__)
 
 
 class Observable(object):
@@ -149,3 +156,43 @@ def get_collection_type(dataset_path):
                 return data_resource['resType']
 
     return None
+
+
+def get_dataset_sample(dataset, problem, dataset_sample_path=None):
+    try:
+        target_name = problem['inputs'][0]['targets'][0]['column_name']
+        for res_id in dataset:
+            if ('https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
+                    in dataset.metadata.query([res_id])['semantic_types']):
+                break
+        else:
+            res_id = next(iter(dataset))
+
+        original_size = len(dataset[res_id])
+        if hasattr(dataset[res_id], 'columns') and len(dataset[res_id]) > SAMPLE_SIZE:
+            labels = dataset[res_id].get(target_name)
+            ratio = SAMPLE_SIZE / original_size
+            stratified_labels = None
+            if TaskKeyword.CLASSIFICATION in problem['problem']['task_keywords']:
+                stratified_labels = labels
+
+            try:
+                x_train, x_test, y_train, y_test = train_test_split(dataset[res_id], labels, random_state=RANDOM_SEED,
+                                                                    test_size=ratio, stratify=stratified_labels)
+            except:
+                # Not using stratified sampling when the minority class has few instances, not enough for the folds
+                x_train, x_test, y_train, y_test = train_test_split(dataset[res_id], labels, random_state=RANDOM_SEED,
+                                                                    test_size=ratio)
+            dataset[res_id] = x_test
+            logger.info('Sampling down data from %d to %d', original_size, len(dataset[res_id]))
+            if dataset_sample_path:
+                dataset.save(dataset_sample_path + 'datasetDoc.json')
+                dataset_sample_uri = dataset_sample_path + 'datasetDoc.json'
+                return dataset_sample_uri
+
+        else:
+            logger.info('Not doing sampling for small dataset (size = %d)', original_size)
+    except:
+        logger.error('Error sampling in dataset %s')
+
+    return dataset

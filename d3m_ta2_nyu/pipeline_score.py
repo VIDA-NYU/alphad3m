@@ -8,10 +8,9 @@ import d3m.runtime
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from d3m_ta2_nyu.workflow import database, convert
-from d3m_ta2_nyu.utils import is_collection
+from d3m_ta2_nyu.utils import is_collection, get_dataset_sample
 from d3m.metadata.pipeline import Pipeline
 from d3m.metadata.problem import PerformanceMetric, TaskKeyword
-from sklearn.model_selection import train_test_split
 from multiprocessing import Manager, Process
 
 logger = logging.getLogger(__name__)
@@ -127,7 +126,7 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
 
 def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config, dataset_uri, timeout_run):
     if is_collection(dataset_uri[7:]):
-        dataset = get_sample(dataset, problem)
+        dataset = get_dataset_sample(dataset, problem)
 
     json_pipeline = convert.to_d3m_json(pipeline)
 
@@ -223,35 +222,3 @@ def save_pipeline_runs(pipelines_runs):
 
         with open(save_run_path, 'w') as fin:
             pipeline_run.to_yaml(fin, indent=2)
-
-
-def get_sample(dataset, problem):
-    SAMPLE_SIZE = 2000
-    RANDOM_SEED = 42
-
-    try:
-        target_name = problem['inputs'][0]['targets'][0]['column_name']
-        for res_id in dataset:
-            if ('https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint'
-                    in dataset.metadata.query([res_id])['semantic_types']):
-                break
-        else:
-            res_id = next(iter(dataset))
-
-        original_size = len(dataset[res_id])
-        if hasattr(dataset[res_id], 'columns') and len(dataset[res_id]) > SAMPLE_SIZE:
-            labels = dataset[res_id].get(target_name)
-            ratio = SAMPLE_SIZE / original_size
-            stratified_labels = None
-            if TaskKeyword.CLASSIFICATION in problem['problem']['task_keywords']:
-                stratified_labels = labels
-
-            x_train, x_test, y_train, y_test = train_test_split(dataset[res_id], labels, random_state=RANDOM_SEED,
-                                                                test_size=ratio, stratify=stratified_labels)
-            dataset[res_id] = x_test
-            dataset[res_id] = x_test
-            logger.info('Sampling down data from %d to %d', original_size, len(dataset[res_id]))
-    except:
-        logger.error('Error sampling in datatset %s')
-
-    return dataset
