@@ -147,13 +147,6 @@
         "digest": "17e79a8603af05781b6ea5a15055e74157290f3c529a36e81155442f1a8b85eb"
     },
     {
-        "id": "94c5c918-9ad5-3496-8e52-2359056e0120",
-        "name": "sklearn.impute.MissingIndicator",
-        "version": "2020.6.24",
-        "python_path": "d3m.primitives.data_cleaning.missing_indicator.SKlearn",
-        "digest": "3e13ebd35715d6bfd571cabd3c8220999f672aecd7d48eff8051b109afee4ea7"
-    },
-    {
         "id": "0609859b-8ed9-397f-ac7a-7c4f63863560",
         "name": "sklearn.feature_extraction.text.CountVectorizer",
         "version": "2020.6.24",
@@ -672,13 +665,6 @@
         "digest": "9cd86dd20b537a990dc613e1c3f307cd206ee40f2b786e760b3800684a408574"
     },
     {
-        "id": "6c425897-6ffe-45b8-949f-002d872ccf12",
-        "name": "Annotated tabular extractor",
-        "version": "0.1.0",
-        "python_path": "d3m.primitives.data_cleaning.tabular_extractor.Common",
-        "digest": "214a6c1b3dfa807e88a4a7bf37df244372eadd0bfe630986c36c83729df7e45c"
-    },
-    {
         "id": "46612a42-6120-3559-9db9-3aa9a76eb94f",
         "name": "duke",
         "version": "1.2.0",
@@ -859,20 +845,6 @@
         "version": "0.1.0",
         "python_path": "d3m.primitives.data_preprocessing.numeric_range_filter.Common",
         "digest": "694e05d4d7697b87597c23194d28fe6b0df8418541c6cc2f849b6ee258012a0b"
-    },
-    {
-        "id": "eaec420d-46eb-4ddf-a2cd-b8097345ff3e",
-        "name": "One-hot maker",
-        "version": "0.3.0",
-        "python_path": "d3m.primitives.data_preprocessing.one_hot_encoder.MakerCommon",
-        "digest": "587f1e32653d0a9b76215edd18ef3854e2a3835c564f04f1e4f4e4ec5538970b"
-    },
-    {
-        "id": "f6315ca9-ca39-4e13-91ba-1964ee27281c",
-        "name": "Pandas one hot encoder",
-        "version": "0.1.0",
-        "python_path": "d3m.primitives.data_preprocessing.one_hot_encoder.PandasCommon",
-        "digest": "e31291d50fd8605a71bf06c2c52d3e43eb0319e863bae147df7557cdf9ccf172"
     },
     {
         "id": "ebfeb6f0-e366-4082-b1a7-602fd50acc96",
@@ -1232,13 +1204,6 @@
         "digest": "deea3342fb16f23259455cf3cc6bd99628b5b9a1c8463290b6de45db728c3922"
     },
     {
-        "id": "7b33a039-af90-4a18-989f-bf8e68f5f3c5",
-        "name": "sklearn.preprocessing.data.OneHotEncoder",
-        "version": "2019.4.4",
-        "python_path": "d3m.primitives.data_transformation.one_hot_encoder.TPOT",
-        "digest": "e975b80a4fd703549a27b765aeae4235bed3f1e20ccd0ff3bc293a6e901a7806"
-    },
-    {
         "id": "36bedff2-1c99-47f3-92a8-a581f35b1924",
         "name": "Expand group predictions",
         "version": "0.4.1",
@@ -1456,20 +1421,6 @@
         "digest": "0b2271855a0fe1b1299266acea672620c4befa7b2960d2a230df42180f5a3695"
     },
     {
-        "id": "5df70f68-b78f-4104-81ab-a935f4007316",
-        "name": "Bag of Characters",
-        "version": "0.1.0",
-        "python_path": "d3m.primitives.feature_extraction.boc.UBC",
-        "digest": "38f0f1b8afa77c7fa757933c5284d0e9a8974714d822b18afe627b8d62671355"
-    },
-    {
-        "id": "21e73615-de5c-47e2-b52b-fa8c7e62f74f",
-        "name": "Bag of Words",
-        "version": "0.1.0",
-        "python_path": "d3m.primitives.feature_extraction.bow.UBC",
-        "digest": "98c7d998309f2c166e72d3012b23f016d9753f4720757704ae18c0f286c25113"
-    },
-    {
         "id": "5335758b-9977-4d53-a3d1-e33a352d214d",
         "name": "Convolutional Neural Network",
         "version": "0.1.0",
@@ -1510,13 +1461,6 @@
         "version": "1.5.3",
         "python_path": "d3m.primitives.feature_extraction.multitable_featurization.DSBOX",
         "digest": "a84a0cd27158041545883d0b04ffd5581b698414083ab80a03718310351d0d20"
-    },
-    {
-        "id": "cf450079-9333-4a3f-aed4-b77a4e8c7be7",
-        "name": "sent2vec_wrapper",
-        "version": "1.3.0",
-        "python_path": "d3m.primitives.feature_extraction.nk_sent2vec.Sent2Vec",
-        "digest": "ac23d2a962103919a40ceea896916496067f1c0c2a2359f64056b44833e55701"
     },
     {
         "id": "2b39791f-03aa-41ea-b370-abdd043a8887",
@@ -1573,13 +1517,6 @@
         "version": "3.0.2",
         "python_path": "d3m.primitives.feature_extraction.sparse_pca.SparsePCA",
         "digest": "12df5881a8e88f6fd2a12637effbcedfd632e5dc48b86536f45d359508ed88bc"
-    },
-    {
-        "id": "fefcb78f-c2f5-4557-a23b-0910b2127769",
-        "name": "Tfidf Transformer",
-        "version": "0.1.4",
-        "python_path": "d3m.primitives.feature_extraction.tfidf_vectorizer.BBNTfidfTransformer",
-        "digest": "00b7baac64cf3e5d64d5b2df6a1253605e15831e66696008881136f7a7d0d2fc"
     },
     {
         "id": "dsbox-featurizer-image-vgg16",

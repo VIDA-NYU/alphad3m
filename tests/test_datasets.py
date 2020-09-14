@@ -111,6 +111,7 @@ def evaluate_pipelines(datasets, top=10):
             search_id = search_results[dataset]['search_id']
             logger.info('Scoring top pipeline id=%s' % top_pipeline_id)
             top_pipeline_path = join(D3MOUTPUTDIR, search_id, 'pipelines_searched', '%s.json' % top_pipeline_id)
+            #top_pipeline_path = '/usr/src/app/resource/pipelines/example_metalearningdb.json'
             score_pipeline_path = join(D3MOUTPUTDIR, 'temp', 'runtime_output', 'fit_score_%s.csv' % top_pipeline_id)
 
             command = [

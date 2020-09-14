@@ -19,6 +19,7 @@ from os.path import join
 from d3m_ta2_nyu.pipeline_execute import execute
 from d3m_ta2_nyu.data_ingestion.data_profiler import profile_data
 from d3m_ta2_nyu.metalearningdb_miner import create_vectors_from_metalearningdb
+from d3m_ta2_nyu.utils import get_collection_type
 
 logger = logging.getLogger(__name__)
 
@@ -201,7 +202,7 @@ def generate(task_keywords, dataset, pipeline_template, metrics, problem, target
     elif TaskKeyword.VERTEX_CLASSIFICATION in task_keywords or TaskKeyword.VERTEX_NOMINATION in task_keywords:
         task_name = 'VERTEX_CLASSIFICATION'
         builder = VertexClassificationBuilder()
-    elif TaskKeyword.TEXT in task_keywords and (
+    elif get_collection_type(dataset[7:]) == 'text' or TaskKeyword.TEXT in task_keywords and (
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'TEXT_' + task_name
         builder = BaseBuilder()

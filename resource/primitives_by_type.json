@@ -30,8 +30,6 @@
     ],
     "IMPUTATION": [
         "d3m.primitives.data_cleaning.imputer.SKlearn",
-        "d3m.primitives.data_cleaning.missing_indicator.SKlearn",
-        "d3m.primitives.data_cleaning.tabular_extractor.Common",
         "d3m.primitives.data_preprocessing.greedy_imputation.DSBOX",
         "d3m.primitives.data_preprocessing.iterative_regression_imputation.DSBOX",
         "d3m.primitives.data_preprocessing.mean_imputation.DSBOX",
@@ -87,10 +85,7 @@
     "CATEGORICAL_ENCODER": [
         "d3m.primitives.data_transformation.one_hot_encoder.SKlearn",
         "d3m.primitives.data_preprocessing.encoder.DSBOX",
-        "d3m.primitives.data_preprocessing.one_hot_encoder.MakerCommon",
-        "d3m.primitives.data_preprocessing.one_hot_encoder.PandasCommon",
-        "d3m.primitives.data_transformation.one_hot_encoder.DistilOneHotEncoder",
-        "d3m.primitives.data_transformation.one_hot_encoder.TPOT"
+        "d3m.primitives.data_transformation.one_hot_encoder.DistilOneHotEncoder"
     ],
     "CATEGORY_ENCODER": [
         "d3m.primitives.data_transformation.ordinal_encoder.SKlearn",
@@ -326,15 +321,6 @@
         "d3m.primitives.feature_construction.sdne.DSBOX",
         "d3m.primitives.feature_construction.zero_count.TPOT"
     ],
-    "NATURAL_LANGUAGE_PROCESSING": [
-        "d3m.primitives.feature_extraction.boc.UBC",
-        "d3m.primitives.feature_extraction.bow.UBC",
-        "d3m.primitives.feature_extraction.nk_sent2vec.Sent2Vec",
-        "d3m.primitives.feature_extraction.tfidf_vectorizer.BBNTfidfTransformer",
-        "d3m.primitives.natural_language_processing.glda.Fastlvm",
-        "d3m.primitives.natural_language_processing.hdp.Fastlvm",
-        "d3m.primitives.natural_language_processing.lda.Fastlvm"
-    ],
     "OBJECT_DETECTION": [
         "d3m.primitives.feature_extraction.yolo.DSBOX",
         "d3m.primitives.object_detection.retina_net.ObjectDetectionRN"
@@ -398,6 +384,15 @@
     "METALEARNING": [
         "d3m.primitives.metalearning.metafeature_extractor.BYU",
         "d3m.primitives.metalearning.metafeature_extractor.Common"
+    ],
+    "NATURAL_LANGUAGE_PROCESSING": [
+        "d3m.primitives.data_preprocessing.count_vectorizer.SKlearn",
+        "d3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn",
+        "d3m.primitives.data_transformation.encoder.DistilTextEncoder",
+        "d3m.primitives.feature_construction.corex_text.DSBOX",
+        "d3m.primitives.natural_language_processing.glda.Fastlvm",
+        "d3m.primitives.natural_language_processing.hdp.Fastlvm",
+        "d3m.primitives.natural_language_processing.lda.Fastlvm"
     ],
     "OPERATOR": [
         "d3m.primitives.operator.column_map.Common",

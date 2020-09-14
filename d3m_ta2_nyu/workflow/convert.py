@@ -52,6 +52,8 @@ def _add_step(steps, modules, params, module_to_step, mod):
 
     outputs = [{'id': k} for k, v in klass.metadata.query()['primitive_code']['instance_methods'].items()
                if v['kind'] == 'PRODUCE']
+    if mod.name.endswith('.Fastlvm'):  # FIXME: Temporal solution, this module will be removed when DB is removed
+        outputs = [{'id': 'produce'}]
 
     # Create step description
     if len(inputs) > 0:

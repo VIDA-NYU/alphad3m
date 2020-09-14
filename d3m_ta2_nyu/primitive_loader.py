@@ -33,9 +33,19 @@ BLACK_LIST = {
     'd3m.primitives.feature_selection.mutual_info_classif.DistilMIRanking',
     'd3m.primitives.dimensionality_reduction.t_distributed_stochastic_neighbor_embedding.Tsne',
     'd3m.primitives.data_cleaning.string_imputer.SKlearn',
+    'd3m.primitives.data_cleaning.tabular_extractor.Common',
+    'd3m.primitives.data_cleaning.missing_indicator.SKlearn',
     'd3m.primitives.data_transformation.gaussian_random_projection.SKlearn',
     'd3m.primitives.data_transformation.sparse_random_projection.SKlearn',
-    'd3m.primitives.data_preprocessing.unary_encoder.DSBOX'
+    'd3m.primitives.feature_extraction.boc.UBC',
+    'd3m.primitives.feature_extraction.bow.UBC',
+    'd3m.primitives.feature_extraction.nk_sent2vec.Sent2Vec',
+    # Repeated primitives:
+    'd3m.primitives.data_preprocessing.unary_encoder.DSBOX',
+    'd3m.primitives.data_transformation.one_hot_encoder.TPOT',
+    'd3m.primitives.data_preprocessing.one_hot_encoder.MakerCommon',
+    'd3m.primitives.data_preprocessing.one_hot_encoder.PandasCommon',
+    'd3m.primitives.feature_extraction.tfidf_vectorizer.BBNTfidfTransformer'
 }
 
 
@@ -130,6 +140,9 @@ def get_primitives_by_type():
             if family not in primitives:
                 primitives[family] = []
             primitives[family].append(primitive_name)
+
+    # Duplicate TEXT_ENCODER primitives for NATURAL_LANGUAGE_PROCESSING family
+    primitives['NATURAL_LANGUAGE_PROCESSING'] = primitives['TEXT_ENCODER'] + primitives['NATURAL_LANGUAGE_PROCESSING']
 
     with open(PRIMITIVES_BY_TYPE_PATH, 'w') as fout:
         json.dump(primitives, fout, indent=4)
