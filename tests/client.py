@@ -99,7 +99,7 @@ def do_train(core, solutions, dataset_path):
                 inputs=[pb_value.Value(
                     dataset_uri='file://%s' % dataset_path,
                 )],
-                expose_outputs=[],
+                expose_outputs=['outputs.0'],
                 expose_value_types=['CSV_URI'],
                 users=[],
             ))
@@ -125,7 +125,7 @@ def do_test(core, fitted, dataset_path):
                 inputs=[pb_value.Value(
                     dataset_uri='file://%s' % dataset_path,
                 )],
-                expose_outputs=[],
+                expose_outputs=['outputs.0'],
                 expose_value_types=['CSV_URI'],
                 users=[],
             ))

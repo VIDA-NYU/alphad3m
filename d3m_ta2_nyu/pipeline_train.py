@@ -3,8 +3,9 @@ import logging
 import pickle
 import d3m.runtime
 import d3m.metadata.base
+from os.path import join
 from sqlalchemy.orm import joinedload
-from d3m.container import Dataset
+from d3m.container import Dataset, DataFrame
 from d3m.metadata import base as metadata_base
 from d3m_ta2_nyu.workflow import database, convert
 
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 @database.with_db
-def train(pipeline_id, dataset, problem, storage_dir, results_path, msg_queue, db):
+def train(pipeline_id, dataset, problem, storage_dir, steps_to_expouse, msg_queue, db):
     # Get pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -36,18 +37,20 @@ def train(pipeline_id, dataset, problem, storage_dir, results_path, msg_queue, d
         convert.to_d3m_json(pipeline),
     )
 
-    fitted_pipeline, predictions, result = d3m.runtime.fit(d3m_pipeline, [dataset], problem_description=problem,
-                                                           context=metadata_base.Context.TESTING,
-                                                           volumes_dir=os.environ.get('D3MSTATICDIR', None),
-                                                           random_seed=0)
+    expouse_outputs = True if len(steps_to_expouse) > 0 else False
 
-    result.check_success()
+    fitted_pipeline, predictions, results = d3m.runtime.fit(d3m_pipeline, [dataset], problem_description=problem,
+                                                            context=metadata_base.Context.TESTING,
+                                                            volumes_dir=os.environ.get('D3MSTATICDIR', None),
+                                                            random_seed=0,
+                                                            expose_produced_outputs=expouse_outputs)
 
-    if results_path is not None:
-        logger.info('Storing fit results at %s', results_path)
-        predictions.to_csv(results_path)
-    else:
-        logger.info('NOT storing fit results')
+    results.check_success()
+
+    logger.info('Storing fit results at %s', storage_dir)
+    for step_id in results.values:
+        if step_id in steps_to_expouse and isinstance(results.values[step_id], DataFrame):
+            results.values[step_id].to_csv(join(storage_dir, 'fit_%s_%s.csv' % (pipeline_id, step_id)))
 
     with open(os.path.join(storage_dir, 'fitted_solution_%s.pkl' % pipeline_id), 'wb') as fout:
         pickle.dump(fitted_pipeline, fout)

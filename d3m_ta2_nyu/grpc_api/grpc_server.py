@@ -393,11 +393,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         This will make it available for testing and exporting.
         """
         pipeline_id = UUID(hex=request.solution_id)
-
         dataset = request.inputs[0].dataset_uri
-        if not dataset.endswith('datasetDoc.json'):
-            raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
-                        "Dataset is not in D3M format: %s", dataset)
+        steps_to_expouse = list(request.expose_outputs)
 
         if dataset.startswith('/'):
             logger.warning("Dataset is a path, turning it into a file:// URL")
@@ -409,7 +406,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 problem = self._ta2.sessions[session_id].problem
                 break
 
-        job_id = self._ta2.train_pipeline(pipeline_id, dataset, problem)
+        job_id = self._ta2.train_pipeline(pipeline_id, dataset, problem, steps_to_expouse)
         self._requests[job_id] = PersistentQueue()
 
         return pb_core.FitSolutionResponse(
@@ -440,12 +437,16 @@ class CoreService(pb_core_grpc.CoreServicer):
                 )
             elif event == 'training_success':
                 pipeline_id = kwargs['pipeline_id']
+                storage_dir = kwargs['storage_dir']
+                steps_to_expouse = kwargs['steps_to_expouse']
                 yield pb_core.GetFitSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.COMPLETED,
                         status="Training completed",
                     ),
-                    exposed_outputs={'outputs.0': pb_value.Value(csv_uri='file://%s' % kwargs['results_path'])},
+                    exposed_outputs={step_id: pb_value.Value(csv_uri='file://%s/fit_%s_%s.csv' %
+                                                                     (storage_dir, pipeline_id, step_id))
+                                     for step_id in steps_to_expouse},
                     fitted_solution_id=str(pipeline_id),
                 )
                 break
@@ -465,15 +466,13 @@ class CoreService(pb_core_grpc.CoreServicer):
         """
         pipeline_id = UUID(hex=request.fitted_solution_id)
         dataset = request.inputs[0].dataset_uri
-        if not dataset.endswith('datasetDoc.json'):
-            raise error(context, grpc.StatusCode.INVALID_ARGUMENT,
-                        "Dataset is not in D3M format: %s", dataset)
+        steps_to_expouse = list(request.expose_outputs)
 
         if dataset.startswith('/'):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
 
-        job_id = self._ta2.test_pipeline(pipeline_id, dataset)
+        job_id = self._ta2.test_pipeline(pipeline_id, dataset, steps_to_expouse)
         self._requests[job_id] = PersistentQueue()
 
         return pb_core.ProduceSolutionResponse(
@@ -496,17 +495,17 @@ class CoreService(pb_core_grpc.CoreServicer):
                             "stream")
                 break
             if event == 'testing_success':
+                pipeline_id = kwargs['pipeline_id']
+                storage_dir = kwargs['storage_dir']
+                steps_to_expouse = kwargs['steps_to_expouse']
                 yield pb_core.GetProduceSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.COMPLETED,
                         status="Execution completed",
                     ),
-                    exposed_outputs={
-                        'outputs.0': pb_value.Value(
-                            csv_uri='file://%s' % kwargs['results_path'],
-                        ),
-                        # FIXME: set 'steps.NN.produce' too in exposed_outputs
-                    },
+                    exposed_outputs={step_id: pb_value.Value(csv_uri='file://%s/produce_%s_%s.csv' %
+                                                                     (storage_dir, pipeline_id, step_id))
+                                     for step_id in steps_to_expouse},
                 )
                 break
             elif event == 'testing_error':
