@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 @database.with_db
-def train(pipeline_id, dataset, problem, storage_dir, steps_to_expouse, msg_queue, db):
+def train(pipeline_id, dataset, problem, storage_dir, steps_to_expose, msg_queue, db):
     # Get pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -37,19 +37,19 @@ def train(pipeline_id, dataset, problem, storage_dir, steps_to_expouse, msg_queu
         convert.to_d3m_json(pipeline),
     )
 
-    expouse_outputs = True if len(steps_to_expouse) > 0 else False
+    expose_outputs = True if len(steps_to_expose) > 0 else False
 
     fitted_pipeline, predictions, results = d3m.runtime.fit(d3m_pipeline, [dataset], problem_description=problem,
                                                             context=metadata_base.Context.TESTING,
                                                             volumes_dir=os.environ.get('D3MSTATICDIR', None),
                                                             random_seed=0,
-                                                            expose_produced_outputs=expouse_outputs)
+                                                            expose_produced_outputs=expose_outputs)
 
     results.check_success()
 
     logger.info('Storing fit results at %s', storage_dir)
     for step_id in results.values:
-        if step_id in steps_to_expouse and isinstance(results.values[step_id], DataFrame):
+        if step_id in steps_to_expose and isinstance(results.values[step_id], DataFrame):
             results.values[step_id].to_csv(join(storage_dir, 'fit_%s_%s.csv' % (pipeline_id, step_id)))
 
     with open(os.path.join(storage_dir, 'fitted_solution_%s.pkl' % pipeline_id), 'wb') as fout:

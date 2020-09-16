@@ -394,7 +394,7 @@ class CoreService(pb_core_grpc.CoreServicer):
         """
         pipeline_id = UUID(hex=request.solution_id)
         dataset = request.inputs[0].dataset_uri
-        steps_to_expouse = list(request.expose_outputs)
+        steps_to_expose = list(request.expose_outputs)
 
         if dataset.startswith('/'):
             logger.warning("Dataset is a path, turning it into a file:// URL")
@@ -406,7 +406,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                 problem = self._ta2.sessions[session_id].problem
                 break
 
-        job_id = self._ta2.train_pipeline(pipeline_id, dataset, problem, steps_to_expouse)
+        job_id = self._ta2.train_pipeline(pipeline_id, dataset, problem, steps_to_expose)
         self._requests[job_id] = PersistentQueue()
 
         return pb_core.FitSolutionResponse(
@@ -438,7 +438,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             elif event == 'training_success':
                 pipeline_id = kwargs['pipeline_id']
                 storage_dir = kwargs['storage_dir']
-                steps_to_expouse = kwargs['steps_to_expouse']
+                steps_to_expose = kwargs['steps_to_expose']
                 yield pb_core.GetFitSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.COMPLETED,
@@ -446,7 +446,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     ),
                     exposed_outputs={step_id: pb_value.Value(csv_uri='file://%s/fit_%s_%s.csv' %
                                                                      (storage_dir, pipeline_id, step_id))
-                                     for step_id in steps_to_expouse},
+                                     for step_id in steps_to_expose},
                     fitted_solution_id=str(pipeline_id),
                 )
                 break
@@ -466,13 +466,13 @@ class CoreService(pb_core_grpc.CoreServicer):
         """
         pipeline_id = UUID(hex=request.fitted_solution_id)
         dataset = request.inputs[0].dataset_uri
-        steps_to_expouse = list(request.expose_outputs)
+        steps_to_expose = list(request.expose_outputs)
 
         if dataset.startswith('/'):
             logger.warning("Dataset is a path, turning it into a file:// URL")
             dataset = 'file://' + dataset
 
-        job_id = self._ta2.test_pipeline(pipeline_id, dataset, steps_to_expouse)
+        job_id = self._ta2.test_pipeline(pipeline_id, dataset, steps_to_expose)
         self._requests[job_id] = PersistentQueue()
 
         return pb_core.ProduceSolutionResponse(
@@ -497,7 +497,7 @@ class CoreService(pb_core_grpc.CoreServicer):
             if event == 'testing_success':
                 pipeline_id = kwargs['pipeline_id']
                 storage_dir = kwargs['storage_dir']
-                steps_to_expouse = kwargs['steps_to_expouse']
+                steps_to_expose = kwargs['steps_to_expose']
                 yield pb_core.GetProduceSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.COMPLETED,
@@ -505,7 +505,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     ),
                     exposed_outputs={step_id: pb_value.Value(csv_uri='file://%s/produce_%s_%s.csv' %
                                                                      (storage_dir, pipeline_id, step_id))
-                                     for step_id in steps_to_expouse},
+                                     for step_id in steps_to_expose},
                 )
                 break
             elif event == 'testing_error':

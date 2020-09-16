@@ -482,13 +482,13 @@ class ScoreJob(Job):
 
 
 class TrainJob(Job):
-    def __init__(self, ta2, pipeline_id, dataset, problem, steps_to_expouse):
+    def __init__(self, ta2, pipeline_id, dataset, problem, steps_to_expose):
         Job.__init__(self)
         self.ta2 = ta2
         self.pipeline_id = pipeline_id
         self.dataset = dataset
         self.problem = problem
-        self.steps_to_expouse = steps_to_expouse
+        self.steps_to_expose = steps_to_expose
 
     def start(self, db_filename, **kwargs):
         logger.info("Training pipeline for %s", self.pipeline_id)
@@ -498,7 +498,7 @@ class TrainJob(Job):
                                 dataset=self.dataset,
                                 problem=self.problem,
                                 storage_dir=self.ta2.runtime_folder,
-                                steps_to_expouse=self.steps_to_expouse,
+                                steps_to_expose=self.steps_to_expose,
                                 db_filename=db_filename)
         self.ta2.notify('training_start',
                         pipeline_id=self.pipeline_id,
@@ -511,14 +511,14 @@ class TrainJob(Job):
         log("Pipeline training process done, returned %d (pipeline: %s)",
             self.proc.returncode, self.pipeline_id)
         if self.proc.returncode == 0:
-            steps_to_expouse = []
-            for step_id in self.steps_to_expouse:
+            steps_to_expose = []
+            for step_id in self.steps_to_expose:
                 if exists(join(self.ta2.runtime_folder, 'fit_%s_%s.csv' % (self.pipeline_id, step_id))):
-                    steps_to_expouse.append(step_id)
+                    steps_to_expose.append(step_id)
             self.ta2.notify('training_success',
                             pipeline_id=self.pipeline_id,
                             storage_dir=self.ta2.runtime_folder,
-                            steps_to_expouse=steps_to_expouse,
+                            steps_to_expose=steps_to_expose,
                             job_id=id(self))
         else:
             self.ta2.notify('training_error',
@@ -528,12 +528,12 @@ class TrainJob(Job):
 
 
 class TestJob(Job):
-    def __init__(self, ta2, pipeline_id, dataset, steps_to_expouse):
+    def __init__(self, ta2, pipeline_id, dataset, steps_to_expose):
         Job.__init__(self)
         self.ta2 = ta2
         self.pipeline_id = pipeline_id
         self.dataset = dataset
-        self.steps_to_expouse = steps_to_expouse
+        self.steps_to_expose = steps_to_expose
 
     def start(self, db_filename, **kwargs):
         logger.info("Testing pipeline for %s", self.pipeline_id)
@@ -542,7 +542,7 @@ class TestJob(Job):
                                 pipeline_id=self.pipeline_id,
                                 dataset=self.dataset,
                                 storage_dir=self.ta2.runtime_folder,
-                                steps_to_expouse=self.steps_to_expouse,
+                                steps_to_expose=self.steps_to_expose,
                                 db_filename=db_filename)
         self.ta2.notify('testing_start',
                         pipeline_id=self.pipeline_id,
@@ -555,14 +555,14 @@ class TestJob(Job):
         log("Pipeline testing process done, returned %d (pipeline: %s)",
             self.proc.returncode, self.pipeline_id)
         if self.proc.returncode == 0:
-            steps_to_expouse = []
-            for step_id in self.steps_to_expouse:
+            steps_to_expose = []
+            for step_id in self.steps_to_expose:
                 if exists(join(self.ta2.runtime_folder, 'produce_%s_%s.csv' % (self.pipeline_id, step_id))):
-                    steps_to_expouse.append(step_id)
+                    steps_to_expose.append(step_id)
             self.ta2.notify('testing_success',
                             pipeline_id=self.pipeline_id,
                             storage_dir=self.ta2.runtime_folder,
-                            steps_to_expouse=steps_to_expouse,
+                            steps_to_expose=steps_to_expose,
                             job_id=id(self))
         else:
             self.ta2.notify('testing_error',
@@ -791,13 +791,13 @@ class D3mTa2(Observable):
         self._run_queue.put(job)
         return id(job)
 
-    def train_pipeline(self, pipeline_id, dataset, problem, steps_to_expouse):
-        job = TrainJob(self, pipeline_id, dataset, problem, steps_to_expouse)
+    def train_pipeline(self, pipeline_id, dataset, problem, steps_to_expose):
+        job = TrainJob(self, pipeline_id, dataset, problem, steps_to_expose)
         self._run_queue.put(job)
         return id(job)
 
-    def test_pipeline(self, pipeline_id, dataset, steps_to_expouse):
-        job = TestJob(self, pipeline_id, dataset, steps_to_expouse)
+    def test_pipeline(self, pipeline_id, dataset, steps_to_expose):
+        job = TestJob(self, pipeline_id, dataset, steps_to_expose)
         self._run_queue.put(job)
         return id(job)
 
