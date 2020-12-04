@@ -3,10 +3,10 @@ import json
 import logging
 import sys
 import datetime
-import ta3ta2_api.core_pb2 as pb_core
-import ta3ta2_api.core_pb2_grpc as pb_core_grpc
-import ta3ta2_api.value_pb2 as pb_value
-from ta3ta2_api.utils import encode_problem_description, encode_performance_metric
+import d3m_automl_rpc.core_pb2 as pb_core
+import d3m_automl_rpc.core_pb2_grpc as pb_core_grpc
+import d3m_automl_rpc.value_pb2 as pb_value
+from d3m_automl_rpc.utils import encode_problem_description, encode_performance_metric
 from d3m_ta2_nyu.grpc_api.grpc_logger import LoggingStub
 
 

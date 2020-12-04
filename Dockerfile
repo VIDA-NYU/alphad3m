@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-v2020.5.18-20200630-050709
+FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-stable-20201201-223410
 
 MAINTAINER "remi.rampin@nyu.edu, raoni@nyu.edu, rlopez@nyu.edu"
 
@@ -35,7 +35,7 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
     comm -23 prev_reqs.txt new_reqs.txt | while read i; do echo "Removed package $i" >&2; exit 1; done && \
     rm prev_reqs.txt new_reqs.txt
 
-RUN pip3 install ta3ta2-api==2020.6.2
+RUN pip3 install d3m-automl-rpc==1.0.0
 
 RUN pip3 install nltk==3.4.5
 RUN pip3 install datamart-profiler==0.6.1

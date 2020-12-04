@@ -28,7 +28,7 @@ BLACK_LIST = {
     'd3m.primitives.classification.search_hybrid.Find_projections',
     'd3m.primitives.regression.search_hybrid_numeric.Find_projections',
     'd3m.primitives.regression.search_numeric.Find_projections',
-    'd3m.primitives.data_preprocessing.binarizer.SKlearn',
+    'd3m.primitives.data_cleaning.binarizer.SKlearn',
     'd3m.primitives.feature_selection.rffeatures.Rffeatures',
     'd3m.primitives.feature_selection.mutual_info_classif.DistilMIRanking',
     'd3m.primitives.dimensionality_reduction.t_distributed_stochastic_neighbor_embedding.Tsne',
@@ -41,10 +41,10 @@ BLACK_LIST = {
     'd3m.primitives.feature_extraction.bow.UBC',
     'd3m.primitives.feature_extraction.nk_sent2vec.Sent2Vec',
     # Repeated primitives:
-    'd3m.primitives.data_preprocessing.unary_encoder.DSBOX',
+    'd3m.primitives.data_transformation.unary_encoder.DSBOX',
     'd3m.primitives.data_transformation.one_hot_encoder.TPOT',
-    'd3m.primitives.data_preprocessing.one_hot_encoder.MakerCommon',
-    'd3m.primitives.data_preprocessing.one_hot_encoder.PandasCommon',
+    'd3m.primitives.data_transformation.one_hot_encoder.MakerCommon',
+    'd3m.primitives.data_transformation.one_hot_encoder.PandasCommon',
     'd3m.primitives.feature_extraction.tfidf_vectorizer.BBNTfidfTransformer'
 }
 
@@ -97,21 +97,20 @@ def get_primitives_by_type():
             # Changing the primitive families using some predefined rules
             if primitive_name in {'d3m.primitives.feature_construction.corex_text.DSBOX',
                                   'd3m.primitives.data_transformation.encoder.DistilTextEncoder',
-                                  'd3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn',
-                                  'd3m.primitives.data_preprocessing.count_vectorizer.SKlearn'}:
+                                  'd3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn',
+                                  'd3m.primitives.feature_extraction.count_vectorizer.SKlearn'}:
                 family = 'TEXT_ENCODER'
 
-            elif primitive_name in {'d3m.primitives.data_preprocessing.quantile_transformer.SKlearn',
-                                    'd3m.primitives.data_preprocessing.normalizer.SKlearn',
-                                    'd3m.primitives.normalization.iqr_scaler.DSBOX'}:
+            elif primitive_name in {'d3m.primitives.data_cleaning.quantile_transformer.SKlearn',
+                                    'd3m.primitives.data_cleaning.normalizer.SKlearn'}:
                 family = 'FEATURE_SCALING'
 
-            elif primitive_name in {'d3m.primitives.data_preprocessing.feature_agglomeration.SKlearn',
+            elif primitive_name in {'d3m.primitives.feature_extraction.feature_agglomeration.SKlearn',
                                     'd3m.primitives.feature_selection.mutual_info_classif.DistilMIRanking'}:
                 family = 'FEATURE_SELECTION'
 
             elif primitive_name in {'d3m.primitives.feature_extraction.pca.SKlearn',
-                                    'd3m.primitives.data_preprocessing.truncated_svd.SKlearn',
+                                    'd3m.primitives.feature_extraction.truncated_svd.SKlearn',
                                     'd3m.primitives.feature_extraction.pca_features.RandomizedPolyPCA',
                                     'd3m.primitives.data_transformation.gaussian_random_projection.SKlearn',
                                     'd3m.primitives.data_transformation.sparse_random_projection.SKlearn'}:

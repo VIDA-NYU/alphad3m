@@ -11,12 +11,12 @@ import grpc
 import logging
 import pickle
 import d3m_ta2_nyu.workflow.convert
-import ta3ta2_api.core_pb2 as pb_core
-import ta3ta2_api.core_pb2_grpc as pb_core_grpc
-import ta3ta2_api.problem_pb2 as pb_problem
-import ta3ta2_api.value_pb2 as pb_value
-import ta3ta2_api.pipeline_pb2 as pb_pipeline
-import ta3ta2_api.primitive_pb2 as pb_primitive
+import d3m_automl_rpc.core_pb2 as pb_core
+import d3m_automl_rpc.core_pb2_grpc as pb_core_grpc
+import d3m_automl_rpc.problem_pb2 as pb_problem
+import d3m_automl_rpc.value_pb2 as pb_value
+import d3m_automl_rpc.pipeline_pb2 as pb_pipeline
+import d3m_automl_rpc.primitive_pb2 as pb_primitive
 
 from uuid import UUID
 from d3m_ta2_nyu import __version__
@@ -25,7 +25,7 @@ from google.protobuf.timestamp_pb2 import Timestamp
 from d3m_ta2_nyu.grpc_api.grpc_logger import log_service
 from d3m_ta2_nyu.primitive_loader import get_primitives_by_name
 from d3m_ta2_nyu.utils import PersistentQueue
-from ta3ta2_api.utils import decode_pipeline_description, decode_problem_description, decode_performance_metric, \
+from d3m_automl_rpc.utils import decode_pipeline_description, decode_problem_description, decode_performance_metric, \
     encode_raw_value
 from d3m.metadata import pipeline as pipeline_module
 

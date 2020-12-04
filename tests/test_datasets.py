@@ -5,12 +5,12 @@ import grpc
 import logging
 import subprocess
 import pandas as pd
-import ta3ta2_api.core_pb2_grpc as pb_core_grpc
+import d3m_automl_rpc.core_pb2_grpc as pb_core_grpc
 from datetime import datetime
 from os.path import join
 from d3m.metadata.pipeline import Pipeline
 from d3m_ta2_nyu.grpc_api.grpc_logger import LoggingStub
-from ta3ta2_api.utils import encode_pipeline_description, decode_value
+from d3m_automl_rpc.utils import encode_pipeline_description, decode_value
 from d3m.metadata.problem import Problem, PerformanceMetric
 from d3m.utils import yaml_load_all, fix_uri
 from client import do_search, do_score, do_train, do_test, do_export, do_describe

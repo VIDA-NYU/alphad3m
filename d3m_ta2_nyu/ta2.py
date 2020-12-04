@@ -21,7 +21,7 @@ import shutil
 import subprocess
 import threading
 import time
-import ta3ta2_api.core_pb2_grpc as pb_core_grpc
+import d3m_automl_rpc.core_pb2_grpc as pb_core_grpc
 from uuid import uuid4, UUID
 from d3m_ta2_nyu import __version__
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process

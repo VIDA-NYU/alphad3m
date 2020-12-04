@@ -77,7 +77,7 @@ def connect(db, pipeline, from_module, to_module, from_output='produce', to_inpu
              raise NameError('Argument %s not found in %s' % (to_input, to_module.name))
 
         if from_module_output != to_module_input and \
-                from_module.name != 'd3m.primitives.data_preprocessing.audio_reader.DistilAudioDatasetLoader':  # TODO Find a better way
+                from_module.name != 'd3m.primitives.data_transformation.audio_reader.DistilAudioDatasetLoader':  # TODO Find a better way
             cast_module_steps = CONTAINER_CAST[from_module_output][to_module_input]
             if cast_module_steps:
                 for cast_step in cast_module_steps.split('|'):
@@ -106,11 +106,11 @@ def set_hyperparams(db, pipeline, module, **hyperparams):
 
 
 def change_default_hyperparams(db, pipeline, primitive_name, primitive):
-    if primitive_name == 'd3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn':
+    if primitive_name == 'd3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn':
         set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace')
-    elif primitive_name == 'd3m.primitives.data_preprocessing.count_vectorizer.SKlearn':
+    elif primitive_name == 'd3m.primitives.feature_extraction.count_vectorizer.SKlearn':
         set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace')
-    elif primitive_name == 'd3m.primitives.data_preprocessing.feature_agglomeration.SKlearn':
+    elif primitive_name == 'd3m.primitives.feature_extraction.feature_agglomeration.SKlearn':
         set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace')
     elif primitive_name == 'd3m.primitives.data_cleaning.string_imputer.SKlearn':
         set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace')
@@ -122,7 +122,7 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive):
         set_hyperparams(db, pipeline, primitive, cluster_col_name='Class')
     elif primitive_name == 'd3m.primitives.time_series_forecasting.lstm.DeepAR':
         set_hyperparams(db, pipeline, primitive, epochs=1)
-    elif primitive_name == 'd3m.primitives.data_preprocessing.encoder.DSBOX':
+    elif primitive_name == 'd3m.primitives.data_transformation.encoder.DSBOX':
         set_hyperparams(db, pipeline, primitive, n_limit=50)
     elif primitive_name == 'd3m.primitives.data_cleaning.cleaning_featurizer.DSBOX':
         set_hyperparams(db, pipeline, primitive, features='split_date_column')
@@ -132,7 +132,7 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive):
 
 def need_entire_dataframe(primitives):
     for primitive in primitives:
-        if primitive in {'d3m.primitives.data_preprocessing.time_series_to_list.DSBOX',
+        if primitive in {'d3m.primitives.data_transformation.time_series_to_list.DSBOX',
                          'd3m.primitives.feature_extraction.random_projection_timeseries_featurization.DSBOX'}:
             return True
     return False
@@ -156,7 +156,7 @@ def encode_features(pipeline, attribute_step, target_step, features_metadata, db
         last_step = time_step
 
     if 'https://metadata.datadrivendiscovery.org/types/CategoricalData' in feature_types:
-        onehot_step = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.encoder.DSBOX')
+        onehot_step = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.encoder.DSBOX')
         set_hyperparams(db, pipeline, onehot_step, n_limit=50)
         connect(db, pipeline, last_step, onehot_step)
         last_step = onehot_step
@@ -219,19 +219,19 @@ def add_file_readers(db, pipeline, prev_step, dataset_path):
     last_step = prev_step
 
     if get_collection_type(dataset_path) == 'text':
-        text_reader = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.text_reader.Common')
+        text_reader = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.text_reader.Common')
         set_hyperparams(db, pipeline, text_reader, return_result='replace')
         connect(db, pipeline, prev_step, text_reader)
         last_step = text_reader
 
     elif get_collection_type(dataset_path) == 'image':
-        image_reader = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.image_reader.Common')
+        image_reader = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.image_reader.Common')
         set_hyperparams(db, pipeline, image_reader, return_result='replace')
         connect(db, pipeline, prev_step, image_reader)
         last_step = image_reader
 
     elif get_collection_type(dataset_path) == 'audio':
-        audio_reader = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.audio_reader.Common')
+        audio_reader = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.audio_reader.Common')
         set_hyperparams(db, pipeline, audio_reader, return_result='replace')
         connect(db, pipeline, prev_step, audio_reader)
         last_step = audio_reader
@@ -383,7 +383,7 @@ class BaseBuilder:
             other_prev_step = encoder_step
 
             if encoder_step == step5:  # Encoders were not applied, so use one_hot_encoder for all features
-                step_fallback = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.encoder.DSBOX')
+                step_fallback = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.encoder.DSBOX')
                 set_hyperparams(db, pipeline, step_fallback, n_limit=50)
                 connect(db, pipeline, step5, step_fallback)
                 other_prev_step = step_fallback
@@ -486,8 +486,8 @@ class TimeseriesClassificationBuilder(BaseBuilder):
         try:
             if len(primitives) == 1:
                 input_data = make_data_module(db, pipeline, targets, features)
-                step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_preprocessing.'
-                                                           'data_cleaning.DistilTimeSeriesFormatter')
+                step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
+                                                           'time_series_formatter.DistilTimeSeriesFormatter')
                 connect(db, pipeline, input_data, step0, from_output='dataset')
 
                 step1 = make_pipeline_module(db, pipeline,
@@ -762,7 +762,7 @@ class AudioBuilder(BaseBuilder):
             input_data = make_data_module(db, pipeline, targets, features)
 
             step0 = make_pipeline_module(db, pipeline,
-                                         'd3m.primitives.data_preprocessing.audio_reader.DistilAudioDatasetLoader')
+                                         'd3m.primitives.data_transformation.audio_reader.DistilAudioDatasetLoader')
             connect(db, pipeline, input_data, step0, from_output='dataset')
 
             step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.column_parser.Common')
