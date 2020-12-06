@@ -159,6 +159,7 @@ def get_collection_type(dataset_path):
 
 
 def get_dataset_sample(dataset, problem, dataset_sample_path=None):
+    sample_size = SAMPLE_SIZE
     try:
         target_name = problem['inputs'][0]['targets'][0]['column_name']
         for res_id in dataset:
@@ -168,13 +169,17 @@ def get_dataset_sample(dataset, problem, dataset_sample_path=None):
         else:
             res_id = next(iter(dataset))
 
+        if TaskKeyword.VIDEO in problem['problem']['task_keywords']:
+            sample_size = 500
         original_size = len(dataset[res_id])
-        if hasattr(dataset[res_id], 'columns') and len(dataset[res_id]) > SAMPLE_SIZE:
+
+        if hasattr(dataset[res_id], 'columns') and len(dataset[res_id]) > sample_size:
             labels = dataset[res_id].get(target_name)
             ratio = SAMPLE_SIZE / original_size
             stratified_labels = None
             if TaskKeyword.CLASSIFICATION in problem['problem']['task_keywords']:
                 stratified_labels = labels
+
 
             try:
                 x_train, x_test, y_train, y_test = train_test_split(dataset[res_id], labels, random_state=RANDOM_SEED,
