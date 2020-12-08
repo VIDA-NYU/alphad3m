@@ -102,7 +102,8 @@ def get_primitives_by_type():
                 family = 'TEXT_ENCODER'
 
             elif primitive_name in {'d3m.primitives.data_cleaning.quantile_transformer.SKlearn',
-                                    'd3m.primitives.data_cleaning.normalizer.SKlearn'}:
+                                    'd3m.primitives.data_cleaning.normalizer.SKlearn',
+                                    'd3m.primitives.normalization.iqr_scaler.DSBOX'}:
                 family = 'FEATURE_SCALING'
 
             elif primitive_name in {'d3m.primitives.feature_extraction.feature_agglomeration.SKlearn',

@@ -175,7 +175,7 @@ def get_dataset_sample(dataset, problem, dataset_sample_path=None):
         else:
             res_id = next(iter(dataset))
 
-        if any(tk in [TaskKeyword.VIDEO, TaskKeyword.IMAGE] for tk in task_keywords):
+        if any(tk in [TaskKeyword.VIDEO, TaskKeyword.IMAGE, TaskKeyword.AUDIO] for tk in task_keywords):
             sample_size = 500
         original_size = len(dataset[res_id])
 

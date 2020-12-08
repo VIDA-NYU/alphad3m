@@ -732,7 +732,7 @@ class ObjectDetectionBuilder(BaseBuilder):
             else:
                 step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                            'dataset_to_dataframe.Common')
-                set_hyperparams(db, pipeline, step1, dataframe_resource='learningData')
+                set_hyperparams(db, pipeline, step1)
                 connect(db, pipeline, step0, step1)
 
                 step2 = make_pipeline_module(db, pipeline, primitives[0])
