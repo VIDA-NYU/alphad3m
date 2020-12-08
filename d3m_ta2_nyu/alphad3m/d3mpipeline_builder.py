@@ -560,7 +560,6 @@ class CommunityDetectionBuilder(BaseBuilder):
                 connect(db, pipeline, input_data, step0, from_output='dataset')
 
                 step1 = make_pipeline_module(db, pipeline, primitives[0])
-
                 connect(db, pipeline, step0, step1)
                 connect(db, pipeline, step0, step1, to_input='outputs', from_output='produce_target')
 
@@ -654,7 +653,7 @@ class VertexClassificationBuilder(BaseBuilder):
         pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
 
         try:
-            if len(primitives) == 1:
+            if len(primitives) == 1 and primitives[0] == 'd3m.primitives.classification.gaussian_classification.JHU':
                 input_data = make_data_module(db, pipeline, targets, features)
 
                 step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.load_graphs.JHU')
@@ -671,6 +670,22 @@ class VertexClassificationBuilder(BaseBuilder):
                 step3 = make_pipeline_module(db, pipeline,
                                              'd3m.primitives.classification.gaussian_classification.JHU')
                 connect(db, pipeline, step2, step3)
+
+                db.add(pipeline)
+                db.commit()
+                logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
+                return pipeline.id
+
+            elif len(primitives) == 1 and primitives[0] == 'd3m.primitives.vertex_nomination.seeded_graph_matching.DistilVertexNomination':
+                input_data = make_data_module(db, pipeline, targets, features)
+
+                step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.load_edgelist.DistilEdgeListLoader')
+                connect(db, pipeline, input_data, step0, from_output='dataset')
+
+                step1 = make_pipeline_module(db, pipeline, primitives[0])
+                set_hyperparams(db, pipeline, step1, metric='accuracy')
+                connect(db, pipeline, step0, step1)
+                connect(db, pipeline, step0, step1, to_input='outputs', from_output='produce_target')
 
                 db.add(pipeline)
                 db.commit()
