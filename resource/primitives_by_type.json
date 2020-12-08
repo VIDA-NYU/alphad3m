@@ -20,10 +20,8 @@
         "d3m.primitives.classification.random_forest.SKlearn",
         "d3m.primitives.classification.sgd.SKlearn",
         "d3m.primitives.classification.svc.SKlearn",
-        "d3m.primitives.classification.cover_tree.Fastlvm",
         "d3m.primitives.classification.ensemble_voting.DSBOX",
         "d3m.primitives.classification.light_gbm.Common",
-        "d3m.primitives.classification.linear_svc.DistilRankedLinearSVC",
         "d3m.primitives.classification.lstm.DSBOX",
         "d3m.primitives.classification.mlp.BBNMLPClassifier",
         "d3m.primitives.classification.random_forest.Common",
@@ -31,12 +29,7 @@
         "d3m.primitives.classification.xgboost_gbtree.Common"
     ],
     "IMPUTATION": [
-        "d3m.primitives.data_cleaning.imputer.SKlearn",
-        "d3m.primitives.data_cleaning.greedy_imputation.DSBOX",
-        "d3m.primitives.data_cleaning.iterative_regression_imputation.DSBOX",
-        "d3m.primitives.data_cleaning.mean_imputation.DSBOX",
-        "d3m.primitives.data_preprocessing.random_sampling_imputer.BYU",
-        "d3m.primitives.data_transformation.imputer.DistilCategoricalImputer"
+        "d3m.primitives.data_cleaning.imputer.SKlearn"
     ],
     "FEATURE_SCALING": [
         "d3m.primitives.data_cleaning.max_abs_scaler.SKlearn",
@@ -44,7 +37,8 @@
         "d3m.primitives.data_cleaning.normalizer.SKlearn",
         "d3m.primitives.data_cleaning.quantile_transformer.SKlearn",
         "d3m.primitives.data_cleaning.robust_scaler.SKlearn",
-        "d3m.primitives.data_cleaning.standard_scaler.SKlearn"
+        "d3m.primitives.data_cleaning.standard_scaler.SKlearn",
+        "d3m.primitives.normalization.iqr_scaler.DSBOX"
     ],
     "PRINCIPAL_COMPONENT_ANALYSIS": [
         "d3m.primitives.data_transformation.fast_ica.SKlearn"
@@ -135,13 +129,8 @@
         "d3m.primitives.regression.ridge.SKlearn",
         "d3m.primitives.regression.sgd.SKlearn",
         "d3m.primitives.regression.svr.SKlearn",
-        "d3m.primitives.regression.cover_tree.Fastlvm",
         "d3m.primitives.regression.echo_linear.DSBOX",
         "d3m.primitives.regression.global_causal_discovery.RegressorRPI",
-        "d3m.primitives.regression.monomial.Test",
-        "d3m.primitives.regression.rfm_precondition_ed_gaussian_krr.RFMPreconditionedGaussianKRR",
-        "d3m.primitives.regression.rfm_precondition_ed_polynomial_krr.RFMPreconditionedPolynomialKRR",
-        "d3m.primitives.regression.tensor_machines_regularized_least_squares.TensorMachinesRegularizedLeastSquares",
         "d3m.primitives.regression.xgboost_gbtree.Common"
     ],
     "TEXT_CLASSIFIER": [
@@ -149,14 +138,12 @@
         "d3m.primitives.classification.text_classifier.DistilTextClassifier"
     ],
     "CLUSTERING": [
-        "d3m.primitives.clustering.cluster_curve_fitting_kmeans.ClusterCurveFittingKMeans",
         "d3m.primitives.clustering.gmm.Fastlvm",
         "d3m.primitives.clustering.hdbscan.Hdbscan",
         "d3m.primitives.clustering.k_means.DistilKMeans",
         "d3m.primitives.clustering.k_means.Fastlvm",
         "d3m.primitives.clustering.k_means.Sloth",
-        "d3m.primitives.clustering.kmeans_clustering.UBC",
-        "d3m.primitives.clustering.spectral_graph.SpectralClustering"
+        "d3m.primitives.clustering.kmeans_clustering.UBC"
     ],
     "COLLABORATIVE_FILTERING": [
         "d3m.primitives.collaborative_filtering.link_prediction.DistilCollaborativeFiltering"
@@ -395,7 +382,8 @@
         "d3m.primitives.time_series_segmentation.signal_framer.SignalFramer",
         "d3m.primitives.time_series_segmentation.uniform_segmentation.UniformSegmentation"
     ],
-    "VERTEX_NOMINATION": [
-        "d3m.primitives.vertex_nomination.seeded_graph_matching.DistilVertexNomination"
+    "VERTEX_CLASSIFICATION": [
+        "d3m.primitives.vertex_nomination.seeded_graph_matching.DistilVertexNomination",
+        "d3m.primitives.classification.gaussian_classification.JHU"
     ]
 }

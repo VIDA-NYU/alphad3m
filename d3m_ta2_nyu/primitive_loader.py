@@ -23,7 +23,6 @@ BLACK_LIST = {
     'd3m.primitives.regression.canonical_correlation_forests.UBC',
     'd3m.primitives.regression.linear_regression.UBC',
     'd3m.primitives.classification.inceptionV3_image_feature.Gator',
-    'd3m.primitives.classification.gaussian_classification.JHU',
     'd3m.primitives.classification.search.Find_projections',
     'd3m.primitives.classification.search_hybrid.Find_projections',
     'd3m.primitives.regression.search_hybrid_numeric.Find_projections',
@@ -102,7 +101,8 @@ def get_primitives_by_type():
                 family = 'TEXT_ENCODER'
 
             elif primitive_name in {'d3m.primitives.data_cleaning.quantile_transformer.SKlearn',
-                                    'd3m.primitives.data_cleaning.normalizer.SKlearn'}:
+                                    'd3m.primitives.data_cleaning.normalizer.SKlearn',
+                                    'd3m.primitives.normalization.iqr_scaler.DSBOX'}:
                 family = 'FEATURE_SCALING'
 
             elif primitive_name in {'d3m.primitives.feature_extraction.feature_agglomeration.SKlearn',
@@ -129,6 +129,10 @@ def get_primitives_by_type():
             elif primitive_name in {'d3m.primitives.data_transformation.data_cleaning.DistilEnrichDates',
                                     'd3m.primitives.data_cleaning.cleaning_featurizer.DSBOX'}:
                 family = 'DATETIME_ENCODER'
+
+            elif primitive_name in {'d3m.primitives.vertex_nomination.seeded_graph_matching.DistilVertexNomination',
+                                    'd3m.primitives.classification.gaussian_classification.JHU'}:
+                family = 'VERTEX_CLASSIFICATION'
 
             elif primitive_name in {'d3m.primitives.feature_extraction.yolo.DSBOX'}:
                 family = 'OBJECT_DETECTION'

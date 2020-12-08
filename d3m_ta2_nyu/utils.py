@@ -159,6 +159,13 @@ def get_collection_type(dataset_path):
 
 
 def get_dataset_sample(dataset, problem, dataset_sample_path=None):
+    task_keywords = problem['problem']['task_keywords']
+    sample_size = SAMPLE_SIZE
+
+    if any(tk in [TaskKeyword.OBJECT_DETECTION, TaskKeyword.FORECASTING] for tk in task_keywords):
+        logger.info('Not doing sampling for task %s', '_'.join([x.name for x in task_keywords]))
+        return dataset
+
     try:
         target_name = problem['inputs'][0]['targets'][0]['column_name']
         for res_id in dataset:
@@ -168,12 +175,15 @@ def get_dataset_sample(dataset, problem, dataset_sample_path=None):
         else:
             res_id = next(iter(dataset))
 
+        if any(tk in [TaskKeyword.VIDEO, TaskKeyword.IMAGE, TaskKeyword.AUDIO] for tk in task_keywords):
+            sample_size = 500
         original_size = len(dataset[res_id])
-        if hasattr(dataset[res_id], 'columns') and len(dataset[res_id]) > SAMPLE_SIZE:
+
+        if hasattr(dataset[res_id], 'columns') and len(dataset[res_id]) > sample_size:
             labels = dataset[res_id].get(target_name)
-            ratio = SAMPLE_SIZE / original_size
+            ratio = sample_size / original_size
             stratified_labels = None
-            if TaskKeyword.CLASSIFICATION in problem['problem']['task_keywords']:
+            if TaskKeyword.CLASSIFICATION in task_keywords:
                 stratified_labels = labels
 
             try:

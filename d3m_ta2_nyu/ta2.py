@@ -35,7 +35,7 @@ from d3m.metadata.problem import TaskKeyword, parse_problem_description
 
 
 MAX_RUNNING_PROCESSES = 6
-MINUTES_SCORE_PIPELINE = 3
+MINUTES_SCORE_PIPELINE = 10
 TUNE_PIPELINES_COUNT = 5
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
