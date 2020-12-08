@@ -113,7 +113,7 @@ def send(msg_queue, pipeline_id):
 
 
 def generate_by_templates(task_keywords, dataset, pipeline_template, targets, features,
-                          features_metadata, privileged_data, msg_queue, DBSession):
+                          features_metadata, privileged_data, metrics, msg_queue, DBSession):
     task_keywords = set(task_keywords)
 
     if task_keywords & {TaskKeyword.GRAPH_MATCHING, TaskKeyword.LINK_PREDICTION, TaskKeyword.VERTEX_NOMINATION,
@@ -136,7 +136,7 @@ def generate_by_templates(task_keywords, dataset, pipeline_template, targets, fe
     templates = BaseBuilder.TEMPLATES.get(template_name, [])
     for imputer, classifier in templates:
         pipeline_id = BaseBuilder.make_template(imputer, classifier, dataset, pipeline_template, targets, features,
-                                                features_metadata, privileged_data, DBSession=DBSession)
+                                                features_metadata, privileged_data, metrics, DBSession=DBSession)
         send(msg_queue, pipeline_id)
 
 
@@ -152,7 +152,7 @@ def generate(task_keywords, dataset, pipeline_template, metrics, problem, target
 
     if os.environ.get('SKIPTEMPLATES', 'not') == 'not':
         generate_by_templates(task_keywords, dataset, pipeline_template, targets,
-                              features, features_metadata, privileged_data, msg_queue, DBSession)
+                              features, features_metadata, privileged_data, metrics, msg_queue, DBSession)
 
     if 'TA2_DEBUG_BE_FAST' in os.environ:
         sys.exit(0)
@@ -162,7 +162,7 @@ def generate(task_keywords, dataset, pipeline_template, metrics, problem, target
 
     def eval_pipeline(primitive_names, origin):
         pipeline_id = builder.make_d3mpipeline(primitive_names, origin, dataset, pipeline_template, targets,
-                                               features, features_metadata, privileged_data, DBSession=DBSession)
+                                               features, features_metadata, privileged_data, metrics, DBSession=DBSession)
         #execute(pipeline_id, dataset, problem, join(os.environ.get('D3MOUTPUTDIR'), 'output_dataframe.csv'), None,
         #        db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'db.sqlite3'))
         # Evaluate the pipeline if syntax is correct:
