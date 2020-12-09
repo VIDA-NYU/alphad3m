@@ -128,6 +128,8 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive):
         set_hyperparams(db, pipeline, primitive, features='split_date_column')
     elif primitive_name == 'd3m.primitives.data_transformation.encoder.DistilTextEncoder':
         set_hyperparams(db, pipeline, primitive, encoder_type='tfidf')
+    elif primitive_name == 'd3m.primitives.classification.text_classifier.DistilTextClassifier':
+        set_hyperparams(db, pipeline, primitive, metric='accuracy')
 
 
 def need_entire_dataframe(primitives):
