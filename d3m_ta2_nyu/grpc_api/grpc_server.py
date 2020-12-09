@@ -177,7 +177,11 @@ class CoreService(pb_core_grpc.CoreServicer):
             if scores:
                 if session.metrics and session.metrics[0]['metric'].name in scores:
                     metric = session.metrics[0]['metric']
-                    internal_score = metric.normalize(scores[metric.name])
+                    try:
+                        internal_score = metric.normalize(scores[metric.name])
+                    except:
+                        internal_score = scores[metric.name]
+                        logger.warning('Problems normalizing metric, using the raw value: %.2f' % scores[metric.name])
                 else:
                     internal_score = float('nan')
                 scores = [
