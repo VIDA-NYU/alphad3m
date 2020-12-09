@@ -22,7 +22,6 @@
         "d3m.primitives.classification.svc.SKlearn",
         "d3m.primitives.classification.ensemble_voting.DSBOX",
         "d3m.primitives.classification.light_gbm.Common",
-        "d3m.primitives.classification.lstm.DSBOX",
         "d3m.primitives.classification.mlp.BBNMLPClassifier",
         "d3m.primitives.classification.random_forest.Common",
         "d3m.primitives.classification.xgboost_dart.Common",
@@ -64,7 +63,6 @@
         "d3m.primitives.data_transformation.random_trees_embedding.SKlearn"
     ],
     "TEXT_ENCODER": [
-        "d3m.primitives.feature_extraction.count_vectorizer.SKlearn",
         "d3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn",
         "d3m.primitives.data_transformation.encoder.DistilTextEncoder",
         "d3m.primitives.feature_construction.corex_text.DSBOX"
@@ -130,11 +128,9 @@
         "d3m.primitives.regression.sgd.SKlearn",
         "d3m.primitives.regression.svr.SKlearn",
         "d3m.primitives.regression.echo_linear.DSBOX",
-        "d3m.primitives.regression.global_causal_discovery.RegressorRPI",
         "d3m.primitives.regression.xgboost_gbtree.Common"
     ],
     "TEXT_CLASSIFIER": [
-        "d3m.primitives.classification.bert_classifier.DistilBertPairClassification",
         "d3m.primitives.classification.text_classifier.DistilTextClassifier"
     ],
     "CLUSTERING": [
@@ -142,8 +138,7 @@
         "d3m.primitives.clustering.hdbscan.Hdbscan",
         "d3m.primitives.clustering.k_means.DistilKMeans",
         "d3m.primitives.clustering.k_means.Fastlvm",
-        "d3m.primitives.clustering.k_means.Sloth",
-        "d3m.primitives.clustering.kmeans_clustering.UBC"
+        "d3m.primitives.clustering.k_means.Sloth"
     ],
     "COLLABORATIVE_FILTERING": [
         "d3m.primitives.collaborative_filtering.link_prediction.DistilCollaborativeFiltering"
@@ -332,10 +327,7 @@
         "d3m.primitives.feature_extraction.count_vectorizer.SKlearn",
         "d3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn",
         "d3m.primitives.data_transformation.encoder.DistilTextEncoder",
-        "d3m.primitives.feature_construction.corex_text.DSBOX",
-        "d3m.primitives.natural_language_processing.glda.Fastlvm",
-        "d3m.primitives.natural_language_processing.hdp.Fastlvm",
-        "d3m.primitives.natural_language_processing.lda.Fastlvm"
+        "d3m.primitives.feature_construction.corex_text.DSBOX"
     ],
     "NORMALIZATION": [
         "d3m.primitives.normalization.iqr_scaler.DSBOX"
