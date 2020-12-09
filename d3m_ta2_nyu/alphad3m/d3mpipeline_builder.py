@@ -133,7 +133,9 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive):
 def need_entire_dataframe(primitives):
     for primitive in primitives:
         if primitive in {'d3m.primitives.data_transformation.time_series_to_list.DSBOX',
-                         'd3m.primitives.feature_extraction.random_projection_timeseries_featurization.DSBOX'}:
+                         'd3m.primitives.feature_extraction.random_projection_timeseries_featurization.DSBOX',
+                         'd3m.primitives.data_transformation.dataframe_to_tensor.DSBOX',
+                         'd3m.primitives.feature_extraction.resnet50_image_feature.DSBOX'}:
             return True
     return False
 
@@ -287,7 +289,7 @@ class BaseBuilder:
             connect(db, pipeline, step0, step1)
 
             prev_step = step1
-            if is_collection(dataset_path):
+            if is_collection(dataset_path) and not need_entire_dataframe(primitives):
                 prev_step, reader_steps = add_file_readers(db, pipeline, prev_step, dataset_path)
                 count_steps += reader_steps
 

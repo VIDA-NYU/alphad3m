@@ -14,8 +14,8 @@ SEMISUPERVISED_CLASSIFICATION_TASK -> IMPUTATION ENCODERS FEATURE_SELECTION CLAS
 LUPI_TASK -> ENCODERS IMPUTATION FEATURE_SCALING FEATURE_SELECTION CLASSIFICATION
 TEXT_CLASSIFICATION_TASK -> NATURAL_LANGUAGE_PROCESSING FEATURE_SELECTION CLASSIFICATION | TEXT_CLASSIFIER
 TEXT_REGRESSION_TASK -> NATURAL_LANGUAGE_PROCESSING FEATURE_SELECTION REGRESSION
-IMAGE_CLASSIFICATION_TASK -> 'd3m.primitives.feature_extraction.image_transfer.DistilImageTransfer' CLASSIFICATION
-IMAGE_REGRESSION_TASK -> 'd3m.primitives.feature_extraction.image_transfer.DistilImageTransfer' REGRESSION
+IMAGE_CLASSIFICATION_TASK -> 'd3m.primitives.feature_extraction.image_transfer.DistilImageTransfer' CLASSIFICATION | 'd3m.primitives.data_transformation.dataframe_to_tensor.DSBOX' 'd3m.primitives.feature_extraction.resnet50_image_feature.DSBOX' CLASSIFICATION
+IMAGE_REGRESSION_TASK -> 'd3m.primitives.feature_extraction.image_transfer.DistilImageTransfer' REGRESSION | 'd3m.primitives.data_transformation.dataframe_to_tensor.DSBOX' 'd3m.primitives.feature_extraction.resnet50_image_feature.DSBOX' REGRESSION
 AUDIO_CLASSIFICATION_TASK -> 'd3m.primitives.feature_extraction.audio_transfer.DistilAudioTransfer' CLASSIFICATION
 AUDIO_REGRESSION_TASK -> 'd3m.primitives.feature_extraction.audio_transfer.DistilAudioTransfer' REGRESSION
 VIDEO_CLASSIFICATION_TASK -> 'd3m.primitives.feature_extraction.resnext101_kinetics_video_features.VideoFeaturizer' CLASSIFICATION
