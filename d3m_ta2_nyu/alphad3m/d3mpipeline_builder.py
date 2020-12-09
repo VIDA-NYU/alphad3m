@@ -158,7 +158,7 @@ def encode_features(pipeline, attribute_step, target_step, features_metadata, db
 
     if 'http://schema.org/DateTime' in feature_types:
         time_step = make_pipeline_module(db, pipeline,
-                                         'd3m.primitives.data_transformation.data_cleaning.DistilEnrichDates')
+                                         'd3m.primitives.data_transformation.enrich_dates.DistilEnrichDates')
         connect(db, pipeline, last_step, time_step)
         last_step = time_step
         count_steps += 1
