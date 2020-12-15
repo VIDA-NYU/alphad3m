@@ -14,7 +14,6 @@ build_image:
   stage: build
   image: python:3
   script:
-    - service docker stop
     - docker daemon --storage-opt dm.basesize=20G
     - date
     - curl -Lo /tmp/docker.tgz https://get.docker.com/builds/Linux/x86_64/docker-17.05.0-ce.tgz && tar -xf /tmp/docker.tgz -C /usr/local && rm /tmp/docker.tgz && export PATH=/usr/local/docker:$PATH && export DOCKER_HOST=tcp://docker:2375
