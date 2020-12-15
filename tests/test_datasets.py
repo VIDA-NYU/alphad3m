@@ -111,7 +111,7 @@ def evaluate_pipelines(datasets, top=10):
             search_id = search_results[dataset]['search_id']
             logger.info('Scoring top pipeline id=%s' % top_pipeline_id)
             top_pipeline_path = join(D3MOUTPUTDIR, search_id, 'pipelines_searched', '%s.json' % top_pipeline_id)
-            top_pipeline_path = '/usr/src/app/resource/pipelines/example_metalearningdb.json'
+            #top_pipeline_path = '/usr/src/app/resource/pipelines/example_metalearningdb.json'
             score_pipeline_path = join(D3MOUTPUTDIR, 'temp', 'runtime_output', 'fit_score_%s.csv' % top_pipeline_id)
 
             command = [
@@ -166,38 +166,6 @@ def load_search_results(file_path):
     with open(file_path) as fin:
         return json.load(fin)
 
-
-def files_to_d3mtext(files_path, source_path, destination_path, text_column='article',
-                     class_column='articleofinterest', suffix='TEST'):
-
-    destination_path = join(destination_path, 'dataset_tmp_test')
-
-    if exists(destination_path):
-        shutil.rmtree(destination_path)
-    os.makedirs(destination_path)
-
-    dataset_path = join(destination_path, 'dataset_%s' % suffix)
-    media_path = join(destination_path, 'dataset_%s' % suffix, 'media')
-    tables_path = join(destination_path, 'dataset_%s' % suffix, 'tables')
-
-    os.makedirs(dataset_path)
-    datasetdoc_path = join(source_path, 'dataset_TRAIN', 'datasetDoc.json')
-    new_datasetdoc_path = join(dataset_path, 'datasetDoc.json')
-    shutil.copyfile(datasetdoc_path, new_datasetdoc_path)
-    os.makedirs(tables_path)
-    shutil.copytree(files_path, media_path)
-
-    dict_tmp = {'d3mIndex': [], class_column: [], text_column: []}
-
-    for index, file_name in enumerate(os.listdir(files_path)):
-        dict_tmp['d3mIndex'].append(index)
-        dict_tmp[class_column].append('')
-        dict_tmp[text_column].append(file_name)
-
-    dataframe_tmp = pd.DataFrame.from_dict(dict_tmp)
-    dataframe_tmp.to_csv(join(tables_path, 'learningData.csv'), index=False)
-
-    return destination_path
 
 def load_template():
     with open(join(os.path.dirname(__file__), '../resource/pipelines/example_metalearningdb.json')) as fin:
@@ -274,7 +242,7 @@ def create_inputs_pofiler(dataset):
 
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['LL1_TXT_CLS_airline_opinion_MIN_METADATA']
-    search_pipelines(datasets, 2, True)
+    datasets = ['185_baseball_MIN_METADATA']
+    search_pipelines(datasets, 5)
     evaluate_pipelines(datasets)
 

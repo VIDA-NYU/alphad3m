@@ -3,21 +3,13 @@
 Those are supposed to be run without data or primitives available.
 """
 
-import uuid
 import shutil
 import tempfile
 import unittest
-import ta3ta2_api.core_pb2 as pb_core
-import ta3ta2_api.value_pb2 as pb_value
-import ta3ta2_api.pipeline_pb2 as pb_pipeline
-import ta3ta2_api.primitive_pb2 as pb_primitive
-
 from unittest import mock
 from d3m_ta2_nyu.ta2 import D3mTa2, Session, TuneHyperparamsJob
 from d3m_ta2_nyu.workflow import database
 from d3m.metadata.problem import PerformanceMetric
-from d3m_ta2_nyu.workflow import convert
-from d3m_ta2_nyu.grpc_api.grpc_server import to_timestamp, CoreService
 
 
 class FakePrimitiveBuilder(object):
