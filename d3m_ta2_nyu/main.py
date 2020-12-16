@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def setup_logging():
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s:%(levelname)s:TA2:%(name)s:%(message)s')
+        format='%(asctime)s:%(levelname)s:AlphaD3M:%(name)s:%(message)s')
 
 
 def main_search():

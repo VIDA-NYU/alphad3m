@@ -678,7 +678,7 @@ class D3mTa2(Observable):
         self._run_thread.setDaemon(True)
         self._run_thread.start()
 
-        logger.warning("TA2 started, version=%s", __version__)
+        logger.warning("AlphaD3M started, version=%s", __version__)
 
     def run_search(self, dataset_path, problem_path=None, problem_config=None, timeout=None):
         if not dataset_path.endswith('datasetDoc.json'):  # Convert to D3M format

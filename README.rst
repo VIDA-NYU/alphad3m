@@ -1,33 +1,30 @@
-D3M implementation from NYU - TA2
+AlphaD3M
 =================================
 
-This repository is part of New York University's implementation of the `Data Driven Discovery project <https://datadrivendiscovery.org/>`__. It holds the TA2 system (pipeline generation and execution). A separate repository holds `our TA3 implementation <https://gitlab.com/ViDA-NYU/d3m/ta3>`__.
+AlphaD3M is an AutoML system that automatically searches for models and derives end-to-end pipelines that read, pre-process the data, and train the model.
+AlphaD3M uses deep learning to learn how to incrementally construct these pipelines. The process progresses by self play with iterative self improvement.
+
+This repository is part of New York University's implementation of the `Data Driven Discovery project (D3M) <https://datadrivendiscovery.org/>`__.
+
 
 Installation
 ------------
 
-You should use Docker
-::
 
-    docker build -t ta2:latest .
-    # Or pull the image from GitLab
-    docker pull registry.gitlab.com/vida-nyu/d3m/ta2:latest
+You can use AlphaD3M through `d3m-interface <https://gitlab.com/ViDA-NYU/d3m/d3m_interface>`__.  d3m-interface is a Python library to use D3M AutoML systems.
+This package works with Python 3.6 and  you need to have Docker installed on your operating system.
 
-Running on data
---------------------
-
-With Docker, you can use the ``docker.sh`` script. Don't forget to update the paths in the script to point to the datasets on your own machine.
+You  can install the latest stable version of this library from `PyPI <https://pypi.org/project/d3m-interface/>`__:
 
 ::
 
-    # Search pipelines
-    ./docker.sh search seed_datasets_current/185_baseball/TRAIN ta2:latest
+    pip3 install d3m-interface
 
-Updating dependencies
----------------------
 
-I am using locked versions of dependencies for reproducible builds and so everyone has the same environment. The ``requirements.txt`` contains the list of packages installed in Dockerfile.
+The first time d3m-interface is used, it automatically downloads a Docker image containing the D3M Core and AlphaD3M.
 
-``numpy`` and ``Cython`` need to be installed first (they are hardcoded in Dockerfile) because other packages depend on them to build.
 
-I want to switch to Pipenv or Poetry eventually, but there are issues right now preventing me from doing it.
+The documentation of our system can be found `here <https://d3m-interface.readthedocs.io/en/latest/getting-started.html>`__.
+To help users get started with AlphaD3M, we provide Jupyter Notebooks in our
+`public repository <https://gitlab.com/ViDA-NYU/d3m/d3m_interface/-/tree/master/examples>`__ that show examples of how the library can be used.
+We also have documentation for the `API <https://d3m-interface.readthedocs.io/en/latest/api.html>`__.
