@@ -1,8 +1,17 @@
 Changelog
 =========
 
-Version v2020.xx.xx
+Version v2021.xx.xx
 ------------------
+
+Version v2020.12.08
+------------------
+* Added encoders (text, datetime, etc.) to the grammar.
+* Added timeout for pipeline execution (during search). 
+* Added support to expouse outputs of the pipeline steps.
+* Added support for ROC AUC metric.
+* Renamed repository to AlphaD3M
+
 Version v2020.07.24
 ------------------
 * Added support for video data type.
