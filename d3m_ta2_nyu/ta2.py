@@ -467,17 +467,22 @@ class ScoreJob(Job):
             except subprocess.TimeoutExpired:
                 self.proc.kill()
                 self.proc.wait()
+
+        _, stderr = self.proc.communicate()
         log = logger.info if self.proc.returncode == 0 else logger.error
         log("Pipeline scoring process done, returned %d (pipeline: %s)",
             self.proc.returncode, self.pipeline_id)
+
         if self.proc.returncode == 0:
             self.ta2.notify('scoring_success',
                             pipeline_id=self.pipeline_id,
                             job_id=id(self))
         else:
+            error_logs = stderr.decode()
             self.ta2.notify('scoring_error',
                             pipeline_id=self.pipeline_id,
-                            job_id=id(self))
+                            job_id=id(self),
+                            error_msg=error_logs)
         return True
 
 
@@ -507,9 +512,12 @@ class TrainJob(Job):
     def poll(self):
         if self.proc.poll() is None:
             return False
+
+        _, stderr = self.proc.communicate()
         log = logger.info if self.proc.returncode == 0 else logger.error
         log("Pipeline training process done, returned %d (pipeline: %s)",
             self.proc.returncode, self.pipeline_id)
+
         if self.proc.returncode == 0:
             steps_to_expose = []
             for step_id in self.steps_to_expose:
@@ -521,9 +529,11 @@ class TrainJob(Job):
                             steps_to_expose=steps_to_expose,
                             job_id=id(self))
         else:
+            error_logs = stderr.decode()
             self.ta2.notify('training_error',
                             pipeline_id=self.pipeline_id,
-                            job_id=id(self))
+                            job_id=id(self),
+                            error_msg=error_logs)
         return True
 
 
@@ -551,6 +561,8 @@ class TestJob(Job):
     def poll(self):
         if self.proc.poll() is None:
             return False
+
+        _, stderr = self.proc.communicate()
         log = logger.info if self.proc.returncode == 0 else logger.error
         log("Pipeline testing process done, returned %d (pipeline: %s)",
             self.proc.returncode, self.pipeline_id)
@@ -565,9 +577,11 @@ class TestJob(Job):
                             steps_to_expose=steps_to_expose,
                             job_id=id(self))
         else:
+            error_logs = stderr.decode()
             self.ta2.notify('testing_error',
                             pipeline_id=self.pipeline_id,
-                            job_id=id(self))
+                            job_id=id(self),
+                            error_msg=error_logs)
         return True
 
 
@@ -611,9 +625,14 @@ class TuneHyperparamsJob(Job):
     def poll(self):
         if self.proc.poll() is None:
             return False
+
+        self.proc.stdin.close()
+        self.proc.stderr.close()
+
         log = logger.info if self.proc.returncode == 0 else logger.error
         log("Pipeline tuning process done, returned %d (pipeline: %s)",
             self.proc.returncode, self.pipeline_id)
+
         if self.proc.returncode == 0:
             logger.info("New pipeline: %s)", self.tuned_pipeline_id)
             self.session.notify('tuning_success',

@@ -383,10 +383,11 @@ class CoreService(pb_core_grpc.CoreServicer):
                 )
                 break
             elif event == 'scoring_error':
+                status = kwargs['error_msg']
                 yield pb_core.GetScoreSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.ERRORED,
-                        status="Scoring failed",
+                        status=status,
                     ),
                 )
                 break
@@ -455,10 +456,11 @@ class CoreService(pb_core_grpc.CoreServicer):
                 )
                 break
             elif event == 'training_error':
+                status = kwargs['error_msg']
                 yield pb_core.GetFitSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.ERRORED,
-                        status="Training failed",
+                        status=status,
                     ),
                 )
                 break
@@ -513,10 +515,11 @@ class CoreService(pb_core_grpc.CoreServicer):
                 )
                 break
             elif event == 'testing_error':
+                status = kwargs['error_msg']
                 yield pb_core.GetProduceSolutionResultsResponse(
                     progress=pb_core.Progress(
                         state=pb_core.ERRORED,
-                        status="Execution failed",
+                        status=status,
                     ),
                 )
                 break

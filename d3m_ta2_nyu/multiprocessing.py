@@ -12,6 +12,7 @@ import pickle
 import socket
 from queue import Empty
 import subprocess
+import traceback
 import sys
 
 
@@ -81,8 +82,7 @@ def run_process(target, tag, msg_queue, **kwargs):
             ),
             base64.b64encode(pickle.dumps(data)),
         ],
-        stdin=subprocess.PIPE)
-    proc.stdin.close()
+        stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
     return proc
 
@@ -100,7 +100,8 @@ def _invoke(tag, target):
     logging.getLogger().handlers = []
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s:%(levelname)s:{}:%(name)s:%(message)s".format(tag))
+        format="%(asctime)s:%(levelname)s:{}:%(name)s:%(message)s".format(tag),
+        stream=sys.stdout)
 
     msg_queue = multiprocessing.connection.Client(address)
 
@@ -112,4 +113,6 @@ def _invoke(tag, target):
         function(msg_queue=msg_queue, **kwargs)
     except Exception:
         logging.exception("Uncaught exception in subprocess %s", tag)
+        error = traceback.format_exc()
+        sys.stderr.write(error)
         sys.exit(1)
