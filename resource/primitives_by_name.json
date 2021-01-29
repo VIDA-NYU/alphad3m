@@ -504,13 +504,6 @@
         "digest": "916863cdb942fab70438c7e72dd92f3c35d45d6db04afe735f128095b5e85998"
     },
     {
-        "id": "cdb18166-e2ca-4418-b5a4-fffbe98f7844",
-        "name": "BBN MLP Classifier",
-        "version": "0.1.4",
-        "python_path": "d3m.primitives.classification.mlp.BBNMLPClassifier",
-        "digest": "cda42f1489bb95a52c8ce0240fb676731dbced3428893869e2e8fa1b0133e779"
-    },
-    {
         "id": "37c2b19d-bdab-4a30-ba08-6be49edcc6af",
         "name": "Random forest classifier",
         "version": "0.4.0",

@@ -39,6 +39,7 @@ BLACK_LIST = {
     'd3m.primitives.feature_extraction.boc.UBC',
     'd3m.primitives.feature_extraction.bow.UBC',
     'd3m.primitives.feature_extraction.nk_sent2vec.Sent2Vec',
+    'd3m.primitives.classification.mlp.BBNMLPClassifier',
     # Repeated primitives:
     'd3m.primitives.data_transformation.unary_encoder.DSBOX',
     'd3m.primitives.data_transformation.one_hot_encoder.TPOT',

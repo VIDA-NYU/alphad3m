@@ -17,7 +17,7 @@ def test(pipeline_id, dataset, storage_dir, steps_to_expose, msg_queue, db):
     with open(os.path.join(storage_dir, 'fitted_solution_%s.pkl' % pipeline_id), 'rb') as fin:
         runtime = pickle.load(fin)
 
-    results = runtime.produce(inputs=[dataset], return_values=steps_to_expose)
+    results = runtime.produce(inputs=[dataset], outputs_to_expose=steps_to_expose)
     results.check_success()
 
     logger.info('Storing produce results at %s', storage_dir)
