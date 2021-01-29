@@ -189,13 +189,13 @@ def get_hyperparameters_from_metalearnig():
 
 
 def get_configspace_from_metalearning(metalearning_entry):
-    print('primitive entry', metalearning_entry)
     cs = ConfigurationSpace()
     categorical_and_none_hyperparams = []
+
     for hyperparam in metalearning_entry:
         if len(metalearning_entry[hyperparam]['choices']) == 1 and metalearning_entry[hyperparam]['default'] is None:
             categorical_and_none_hyperparams.append(
-                Constant(hyperparam,'None')
+                Constant(hyperparam, 'None')
             )
         else:
             categorical_and_none_hyperparams.append(

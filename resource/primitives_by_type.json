@@ -22,7 +22,6 @@
         "d3m.primitives.classification.svc.SKlearn",
         "d3m.primitives.classification.ensemble_voting.DSBOX",
         "d3m.primitives.classification.light_gbm.Common",
-        "d3m.primitives.classification.mlp.BBNMLPClassifier",
         "d3m.primitives.classification.random_forest.Common",
         "d3m.primitives.classification.xgboost_dart.Common",
         "d3m.primitives.classification.xgboost_gbtree.Common"

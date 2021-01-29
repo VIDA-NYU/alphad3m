@@ -548,7 +548,7 @@ class BaseBuilder:
 class TimeseriesClassificationBuilder(BaseBuilder):
 
     def make_d3mpipeline(self, primitives, origin, dataset, pipeline_template, targets, features,
-                         features_metadata, privileged_data=[],metrics=[], DBSession=None):
+                         features_metadata, privileged_data=[], metrics=[], DBSession=None):
         db = DBSession()
         origin_name = '%s (%s)' % (origin, ', '.join([p.replace('d3m.primitives.', '') for p in primitives]))
         pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
@@ -671,7 +671,7 @@ class CommunityDetectionBuilder(BaseBuilder):
 
 class LinkPredictionBuilder(BaseBuilder):
     def make_d3mpipeline(self, primitives, origin, dataset, pipeline_template, targets, features,
-                         features_metadata, privileged_data=[],metrics=[], DBSession=None):
+                         features_metadata, privileged_data=[], metrics=[], DBSession=None):
         db = DBSession()
         origin_name = '%s (%s)' % (origin, ', '.join([p.replace('d3m.primitives.', '') for p in primitives]))
         pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
@@ -709,7 +709,7 @@ class LinkPredictionBuilder(BaseBuilder):
 
 class GraphMatchingBuilder(BaseBuilder):
     def make_d3mpipeline(self, primitives, origin, dataset, pipeline_template, targets, features,
-                         features_metadata, privileged_data=[],metrics=[], DBSession=None):
+                         features_metadata, privileged_data=[], metrics=[], DBSession=None):
         db = DBSession()
         origin_name = '%s (%s)' % (origin, ', '.join([p.replace('d3m.primitives.', '') for p in primitives]))
         try:
@@ -742,7 +742,7 @@ class GraphMatchingBuilder(BaseBuilder):
 
 class VertexClassificationBuilder(BaseBuilder):
     def make_d3mpipeline(self, primitives, origin, dataset, pipeline_template, targets, features,
-                         features_metadata, privileged_data=[],metrics=[], DBSession=None):
+                         features_metadata, privileged_data=[], metrics=[], DBSession=None):
         db = DBSession()
         origin_name = '%s (%s)' % (origin, ', '.join([p.replace('d3m.primitives.', '') for p in primitives]))
         pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
@@ -802,7 +802,7 @@ class VertexClassificationBuilder(BaseBuilder):
 class ObjectDetectionBuilder(BaseBuilder):
 
     def make_d3mpipeline(self, primitives, origin, dataset, pipeline_template, targets, features,
-                         features_metadata, privileged_data=[],metrics=[], DBSession=None):
+                         features_metadata, privileged_data=[], metrics=[], DBSession=None):
         db = DBSession()
         origin_name = '%s (%s)' % (origin, ', '.join([p.replace('d3m.primitives.', '') for p in primitives]))
         pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
@@ -881,7 +881,7 @@ class ObjectDetectionBuilder(BaseBuilder):
 class AudioBuilder(BaseBuilder):
 
     def make_d3mpipeline(self, primitives, origin, dataset, pipeline_template, targets, features,
-                         features_metadata, privileged_data=[],metrics=[], DBSession=None):
+                         features_metadata, privileged_data=[], metrics=[], DBSession=None):
         db = DBSession()
         origin_name = '%s (%s)' % (origin, ', '.join([p.replace('d3m.primitives.', '') for p in primitives]))
         pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
@@ -979,7 +979,7 @@ class AudioBuilder(BaseBuilder):
 class SemisupervisedClassificationBuilder(BaseBuilder):
 
     def make_d3mpipeline(self, primitives, origin, dataset, pipeline_template, targets, features,
-                         features_metadata, privileged_data=[],metrics=[], DBSession=None):
+                         features_metadata, privileged_data=[], metrics=[], DBSession=None):
         db = DBSession()
         origin_name = '%s (%s)' % (origin, ', '.join([p.replace('d3m.primitives.', '') for p in primitives]))
         pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
@@ -1107,7 +1107,7 @@ class SemisupervisedClassificationBuilder(BaseBuilder):
 class CollaborativeFilteringBuilder:
 
     def make_d3mpipeline(self, primitives, origin, dataset, pipeline_template, targets, features,
-                         features_metadata, privileged_data=[], DBSession=None):
+                         features_metadata, privileged_data=[], metrics=[], DBSession=None):
         # TODO parameters 'features and 'targets' are not needed
         db = DBSession()
         dataset_path = dataset[7:]
