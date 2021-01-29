@@ -13,7 +13,7 @@ from d3m_ta2_nyu.grpc_api.grpc_logger import LoggingStub
 from d3m_automl_rpc.utils import encode_pipeline_description, decode_value
 from d3m.metadata.problem import Problem, PerformanceMetric
 from d3m.utils import yaml_load_all, fix_uri
-from client import do_search, do_score, do_train, do_test, do_export, do_describe
+from client import do_search, do_score, do_train, do_test, do_export, do_describe, do_save_fitted_solution
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
@@ -73,6 +73,7 @@ def search_pipelines(datasets, time_bound=10, use_template=False):
                 all_scores.append({'id': pipeline_id, 'score': pipeline_score})
                 #do_score(core, problem, [pipeline_id], dataset_train_path)
                 #fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
+                #do_save_fitted_solution(core, fitted_pipeline)
                 #do_test(core, fitted_pipeline, dataset_train_path.replace('TRAIN', 'TEST'))
                 #do_export(core, fitted_pipeline)
                 #do_describe(core, [pipeline_id])

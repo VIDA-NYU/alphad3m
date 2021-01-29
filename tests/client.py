@@ -2,7 +2,9 @@ import grpc
 import json
 import logging
 import sys
+import pickle
 import datetime
+from urllib import parse
 import d3m_automl_rpc.core_pb2 as pb_core
 import d3m_automl_rpc.core_pb2_grpc as pb_core_grpc
 import d3m_automl_rpc.value_pb2 as pb_value
@@ -162,6 +164,22 @@ def do_describe(core, solutions):
             ))
         except Exception:
             logger.exception("Exception during describe %r", solution)
+
+
+def do_save_fitted_solution(core, fitted):
+    saved = {}
+
+    for fitted_solution_id in fitted.values():
+        response = core.SaveFittedSolution(pb_core.SaveFittedSolutionRequest(fitted_solution_id=fitted_solution_id))
+        parsed_uri = parse.urlparse(response.fitted_solution_uri, allow_fragments=False)
+        fitted_solution_path = parsed_uri.path
+
+        with open(fitted_solution_path, 'rb') as fin:
+            fitted_object = pickle.load(fin)
+
+        saved[fitted_solution_id] = fitted_object
+
+    return saved
 
 
 def main():

@@ -587,6 +587,16 @@ class CoreService(pb_core_grpc.CoreServicer):
             steps=step_descriptions
         )
 
+    def SaveFittedSolution(self, request, context):
+        """Save a trained pipeline.
+        """
+        pipeline_id = UUID(hex=request.fitted_solution_id)
+        fitted_solution_uri = self._ta2.get_fitted_pipeline_uri(pipeline_id)
+
+        return pb_core.SaveFittedSolutionResponse(
+            fitted_solution_uri='%s' % fitted_solution_uri,
+        )
+
     def _add_step(self, steps, step_descriptions, modules, params, module_to_step, mod):
         if mod.id in module_to_step:
             return module_to_step[mod.id]

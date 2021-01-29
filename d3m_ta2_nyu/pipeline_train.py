@@ -52,5 +52,5 @@ def train(pipeline_id, dataset, problem, storage_dir, steps_to_expose, msg_queue
         if step_id in steps_to_expose and isinstance(results.values[step_id], DataFrame):
             results.values[step_id].to_csv(join(storage_dir, 'fit_%s_%s.csv' % (pipeline_id, step_id)))
 
-    with open(os.path.join(storage_dir, 'fitted_solution_%s.pkl' % pipeline_id), 'wb') as fout:
+    with open(join(storage_dir, 'fitted_solution_%s.pkl' % pipeline_id), 'wb') as fout:
         pickle.dump(fitted_pipeline, fout)

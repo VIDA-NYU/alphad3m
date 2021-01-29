@@ -820,6 +820,13 @@ class D3mTa2(Observable):
         self._run_queue.put(job)
         return id(job)
 
+    def get_fitted_pipeline_uri(self, pipeline_id):
+        fitted_pipeline_uri = join(self.runtime_folder, 'fitted_solution_%s.pkl' % pipeline_id)
+        if exists(fitted_pipeline_uri):
+            return 'file://' + fitted_pipeline_uri
+
+        return None
+
     def build_pipelines(self, session_id, dataset, task_keywords, metrics, timeout_search, timeout_run, template=None,
                         targets=None, features=None, tune=None, report_rank=False):
         if not metrics:
