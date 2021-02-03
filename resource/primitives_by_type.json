@@ -61,13 +61,18 @@
     "RANDOM_FOREST": [
         "d3m.primitives.data_transformation.random_trees_embedding.SKlearn"
     ],
-    "TEXT_ENCODER": [
+    "NATURAL_LANGUAGE_PROCESSING": [
         "d3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn",
         "d3m.primitives.data_transformation.encoder.DistilTextEncoder",
-        "d3m.primitives.feature_construction.corex_text.DSBOX"
+        "d3m.primitives.feature_construction.corex_text.DSBOX",
+        "d3m.primitives.feature_extraction.count_vectorizer.SKlearn",
+        "d3m.primitives.feature_extraction.boc.UBC",
+        "d3m.primitives.feature_extraction.bow.UBC",
+        "d3m.primitives.natural_language_processing.glda.Fastlvm",
+        "d3m.primitives.natural_language_processing.hdp.Fastlvm",
+        "d3m.primitives.natural_language_processing.lda.Fastlvm"
     ],
     "FEATURE_SELECTION": [
-        "d3m.primitives.feature_extraction.feature_agglomeration.SKlearn",
         "d3m.primitives.feature_selection.generic_univariate_select.SKlearn",
         "d3m.primitives.feature_selection.select_fwe.SKlearn",
         "d3m.primitives.feature_selection.select_percentile.SKlearn",
@@ -103,6 +108,11 @@
         "d3m.primitives.dimensionality_reduction.principal_component_analysis.UBC",
         "d3m.primitives.feature_extraction.pca_features.RandomizedPolyPCA"
     ],
+    "TEXT_ENCODER": [
+        "d3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn",
+        "d3m.primitives.data_transformation.encoder.DistilTextEncoder",
+        "d3m.primitives.feature_construction.corex_text.DSBOX"
+    ],
     "REGRESSION": [
         "d3m.primitives.regression.ada_boost.SKlearn",
         "d3m.primitives.regression.ard.SKlearn",
@@ -128,6 +138,10 @@
         "d3m.primitives.regression.svr.SKlearn",
         "d3m.primitives.regression.echo_linear.DSBOX",
         "d3m.primitives.regression.xgboost_gbtree.Common"
+    ],
+    "VERTEX_CLASSIFICATION": [
+        "d3m.primitives.classification.gaussian_classification.JHU",
+        "d3m.primitives.vertex_nomination.seeded_graph_matching.DistilVertexNomination"
     ],
     "TEXT_CLASSIFIER": [
         "d3m.primitives.classification.text_classifier.DistilTextClassifier"
@@ -322,15 +336,6 @@
         "d3m.primitives.metalearning.metafeature_extractor.BYU",
         "d3m.primitives.metalearning.metafeature_extractor.Common"
     ],
-    "NATURAL_LANGUAGE_PROCESSING": [
-        "d3m.primitives.feature_extraction.count_vectorizer.SKlearn",
-        "d3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn",
-        "d3m.primitives.data_transformation.encoder.DistilTextEncoder",
-        "d3m.primitives.feature_construction.corex_text.DSBOX"
-    ],
-    "NORMALIZATION": [
-        "d3m.primitives.normalization.iqr_scaler.DSBOX"
-    ],
     "OPERATOR": [
         "d3m.primitives.operator.column_map.Common",
         "d3m.primitives.operator.compute_unique_values.Common",
@@ -372,9 +377,5 @@
     "TIME_SERIES_SEGMENTATION": [
         "d3m.primitives.time_series_segmentation.signal_framer.SignalFramer",
         "d3m.primitives.time_series_segmentation.uniform_segmentation.UniformSegmentation"
-    ],
-    "VERTEX_CLASSIFICATION": [
-        "d3m.primitives.vertex_nomination.seeded_graph_matching.DistilVertexNomination",
-        "d3m.primitives.classification.gaussian_classification.JHU"
     ]
 }

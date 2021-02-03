@@ -36,8 +36,6 @@ BLACK_LIST = {
     'd3m.primitives.data_cleaning.missing_indicator.SKlearn',
     'd3m.primitives.data_transformation.gaussian_random_projection.SKlearn',
     'd3m.primitives.data_transformation.sparse_random_projection.SKlearn',
-    'd3m.primitives.feature_extraction.boc.UBC',
-    'd3m.primitives.feature_extraction.bow.UBC',
     'd3m.primitives.feature_extraction.nk_sent2vec.Sent2Vec',
     'd3m.primitives.classification.mlp.BBNMLPClassifier',
     # Repeated primitives:
@@ -45,7 +43,27 @@ BLACK_LIST = {
     'd3m.primitives.data_transformation.one_hot_encoder.TPOT',
     'd3m.primitives.data_transformation.one_hot_encoder.MakerCommon',
     'd3m.primitives.data_transformation.one_hot_encoder.PandasCommon',
-    'd3m.primitives.feature_extraction.tfidf_vectorizer.BBNTfidfTransformer'
+    'd3m.primitives.feature_extraction.tfidf_vectorizer.BBNTfidfTransformer',
+    # Poor performance:
+    'd3m.primitives.classification.cover_tree.Fastlvm',
+    'd3m.primitives.classification.linear_svc.DistilRankedLinearSVC',
+    'd3m.primitives.classification.lstm.DSBOX',
+    'd3m.primitives.regression.cover_tree.Fastlvm',
+    'd3m.primitives.classification.bert_classifier.DistilBertPairClassification',
+    'd3m.primitives.regression.global_causal_discovery.RegressorRPI',
+    'd3m.primitives.regression.monomial.Test',
+    'd3m.primitives.regression.rfm_precondition_ed_gaussian_krr.RFMPreconditionedGaussianKRR',
+    'd3m.primitives.regression.rfm_precondition_ed_polynomial_krr.RFMPreconditionedPolynomialKRR',
+    'd3m.primitives.regression.tensor_machines_regularized_least_squares.TensorMachinesRegularizedLeastSquares',
+    'd3m.primitives.clustering.cluster_curve_fitting_kmeans.ClusterCurveFittingKMeans',
+    'd3m.primitives.clustering.kmeans_clustering.UBC',
+    'd3m.primitives.clustering.spectral_graph.SpectralClustering',
+    'd3m.primitives.data_cleaning.greedy_imputation.DSBOX',
+    'd3m.primitives.data_cleaning.iterative_regression_imputation.DSBOX',
+    'd3m.primitives.data_cleaning.mean_imputation.DSBOX',
+    'd3m.primitives.data_preprocessing.random_sampling_imputer.BYU',
+    'd3m.primitives.data_transformation.imputer.DistilCategoricalImputer',
+    'd3m.primitives.feature_extraction.feature_agglomeration.SKlearn',
 }
 
 
@@ -97,8 +115,7 @@ def get_primitives_by_type():
             # Changing the primitive families using some predefined rules
             if primitive_name in {'d3m.primitives.feature_construction.corex_text.DSBOX',
                                   'd3m.primitives.data_transformation.encoder.DistilTextEncoder',
-                                  'd3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn',
-                                  'd3m.primitives.feature_extraction.count_vectorizer.SKlearn'}:
+                                  'd3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn'}:
                 family = 'TEXT_ENCODER'
 
             elif primitive_name in {'d3m.primitives.data_cleaning.quantile_transformer.SKlearn',
@@ -119,6 +136,7 @@ def get_primitives_by_type():
 
             elif primitive_name in {'d3m.primitives.feature_extraction.boc.UBC',
                                     'd3m.primitives.feature_extraction.bow.UBC',
+                                    'd3m.primitives.feature_extraction.count_vectorizer.SKlearn',
                                     'd3m.primitives.feature_extraction.nk_sent2vec.Sent2Vec',
                                     'd3m.primitives.feature_extraction.tfidf_vectorizer.BBNTfidfTransformer'}:
                 family = 'NATURAL_LANGUAGE_PROCESSING'
