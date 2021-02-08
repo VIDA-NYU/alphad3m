@@ -35,7 +35,7 @@ from d3m.metadata.problem import TaskKeyword, parse_problem_description
 
 
 MAX_RUNNING_PROCESSES = 6
-MINUTES_SCORE_PIPELINE = 10
+MINUTES_SCORE_PIPELINE = 5
 TUNE_PIPELINES_COUNT = 5
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
@@ -606,6 +606,7 @@ class TuneHyperparamsJob(Job):
                 os.mkdir(subdir)
 
         self.msg = Receiver()
+        timeout_run = self.session.timeout_run if self.session.timeout_run is not None else MINUTES_SCORE_PIPELINE * 60
 
         self.proc = run_process('d3m_ta2_nyu.pipeline_tune.tune',
                                 'tune', self.msg,
@@ -616,7 +617,7 @@ class TuneHyperparamsJob(Job):
                                 dataset_uri=self.session.dataset_uri,
                                 sample_dataset_uri=self.session.sample_dataset_uri,
                                 timeout_tuning=self.timeout_tuning,
-                                timeout_run=MINUTES_SCORE_PIPELINE * 60,
+                                timeout_run=timeout_run,
                                 db_filename=db_filename)
         self.session.notify('tuning_start',
                             pipeline_id=self.pipeline_id,
@@ -1054,7 +1055,11 @@ class D3mTa2(Observable):
 
         This is used by the pipeline synthesis code.
         """
-        timeout_run = MINUTES_SCORE_PIPELINE * 60
+        if session.timeout_run is None:
+            timeout_run = MINUTES_SCORE_PIPELINE * 60
+        else:
+            timeout_run = session.timeout_run
+
         scoring_config = {'shuffle': 'true',
                           'stratified': 'true' if TaskKeyword.CLASSIFICATION in task_keywords else 'false',
                           'method': 'K_FOLD',
