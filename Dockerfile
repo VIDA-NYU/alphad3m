@@ -41,6 +41,7 @@ RUN pip3 install nltk==3.4.5
 RUN pip3 install datamart-profiler==0.6.1
 RUN pip3 install datamart-materialize==0.6.1
 
+RUN pip3 install -e git+https://gitlab.com/datadrivendiscovery/sklearn-wrap.git@dev-dist#egg=sklearn_wrap
 
 COPY eval.sh /usr/local/bin/eval.sh
 
