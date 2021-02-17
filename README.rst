@@ -24,7 +24,7 @@ You  can install the latest stable version of this library from `PyPI <https://p
 The first time d3m-interface is used, it automatically downloads a Docker image containing the D3M Core and AlphaD3M.
 
 
-The documentation of our system can be found `here <https://d3m-interface.readthedocs.io/en/latest/getting-started.html>`__.
+The documentation of our system can be found `here <https://d3m-interface.readthedocs.io/>`__.
 To help users get started with AlphaD3M, we provide Jupyter Notebooks in our
 `public repository <https://gitlab.com/ViDA-NYU/d3m/d3m_interface/-/tree/master/examples>`__ that show examples of how the library can be used.
 We also have documentation for the `API <https://d3m-interface.readthedocs.io/en/latest/api.html>`__.
