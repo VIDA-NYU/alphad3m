@@ -970,7 +970,9 @@ class D3mTa2(Observable):
         expected_search_end = None
         if timeout_search is not None:
             timeout_search = timeout_search * 60  # Minutes to seconds
-            timeout_search_internal = timeout_search * 0.85
+            timeout_search_internal = timeout_search
+            if TUNE_PIPELINES_COUNT > 0:
+                timeout_search_internal = timeout_search * 0.85
             now = time.time()
             expected_search_end = now + timeout_search
 
