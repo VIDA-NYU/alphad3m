@@ -95,16 +95,16 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
         pipeline_split = train_test_tabular_split
 
     elif scoring_config['method'] == 'RANKING':  # For TA2 only evaluation
+        pipeline_split = kfold_tabular_split
         scoring_config['number_of_folds'] = '4'
         report_rank = True
-        pipeline_split = kfold_tabular_split
     else:
         logger.warning('Unknown evaluation method, using K_FOLD')
         pipeline_split = kfold_tabular_split
 
     if metrics[0]['metric'] == PerformanceMetric.F1 and TaskKeyword.SEMISUPERVISED in problem['problem']['task_keywords']:
         new_metrics = [{'metric': PerformanceMetric.F1_MACRO}]
-        scores = evaluate(pipeline, kfold_tabular_split, dataset, new_metrics, problem, scoring_config, dataset_uri, timeout_run)
+        scores = evaluate(pipeline, pipeline_split, dataset, new_metrics, problem, scoring_config, dataset_uri, timeout_run)
         scores = change_name_metric(scores, new_metrics, new_metric=metrics[0]['metric'].name)
     else:
         scores = evaluate(pipeline, pipeline_split, dataset, metrics, problem, scoring_config, dataset_uri, timeout_run)
