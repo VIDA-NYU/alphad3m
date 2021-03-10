@@ -1,5 +1,4 @@
-AlphaD3M
-=================================
+![AlphaD3M logo](AlphaD3M_logo.png =360x285)
 
 AlphaD3M is an AutoML system that automatically searches for models and derives end-to-end pipelines that read, pre-process the data, and train the model.
 AlphaD3M uses deep learning to learn how to incrementally construct these pipelines. The process progresses by self play with iterative self improvement.
@@ -11,7 +10,7 @@ Installation
 ------------
 
 
-You can use AlphaD3M through `d3m-interface <https://gitlab.com/ViDA-NYU/d3m/d3m_interface>`__.  d3m-interface is a Python library to use D3M AutoML systems.
+You can use AlphaD3M through `d3m-interface <https://d3m-interface.readthedocs.io/en/latest/>`__.  d3m-interface is a Python library to use D3M AutoML systems.
 This package works with Python 3.6 and  you need to have Docker installed on your operating system.
 
 You  can install the latest stable version of this library from `PyPI <https://pypi.org/project/d3m-interface/>`__:
