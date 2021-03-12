@@ -1,6 +1,7 @@
 """Various utilities that are not specific to D3M.
 """
 
+import os
 import contextlib
 import logging
 import json
@@ -206,3 +207,8 @@ def get_dataset_sample(dataset, problem, dataset_sample_path=None):
         logger.error('Error sampling in dataset %s')
 
     return dataset
+
+
+def create_outputfolders(folder_path):
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)

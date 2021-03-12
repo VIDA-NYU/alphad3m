@@ -13,7 +13,7 @@ from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.parameter_tuning.primitive_config import is_tunable
 from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, get_new_hyperparameters
 from d3m.metadata.problem import PerformanceMetric, TaskKeyword
-from d3m_ta2_nyu.ta2 import create_outputfolders
+from d3m_ta2_nyu.utils import create_outputfolders
 
 logger = logging.getLogger(__name__)
 
