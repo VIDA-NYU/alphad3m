@@ -13,7 +13,7 @@ from d3m_ta2_nyu.grpc_api.grpc_logger import LoggingStub
 from d3m_automl_rpc.utils import encode_pipeline_description, decode_value
 from d3m.metadata.problem import Problem, PerformanceMetric
 from d3m.utils import yaml_load_all, fix_uri
-from client import do_search, do_score, do_train, do_test, do_export, do_describe, do_save_fitted_solution
+from client import do_search, do_score, do_train, do_test, do_export, do_describe, do_load_solution, do_save_fitted_solution
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)

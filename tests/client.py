@@ -166,6 +166,19 @@ def do_describe(core, solutions):
             logger.exception("Exception during describe %r", solution)
 
 
+def do_save_solution(core, solution_id):
+    response = core.SaveSolution(pb_core.SaveSolutionRequest(solution_id=solution_id))
+
+    return response.solution_uri
+
+
+def do_load_solution(core, solution_path):
+    solution_uri = 'file://%s' % solution_path
+    response = core.LoadSolution(pb_core.LoadSolutionRequest(solution_uri=solution_uri))
+
+    return response.solution_id
+
+
 def do_save_fitted_solution(core, fitted):
     saved = {}
 

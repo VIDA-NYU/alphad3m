@@ -26,7 +26,7 @@ from uuid import uuid4, UUID
 from d3m_ta2_nyu import __version__
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu.grpc_api import grpc_server
-from d3m_ta2_nyu.utils import Observable, ProgressStatus, is_collection, get_dataset_sample
+from d3m_ta2_nyu.utils import Observable, ProgressStatus, is_collection, get_dataset_sample, create_outputfolders
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json
 from d3m_ta2_nyu.data_ingestion.data_reader import create_d3mdataset, create_d3mproblem
@@ -821,10 +821,125 @@ class D3mTa2(Observable):
         self._run_queue.put(job)
         return id(job)
 
-    def get_fitted_pipeline_uri(self, pipeline_id):
-        fitted_pipeline_uri = join(self.runtime_folder, 'fitted_solution_%s.pkl' % pipeline_id)
-        if exists(fitted_pipeline_uri):
-            return 'file://' + fitted_pipeline_uri
+    def save_pipeline(self, session_id, pipeline_id, problem):
+        pipeline_id = str(pipeline_id)
+        session_id = str(session_id)
+        pipeline_path = join(self.output_folder, session_id, 'pipelines_scored', '%s.json' % pipeline_id)
+
+        if exists(pipeline_path):
+            pipeline_folder_path = join(self.output_folder, 'temp', 'saved_pipelines', pipeline_id)
+            create_outputfolders(pipeline_folder_path)
+            shutil.copyfile(pipeline_path, join(pipeline_folder_path, 'pipeline.json'))
+            problem_json = problem.to_json_structure()
+
+            with open(join(pipeline_folder_path, 'problem.json'), 'w') as fout:
+                json.dump(problem_json, fout, indent=2)
+
+            return 'file://' + pipeline_folder_path
+
+        return None
+
+    def load_pipeline(self, session_id, pipeline):
+        session = self.sessions[session_id]
+        db = self.DBSession()
+        dataset = 'N/A'
+
+        pipeline_database = database.Pipeline(origin='Loaded pipeline', dataset=dataset)
+
+        # TODO: Do it on d3mpipeline_generator.py
+        def make_module(package, version, name):
+            pipeline_module = database.PipelineModule(
+                pipeline=pipeline_database,
+                package=package, version=version, name=name)
+            db.add(pipeline_module)
+            return pipeline_module
+
+        def make_data_module(name):
+            return make_module('data', '0.0', name)
+
+        def make_primitive_module(name):
+            if name[0] == '.':
+                name = 'd3m.primitives' + name
+            return make_module('d3m', '2018.7.10', name)
+
+        def connect(from_module, to_module,
+                    from_output='produce', to_input='inputs'):
+            db.add(database.PipelineConnection(pipeline=pipeline_database,
+                                               from_module=from_module,
+                                               to_module=to_module,
+                                               from_output_name=from_output,
+                                               to_input_name=to_input))
+
+        def set_hyperparams(module, **hyperparams):
+            db.add(database.PipelineParameter(
+                pipeline=pipeline_database, module=module,
+                name='hyperparams', value=pickle.dumps(hyperparams),
+            ))
+
+        try:
+            # TODO: Use pipeline input for this
+            if dataset:
+                input_data = make_data_module('dataset')
+                db.add(database.PipelineParameter(
+                    pipeline=pipeline_database, module=input_data,
+                    name='targets', value=pickle.dumps('targets'),
+                ))
+                db.add(database.PipelineParameter(
+                    pipeline=pipeline_database, module=input_data,
+                    name='features', value=pickle.dumps('features'),
+                ))
+            prev_step = None
+            prev_steps = {}
+            count_template_steps = 0
+            for pipeline_step in pipeline['steps']:
+                if pipeline_step['type'] == 'PRIMITIVE':
+                    step = make_primitive_module(pipeline_step['primitive']['python_path'])
+                    if 'outputs' in pipeline_step:
+                        for output in pipeline_step['outputs']:
+                            prev_steps['steps.%d.%s' % (count_template_steps, output['id'])] = step
+
+                    count_template_steps += 1
+                    if 'hyperparams' in pipeline_step:
+                        hyperparams = {}
+                        for hyper, desc in pipeline_step['hyperparams'].items():
+                            hyperparams[hyper] = {'type': desc['type'], 'data': desc['data']}
+                        set_hyperparams(step, **hyperparams)
+                else:
+                    # TODO In the future we should be able to handle subpipelines
+                    break
+                if prev_step:
+                    if 'arguments' in pipeline_step:
+                        for argument, desc in pipeline_step['arguments'].items():
+                            connect(prev_steps[desc['data']], step, from_output=desc['data'].split('.')[-1],
+                                    to_input=argument)
+                    connect(prev_step, step, from_output='index', to_input='index')
+                else:
+                    connect(input_data, step, from_output='dataset')
+                prev_step = step
+            db.add(pipeline_database)
+            db.commit()
+            pipeline_id = pipeline_database.id
+            logger.info("Created fixed pipeline %s", pipeline_id)
+            session.write_searched_pipeline(pipeline_id)
+
+            session.notify('new_fixed_pipeline', pipeline_id=pipeline_id)
+            with session.lock:
+                session.pipelines.add(pipeline_id)
+                # Force working=True so we get 'done_searching' even if no pipeline
+                # gets created
+                session.working = False
+        finally:
+            db.close()
+
+        return pipeline_id
+
+    def save_fitted_pipeline(self, pipeline_id):
+        fitted_pipeline_path = join(self.runtime_folder, 'fitted_solution_%s.pkl' % pipeline_id)
+        if exists(fitted_pipeline_path):
+            pipeline_path_dst = join(self.output_folder, 'temp', 'saved_fitted_pipelines', pipeline_id)
+            create_outputfolders(pipeline_path_dst)
+            shutil.copyfile(fitted_pipeline_path, join(pipeline_path_dst, 'fitted_solution_%s.pkl' % pipeline_id))
+            return 'file://' + pipeline_path_dst
 
         return None
 
@@ -1166,10 +1281,3 @@ class D3mTa2(Observable):
                     running_jobs[id(job)] = job
 
             time.sleep(3)
-
-
-def create_outputfolders(folder_path):
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-
-

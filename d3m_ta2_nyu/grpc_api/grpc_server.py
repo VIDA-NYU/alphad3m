@@ -1,4 +1,4 @@
-"""GRPC server code, exposing D3mTa2 over the TA3-TA2 protocol.
+"""GRPC server code, exposing AlphaD3M over the TA3-TA2 protocol.
 
 Those adapters wrap the D3mTa2 object and handle all the GRPC and protobuf
 logic, converting to/from protobuf messages. No GRPC or protobuf objects should
@@ -7,10 +7,12 @@ leave this module.
 
 
 import grpc
+import json
 import calendar
 import datetime
 import logging
 from uuid import UUID
+from os.path import join
 from d3m_ta2_nyu import __version__
 import d3m_automl_rpc.core_pb2 as pb_core
 import d3m_automl_rpc.core_pb2_grpc as pb_core_grpc
@@ -21,6 +23,7 @@ import d3m_automl_rpc.primitive_pb2 as pb_primitive
 from d3m_automl_rpc.utils import decode_pipeline_description, decode_problem_description, decode_performance_metric, \
     encode_pipeline_description
 from d3m.metadata import pipeline as pipeline_module
+from d3m.metadata.problem import Problem
 from google.protobuf.timestamp_pb2 import Timestamp
 from d3m_ta2_nyu.grpc_api.grpc_logger import log_service
 from d3m_ta2_nyu.primitive_loader import get_primitives_by_name
@@ -54,7 +57,6 @@ def error(context, code, format, *args):
 
 @log_service(logger)
 class CoreService(pb_core_grpc.CoreServicer):
-    installed_primitives = get_primitives_by_name()
 
     def __init__(self, ta2):
         self._ta2 = ta2
@@ -72,7 +74,7 @@ class CoreService(pb_core_grpc.CoreServicer):
 
     def Hello(self, request, context):
         version = pb_core.DESCRIPTOR.GetOptions().Extensions[pb_core.protocol_version]
-        user_agent = "nyu_ta2 %s" % __version__
+        user_agent = "alphad3m %s" % __version__
 
         return pb_core.HelloResponse(
             user_agent=user_agent,
@@ -84,16 +86,6 @@ class CoreService(pb_core_grpc.CoreServicer):
             supported_evaluation_methods=['K_FOLD', 'HOLDOUT', 'RANKING'],
             supported_search_features=[]
         )
-
-    def ListPrimitives(self, request, context):
-        primitives = []
-
-        for primitive in self.installed_primitives:
-            primitives.append(pb_primitive.Primitive(id=primitive['id'], version=primitive['version'],
-                                                     python_path=primitive['python_path'], name=primitive['name'],
-                                                     digest=primitive['digest']))
-
-        return pb_core.ListPrimitivesResponse(primitives=primitives)
 
     def SearchSolutions(self, request, context):
         """Create a `Session` and start generating & scoring pipelines.
@@ -269,24 +261,6 @@ class CoreService(pb_core_grpc.CoreServicer):
                     yield msg_progress("Solution doesn't work")
 
             yield msg_progress("End of search", pb_core.COMPLETED)
-
-    def EndSearchSolutions(self, request, context):
-        """Stop the search and delete the `Session`.
-        """
-        session_id = UUID(hex=request.search_id)
-        if session_id in self._ta2.sessions:
-            self._ta2.finish_session(session_id)
-            logger.info("Search terminated: %s", session_id)
-        return pb_core.EndSearchSolutionsResponse()
-
-    def StopSearchSolutions(self, request, context):
-        """Stop the search without deleting the `Session`.
-        """
-        session_id = UUID(hex=request.search_id)
-        if session_id in self._ta2.sessions:
-            self._ta2.stop_session(session_id)
-            logger.info("Search stopped: %s", session_id)
-        return pb_core.StopSearchSolutionsResponse()
 
     def ScoreSolution(self, request, context):
         """Request scores for a pipeline.
@@ -522,8 +496,74 @@ class CoreService(pb_core_grpc.CoreServicer):
                 )
                 break
 
+    def SaveSolution(self, request, context):
+        """Save a pipeline.
+        """
+        pipeline_id = UUID(hex=request.solution_id)
+        session_id = None
+        problem = None
+
+        for session_id in self._ta2.sessions.keys():
+            if pipeline_id in self._ta2.sessions[session_id].pipelines:
+                problem = self._ta2.sessions[session_id].problem
+                break
+
+        solution_uri = self._ta2.save_pipeline(session_id, pipeline_id, problem)
+
+        return pb_core.SaveSolutionResponse(
+            solution_uri='%s' % solution_uri,
+        )
+
+    def LoadSolution(self, request, context):
+        """Load a pipeline into a search session.
+        """
+        solution_path = request.solution_uri.replace('file://', '')
+
+        with open(join(solution_path, 'pipeline.json')) as fin:
+            pipeline = json.load(fin)
+
+        with open(join(solution_path, 'problem.json')) as fin:
+            problem_json = json.load(fin)
+            problem = Problem.from_json_structure(problem_json)
+
+        search_id = self._ta2.new_session(problem)
+        solution_id = self._ta2.load_pipeline(search_id, pipeline)
+
+        return pb_core.LoadSolutionResponse(
+            solution_id='%s' % solution_id,
+        )
+
+    def SaveFittedSolution(self, request, context):
+        """Save a trained pipeline.
+        """
+        pipeline_id = UUID(hex=request.fitted_solution_id)
+        fitted_solution_uri = self._ta2.save_fitted_pipeline(str(pipeline_id))
+
+        return pb_core.SaveFittedSolutionResponse(
+            fitted_solution_uri='%s' % fitted_solution_uri,
+        )
+
+    def DescribeSolution(self, request, context):
+        """Describe a pipeline as a grpc message.
+        """
+        pipeline_id = UUID(hex=request.solution_id)
+        pipeline = self._ta2.get_workflow(pipeline_id)
+
+        if not pipeline:
+            raise error(context, grpc.StatusCode.NOT_FOUND,
+                        "Unknown solution ID %r", request.solution_id)
+
+        json_pipeline = convert.to_d3m_json(pipeline)
+        d3m_pipeline = pipeline_module.Pipeline.from_json_structure(json_pipeline, )
+        grpc_pipeline = encode_pipeline_description(d3m_pipeline, ['RAW', 'DATASET_URI', 'CSV_URI'], self._ta2.output_folder)
+
+        return pb_core.DescribeSolutionResponse(
+            pipeline=grpc_pipeline,
+            steps=None
+        )
+
     def SolutionExport(self, request, context):
-        """Export a trained pipeline as an executable.
+        """Export a pipeline.
         """
         pipeline_id = UUID(hex=request.solution_id)
         session_id = None
@@ -544,29 +584,31 @@ class CoreService(pb_core_grpc.CoreServicer):
         session.write_exported_pipeline(pipeline_id, rank)
         return pb_core.SolutionExportResponse()
 
-    def DescribeSolution(self, request, context):
-        pipeline_id = UUID(hex=request.solution_id)
-        pipeline = self._ta2.get_workflow(pipeline_id)
+    def ListPrimitives(self, request, context):
+        primitives = []
+        installed_primitives = get_primitives_by_name()
 
-        if not pipeline:
-            raise error(context, grpc.StatusCode.NOT_FOUND,
-                        "Unknown solution ID %r", request.solution_id)
+        for primitive in installed_primitives:
+            primitives.append(pb_primitive.Primitive(id=primitive['id'], version=primitive['version'],
+                                                     python_path=primitive['python_path'], name=primitive['name'],
+                                                     digest=primitive['digest']))
 
-        json_pipeline = convert.to_d3m_json(pipeline)
-        d3m_pipeline = pipeline_module.Pipeline.from_json_structure(json_pipeline, )
-        grpc_pipeline = encode_pipeline_description(d3m_pipeline, ['RAW', 'DATASET_URI', 'CSV_URI'], self._ta2.output_folder)
+        return pb_core.ListPrimitivesResponse(primitives=primitives)
 
-        return pb_core.DescribeSolutionResponse(
-            pipeline=grpc_pipeline,
-            steps=None
-        )
-
-    def SaveFittedSolution(self, request, context):
-        """Save a trained pipeline.
+    def StopSearchSolutions(self, request, context):
+        """Stop the search without deleting the `Session`.
         """
-        pipeline_id = UUID(hex=request.fitted_solution_id)
-        fitted_solution_uri = self._ta2.get_fitted_pipeline_uri(pipeline_id)
+        session_id = UUID(hex=request.search_id)
+        if session_id in self._ta2.sessions:
+            self._ta2.stop_session(session_id)
+            logger.info("Search stopped: %s", session_id)
+        return pb_core.StopSearchSolutionsResponse()
 
-        return pb_core.SaveFittedSolutionResponse(
-            fitted_solution_uri='%s' % fitted_solution_uri,
-        )
+    def EndSearchSolutions(self, request, context):
+        """Stop the search and delete the `Session`.
+        """
+        session_id = UUID(hex=request.search_id)
+        if session_id in self._ta2.sessions:
+            self._ta2.finish_session(session_id)
+            logger.info("Search terminated: %s", session_id)
+        return pb_core.EndSearchSolutionsResponse()
