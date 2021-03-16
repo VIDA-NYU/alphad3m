@@ -77,6 +77,7 @@ def search_pipelines(datasets, time_bound=10, use_template=False):
                 #do_test(core, fitted_pipeline, dataset_train_path.replace('TRAIN', 'TEST'))
                 #do_export(core, fitted_pipeline)
                 #do_describe(core, [pipeline_id])
+                #pipeline_id =  do_load_solution(core, '/output/saved_pipeline')
 
             result['pipelines'] = number_pipelines
             result['best_time'] = best_time
