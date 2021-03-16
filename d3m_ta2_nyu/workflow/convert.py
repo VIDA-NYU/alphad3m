@@ -24,15 +24,18 @@ def _add_step(steps, modules, params, module_to_step, mod):
     # Recursively walk upstream modules (to get `steps` in topological order)
     # Add inputs to a dictionary, in deterministic order
     inputs = {}
+    outputs = set()
 
     for conn in sorted(mod.connections_to, key=lambda c: c.to_input_name):
         step = _add_step(steps, modules, params, module_to_step, modules[conn.from_module_id])
 
         # index is a special connection to keep the order of steps in fixed pipeline templates
-        if 'index' in conn.to_input_name: continue
+        if 'index' in conn.to_input_name:
+            continue
 
         if step.startswith('inputs.'):
             inputs[conn.to_input_name] = step
+            outputs.add('produce')
         else:
             if conn.to_input_name in inputs:
                 previous_value = inputs[conn.to_input_name]
@@ -43,17 +46,14 @@ def _add_step(steps, modules, params, module_to_step, mod):
             else:
                 inputs[conn.to_input_name] = '%s.%s' % (step, conn.from_output_name)
 
+            outputs.add(conn.from_output_name)
+
     klass = get_class(mod.name)
     primitive_desc = {
         key: value
         for key, value in klass.metadata.query().items()
         if key in {'id', 'version', 'python_path', 'name', 'digest'}
     }
-
-    outputs = [{'id': k} for k, v in klass.metadata.query()['primitive_code']['instance_methods'].items()
-               if v['kind'] == 'PRODUCE']
-    if mod.name.endswith('.Fastlvm'):  # FIXME: Temporal solution, this module will be removed when DB is removed
-        outputs = [{'id': 'produce'}]
 
     # Create step description
     if len(inputs) > 0:
@@ -67,7 +67,7 @@ def _add_step(steps, modules, params, module_to_step, mod):
                 }
                 for name, data in inputs.items()
             },
-            'outputs': outputs
+            'outputs': [{'id': o} for o in outputs]
         }
     else:
         step = {
