@@ -283,8 +283,9 @@ def is_target_task(problem, task):
         problem_task = [problem['task_type']]
     elif 'task_keywords' in problem:
         if 'CLASSIFICATION' in problem['task_keywords'] and 'TABULAR' in problem['task_keywords']:
-            #if 'CLASSIFICATION' in problem['task_keywords'] and '1491_one_hundred_plants_margin' in problem['id']:
             problem_task = 'CLASSIFICATION'
+        elif 'REGRESSION' in problem['task_keywords'] and 'TABULAR' in problem['task_keywords']:
+            problem_task = 'REGRESSION'
 
     if task == problem_task:
         return True
@@ -348,7 +349,7 @@ def load_primitives_by_type():
         primitives = json.load(fin)
 
     for primitive_type in primitives:
-        primitive_names = primitives[primitive_type].keys()
+        primitive_names = primitives[primitive_type]
         for primitive_name in primitive_names:
             primitives_by_type[primitives_by_name[primitive_name]] = primitive_type
 
@@ -357,15 +358,15 @@ def load_primitives_by_type():
 
 if __name__ == '__main__':
     task = 'CLASSIFICATION'
-    pipelines_file = '/Users/rlopez/Downloads/metalearningdb_dump_20200304/pipelines-1583354358.json'
-    pipeline_runs_file = '/Users/rlopez/Downloads/metalearningdb_dump_20200304/pipeline_runs-1583354387.json'
-    problems_file = '/Users/rlopez/Downloads/metalearningdb_dump_20200304/problems-1583354357.json'
+    #pipelines_file = '/Users/rlopez/Downloads/metalearningdb_dump_20200304/pipelines-1583354358.json'
+    #pipeline_runs_file = '/Users/rlopez/Downloads/metalearningdb_dump_20200304/pipeline_runs-1583354387.json'
+    #problems_file = '/Users/rlopez/Downloads/metalearningdb_dump_20200304/problems-1583354357.json'
     #merge_pipeline_files(pipelines_file, pipeline_runs_file, problems_file)
-    #create_grammar_from_metalearningdb(task)
-    #analyze_distribution(load_metalearningdb(task))
-    non_terminals = {x: i+1 for i, x in enumerate(set(load_primitives_by_type().values()))}
+    create_grammar_from_metalearningdb(task)
+    analyze_distribution(load_metalearningdb(task))
+    '''non_terminals = {x: i+1 for i, x in enumerate(set(load_primitives_by_type().values()))}
     terminals = {x: len(non_terminals) + i for i, x in enumerate(load_primitives_by_name().keys())}
     terminals['E'] = 0
     rules = {'S -> IMPUTATION ENCODERS FEATURE_SCALING FEATURE_SELECTION CLASSIFICATION': 1, 'ENCODERS -> CATEGORICAL_ENCODER TEXT_ENCODER': 2, 'IMPUTATION -> d3m.primitives.data_cleaning.imputer.SKlearn': 3, 'IMPUTATION -> d3m.primitives.data_cleaning.missing_indicator.SKlearn': 4, 'IMPUTATION -> d3m.primitives.data_cleaning.string_imputer.SKlearn': 5, 'IMPUTATION -> d3m.primitives.data_cleaning.tabular_extractor.Common': 6, 'IMPUTATION -> d3m.primitives.data_preprocessing.greedy_imputation.DSBOX': 7, 'IMPUTATION -> d3m.primitives.data_preprocessing.iterative_regression_imputation.DSBOX': 8, 'IMPUTATION -> d3m.primitives.data_preprocessing.mean_imputation.DSBOX': 9, 'IMPUTATION -> d3m.primitives.data_preprocessing.random_sampling_imputer.BYU': 10, 'IMPUTATION -> d3m.primitives.data_transformation.imputer.DistilCategoricalImputer': 11, 'IMPUTATION -> E': 12, 'FEATURE_SELECTION -> d3m.primitives.feature_selection.generic_univariate_select.SKlearn': 13, 'FEATURE_SELECTION -> d3m.primitives.feature_selection.select_fwe.SKlearn': 14, 'FEATURE_SELECTION -> d3m.primitives.feature_selection.select_percentile.SKlearn': 15, 'FEATURE_SELECTION -> d3m.primitives.feature_selection.variance_threshold.SKlearn': 16, 'FEATURE_SELECTION -> d3m.primitives.feature_selection.joint_mutual_information.AutoRPI': 17, 'FEATURE_SELECTION -> d3m.primitives.feature_selection.pca_features.Pcafeatures': 18, 'FEATURE_SELECTION -> d3m.primitives.feature_selection.rffeatures.Rffeatures': 19, 'FEATURE_SELECTION -> d3m.primitives.feature_selection.score_based_markov_blanket.RPI': 20, 'FEATURE_SELECTION -> d3m.primitives.feature_selection.simultaneous_markov_blanket.AutoRPI': 21, 'FEATURE_SELECTION -> d3m.primitives.feature_selection.skfeature.TAMU': 22, 'FEATURE_SELECTION -> E': 23, 'FEATURE_SCALING -> d3m.primitives.data_preprocessing.binarizer.SKlearn': 24, 'FEATURE_SCALING -> d3m.primitives.data_preprocessing.max_abs_scaler.SKlearn': 25, 'FEATURE_SCALING -> d3m.primitives.data_preprocessing.min_max_scaler.SKlearn': 26, 'FEATURE_SCALING -> d3m.primitives.data_preprocessing.robust_scaler.SKlearn': 27, 'FEATURE_SCALING -> d3m.primitives.data_preprocessing.standard_scaler.SKlearn': 28, 'FEATURE_SCALING -> E': 29, 'CLASSIFICATION -> d3m.primitives.classification.ada_boost.SKlearn': 30, 'CLASSIFICATION -> d3m.primitives.classification.bagging.SKlearn': 31, 'CLASSIFICATION -> d3m.primitives.classification.bernoulli_naive_bayes.SKlearn': 32, 'CLASSIFICATION -> d3m.primitives.classification.decision_tree.SKlearn': 33, 'CLASSIFICATION -> d3m.primitives.classification.dummy.SKlearn': 34, 'CLASSIFICATION -> d3m.primitives.classification.extra_trees.SKlearn': 35, 'CLASSIFICATION -> d3m.primitives.classification.gaussian_naive_bayes.SKlearn': 36, 'CLASSIFICATION -> d3m.primitives.classification.gradient_boosting.SKlearn': 37, 'CLASSIFICATION -> d3m.primitives.classification.k_neighbors.SKlearn': 38, 'CLASSIFICATION -> d3m.primitives.classification.linear_discriminant_analysis.SKlearn': 39, 'CLASSIFICATION -> d3m.primitives.classification.linear_svc.SKlearn': 40, 'CLASSIFICATION -> d3m.primitives.classification.logistic_regression.SKlearn': 41, 'CLASSIFICATION -> d3m.primitives.classification.mlp.SKlearn': 42, 'CLASSIFICATION -> d3m.primitives.classification.multinomial_naive_bayes.SKlearn': 43, 'CLASSIFICATION -> d3m.primitives.classification.nearest_centroid.SKlearn': 44, 'CLASSIFICATION -> d3m.primitives.classification.passive_aggressive.SKlearn': 45, 'CLASSIFICATION -> d3m.primitives.classification.quadratic_discriminant_analysis.SKlearn': 46, 'CLASSIFICATION -> d3m.primitives.classification.random_forest.SKlearn': 47, 'CLASSIFICATION -> d3m.primitives.classification.sgd.SKlearn': 48, 'CLASSIFICATION -> d3m.primitives.classification.svc.SKlearn': 49, 'CLASSIFICATION -> d3m.primitives.classification.bert_classifier.DistilBertPairClassification': 50, 'CLASSIFICATION -> d3m.primitives.classification.cover_tree.Fastlvm': 51, 'CLASSIFICATION -> d3m.primitives.classification.gaussian_classification.JHU': 52, 'CLASSIFICATION -> d3m.primitives.classification.light_gbm.Common': 53, 'CLASSIFICATION -> d3m.primitives.classification.logistic_regression.UBC': 54, 'CLASSIFICATION -> d3m.primitives.classification.lstm.DSBOX': 55, 'CLASSIFICATION -> d3m.primitives.classification.mlp.BBNMLPClassifier': 56, 'CLASSIFICATION -> d3m.primitives.classification.multilayer_perceptron.UBC': 57, 'CLASSIFICATION -> d3m.primitives.classification.random_classifier.Test': 58, 'CLASSIFICATION -> d3m.primitives.classification.random_forest.Common': 59, 'CLASSIFICATION -> d3m.primitives.classification.search.Find_projections': 60, 'CLASSIFICATION -> d3m.primitives.classification.search_hybrid.Find_projections': 61, 'CLASSIFICATION -> d3m.primitives.classification.simple_cnaps.UBC': 62, 'CLASSIFICATION -> d3m.primitives.classification.text_classifier.DistilTextClassifier': 63, 'CLASSIFICATION -> d3m.primitives.classification.xgboost_dart.Common': 64, 'CLASSIFICATION -> d3m.primitives.classification.xgboost_gbtree.Common': 65, 'CATEGORICAL_ENCODER -> d3m.primitives.data_transformation.one_hot_encoder.SKlearn': 66, 'CATEGORICAL_ENCODER -> d3m.primitives.data_preprocessing.encoder.DSBOX': 67, 'CATEGORICAL_ENCODER -> d3m.primitives.data_preprocessing.one_hot_encoder.MakerCommon': 68, 'CATEGORICAL_ENCODER -> d3m.primitives.data_preprocessing.one_hot_encoder.PandasCommon': 69, 'CATEGORICAL_ENCODER -> d3m.primitives.data_preprocessing.unary_encoder.DSBOX': 70, 'CATEGORICAL_ENCODER -> d3m.primitives.data_transformation.one_hot_encoder.DistilOneHotEncoder': 71, 'CATEGORICAL_ENCODER -> d3m.primitives.data_transformation.one_hot_encoder.TPOT': 72, 'TEXT_ENCODER -> d3m.primitives.data_preprocessing.count_vectorizer.SKlearn': 73, 'TEXT_ENCODER -> d3m.primitives.data_preprocessing.tfidf_vectorizer.SKlearn': 74, 'TEXT_ENCODER -> d3m.primitives.data_transformation.encoder.DistilTextEncoder': 75, 'TEXT_ENCODER -> d3m.primitives.feature_construction.corex_text.DSBOX': 76}
     grammar = {'RULES': rules, 'NON_TERMINALS': non_terminals, 'TERMINALS': terminals}
-    create_vectors_from_metalearningdb(task, grammar)
+    create_vectors_from_metalearningdb(task, grammar)'''
