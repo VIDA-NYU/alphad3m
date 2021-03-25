@@ -441,9 +441,8 @@ class BaseBuilder:
             encoder_step, encode_steps = encode_features(pipeline, step5, step4, features_metadata, db)
             other_prev_step = encoder_step
             count_steps += encode_steps
-            if encoder_step == step5:  # Encoders were not applied, so use one_hot_encoder for all features
-                step_fallback = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.encoder.DSBOX')
-                set_hyperparams(db, pipeline, step_fallback, n_limit=50)
+            if encoder_step == step5:  # Encoders were not applied, so use to_numeric for all features
+                step_fallback = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.to_numeric.DSBOX')
                 connect(db, pipeline, step5, step_fallback)
                 other_prev_step = step_fallback
                 count_steps += 1
