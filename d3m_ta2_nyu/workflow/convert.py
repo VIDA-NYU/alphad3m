@@ -24,7 +24,6 @@ def _add_step(steps, modules, params, module_to_step, mod):
     # Recursively walk upstream modules (to get `steps` in topological order)
     # Add inputs to a dictionary, in deterministic order
     inputs = {}
-    outputs = set()
 
     for conn in sorted(mod.connections_to, key=lambda c: c.to_input_name):
         step = _add_step(steps, modules, params, module_to_step, modules[conn.from_module_id])
@@ -35,7 +34,6 @@ def _add_step(steps, modules, params, module_to_step, mod):
 
         if step.startswith('inputs.'):
             inputs[conn.to_input_name] = step
-            outputs.add('produce')
         else:
             if conn.to_input_name in inputs:
                 previous_value = inputs[conn.to_input_name]
@@ -46,7 +44,9 @@ def _add_step(steps, modules, params, module_to_step, mod):
             else:
                 inputs[conn.to_input_name] = '%s.%s' % (step, conn.from_output_name)
 
-            outputs.add(conn.from_output_name)
+    outputs = set([c.from_output_name for c in mod.connections_from])
+    if len(outputs) == 0:  # Add 'produce' output for the last step of the pipeline
+        outputs = {'produce'}
 
     klass = get_class(mod.name)
     primitive_desc = {
