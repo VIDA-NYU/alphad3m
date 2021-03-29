@@ -1,7 +1,6 @@
 import signal
 import os
 import sys
-import operator
 import logging
 import json
 
@@ -52,7 +51,7 @@ config = {
                    'GRAPH': 2,
                    'IMAGE': 3},
 
-    'PIPELINE_SIZE': 7,
+    'PIPELINE_SIZE': 8,
 
     'ARGS': {
         'numIters': 25,

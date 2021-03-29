@@ -1,7 +1,6 @@
-import logging
 import os
-import json
 import pickle
+import logging
 import itertools
 from d3m_ta2_nyu.workflow import database
 from d3m import index
@@ -22,17 +21,17 @@ CONTAINER_CAST = {
                '|d3m.primitives.data_transformation.dataframe_to_list.Common')
     },
     DataFrame: {
-        Dataset: "",
+        Dataset: '',
         ndarray: 'd3m.primitives.data_transformation.dataframe_to_ndarray.Common',
         List: 'd3m.primitives.data_transformation.dataframe_to_list.Common'
     },
     ndarray: {
-        Dataset: "",
+        Dataset: '',
         DataFrame: 'd3m.primitives.data_transformation.ndarray_to_dataframe.Common',
         List: 'd3m.primitives.data_transformation.ndarray_to_list.Common'
     },
     List: {
-        Dataset: "",
+        Dataset: '',
         DataFrame: 'd3m.primitives.data_transformation.list_to_dataframe.Common',
         ndarray: 'd3m.primitives.data_transformation.list_to_ndarray.Common',
     }
@@ -61,27 +60,33 @@ def make_data_module(db, pipeline, targets, features):
 def connect(db, pipeline, from_module, to_module, from_output='produce', to_input='inputs'):
     if 'index' not in from_output:
         if not from_module.name.startswith('dataset'):
-            from_module_primitive = index.get_primitive(from_module.name)
-            from_module_output = from_module_primitive.metadata.query()['primitive_code']['class_type_arguments'][
-                'Outputs']
+            from_module_prim = index.get_primitive(from_module.name)
+            from_module_output = from_module_prim.metadata.query()['primitive_code']['class_type_arguments']['Outputs']
         else:
             from_module_output = Dataset
 
-        to_module_primitive = index.get_primitive(to_module.name)
-        to_module_input = to_module_primitive.metadata.query()['primitive_code']['class_type_arguments'][
-            'Inputs']
-
-        arguments = to_module_primitive.metadata.query()['primitive_code']['arguments']
+        to_module_prim = index.get_primitive(to_module.name)
+        to_module_input = to_module_prim.metadata.query()['primitive_code']['class_type_arguments']['Inputs']
+        arguments = to_module_prim.metadata.query()['primitive_code']['arguments']
 
         if to_input not in arguments:
              raise NameError('Argument %s not found in %s' % (to_input, to_module.name))
 
         if from_module_output != to_module_input and \
-                from_module.name != 'd3m.primitives.data_transformation.audio_reader.DistilAudioDatasetLoader':  # TODO Find a better way
+                from_module.name != 'd3m.primitives.data_transformation.audio_reader.DistilAudioDatasetLoader':
+            #  DistilAudioDatasetLoader primitive has multiple outputs, so skip it
             cast_module_steps = CONTAINER_CAST[from_module_output][to_module_input]
-            if cast_module_steps:
+            if to_module.name == 'd3m.primitives.feature_extraction.resnet50_image_feature.DSBOX':
+                to_tensor = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataframe_to_tensor.DSBOX')
+                db.add(database.PipelineConnection(pipeline=pipeline,
+                                                   from_module=from_module,
+                                                   to_module=to_tensor,
+                                                   from_output_name=from_output,
+                                                   to_input_name='inputs'))
+                from_module = to_tensor
+            elif cast_module_steps:
                 for cast_step in cast_module_steps.split('|'):
-                    cast_module = make_pipeline_module(db, pipeline,cast_step)
+                    cast_module = make_pipeline_module(db, pipeline, cast_step)
                     db.add(database.PipelineConnection(pipeline=pipeline,
                                                        from_module=from_module,
                                                        to_module=cast_module,
@@ -157,8 +162,8 @@ def encode_features(pipeline, attribute_step, target_step, features_metadata, db
         count_steps += 1
 
     if 'http://schema.org/DateTime' in feature_types:
-        time_step = make_pipeline_module(db, pipeline,
-                                         'd3m.primitives.data_transformation.enrich_dates.DistilEnrichDates')
+        time_step = make_pipeline_module(db, pipeline, 'd3m.primitives.data_cleaning.cleaning_featurizer.DSBOX')
+        set_hyperparams(db, pipeline, time_step, features='split_date_column')
         connect(db, pipeline, last_step, time_step)
         last_step = time_step
         count_steps += 1
@@ -315,9 +320,6 @@ class BaseBuilder:
             if need_entire_dataframe(primitives):
                 prev_step, primitives, primitive_steps = add_previous_primitive(db, pipeline, primitives, prev_step)
                 count_steps += primitive_steps
-
-
-
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.column_parser.Common')
             count_steps += 1
@@ -891,6 +893,7 @@ class AudioBuilder(BaseBuilder):
             step0 = make_pipeline_module(db, pipeline,
                                          'd3m.primitives.data_transformation.audio_reader.DistilAudioDatasetLoader')
             connect(db, pipeline, input_data, step0, from_output='dataset')
+
             if 'ROC_AUC' in metrics[0]['metric'].name:
                 step_unique = make_pipeline_module(db, pipeline,
                                                    'd3m.primitives.operator.compute_unique_values.Common')
@@ -906,11 +909,7 @@ class AudioBuilder(BaseBuilder):
                         "https://metadata.datadrivendiscovery.org/types/FloatVector"
                     ]
             )
-            db.add(database.PipelineConnection(pipeline=pipeline,
-                                               from_module=step_unique,
-                                               to_module=step1,
-                                               from_output_name='produce',
-                                               to_input_name='inputs'))
+            connect(db, pipeline, step_unique, step1)
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                        'extract_columns_by_semantic_types.Common')
@@ -920,49 +919,34 @@ class AudioBuilder(BaseBuilder):
             connect(db, pipeline, step_unique, step2)
 
             step3 = make_pipeline_module(db, pipeline, primitives[0])
-            db.add(database.PipelineConnection(pipeline=pipeline,
-                                               from_module=step_unique,
-                                               to_module=step3,
-                                               from_output_name='produce_collection',
-                                               to_input_name='inputs'))
+            connect(db, pipeline, step_unique, step3, from_output='produce_collection')
 
-            step = prev_step = step3
-            preprocessors = primitives[1:-1]
-            estimator = primitives[-1]
+            current_step = prev_step = step3
+            for primitive in primitives[1:]:
+                current_step = make_pipeline_module(db, pipeline, primitive)
+                change_default_hyperparams(db, pipeline, primitive, current_step)
+                connect(db, pipeline, prev_step, current_step)
+                prev_step = current_step
 
-            for preprocessor in preprocessors:
-                step = make_pipeline_module(db, pipeline, preprocessor)
-                change_default_hyperparams(db, pipeline, preprocessor, step)
-                connect(db, pipeline, prev_step, step)
-                prev_step = step
-
-                to_module_primitive = index.get_primitive(preprocessor)
+                to_module_primitive = index.get_primitive(primitive)
                 if 'outputs' in to_module_primitive.metadata.query()['primitive_code']['arguments']:
-                    connect(db, pipeline, step2, step, to_input='outputs')
-
-            step5 = make_pipeline_module(db, pipeline, estimator)
-            change_default_hyperparams(db, pipeline, estimator, step5)
-            connect(db, pipeline, step, step5)
-            connect(db, pipeline, step2, step5, to_input='outputs')
+                    connect(db, pipeline, step2, current_step, to_input='outputs')
 
             if 'ROC_AUC' in metrics[0]['metric'].name:
-                count_steps = 4 + len(primitives)
+                count_steps = 3 + len(primitives)
                 step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                            'construct_confidence.Common')
                 set_hyperparams(db, pipeline, step6,
                                 primitive_learner={"type": "PRIMITIVE", "data": count_steps}
                                 )
-                connect(db, pipeline, step5, step6, from_output='index', to_input='index')
+                connect(db, pipeline, current_step, step6, from_output='index', to_input='index')
                 connect(db, pipeline, step_unique, step6)
                 connect(db, pipeline, step1, step6, to_input='reference')
             else:
                 step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                            'construct_predictions.Common')
-                connect(db, pipeline, step5, step6)
+                connect(db, pipeline, current_step, step6)
                 connect(db, pipeline, step1, step6, to_input='reference')
-
-            db.add(pipeline)
-            db.commit()
 
             db.add(pipeline)
             db.commit()
@@ -1061,7 +1045,7 @@ class SemisupervisedClassificationBuilder(BaseBuilder):
 
                 step5 = make_pipeline_module(db, pipeline, estimator)
                 change_default_hyperparams(db, pipeline, estimator, step5)
-                connect(db, pipeline, step_blackbox, step5,from_output='index', to_input='index')
+                connect(db, pipeline, step_blackbox, step5, from_output='index', to_input='index')
                 connect(db, pipeline, step, step5)
                 set_hyperparams(db, pipeline, step5,
                                 blackbox={ "type": "PRIMITIVE", "data": count_steps }

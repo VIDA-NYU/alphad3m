@@ -2,6 +2,7 @@ import os
 import logging
 import json
 from d3m import index
+from collections import OrderedDict
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +13,7 @@ PRIMITIVES_BY_TYPE_PATH = os.path.join(os.path.dirname(__file__), '../resource/p
 INSTALLED_PRIMITIVES = sorted(index.search(), key=lambda x: x.endswith('SKlearn'), reverse=True)
 
 BLACK_LIST = {
+     # Not working primitives:
     'd3m.primitives.classification.random_classifier.Test',
     'd3m.primitives.classification.global_causal_discovery.ClassifierRPI',
     'd3m.primitives.classification.tree_augmented_naive_bayes.BayesianInfRPI',
@@ -44,6 +46,8 @@ BLACK_LIST = {
     'd3m.primitives.data_transformation.one_hot_encoder.MakerCommon',
     'd3m.primitives.data_transformation.one_hot_encoder.PandasCommon',
     'd3m.primitives.feature_extraction.tfidf_vectorizer.BBNTfidfTransformer',
+    'd3m.primitives.data_transformation.one_hot_encoder.DistilOneHotEncoder',
+    'd3m.primitives.feature_selection.pca_features.Pcafeatures',
     # Poor performance:
     'd3m.primitives.classification.cover_tree.Fastlvm',
     'd3m.primitives.classification.linear_svc.DistilRankedLinearSVC',
@@ -64,6 +68,15 @@ BLACK_LIST = {
     'd3m.primitives.data_preprocessing.random_sampling_imputer.BYU',
     'd3m.primitives.data_transformation.imputer.DistilCategoricalImputer',
     'd3m.primitives.feature_extraction.feature_agglomeration.SKlearn',
+    'd3m.primitives.feature_extraction.boc.UBC',
+    'd3m.primitives.feature_extraction.bow.UBC',
+    'd3m.primitives.natural_language_processing.glda.Fastlvm',
+    'd3m.primitives.natural_language_processing.hdp.Fastlvm',
+    'd3m.primitives.natural_language_processing.lda.Fastlvm',
+    'd3m.primitives.classification.dummy.SKlearn',
+    'd3m.primitives.regression.dummy.SKlearn',
+    'd3m.primitives.data_cleaning.normalizer.SKlearn',
+    'd3m.primitives.classification.ensemble_voting.DSBOX'
 }
 
 
@@ -113,12 +126,7 @@ def get_primitives_by_type():
                 family = algorithm_types[0]
 
             # Changing the primitive families using some predefined rules
-            if primitive_name in {'d3m.primitives.feature_construction.corex_text.DSBOX',
-                                  'd3m.primitives.data_transformation.encoder.DistilTextEncoder',
-                                  'd3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn'}:
-                family = 'TEXT_ENCODER'
-
-            elif primitive_name in {'d3m.primitives.data_cleaning.quantile_transformer.SKlearn',
+            if primitive_name in {'d3m.primitives.data_cleaning.quantile_transformer.SKlearn',
                                     'd3m.primitives.data_cleaning.normalizer.SKlearn',
                                     'd3m.primitives.normalization.iqr_scaler.DSBOX'}:
                 family = 'FEATURE_SCALING'
@@ -128,25 +136,19 @@ def get_primitives_by_type():
                 family = 'FEATURE_SELECTION'
 
             elif primitive_name in {'d3m.primitives.feature_extraction.pca.SKlearn',
+                                    'd3m.primitives.feature_selection.pca_features.Pcafeatures',
                                     'd3m.primitives.feature_extraction.truncated_svd.SKlearn',
                                     'd3m.primitives.feature_extraction.pca_features.RandomizedPolyPCA',
                                     'd3m.primitives.data_transformation.gaussian_random_projection.SKlearn',
-                                    'd3m.primitives.data_transformation.sparse_random_projection.SKlearn'}:
+                                    'd3m.primitives.data_transformation.sparse_random_projection.SKlearn',
+                                    'd3m.primitives.data_transformation.fast_ica.SKlearn'}:
                 family = 'DIMENSIONALITY_REDUCTION'  # Or should it be FEATURE_SELECTION ?
-
-            elif primitive_name in {'d3m.primitives.feature_extraction.boc.UBC',
-                                    'd3m.primitives.feature_extraction.bow.UBC',
-                                    'd3m.primitives.feature_extraction.count_vectorizer.SKlearn',
-                                    'd3m.primitives.feature_extraction.nk_sent2vec.Sent2Vec',
-                                    'd3m.primitives.feature_extraction.tfidf_vectorizer.BBNTfidfTransformer'}:
-                family = 'NATURAL_LANGUAGE_PROCESSING'
 
             elif primitive_name in {'d3m.primitives.classification.bert_classifier.DistilBertPairClassification',
                                     'd3m.primitives.classification.text_classifier.DistilTextClassifier'}:
                 family = 'TEXT_CLASSIFIER'
 
-            elif primitive_name in {'d3m.primitives.data_transformation.data_cleaning.DistilEnrichDates',
-                                    'd3m.primitives.data_cleaning.cleaning_featurizer.DSBOX'}:
+            elif primitive_name in {'d3m.primitives.data_cleaning.cleaning_featurizer.DSBOX'}:
                 family = 'DATETIME_ENCODER'
 
             elif primitive_name in {'d3m.primitives.vertex_nomination.seeded_graph_matching.DistilVertexNomination',
@@ -156,6 +158,34 @@ def get_primitives_by_type():
             elif primitive_name in {'d3m.primitives.feature_extraction.yolo.DSBOX'}:
                 family = 'OBJECT_DETECTION'
 
+            elif primitive_name in {'d3m.primitives.feature_construction.corex_text.DSBOX',
+                                    'd3m.primitives.data_transformation.encoder.DistilTextEncoder',
+                                    'd3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn'}:
+                family = 'TEXT_ENCODER'
+
+            elif primitive_name in {'d3m.primitives.feature_extraction.boc.UBC',
+                                    'd3m.primitives.feature_extraction.bow.UBC',
+                                    'd3m.primitives.feature_extraction.count_vectorizer.SKlearn',
+                                    'd3m.primitives.feature_extraction.nk_sent2vec.Sent2Vec',
+                                    'd3m.primitives.feature_extraction.tfidf_vectorizer.BBNTfidfTransformer'}:
+                family = 'TEXT_FEATURIZER'
+
+            elif primitive_name in {'d3m.primitives.feature_extraction.image_transfer.DistilImageTransfer',
+                                    'd3m.primitives.feature_extraction.resnet50_image_feature.DSBOX'}:
+                family = 'IMAGE_FEATURIZER'
+
+            elif primitive_name in {'d3m.primitives.feature_extraction.audio_transfer.DistilAudioTransfer'}:
+                family = 'AUDIO_FEATURIZER'
+
+            elif primitive_name in {'d3m.primitives.feature_extraction.resnext101_kinetics_video_features.VideoFeaturizer'}:
+                family = 'VIDEO_FEATURIZER'
+
+            elif primitive_name in {'d3m.primitives.feature_extraction.random_projection_timeseries_featurization.DSBOX'}:
+                family = 'TIMESERIES_FEATURIZER'
+
+            elif primitive_name in {'d3m.primitives.data_transformation.time_series_to_list.DSBOX'}:
+                family = 'TIMESERIES_READER'
+
             if family == 'ENCODE_ONE_HOT':
                 family = 'CATEGORICAL_ENCODER'
 
@@ -163,11 +193,11 @@ def get_primitives_by_type():
                 primitives[family] = []
             primitives[family].append(primitive_name)
 
-    # Duplicate TEXT_ENCODER primitives for NATURAL_LANGUAGE_PROCESSING family
-    primitives['NATURAL_LANGUAGE_PROCESSING'] = primitives['TEXT_ENCODER'] + primitives['NATURAL_LANGUAGE_PROCESSING']
+    # Duplicate TEXT_ENCODER primitives for TEXT_FEATURIZER family
+    primitives['TEXT_FEATURIZER'] = primitives['TEXT_ENCODER'] + primitives['TEXT_FEATURIZER']
 
     with open(PRIMITIVES_BY_TYPE_PATH, 'w') as fout:
-        json.dump(primitives, fout, indent=4)
+        json.dump(OrderedDict(sorted(primitives.items())), fout, indent=4)
     logger.info('Loading primitives info from D3M index')
 
     return primitives
