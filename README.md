@@ -17,7 +17,7 @@ This package works with Python 3.6 and  you need to have Docker installed on you
 You  can install the latest stable version of this library from [PyPI](https://pypi.org/project/d3m-interface/):
 
 ```
-$ pip3 install d3m-interface
+$ pip install d3m-interface
 ```
 
 The first time d3m-interface is used, it automatically downloads a Docker image containing the D3M Core and AlphaD3M.
