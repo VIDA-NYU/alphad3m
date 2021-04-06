@@ -205,7 +205,7 @@ def generate(task_keywords, dataset, pipeline_template, metrics, problem, target
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'TEXT_' + task_name
         builder = BaseBuilder()
-    elif TaskKeyword.IMAGE in task_keywords and (
+    elif get_collection_type(dataset[7:]) == 'image' or TaskKeyword.IMAGE in task_keywords and (
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
         task_name = 'IMAGE_' + task_name
         builder = BaseBuilder()
