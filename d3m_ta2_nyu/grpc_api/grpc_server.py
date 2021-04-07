@@ -28,7 +28,6 @@ from google.protobuf.timestamp_pb2 import Timestamp
 from d3m_ta2_nyu.grpc_api.grpc_logger import log_service
 from d3m_ta2_nyu.primitive_loader import get_primitives_by_name
 from d3m_ta2_nyu.utils import PersistentQueue
-from d3m_ta2_nyu.workflow import convert
 
 logger = logging.getLogger(__name__)
 
@@ -547,15 +546,13 @@ class CoreService(pb_core_grpc.CoreServicer):
         """Describe a pipeline as a grpc message.
         """
         pipeline_id = UUID(hex=request.solution_id)
-        pipeline = self._ta2.get_workflow(pipeline_id)
+        pipeline = self._ta2.get_pipeline(pipeline_id)
 
         if not pipeline:
             raise error(context, grpc.StatusCode.NOT_FOUND,
                         "Unknown solution ID %r", request.solution_id)
 
-        json_pipeline = convert.to_d3m_json(pipeline)
-        d3m_pipeline = pipeline_module.Pipeline.from_json_structure(json_pipeline, )
-        grpc_pipeline = encode_pipeline_description(d3m_pipeline, ['RAW', 'DATASET_URI', 'CSV_URI'], self._ta2.output_folder)
+        grpc_pipeline = encode_pipeline_description(pipeline, ['RAW', 'DATASET_URI', 'CSV_URI'], self._ta2.output_folder)
 
         return pb_core.DescribeSolutionResponse(
             pipeline=grpc_pipeline,

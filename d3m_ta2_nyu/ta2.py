@@ -32,11 +32,12 @@ from d3m_ta2_nyu.workflow.convert import to_d3m_json
 from d3m_ta2_nyu.data_ingestion.data_reader import create_d3mdataset, create_d3mproblem
 from d3m.container import Dataset
 from d3m.metadata.problem import TaskKeyword, parse_problem_description
+from d3m.metadata import pipeline as pipeline_module
 
 
 MAX_RUNNING_PROCESSES = 6
 MINUTES_SCORE_PIPELINE = 5
-TUNE_PIPELINES_COUNT = 5
+TUNE_PIPELINES_COUNT = 0
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0
@@ -768,18 +769,21 @@ class D3mTa2(Observable):
         session = self.sessions[session_id]
         session.stop_requested = True
 
-    def get_workflow(self, pipeline_id):
+    def get_pipeline(self, pipeline_id):
         db = self.DBSession()
         try:
-            return (
+            pipeline = (
                 db.query(database.Pipeline)
-                .filter(database.Pipeline.id == pipeline_id)
-                .options(
-                    joinedload(database.Pipeline.modules)
-                        .joinedload(database.PipelineModule.connections_to),
-                    joinedload(database.Pipeline.connections)
-                )
-            ).one_or_none()
+                    .filter(database.Pipeline.id == pipeline_id)
+                    .options(joinedload(database.Pipeline.modules),
+                             joinedload(database.Pipeline.connections))
+            ).one()
+
+            json_pipeline = to_d3m_json(pipeline)
+            d3m_pipeline = pipeline_module.Pipeline.from_json_structure(json_pipeline, )
+
+            return d3m_pipeline
+
         finally:
             db.close()
 
