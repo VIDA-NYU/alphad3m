@@ -148,7 +148,7 @@ def get_primitives_by_type():
                                     'd3m.primitives.classification.text_classifier.DistilTextClassifier'}:
                 family = 'TEXT_CLASSIFIER'
 
-            elif primitive_name in {'d3m.primitives.data_cleaning.cleaning_featurizer.DSBOX'}:
+            elif primitive_name in {'d3m.primitives.data_transformation.enrich_dates.DistilEnrichDates'}:
                 family = 'DATETIME_ENCODER'
 
             elif primitive_name in {'d3m.primitives.vertex_nomination.seeded_graph_matching.DistilVertexNomination',

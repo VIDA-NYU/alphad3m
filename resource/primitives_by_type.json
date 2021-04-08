@@ -139,7 +139,7 @@
         "d3m.primitives.data_cleaning.data_cleaning.Datacleaning"
     ],
     "DATETIME_ENCODER": [
-        "d3m.primitives.data_cleaning.cleaning_featurizer.DSBOX"
+        "d3m.primitives.data_transformation.enrich_dates.DistilEnrichDates"
     ],
     "DIMENSIONALITY_REDUCTION": [
         "d3m.primitives.data_transformation.fast_ica.SKlearn",

@@ -129,10 +129,10 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive):
         set_hyperparams(db, pipeline, primitive, epochs=1)
     elif primitive_name == 'd3m.primitives.data_transformation.encoder.DSBOX':
         set_hyperparams(db, pipeline, primitive, n_limit=50)
-    elif primitive_name == 'd3m.primitives.data_cleaning.cleaning_featurizer.DSBOX':
-        set_hyperparams(db, pipeline, primitive, features='split_date_column')
     elif primitive_name == 'd3m.primitives.data_transformation.encoder.DistilTextEncoder':
         set_hyperparams(db, pipeline, primitive, encoder_type='tfidf')
+    elif primitive_name == 'd3m.primitives.data_transformation.enrich_dates.DistilEnrichDates':
+        set_hyperparams(db, pipeline, primitive, replace=True)
     elif primitive_name == 'd3m.primitives.classification.text_classifier.DistilTextClassifier':
         set_hyperparams(db, pipeline, primitive, metric='accuracy')
     elif primitive_name == 'd3m.primitives.feature_selection.joint_mutual_information.AutoRPI':
@@ -162,8 +162,8 @@ def encode_features(pipeline, attribute_step, target_step, features_metadata, db
         count_steps += 1
 
     if 'http://schema.org/DateTime' in feature_types:
-        time_step = make_pipeline_module(db, pipeline, 'd3m.primitives.data_cleaning.cleaning_featurizer.DSBOX')
-        set_hyperparams(db, pipeline, time_step, features='split_date_column')
+        time_step = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.enrich_dates.DistilEnrichDates')
+        set_hyperparams(db, pipeline, time_step, replace=True)
         connect(db, pipeline, last_step, time_step)
         last_step = time_step
         count_steps += 1
