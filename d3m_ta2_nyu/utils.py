@@ -177,7 +177,7 @@ def get_dataset_sample(dataset, problem, dataset_sample_path=None):
             res_id = next(iter(dataset))
 
         if any(tk in [TaskKeyword.VIDEO, TaskKeyword.IMAGE, TaskKeyword.AUDIO] for tk in task_keywords):
-            sample_size = 500
+            sample_size = 100
         original_size = len(dataset[res_id])
 
         if hasattr(dataset[res_id], 'columns') and len(dataset[res_id]) > sample_size:
