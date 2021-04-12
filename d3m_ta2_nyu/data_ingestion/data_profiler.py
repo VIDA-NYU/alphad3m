@@ -11,7 +11,7 @@ def select_annotated_feature_types(dataset_doc):
     feature_types = {}
     try:
         for data_res in dataset_doc['dataResources']:
-            if data_res['resType'] == 'table':
+            if data_res['resID'] == 'learningData' and data_res['resType'] == 'table':
                 for column in data_res['columns']:
                     if column['colType'] != 'unknown':
                         semantic_type = [D3M_COLUMN_TYPE_CONSTANTS_TO_SEMANTIC_TYPES[column['colType']]]
