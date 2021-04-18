@@ -125,8 +125,6 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive):
         set_hyperparams(db, pipeline, primitive, strategy='most_frequent')
     elif primitive_name == 'd3m.primitives.clustering.k_means.DistilKMeans':
         set_hyperparams(db, pipeline, primitive, cluster_col_name='Class')
-    elif primitive_name == 'd3m.primitives.time_series_forecasting.lstm.DeepAR':
-        set_hyperparams(db, pipeline, primitive, epochs=1)
     elif primitive_name == 'd3m.primitives.data_transformation.encoder.DSBOX':
         set_hyperparams(db, pipeline, primitive, n_limit=50)
     elif primitive_name == 'd3m.primitives.data_transformation.encoder.DistilTextEncoder':
@@ -255,6 +253,22 @@ def add_file_readers(db, pipeline, prev_step, dataset_path):
     return last_step, count_steps
 
 
+def add_rocauc_primitives(pipeline, current_step, prev_step, target_step, dataframe_step, index_learner, db):
+    horizontal_concat = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.horizontal_concat.DataFrameCommon')
+    # 'index'  is an artificial connection, just to guarantee the order of the steps
+    connect(db, pipeline, current_step, horizontal_concat, from_output='index', to_input='index')
+    connect(db, pipeline, prev_step, horizontal_concat, to_input='left')
+    connect(db, pipeline, target_step, horizontal_concat, to_input='right')
+
+    compute_values = make_pipeline_module(db, pipeline, 'd3m.primitives.operator.compute_unique_values.Common')
+    connect(db, pipeline, horizontal_concat, compute_values)
+
+    construct_confidence = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.construct_confidence.Common')
+    set_hyperparams(db, pipeline, construct_confidence, primitive_learner={"type": "PRIMITIVE", "data": index_learner})
+    connect(db, pipeline, compute_values, construct_confidence)
+    connect(db, pipeline, dataframe_step, construct_confidence, to_input='reference')
+
+
 def add_previous_primitive(db, pipeline, primitives, prev_step):
     remaining_primitives = []
     count_steps = 0
@@ -279,22 +293,21 @@ class BaseBuilder:
         dataset_path = dataset[7:]
         origin_name = '%s (%s)' % (origin, ', '.join([p.replace('d3m.primitives.', '') for p in primitives]))
         pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
-
+        count_steps = 0
         try:
             input_data = make_data_module(db, pipeline, targets, features)
-
             step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
-            count_steps = 0
-            if pipeline_template:
-                template_step, template_count = process_template(db, input_data, pipeline, pipeline_template)
-                count_steps += template_count
-                connect(db, pipeline, template_step, step0)
-            else:
+
+            if not pipeline_template:
                 connect(db, pipeline, input_data, step0, from_output='dataset')
+            else:
+                template_step, template_count = process_template(db, input_data, pipeline, pipeline_template)
+                connect(db, pipeline, template_step, step0)
+                count_steps += template_count
 
             step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
-            count_steps += 1
             connect(db, pipeline, step0, step1)
+            count_steps += 1
 
             prev_step = step1
             if is_collection(dataset_path) and not need_entire_dataframe(primitives):
@@ -302,71 +315,50 @@ class BaseBuilder:
                 count_steps += reader_steps
 
             if len(features_metadata['semantictypes_indices']) > 0:
-                prev_step, semantic_steps = add_semantic_types(db, features_metadata, pipeline, pipeline_template,
-                                                               prev_step)
+                prev_step, semantic_steps = add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step)
                 count_steps += semantic_steps
 
             dataframe_step = prev_step
-
-            if 'ROC_AUC' in metrics[0]['metric'].name:
-                step_unique = make_pipeline_module(db, pipeline, 'd3m.primitives.operator.compute_unique_values.Common')
-                connect(db, pipeline, dataframe_step, step_unique)
-                count_steps += 1
-                prev_step = step_unique
-            else:
-                step_unique = dataframe_step
-
             if need_entire_dataframe(primitives):
                 prev_step, primitives, primitive_steps = add_previous_primitive(db, pipeline, primitives, prev_step)
                 count_steps += primitive_steps
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.column_parser.Common')
-            count_steps += 1
             connect(db, pipeline, prev_step, step2)
-
-            step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'extract_columns_by_semantic_types.Common')
             count_steps += 1
+
+            step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
             set_hyperparams(db, pipeline, step3,
                             semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute'],
                             exclude_columns=privileged_data)
             connect(db, pipeline, step2, step3)
-
-            step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'extract_columns_by_semantic_types.Common')
             count_steps += 1
-            set_hyperparams(db, pipeline, step4,
-                            semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
-            connect(db, pipeline, step_unique, step4)
+
+            step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
+            set_hyperparams(db, pipeline, step4, semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
+            connect(db, pipeline, dataframe_step, step4)
+            count_steps += 1
 
             current_step = prev_step = step3
-
             for primitive in primitives:
                 current_step = make_pipeline_module(db, pipeline, primitive)
-                count_steps += 1
                 change_default_hyperparams(db, pipeline, primitive, current_step)
                 connect(db, pipeline, prev_step, current_step)
-                prev_step = current_step
+                count_steps += 1
+
+                if primitive != primitives[-1]:  # Not update when it is the last primitive
+                    prev_step = current_step
 
                 to_module_primitive = index.get_primitive(primitive)
                 if 'outputs' in to_module_primitive.metadata.query()['primitive_code']['arguments']:
                     connect(db, pipeline, step4, current_step, to_input='outputs')
 
             if 'ROC_AUC' in metrics[0]['metric'].name:
-                step5 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'construct_confidence.Common')
-                set_hyperparams(db, pipeline, step5,
-                                primitive_learner={"type": "PRIMITIVE", "data": count_steps}
-                                )
-                connect(db, pipeline, current_step, step5, from_output='index', to_input='index')
-                connect(db, pipeline, step_unique, step5)
-                connect(db, pipeline, dataframe_step, step5, to_input='reference')
+                add_rocauc_primitives(pipeline, current_step, prev_step, step4, dataframe_step, count_steps, db)
             else:
-                step5 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'construct_predictions.Common')
+                step5 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.construct_predictions.Common')
                 connect(db, pipeline, current_step, step5)
                 connect(db, pipeline, dataframe_step, step5, to_input='reference')
-
 
             db.add(pipeline)
             db.commit()
@@ -385,42 +377,34 @@ class BaseBuilder:
         origin_name = 'Template (%s, %s)' % (imputer, estimator)
         origin_name = origin_name.replace('d3m.primitives.', '')
         pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
-
+        count_steps = 0
         try:
             # TODO: Use pipeline input for this
-            #count_steps = 0
             input_data = make_data_module(db, pipeline, targets, features)
-
             step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
-            count_steps = 0
+
             if pipeline_template:
                 template_step, template_count = process_template(db, input_data, pipeline, pipeline_template)
-                count_steps += template_count
                 connect(db, pipeline, template_step, step0)
+                count_steps += template_count
             else:
                 connect(db, pipeline, input_data, step0, from_output='dataset')
 
             step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
             connect(db, pipeline, step0, step1)
             count_steps += 1
+
             prev_step = step1
             if len(features_metadata['semantictypes_indices']) > 0:
                 prev_step, semantic_steps = add_semantic_types(db, features_metadata, pipeline, pipeline_template, prev_step)
                 count_steps += semantic_steps
 
-            if 'ROC_AUC' in metrics[0]['metric'].name:
-                step_unique = make_pipeline_module(db, pipeline, 'd3m.primitives.operator.compute_unique_values.Common')
-                connect(db, pipeline, prev_step, step_unique)
-                count_steps += 1
-            else:
-                step_unique = prev_step
-
-            step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'column_parser.Common')
-            connect(db, pipeline, step_unique, step2)
+            dataframe_step = prev_step
+            step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.column_parser.Common')
+            connect(db, pipeline, prev_step, step2)
             count_steps += 1
-            step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'extract_columns_by_semantic_types.Common')
+
+            step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
             set_hyperparams(db, pipeline, step3,
                             semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute'],
                             exclude_columns=privileged_data
@@ -428,44 +412,37 @@ class BaseBuilder:
             connect(db, pipeline, step2, step3)
             count_steps += 1
 
-            step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'extract_columns_by_semantic_types.Common')
-            set_hyperparams(db, pipeline, step4,
-                            semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
-                            )
-            connect(db, pipeline, step_unique, step4)
+            step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
+            set_hyperparams(db, pipeline, step4, semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
+            connect(db, pipeline, dataframe_step, step4)
             count_steps += 1
+
             step5 = make_pipeline_module(db, pipeline, imputer)
             set_hyperparams(db, pipeline, step5, strategy='most_frequent')
             connect(db, pipeline, step3, step5)
             count_steps += 1
+
             encoder_step, encode_steps = encode_features(pipeline, step5, features_metadata, db)
-            other_prev_step = encoder_step
             count_steps += encode_steps
+
+            prev_step = encoder_step
             if encoder_step == step5:  # Encoders were not applied, so use to_numeric for all features
                 step_fallback = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.to_numeric.DSBOX')
                 connect(db, pipeline, step5, step_fallback)
-                other_prev_step = step_fallback
+                prev_step = step_fallback
                 count_steps += 1
 
             step6 = make_pipeline_module(db, pipeline, estimator)
-            connect(db, pipeline, other_prev_step, step6)
+            connect(db, pipeline, prev_step, step6)
             connect(db, pipeline, step4, step6, to_input='outputs')
             count_steps += 1
+
             if 'ROC_AUC' in metrics[0]['metric'].name:
-                step7 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'construct_confidence.Common')
-                set_hyperparams(db, pipeline, step7,
-                                primitive_learner={"type": "PRIMITIVE", "data": count_steps}
-                                )
-                connect(db, pipeline, step6, step7, from_output='index', to_input='index')
-                connect(db, pipeline, step_unique, step7)
-                connect(db, pipeline, prev_step, step7, to_input='reference')
+                add_rocauc_primitives(pipeline, step6, prev_step, step4, dataframe_step, count_steps, db)
             else:
-                step7 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'construct_predictions.Common')
+                step7 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.construct_predictions.Common')
                 connect(db, pipeline, step6, step7)
-                connect(db, pipeline, prev_step, step7, to_input='reference')
+                connect(db, pipeline, dataframe_step, step7, to_input='reference')
 
             db.add(pipeline)
             db.commit()
@@ -560,32 +537,21 @@ class TimeseriesClassificationBuilder(BaseBuilder):
                                                            'time_series_formatter.DistilTimeSeriesFormatter')
                 connect(db, pipeline, input_data, step0, from_output='dataset')
 
-                step1 = make_pipeline_module(db, pipeline,
-                                             'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
+                step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
                 connect(db, pipeline, step0, step1)
 
-                step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'dataset_to_dataframe.Common')
+                step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
                 connect(db, pipeline, input_data, step2, from_output='dataset')
 
-                if 'ROC_AUC' in metrics[0]['metric'].name:
-                    step_unique = make_pipeline_module(db, pipeline,
-                                                       'd3m.primitives.operator.compute_unique_values.Common')
-                    connect(db, pipeline, step2, step_unique)
-                else:
-                    step_unique = step2
-
                 step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.column_parser.Common')
-
                 set_hyperparams(db, pipeline, step3, parse_semantic_types=[
                                                       'http://schema.org/Boolean',
                                                       'http://schema.org/Integer',
                                                       'http://schema.org/Float',
                                                       'https://metadata.datadrivendiscovery.org/types/FloatVector'])
-                connect(db, pipeline, step_unique, step3)
+                connect(db, pipeline, step2, step3)
 
-                step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'extract_columns_by_semantic_types.Common')
+                step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
                 set_hyperparams(db, pipeline, step4,
                                 semantic_types=['https://metadata.datadrivendiscovery.org/types/Target',
                                                 'https://metadata.datadrivendiscovery.org/types/TrueTarget',
@@ -600,20 +566,9 @@ class TimeseriesClassificationBuilder(BaseBuilder):
                 connect(db, pipeline, step1, step5)
                 connect(db, pipeline, step4, step5, to_input='outputs')
 
-                if 'ROC_AUC' in metrics[0]['metric'].name:
-                    step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                               'construct_confidence.Common')
-                    set_hyperparams(db, pipeline, step6,
-                                    primitive_learner={"type": "PRIMITIVE", "data": 6}
-                                    )
-                    connect(db, pipeline, step5, step6, from_output='index', to_input='index')
-                    connect(db, pipeline, step_unique, step6)
-                    connect(db, pipeline, step2, step6, to_input='reference')
-                else:
-                    step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                               'construct_predictions.Common')
-                    connect(db, pipeline, step5, step6)
-                    connect(db, pipeline, step2, step6, to_input='reference')
+                step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.construct_predictions.Common')
+                connect(db, pipeline, step5, step6)
+                connect(db, pipeline, step2, step6, to_input='reference')
 
                 db.add(pipeline)
                 db.commit()
@@ -814,23 +769,15 @@ class ObjectDetectionBuilder(BaseBuilder):
             connect(db, pipeline, input_data, step0, from_output='dataset')
 
             if primitives[0] == 'd3m.primitives.feature_extraction.yolo.DSBOX':
-                step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'dataset_to_dataframe.Common')
+                step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
                 connect(db, pipeline, step0, step1)
-                if 'ROC_AUC' in metrics[0]['metric'].name:
-                    step_unique = make_pipeline_module(db, pipeline,
-                                                       'd3m.primitives.operator.compute_unique_values.Common')
-                    connect(db, pipeline, step1, step_unique)
 
-                else:
-                    step_unique = step1
-                step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'extract_columns_by_semantic_types.Common')
+                step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
                 set_hyperparams(db, pipeline, step2,
                                 semantic_types=['https://metadata.datadrivendiscovery.org/types/PrimaryMultiKey',
                                                 'https://metadata.datadrivendiscovery.org/types/FileName']
                                 )
-                connect(db, pipeline, step_unique, step2)
+                connect(db, pipeline, step1, step2)
 
                 step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                            'extract_columns_by_semantic_types.Common')
@@ -843,20 +790,9 @@ class ObjectDetectionBuilder(BaseBuilder):
                 connect(db, pipeline, step2, step4)
                 connect(db, pipeline, step3, step4, to_input='outputs')
 
-                if 'ROC_AUC' in metrics[0]['metric'].name:
-                    step5 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                               'construct_confidence.Common')
-                    set_hyperparams(db, pipeline, step5,
-                                    primitive_learner={"type": "PRIMITIVE", "data": 4}
-                                    )
-                    connect(db, pipeline, step4, step5, from_output='index', to_input='index')
-                    connect(db, pipeline, step_unique, step5)
-                    connect(db, pipeline, step2, step5, to_input='reference')
-                else:
-                    step5 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'construct_predictions.Common')
-                    connect(db, pipeline, step4, step5)
-                    connect(db, pipeline, step2, step5, to_input='reference')
+                step5 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.construct_predictions.Common')
+                connect(db, pipeline, step4, step5)
+                connect(db, pipeline, step2, step5, to_input='reference')
             else:
                 step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                            'dataset_to_dataframe.Common')
@@ -885,21 +821,13 @@ class AudioBuilder(BaseBuilder):
         db = DBSession()
         origin_name = '%s (%s)' % (origin, ', '.join([p.replace('d3m.primitives.', '') for p in primitives]))
         pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
-
+        count_steps = 0
         try:
             input_data = make_data_module(db, pipeline, targets, features)
 
-            step0 = make_pipeline_module(db, pipeline,
-                                         'd3m.primitives.data_transformation.audio_reader.DistilAudioDatasetLoader')
+            step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.audio_reader.DistilAudioDatasetLoader')
             connect(db, pipeline, input_data, step0, from_output='dataset')
 
-            if 'ROC_AUC' in metrics[0]['metric'].name:
-                step_unique = make_pipeline_module(db, pipeline,
-                                                   'd3m.primitives.operator.compute_unique_values.Common')
-                connect(db, pipeline, step0, step_unique)
-
-            else:
-                step_unique = step0
             step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.column_parser.Common')
             set_hyperparams(db, pipeline, step1, parse_semantic_types=[
                         "http://schema.org/Boolean",
@@ -908,39 +836,34 @@ class AudioBuilder(BaseBuilder):
                         "https://metadata.datadrivendiscovery.org/types/FloatVector"
                     ]
             )
-            connect(db, pipeline, step_unique, step1)
+            connect(db, pipeline, step0, step1)
+            count_steps += 1
 
-            step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                       'extract_columns_by_semantic_types.Common')
-            set_hyperparams(db, pipeline, step2,
-                            semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
-                            )
-            connect(db, pipeline, step_unique, step2)
+            step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
+            set_hyperparams(db, pipeline, step2, semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
+            connect(db, pipeline, step0, step2)
+            count_steps += 1
 
             step3 = make_pipeline_module(db, pipeline, primitives[0])
-            connect(db, pipeline, step_unique, step3, from_output='produce_collection')
+            connect(db, pipeline, step0, step3, from_output='produce_collection')
+            count_steps += 1
 
             current_step = prev_step = step3
             for primitive in primitives[1:]:
                 current_step = make_pipeline_module(db, pipeline, primitive)
                 change_default_hyperparams(db, pipeline, primitive, current_step)
                 connect(db, pipeline, prev_step, current_step)
-                prev_step = current_step
+                count_steps += 1
+
+                if primitive != primitives[-1]:  # Not update when it is the last primitive
+                    prev_step = current_step
 
                 to_module_primitive = index.get_primitive(primitive)
                 if 'outputs' in to_module_primitive.metadata.query()['primitive_code']['arguments']:
                     connect(db, pipeline, step2, current_step, to_input='outputs')
 
             if 'ROC_AUC' in metrics[0]['metric'].name:
-                count_steps = 3 + len(primitives)
-                step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'construct_confidence.Common')
-                set_hyperparams(db, pipeline, step6,
-                                primitive_learner={"type": "PRIMITIVE", "data": count_steps}
-                                )
-                connect(db, pipeline, current_step, step6, from_output='index', to_input='index')
-                connect(db, pipeline, step_unique, step6)
-                connect(db, pipeline, step1, step6, to_input='reference')
+                add_rocauc_primitives(pipeline, current_step, prev_step, step2, step0, count_steps, db)
             else:
                 step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
                                                            'construct_predictions.Common')
@@ -965,120 +888,91 @@ class SemisupervisedClassificationBuilder(BaseBuilder):
         db = DBSession()
         origin_name = '%s (%s)' % (origin, ', '.join([p.replace('d3m.primitives.', '') for p in primitives]))
         pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
-
+        count_steps = 0
         try:
-            if 'semisupervised_classification.iterative_labeling.AutonBox' in primitives[-1]:
 
-                input_data = make_data_module(db, pipeline, targets, features)
-                step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
-                count_steps = 0
-                if pipeline_template:
-                    template_step, template_steps = process_template(db, input_data, pipeline, pipeline_template)
-                    connect(db, pipeline, template_step, step0)
-                    count_steps += template_steps
-                else:
-                    connect(db, pipeline, input_data, step0, from_output='dataset')
+            input_data = make_data_module(db, pipeline, targets, features)
+            step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
 
-                step1 = make_pipeline_module(db, pipeline,
-                                             'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
-
-                count_steps += 1
-                connect(db, pipeline, step0, step1)
-
-                prev_step = step1
-                if len(features_metadata['semantictypes_indices']) > 0:
-                    prev_step, semantic_steps_count = add_semantic_types(db, features_metadata, pipeline,
-                                                                   pipeline_template, prev_step)
-                    count_steps += semantic_steps_count
-                if 'ROC_AUC' in metrics[0]['metric'].name:
-                    step_unique = make_pipeline_module(db, pipeline,
-                                                       'd3m.primitives.operator.compute_unique_values.Common')
-                    connect(db, pipeline, prev_step, step_unique)
-                    count_steps += 1
-                else:
-                    step_unique = prev_step
-                step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'column_parser.Common')
-                count_steps += 1
-                connect(db, pipeline, prev_step, step2)
-
-                step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'extract_columns_by_semantic_types.Common')
-                count_steps += 1
-
-                set_hyperparams(db, pipeline, step3,
-                                semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute'],
-                                exclude_columns=privileged_data)
-                connect(db, pipeline, step2, step3)
-
-                step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                           'extract_columns_by_semantic_types.Common')
-                count_steps += 1
-                set_hyperparams(db, pipeline, step4,
-                                semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget']
-                                )
-                connect(db, pipeline, prev_step, step4)
-
-                step = otherprev_step = step3
-                preprocessors = primitives[:-2]
-                blackbox = primitives[-2]
-                estimator = primitives[-1]
-
-                for preprocessor in preprocessors:
-                    step = make_pipeline_module(db, pipeline, preprocessor)
-                    count_steps += 1
-                    change_default_hyperparams(db, pipeline, preprocessor, step)
-                    connect(db, pipeline, otherprev_step, step)
-                    otherprev_step = step
-
-                    to_module_primitive = index.get_primitive(preprocessor)
-                    if 'outputs' in to_module_primitive.metadata.query()['primitive_code']['arguments']:
-                        connect(db, pipeline, step4, step, to_input='outputs')
-
-                step_blackbox = make_pipeline_module(db, pipeline, blackbox)
-                count_steps += 1
-                change_default_hyperparams(db, pipeline, blackbox, step_blackbox)
-                connect(db, pipeline, step, step_blackbox)
-                connect(db, pipeline, step4, step_blackbox, to_input='outputs')
-
-
-                step5 = make_pipeline_module(db, pipeline, estimator)
-                change_default_hyperparams(db, pipeline, estimator, step5)
-                connect(db, pipeline, step_blackbox, step5, from_output='index', to_input='index')
-                connect(db, pipeline, step, step5)
-                set_hyperparams(db, pipeline, step5,
-                                blackbox={ "type": "PRIMITIVE", "data": count_steps }
-                                )
-                count_steps += 1
-                to_module_primitive = index.get_primitive(estimator)
-                if 'outputs' in to_module_primitive.metadata.query()['primitive_code']['arguments']:
-                    connect(db, pipeline, step4, step5, to_input='outputs')
-
-                if 'ROC_AUC' in metrics[0]['metric'].name:
-                    step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                               'construct_confidence.Common')
-                    set_hyperparams(db, pipeline, step6,
-                                    primitive_learner={"type": "PRIMITIVE", "data": count_steps}
-                                    )
-                    connect(db, pipeline, step5, step6, from_output='index', to_input='index')
-                    connect(db, pipeline, step_unique, step6)
-                    connect(db, pipeline, prev_step, step6, to_input='reference')
-                else:
-                    step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.'
-                                                               'construct_predictions.Common')
-                    connect(db, pipeline, step5, step6)
-                    connect(db, pipeline, prev_step, step6, to_input='reference')
-
-                db.add(pipeline)
-                db.commit()
-                logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
-                return pipeline.id
+            if pipeline_template:
+                template_step, template_steps = process_template(db, input_data, pipeline, pipeline_template)
+                connect(db, pipeline, template_step, step0)
+                count_steps += template_steps
             else:
-                pipeline_id = super().make_d3mpipeline(primitives, origin, dataset, pipeline_template,
-                                                       targets, features, features_metadata,
-                                                       privileged_data=privileged_data,
-                                                       metrics=metrics, DBSession=DBSession)
-                return pipeline_id
+                connect(db, pipeline, input_data, step0, from_output='dataset')
+
+            step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
+            connect(db, pipeline, step0, step1)
+            count_steps += 1
+
+            prev_step = step1
+            if len(features_metadata['semantictypes_indices']) > 0:
+                prev_step, semantic_steps_count = add_semantic_types(db, features_metadata, pipeline,
+                                                               pipeline_template, prev_step)
+                count_steps += semantic_steps_count
+
+            step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.column_parser.Common')
+            connect(db, pipeline, prev_step, step2)
+            count_steps += 1
+
+            step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
+            set_hyperparams(db, pipeline, step3,
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute'],
+                            exclude_columns=privileged_data)
+            connect(db, pipeline, step2, step3)
+            count_steps += 1
+
+            step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
+            set_hyperparams(db, pipeline, step4, semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
+            connect(db, pipeline, prev_step, step4)
+            count_steps += 1
+
+            step = otherprev_step = step3
+            preprocessors = primitives[:-2]
+            blackbox = primitives[-2]
+            estimator = primitives[-1]
+
+            for preprocessor in preprocessors:
+                step = make_pipeline_module(db, pipeline, preprocessor)
+                change_default_hyperparams(db, pipeline, preprocessor, step)
+                connect(db, pipeline, otherprev_step, step)
+                count_steps += 1
+                otherprev_step = step
+
+                to_module_primitive = index.get_primitive(preprocessor)
+                if 'outputs' in to_module_primitive.metadata.query()['primitive_code']['arguments']:
+                    connect(db, pipeline, step4, step, to_input='outputs')
+
+            step_blackbox = make_pipeline_module(db, pipeline, blackbox)
+            change_default_hyperparams(db, pipeline, blackbox, step_blackbox)
+            connect(db, pipeline, step, step_blackbox)
+            connect(db, pipeline, step4, step_blackbox, to_input='outputs')
+            count_steps += 1
+
+            step5 = make_pipeline_module(db, pipeline, estimator)
+            set_hyperparams(db, pipeline, step5, blackbox={"type": "PRIMITIVE", "data": count_steps})
+            connect(db, pipeline, step_blackbox, step5, from_output='index', to_input='index')
+            connect(db, pipeline, step, step5)
+
+            count_steps += 1
+
+            to_module_primitive = index.get_primitive(estimator)
+            if 'outputs' in to_module_primitive.metadata.query()['primitive_code']['arguments']:
+                connect(db, pipeline, step4, step5, to_input='outputs')
+
+            if 'ROC_AUC' in metrics[0]['metric'].name:
+                add_rocauc_primitives(pipeline, step5, otherprev_step, step4, prev_step, count_steps, db)
+            else:
+                step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.construct_predictions.Common')
+                connect(db, pipeline, step5, step6)
+                connect(db, pipeline, prev_step, step6, to_input='reference')
+
+            db.add(pipeline)
+            db.commit()
+            logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
+
+            return pipeline.id
+
         except:
             logger.exception('Error creating pipeline id=%s, primitives=%s', pipeline.id, str(primitives))
             return None
@@ -1118,7 +1012,7 @@ class CollaborativeFilteringBuilder:
 
             dataframe_step = prev_step
             if need_entire_dataframe(primitives):
-                prev_step, primitives = add_previous_primitive(db, pipeline, primitives, prev_step)
+                prev_step, primitives, primitive_steps = add_previous_primitive(db, pipeline, primitives, prev_step)
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.column_parser.Common')
             connect(db, pipeline, prev_step, step2)
