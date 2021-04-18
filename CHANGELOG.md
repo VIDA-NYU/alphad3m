@@ -3,6 +3,10 @@ Changelog
 
 Version v2021.xx.xx
 ------------------
+* Added support to save and load pipelines.
+* Use timeout_run parameter to score pipelines during search.
+* Use the AutoML RPC utils for encoding GRPC pipelines.
+* Implemented the method SaveFittedSolution of the AutoML RPC API.
 
 Version v2020.12.08
 ------------------
