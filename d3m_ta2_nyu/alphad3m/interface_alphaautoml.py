@@ -176,7 +176,7 @@ def generate(task_keywords, dataset, pipeline_template, metrics, problem, target
         builder = BaseBuilder()
     elif TaskKeyword.SEMISUPERVISED in task_keywords:
         task_name = 'SEMISUPERVISED_CLASSIFICATION'
-        builder = SemisupervisedClassificationBuilder()
+        builder = BaseBuilder()
     elif TaskKeyword.COLLABORATIVE_FILTERING in task_keywords:
         task_name = 'COLLABORATIVE_FILTERING'
         builder = CollaborativeFilteringBuilder()

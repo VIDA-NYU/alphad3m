@@ -110,7 +110,7 @@ def set_hyperparams(db, pipeline, module, **hyperparams):
     ))
 
 
-def change_default_hyperparams(db, pipeline, primitive_name, primitive):
+def change_default_hyperparams(db, pipeline, primitive_name, primitive, index_learner=0):
     if primitive_name == 'd3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn':
         set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace')
     elif primitive_name == 'd3m.primitives.feature_extraction.count_vectorizer.SKlearn':
@@ -135,6 +135,8 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive):
         set_hyperparams(db, pipeline, primitive, metric='accuracy')
     elif primitive_name == 'd3m.primitives.feature_selection.joint_mutual_information.AutoRPI':
         set_hyperparams(db, pipeline, primitive, method='fullBayesian')
+    elif primitive_name == 'd3m.primitives.semisupervised_classification.iterative_labeling.AutonBox':
+        set_hyperparams(db, pipeline, primitive,  blackbox={'type': 'PRIMITIVE', 'data': index_learner})
 
 
 def need_entire_dataframe(primitives):
@@ -339,22 +341,26 @@ class BaseBuilder:
             connect(db, pipeline, dataframe_step, step4)
             count_steps += 1
 
-            current_step = prev_step = step3
+            current_step = prev_step = preprev_step = step3
             for primitive in primitives:
                 current_step = make_pipeline_module(db, pipeline, primitive)
-                change_default_hyperparams(db, pipeline, primitive, current_step)
-                connect(db, pipeline, prev_step, current_step)
-                count_steps += 1
+                change_default_hyperparams(db, pipeline, primitive, current_step, count_steps)
 
-                if primitive != primitives[-1]:  # Not update when it is the last primitive
-                    prev_step = current_step
+                if 'semisupervised_classification' in primitive:
+                    connect(db, pipeline, preprev_step, current_step)
+                    connect(db, pipeline, prev_step, current_step, from_output='index', to_input='index')
+                else:
+                    connect(db, pipeline, prev_step, current_step)
 
-                to_module_primitive = index.get_primitive(primitive)
-                if 'outputs' in to_module_primitive.metadata.query()['primitive_code']['arguments']:
+                if 'outputs' in index.get_primitive(primitive).metadata.query()['primitive_code']['arguments']:
                     connect(db, pipeline, step4, current_step, to_input='outputs')
 
+                preprev_step = prev_step
+                prev_step = current_step
+                count_steps += 1
+
             if 'ROC_AUC' in metrics[0]['metric'].name:
-                add_rocauc_primitives(pipeline, current_step, prev_step, step4, dataframe_step, count_steps, db)
+                add_rocauc_primitives(pipeline, current_step, preprev_step, step4, dataframe_step, count_steps, db)
             else:
                 step5 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.construct_predictions.Common')
                 connect(db, pipeline, current_step, step5)
@@ -874,105 +880,6 @@ class AudioBuilder(BaseBuilder):
             db.commit()
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
-        except:
-            logger.exception('Error creating pipeline id=%s, primitives=%s', pipeline.id, str(primitives))
-            return None
-        finally:
-            db.close()
-
-
-class SemisupervisedClassificationBuilder(BaseBuilder):
-
-    def make_d3mpipeline(self, primitives, origin, dataset, pipeline_template, targets, features,
-                         features_metadata, privileged_data=[], metrics=[], DBSession=None):
-        db = DBSession()
-        origin_name = '%s (%s)' % (origin, ', '.join([p.replace('d3m.primitives.', '') for p in primitives]))
-        pipeline = database.Pipeline(origin=origin_name, dataset=dataset)
-        count_steps = 0
-        try:
-
-            input_data = make_data_module(db, pipeline, targets, features)
-            step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
-
-            if pipeline_template:
-                template_step, template_steps = process_template(db, input_data, pipeline, pipeline_template)
-                connect(db, pipeline, template_step, step0)
-                count_steps += template_steps
-            else:
-                connect(db, pipeline, input_data, step0, from_output='dataset')
-
-            step1 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_to_dataframe.Common')
-            connect(db, pipeline, step0, step1)
-            count_steps += 1
-
-            prev_step = step1
-            if len(features_metadata['semantictypes_indices']) > 0:
-                prev_step, semantic_steps_count = add_semantic_types(db, features_metadata, pipeline,
-                                                               pipeline_template, prev_step)
-                count_steps += semantic_steps_count
-
-            step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.column_parser.Common')
-            connect(db, pipeline, prev_step, step2)
-            count_steps += 1
-
-            step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
-            set_hyperparams(db, pipeline, step3,
-                            semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute'],
-                            exclude_columns=privileged_data)
-            connect(db, pipeline, step2, step3)
-            count_steps += 1
-
-            step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
-            set_hyperparams(db, pipeline, step4, semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
-            connect(db, pipeline, prev_step, step4)
-            count_steps += 1
-
-            step = otherprev_step = step3
-            preprocessors = primitives[:-2]
-            blackbox = primitives[-2]
-            estimator = primitives[-1]
-
-            for preprocessor in preprocessors:
-                step = make_pipeline_module(db, pipeline, preprocessor)
-                change_default_hyperparams(db, pipeline, preprocessor, step)
-                connect(db, pipeline, otherprev_step, step)
-                count_steps += 1
-                otherprev_step = step
-
-                to_module_primitive = index.get_primitive(preprocessor)
-                if 'outputs' in to_module_primitive.metadata.query()['primitive_code']['arguments']:
-                    connect(db, pipeline, step4, step, to_input='outputs')
-
-            step_blackbox = make_pipeline_module(db, pipeline, blackbox)
-            change_default_hyperparams(db, pipeline, blackbox, step_blackbox)
-            connect(db, pipeline, step, step_blackbox)
-            connect(db, pipeline, step4, step_blackbox, to_input='outputs')
-            count_steps += 1
-
-            step5 = make_pipeline_module(db, pipeline, estimator)
-            set_hyperparams(db, pipeline, step5, blackbox={"type": "PRIMITIVE", "data": count_steps})
-            connect(db, pipeline, step_blackbox, step5, from_output='index', to_input='index')
-            connect(db, pipeline, step, step5)
-
-            count_steps += 1
-
-            to_module_primitive = index.get_primitive(estimator)
-            if 'outputs' in to_module_primitive.metadata.query()['primitive_code']['arguments']:
-                connect(db, pipeline, step4, step5, to_input='outputs')
-
-            if 'ROC_AUC' in metrics[0]['metric'].name:
-                add_rocauc_primitives(pipeline, step5, otherprev_step, step4, prev_step, count_steps, db)
-            else:
-                step6 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.construct_predictions.Common')
-                connect(db, pipeline, step5, step6)
-                connect(db, pipeline, prev_step, step6, to_input='reference')
-
-            db.add(pipeline)
-            db.commit()
-            logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
-
-            return pipeline.id
-
         except:
             logger.exception('Error creating pipeline id=%s, primitives=%s', pipeline.id, str(primitives))
             return None
