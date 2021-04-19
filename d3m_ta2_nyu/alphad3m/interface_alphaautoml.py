@@ -103,7 +103,7 @@ def select_encoders(feature_types):
         if features_type in mapping_feature_types:
             encoders.append(mapping_feature_types[features_type])
 
-    return encoders
+    return sorted(encoders, reverse=True)
 
 
 def send(msg_queue, pipeline_id):
