@@ -155,7 +155,7 @@ def encode_features(pipeline, attribute_step, features_metadata, db):
     count_steps = 0
     if 'http://schema.org/Text' in feature_types:
         text_step = make_pipeline_module(db, pipeline, 'd3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn')
-        set_hyperparams(db, pipeline, text_step, return_result='replace')
+        set_hyperparams(db, pipeline, text_step, use_semantic_types=True, return_result='replace')
         connect(db, pipeline, last_step, text_step)
         last_step = text_step
         count_steps += 1
