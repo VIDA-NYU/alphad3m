@@ -149,14 +149,23 @@ def need_entire_dataframe(primitives):
     return False
 
 
-def encode_features(pipeline, attribute_step, features_metadata, db):
+def encode_features(pipeline, attribute_step, target_step, features_metadata, db):
     last_step = attribute_step
     feature_types = features_metadata['only_attribute_types']
     count_steps = 0
     if 'http://schema.org/Text' in feature_types:
-        text_step = make_pipeline_module(db, pipeline, 'd3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn')
-        set_hyperparams(db, pipeline, text_step, use_semantic_types=True, return_result='replace')
-        connect(db, pipeline, last_step, text_step)
+        # It has multiple targets? Then, use other primitive until
+        # https://github.com/uncharted-distil/distil-primitives/issues/265 is fixed.
+        if len(features_metadata['semantictypes_indices']
+               ['https://metadata.datadrivendiscovery.org/types/TrueTarget']) > 1:
+            text_step = make_pipeline_module(db, pipeline, 'd3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn')
+            set_hyperparams(db, pipeline, text_step, use_semantic_types=True, return_result='replace')
+            connect(db, pipeline, last_step, text_step)
+        else:
+            text_step = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.encoder.DistilTextEncoder')
+            set_hyperparams(db, pipeline, text_step, encoder_type='tfidf')
+            connect(db, pipeline, last_step, text_step)
+            connect(db, pipeline, target_step, text_step, to_input='outputs')
         last_step = text_step
         count_steps += 1
 
@@ -428,7 +437,7 @@ class BaseBuilder:
             connect(db, pipeline, step3, step5)
             count_steps += 1
 
-            encoder_step, encode_steps = encode_features(pipeline, step5, features_metadata, db)
+            encoder_step, encode_steps = encode_features(pipeline, step5, step4, features_metadata, db)
             count_steps += encode_steps
 
             prev_step = encoder_step
