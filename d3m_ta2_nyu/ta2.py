@@ -26,7 +26,8 @@ from uuid import uuid4, UUID
 from d3m_ta2_nyu import __version__
 from d3m_ta2_nyu.multiprocessing import Receiver, run_process
 from d3m_ta2_nyu.grpc_api import grpc_server
-from d3m_ta2_nyu.utils import Observable, ProgressStatus, is_collection, get_dataset_sample, create_outputfolders
+from d3m_ta2_nyu.utils import Observable, ProgressStatus, is_collection, get_dataset_sample, create_outputfolders, \
+    read_streams
 from d3m_ta2_nyu.workflow import database
 from d3m_ta2_nyu.workflow.convert import to_d3m_json
 from d3m_ta2_nyu.data_ingestion.data_reader import create_d3mdataset, create_d3mproblem
@@ -36,8 +37,9 @@ from d3m.metadata import pipeline as pipeline_module
 
 
 MAX_RUNNING_PROCESSES = 6
-MINUTES_SCORE_PIPELINE = 5
-TUNE_PIPELINES_COUNT = 0
+MINUTES_SCORE_PIPELINE = 2
+TUNE_PIPELINES_COUNT = 5
+TIME_TO_TUNE = 0.1  # The ratio of the time to be used for the tunning process.
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0
@@ -424,7 +426,6 @@ class Job(object):
 
 
 class ScoreJob(Job):
-    timeout = 10 * 60
 
     def __init__(self, ta2, pipeline_id, dataset_uri, metrics, problem, scoring_config, timeout_run, report_rank=False,
                  sample_dataset_uri=None):
@@ -448,7 +449,6 @@ class ScoreJob(Job):
                                 metrics=self.metrics,
                                 problem=self.problem,
                                 scoring_config=self.scoring_config,
-                                timeout_run=self.timeout_run,
                                 report_rank=self.report_rank,
                                 db_filename=db_filename)
         self.started = time.time()
@@ -457,11 +457,10 @@ class ScoreJob(Job):
                         job_id=id(self))
 
     def poll(self):
-        if self.proc.poll() is None:
-            return False
-        if self.started + self.timeout < time.time():
-            logger.error("Scoring process is stuck, terminating after %d "
-                         "seconds", time.time() - self.started)
+        timeout_reached = False
+        if self.started + self.timeout_run < time.time():
+            timeout_reached = True
+            logger.error('Reached timeout (%d seconds) to score a pipeline' % self.timeout_run)
             self.proc.terminate()
             try:
                 self.proc.wait(30)
@@ -469,21 +468,23 @@ class ScoreJob(Job):
                 self.proc.kill()
                 self.proc.wait()
 
-        _, stderr = self.proc.communicate()
+        if self.proc.poll() is None:
+            return False
+
+        error_msg = read_streams(self.proc)
+        if timeout_reached: error_msg = 'Reached timeout (%d seconds) to score a pipeline' % self.timeout_run
         log = logger.info if self.proc.returncode == 0 else logger.error
-        log("Pipeline scoring process done, returned %d (pipeline: %s)",
-            self.proc.returncode, self.pipeline_id)
+        log('Pipeline scoring process done, returned %d (pipeline: %s)', self.proc.returncode, self.pipeline_id)
 
         if self.proc.returncode == 0:
             self.ta2.notify('scoring_success',
                             pipeline_id=self.pipeline_id,
                             job_id=id(self))
         else:
-            error_logs = stderr.decode()
             self.ta2.notify('scoring_error',
                             pipeline_id=self.pipeline_id,
                             job_id=id(self),
-                            error_msg=error_logs)
+                            error_msg=error_msg)
         return True
 
 
@@ -497,7 +498,7 @@ class TrainJob(Job):
         self.steps_to_expose = steps_to_expose
 
     def start(self, db_filename, **kwargs):
-        logger.info("Training pipeline for %s", self.pipeline_id)
+        logger.info('Training pipeline for %s', self.pipeline_id)
         self.msg = Receiver()
         self.proc = run_process('d3m_ta2_nyu.pipeline_train.train', 'train', self.msg,
                                 pipeline_id=self.pipeline_id,
@@ -514,10 +515,9 @@ class TrainJob(Job):
         if self.proc.poll() is None:
             return False
 
-        _, stderr = self.proc.communicate()
+        error_msg = read_streams(self.proc)
         log = logger.info if self.proc.returncode == 0 else logger.error
-        log("Pipeline training process done, returned %d (pipeline: %s)",
-            self.proc.returncode, self.pipeline_id)
+        log('Pipeline training process done, returned %d (pipeline: %s)', self.proc.returncode, self.pipeline_id)
 
         if self.proc.returncode == 0:
             steps_to_expose = []
@@ -530,11 +530,10 @@ class TrainJob(Job):
                             steps_to_expose=steps_to_expose,
                             job_id=id(self))
         else:
-            error_logs = stderr.decode()
             self.ta2.notify('training_error',
                             pipeline_id=self.pipeline_id,
                             job_id=id(self),
-                            error_msg=error_logs)
+                            error_msg=error_msg)
         return True
 
 
@@ -563,10 +562,10 @@ class TestJob(Job):
         if self.proc.poll() is None:
             return False
 
-        _, stderr = self.proc.communicate()
+        error_msg = read_streams(self.proc)
         log = logger.info if self.proc.returncode == 0 else logger.error
-        log("Pipeline testing process done, returned %d (pipeline: %s)",
-            self.proc.returncode, self.pipeline_id)
+        log('Pipeline testing process done, returned %d (pipeline: %s)', self.proc.returncode, self.pipeline_id)
+
         if self.proc.returncode == 0:
             steps_to_expose = []
             for step_id in self.steps_to_expose:
@@ -578,11 +577,10 @@ class TestJob(Job):
                             steps_to_expose=steps_to_expose,
                             job_id=id(self))
         else:
-            error_logs = stderr.decode()
             self.ta2.notify('testing_error',
                             pipeline_id=self.pipeline_id,
                             job_id=id(self),
-                            error_msg=error_logs)
+                            error_msg=error_msg)
         return True
 
 
@@ -597,8 +595,7 @@ class TuneHyperparamsJob(Job):
 
     def start(self, db_filename, predictions_root, **kwargs):
         self.runtime_folder = predictions_root
-        logger.info("Running tuning for %s "
-                    "(session %s has %d pipelines left to tune)",
+        logger.info("Running tuning for %s (session %s has %d pipelines left to tune)",
                     self.pipeline_id, self.session.id,
                     len(self.session.pipelines_tuning))
         if self.store_results and self.runtime_folder is not None:
@@ -607,8 +604,6 @@ class TuneHyperparamsJob(Job):
                 os.mkdir(subdir)
 
         self.msg = Receiver()
-        timeout_run = self.session.timeout_run if self.session.timeout_run is not None else MINUTES_SCORE_PIPELINE * 60
-
         self.proc = run_process('d3m_ta2_nyu.pipeline_tune.tune',
                                 'tune', self.msg,
                                 pipeline_id=self.pipeline_id,
@@ -618,19 +613,27 @@ class TuneHyperparamsJob(Job):
                                 dataset_uri=self.session.dataset_uri,
                                 sample_dataset_uri=self.session.sample_dataset_uri,
                                 timeout_tuning=self.timeout_tuning,
-                                timeout_run=timeout_run,
                                 db_filename=db_filename)
+        self.started = time.time()
         self.session.notify('tuning_start',
                             pipeline_id=self.pipeline_id,
                             job_id=id(self))
 
     def poll(self):
+        # TODO: Should it control the time bound limit?
+        '''if self.started + self.timeout_tuning < time.time():
+            logger.error("Tunning process is stuck, terminating after %d seconds", time.time() - self.started)
+            self.proc.terminate()
+            try:
+                self.proc.wait(30)
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+                self.proc.wait()'''
+
         if self.proc.poll() is None:
             return False
 
-        self.proc.stdin.close()
-        self.proc.stderr.close()
-
+        error_msg = read_streams(self.proc)
         log = logger.info if self.proc.returncode == 0 else logger.error
         log("Pipeline tuning process done, returned %d (pipeline: %s)",
             self.proc.returncode, self.pipeline_id)
@@ -649,7 +652,8 @@ class TuneHyperparamsJob(Job):
         else:
             self.session.notify('tuning_error',
                                 pipeline_id=self.pipeline_id,
-                                job_id=id(self))
+                                job_id=id(self),
+                                error_msg=error_msg)
             self.session.pipeline_tuning_done(self.pipeline_id)
         return True
 
@@ -1091,7 +1095,7 @@ class D3mTa2(Observable):
             timeout_search = timeout_search * 60  # Minutes to seconds
             timeout_search_internal = timeout_search
             if TUNE_PIPELINES_COUNT > 0:
-                timeout_search_internal = timeout_search * 0.85
+                timeout_search_internal = timeout_search * (1 - TIME_TO_TUNE)
             now = time.time()
             expected_search_end = now + timeout_search
 

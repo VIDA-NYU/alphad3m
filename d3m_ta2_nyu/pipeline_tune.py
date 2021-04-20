@@ -21,9 +21,9 @@ PRIMITIVES = index.search()
 
 
 @database.with_db
-def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, report_rank, timeout_tuning, timeout_run,
-         msg_queue, db):
-    timeout_tuning = timeout_tuning * 0.9  # FIXME: Save 10% of timeout to score the best config
+def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, report_rank, timeout_tuning, msg_queue, db):
+    # FIXME: Save 10% of timeout to score the best config. It shouldn't run the best config twice
+    timeout_tuning = timeout_tuning * 0.9
     # Load pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -73,8 +73,7 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, report_
             new_hyperparams.append(db_hyperparams)
 
         pipeline.parameters += new_hyperparams
-        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics_to_use, problem, scoring_config, dataset_uri,
-                          timeout_run)
+        scores = evaluate(pipeline, kfold_tabular_split, dataset, metrics_to_use, problem, scoring_config, dataset_uri)
         first_metric = metrics_to_use[0]['metric'].name
         score_values = []
         for fold_scores in scores.values():
@@ -118,10 +117,9 @@ def tune(pipeline_id, metrics, problem, dataset_uri, sample_dataset_uri, report_
     db.commit()
 
     logger.info('Tuning done, generated new pipeline %s', new_pipeline.id)
-
     shutil.rmtree(join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'tuning', str(pipeline_id)))
-
-    score(new_pipeline.id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, timeout_run, report_rank, None,
+    # FIXME: We should remove this score process to avoid execute twice the best configuration
+    score(new_pipeline.id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, report_rank, None,
           db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'db.sqlite3'))
     # TODO: Change this static string path
 

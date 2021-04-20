@@ -11,7 +11,6 @@ from d3m_ta2_nyu.workflow import database, convert
 from d3m_ta2_nyu.utils import is_collection, get_dataset_sample
 from d3m.metadata.pipeline import Pipeline
 from d3m.metadata.problem import PerformanceMetric, TaskKeyword
-from multiprocessing import Manager, Process
 
 logger = logging.getLogger(__name__)
 
@@ -61,8 +60,7 @@ def check_timeindicator(dataset_path):
 
 
 @database.with_db
-def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, timeout_run, report_rank,
-          msg_queue, db):
+def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, report_rank, msg_queue, db):
     dataset_uri_touse = dataset_uri
 
     if sample_dataset_uri:
@@ -104,10 +102,10 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
 
     if metrics[0]['metric'] == PerformanceMetric.F1 and TaskKeyword.SEMISUPERVISED in problem['problem']['task_keywords']:
         new_metrics = [{'metric': PerformanceMetric.F1_MACRO}]
-        scores = evaluate(pipeline, pipeline_split, dataset, new_metrics, problem, scoring_config, dataset_uri, timeout_run)
+        scores = evaluate(pipeline, pipeline_split, dataset, new_metrics, problem, scoring_config, dataset_uri)
         scores = change_name_metric(scores, new_metrics, new_metric=metrics[0]['metric'].name)
     else:
-        scores = evaluate(pipeline, pipeline_split, dataset, metrics, problem, scoring_config, dataset_uri, timeout_run)
+        scores = evaluate(pipeline, pipeline_split, dataset, metrics, problem, scoring_config, dataset_uri)
 
     logger.info("Evaluation results:\n%s", scores)
 
@@ -124,7 +122,7 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
     db.commit()
 
 
-def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config, dataset_uri, timeout_run):
+def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config, dataset_uri):
     if is_collection(dataset_uri[7:]):
         dataset = get_dataset_sample(dataset, problem)
 
@@ -140,18 +138,18 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config,
     if 'method' in scoring_config:
         scoring_config.pop('method')
 
-    manager = Manager()
-    return_dict = manager.dict()
-    p = Process(target=worker, args=(d3m_pipeline, data_pipeline, scoring_pipeline, problem, dataset, scoring_config, metrics, return_dict))
-    p.start()
-    p.join(timeout_run)
-    p.terminate()
-
-    if 'run_results' not in return_dict or 'run_scores' not in return_dict:
-        raise TimeoutError('Reached timeout (%d seconds) to score a pipeline' % timeout_run)
-
-    run_results = return_dict['run_results']
-    run_scores = return_dict['run_scores']
+    run_scores, run_results = d3m.runtime.evaluate(
+        pipeline=d3m_pipeline,
+        data_pipeline=data_pipeline,
+        scoring_pipeline=scoring_pipeline,
+        problem_description=problem,
+        inputs=[dataset],
+        data_params=scoring_config,
+        metrics=metrics,
+        volumes_dir=os.environ.get('D3MSTATICDIR', None),
+        context=d3m.metadata.base.Context.TESTING,
+        random_seed=0,
+    )
 
     for result in run_results:
         if result.has_error():
@@ -167,23 +165,6 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config,
         scores[row['fold']][row['metric']] = row['value']
 
     return scores
-
-
-def worker(d3m_pipeline, data_pipeline, scoring_pipeline, problem, dataset, scoring_config, metrics, return_dict):
-    run_scores, run_results = d3m.runtime.evaluate(
-        pipeline=d3m_pipeline,
-        data_pipeline=data_pipeline,
-        scoring_pipeline=scoring_pipeline,
-        problem_description=problem,
-        inputs=[dataset],
-        data_params=scoring_config,
-        metrics=metrics,
-        volumes_dir=os.environ.get('D3MSTATICDIR', None),
-        context=d3m.metadata.base.Context.TESTING,
-        random_seed=0,
-    )
-    return_dict['run_scores'] = run_scores
-    return_dict['run_results'] = run_results
 
 
 def create_rank_metric(scores, metrics):

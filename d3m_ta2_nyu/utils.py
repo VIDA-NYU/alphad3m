@@ -7,6 +7,7 @@ import logging
 import json
 from queue import Empty, Queue
 import threading
+import subprocess
 from d3m.metadata.problem import TaskKeyword
 from sklearn.model_selection import train_test_split
 
@@ -212,3 +213,14 @@ def get_dataset_sample(dataset, problem, dataset_sample_path=None):
 def create_outputfolders(folder_path):
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
+
+
+def read_streams(process):
+    error_msg = None
+    try:
+        _, stderr = process.communicate(timeout=5)
+        error_msg = stderr.decode()
+    except subprocess.TimeoutExpired:
+        logger.error('Timeout error reading child process logs')
+
+    return error_msg
