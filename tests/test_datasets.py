@@ -57,8 +57,8 @@ def search_pipelines(datasets, time_bound=10, use_template=False):
                                         pipeline_template=pipeline_template)
         #print(dataset, problem['problem']['performance_metrics'][0]['metric'].name, task_keywords)
         number_pipelines = len(pipelines)
-        result = {'search_id': search_id, 'task': task_keywords, 'search_time': str(datetime.now() - start_time), 'pipelines': number_pipelines,
-                  'best_time': 'None', 'best_score': 'None', 'all_scores': []}
+        result = {'search_id': search_id, 'task': task_keywords, 'search_time': str(datetime.now() - start_time),
+                  'pipelines': number_pipelines, 'best_time': 'None', 'best_score': 'None', 'all_scores': []}
 
         if number_pipelines > 0:
             best_time = sorted(pipelines.values(), key=lambda x: x[2])[0][2]
@@ -66,7 +66,7 @@ def search_pipelines(datasets, time_bound=10, use_template=False):
             all_scores = []
 
             for pipeline_id, (_, pipeline, _) in sorted_pipelines:
-                if use_template:  # FIXME: Pipeline score is not calculate when working with fully defined pipeline
+                if use_template:  # FIXME: Pipeline's score is not calculate when working with fully defined template
                     pipeline_score = 1.0
                 else:
                     pipeline_score = decode_value(pipeline[0].scores[0].value)['value']
@@ -90,7 +90,7 @@ def search_pipelines(datasets, time_bound=10, use_template=False):
             json.dump(search_results, fout, indent=4)
 
 
-def evaluate_pipelines(datasets, top=10):
+def evaluate_pipelines(datasets, top=10, option='fit-score'):
     statistics_path = join(D3MOUTPUTDIR, 'temp', 'statistics_datasets.csv')
     search_results_path = join(D3MOUTPUTDIR, 'temp', 'search_results.json')
     search_results = load_search_results(search_results_path)
@@ -112,35 +112,22 @@ def evaluate_pipelines(datasets, top=10):
             top_pipeline_id = top_pipeline['id']
             search_id = search_results[dataset]['search_id']
             logger.info('Scoring top pipeline id=%s' % top_pipeline_id)
-            top_pipeline_path = join(D3MOUTPUTDIR, search_id, 'pipelines_searched', '%s.json' % top_pipeline_id)
-            #top_pipeline_path = '/usr/src/app/resource/pipelines/example_metalearningdb.json'
-            score_pipeline_path = join(D3MOUTPUTDIR, 'temp', 'runtime_output', 'fit_score_%s.csv' % top_pipeline_id)
-
-            command = [
-                'python3', '-m', 'd3m',
-                'runtime',
-                '--volumes', D3MSTATICDIR,
-                '--context', 'TESTING',
-                '--random-seed', '0',
-                'fit-score',
-                '--pipeline', top_pipeline_path,
-                '--problem', problem_path,
-                '--input', dataset_train_path,
-                '--test-input', dataset_test_path,
-                '--score-input', dataset_score_path,
-                '--scores', score_pipeline_path,
-                '--output-run', join(D3MOUTPUTDIR, search_id, 'pipeline_runs', 'run_%s.yml' % top_pipeline_id)
-                ]
+            pipeline_path = join(D3MOUTPUTDIR, search_id, 'pipelines_searched', '%s.json' % top_pipeline_id)
+            #pipeline_path = '/usr/src/app/resource/pipelines/example_metalearningdb.json'
+            output_path = join(D3MOUTPUTDIR, 'temp', 'runtime_output', '%s_%s.csv' % (option, top_pipeline_id))
             try:
+                command = create_command(option, pipeline_path, output_path, problem_path, dataset_train_path,
+                                         dataset_test_path, dataset_score_path)
                 subprocess.call(command)
-                df = pd.read_csv(score_pipeline_path)
-                score = round(df['value'][0], 6)
-                metric = df['metric'][0]
-                normalized_score = PerformanceMetric[metric].normalize(score)
-                performance_top_pipelines[top_pipeline_id] = (score, normalized_score)
-                logger.info('Scored top pipeline id=%s, %s=%.6f' % (top_pipeline_id, metric, score))
+                if option == 'fit-score':
+                    df = pd.read_csv(output_path)
+                    score = round(df['value'][0], 6)
+                    metric = df['metric'][0]
+                    normalized_score = PerformanceMetric[metric].normalize(score)
+                    performance_top_pipelines[top_pipeline_id] = (score, normalized_score)
+                    logger.info('Scored top pipeline id=%s, %s=%.6f' % (top_pipeline_id, metric, score))
             except:
-                logger.exception('Error calculating test score')
+                logger.exception('Error during the process %s' % option)
 
         if len(performance_top_pipelines) > 0:
             best_pipeline = sorted(performance_top_pipelines.items(), key=lambda x: x[1][1], reverse=True)[0]
@@ -152,6 +139,30 @@ def evaluate_pipelines(datasets, top=10):
                search_results[dataset]['search_time'], best_score, metric, search_results[dataset]['task'], best_id]
         save_row(statistics_path, row)
         #create_dupms(search_id, performance_top_pipelines.keys())
+
+
+def create_command(option, pipeline_path, output_path, problem_path, train_path, test_path, score_path=None):
+    command = [
+        'python3', '-m', 'd3m',
+        'runtime',
+        '--volumes', D3MSTATICDIR,
+        '--context', 'TESTING',
+        '--random-seed', '0',
+        option,
+        '--pipeline', pipeline_path,
+        '--problem', problem_path,
+        '--input', train_path,
+        '--test-input', test_path,
+        #'-E', join(D3MOUTPUTDIR, 'temp', 'runtime_output'),
+        #'--output-run', join(D3MOUTPUTDIR, search_id, 'pipeline_runs', 'run_%s.yml' % top_pipeline_id)
+    ]
+
+    if option == 'fit-produce':
+        command += ['--output', output_path]
+    elif option == 'fit-score':
+        command += ['--score-input', score_path, '--scores', output_path]
+
+    return command
 
 
 def save_row(file_path, row):
