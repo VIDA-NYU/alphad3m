@@ -115,8 +115,8 @@ def change_default_hyperparams(db, pipeline, primitive_name, primitive, index_le
         set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace', handle_unknown='ignore')
     elif primitive_name == 'd3m.primitives.data_cleaning.imputer.SKlearn':
         set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace', strategy='most_frequent')
-    elif primitive_name.endswith('.SKlearn') and not (primitive.startswith('d3m.primitives.classification.') or
-                                                      primitive.startswith('d3m.primitives.regression.')):
+    elif primitive_name.endswith('.SKlearn') and not (primitive_name.startswith('d3m.primitives.classification.') or
+                                                      primitive_name.startswith('d3m.primitives.regression.')):
         set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace')
     elif primitive_name == 'd3m.primitives.clustering.k_means.DistilKMeans':
         set_hyperparams(db, pipeline, primitive, cluster_col_name='Class')
@@ -327,14 +327,13 @@ class BaseBuilder:
                 count_steps += primitive_steps
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.column_parser.Common')
-            #set_hyperparams(db, pipeline, step2, exclude_columns=[8,10])
             connect(db, pipeline, prev_step, step2)
             count_steps += 1
 
             step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
             set_hyperparams(db, pipeline, step3,
                             semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute'],
-                            exclude_columns=privileged_data)#+[8,10])
+                            exclude_columns=privileged_data)
             connect(db, pipeline, step2, step3)
             count_steps += 1
 
