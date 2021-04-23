@@ -76,7 +76,11 @@ BLACK_LIST = {
     'd3m.primitives.classification.dummy.SKlearn',
     'd3m.primitives.regression.dummy.SKlearn',
     'd3m.primitives.data_cleaning.normalizer.SKlearn',
-    'd3m.primitives.classification.ensemble_voting.DSBOX'
+    'd3m.primitives.classification.ensemble_voting.DSBOX',
+    # Long running times:
+    'd3m.primitives.feature_selection.joint_mutual_information.AutoRPI',
+    'd3m.primitives.feature_selection.score_based_markov_blanket.RPI',
+    'd3m.primitives.feature_selection.simultaneous_markov_blanket.AutoRPI'
 }
 
 
