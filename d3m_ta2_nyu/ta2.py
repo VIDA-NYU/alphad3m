@@ -8,7 +8,6 @@ from concurrent import futures
 import datetime
 import grpc
 import json
-import csv
 import logging
 import os
 import pickle
@@ -36,10 +35,10 @@ from d3m.metadata.problem import TaskKeyword, parse_problem_description
 from d3m.metadata import pipeline as pipeline_module
 
 
-MAX_RUNNING_PROCESSES = 6
-MINUTES_SCORE_PIPELINE = 2
-TUNE_PIPELINES_COUNT = 5
+TUNE_PIPELINES_COUNT = 0
 TIME_TO_TUNE = 0.1  # The ratio of the time to be used for the tunning process.
+MINUTES_SCORE_PIPELINE = 3
+MAX_RUNNING_PROCESSES = 6
 
 if 'TA2_DEBUG_BE_FAST' in os.environ:
     TUNE_PIPELINES_COUNT = 0

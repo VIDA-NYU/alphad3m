@@ -490,10 +490,10 @@ class BaseBuilder:
             # Classifier
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
+                'd3m.primitives.classification.xgboost_gbtree.Common',
                 'd3m.primitives.classification.extra_trees.SKlearn',
                 'd3m.primitives.classification.gradient_boosting.SKlearn',
-                'd3m.primitives.classification.linear_svc.SKlearn',
-                'd3m.primitives.classification.xgboost_gbtree.Common'
+                'd3m.primitives.classification.ada_boost.SKlearn'
             ],
         )),
         'DEBUG_CLASSIFICATION': list(itertools.product(
@@ -502,7 +502,7 @@ class BaseBuilder:
             # Classifier
             [
                 'd3m.primitives.classification.random_forest.SKlearn',
-                'd3m.primitives.classification.extra_trees.SKlearn'
+                'd3m.primitives.classification.xgboost_gbtree.Common'
             ],
         )),
         'REGRESSION': list(itertools.product(
@@ -511,10 +511,10 @@ class BaseBuilder:
             # Classifier
             [
                 'd3m.primitives.regression.random_forest.SKlearn',
+                'd3m.primitives.regression.xgboost_gbtree.Common',
                 'd3m.primitives.regression.extra_trees.SKlearn',
                 'd3m.primitives.regression.gradient_boosting.SKlearn',
-                'd3m.primitives.regression.lasso.SKlearn',
-                'd3m.primitives.regression.xgboost_gbtree.Commo'
+                'd3m.primitives.regression.ada_boost.SKlearn'
             ],
         )),
         'DEBUG_REGRESSION': list(itertools.product(
@@ -523,7 +523,7 @@ class BaseBuilder:
             # Classifier
             [
                 'd3m.primitives.regression.random_forest.SKlearn',
-                'd3m.primitives.regression.gradient_boosting.SKlearn'
+                'd3m.primitives.regression.xgboost_gbtree.Common'
             ],
         )),
     }
