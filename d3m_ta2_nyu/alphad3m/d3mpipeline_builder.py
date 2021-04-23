@@ -111,24 +111,17 @@ def set_hyperparams(db, pipeline, module, **hyperparams):
 
 
 def change_default_hyperparams(db, pipeline, primitive_name, primitive, index_learner=0):
-    if primitive_name == 'd3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn':
-        set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace')
-    elif primitive_name == 'd3m.primitives.feature_extraction.count_vectorizer.SKlearn':
-        set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace')
-    elif primitive_name == 'd3m.primitives.feature_extraction.feature_agglomeration.SKlearn':
-        set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace')
-    elif primitive_name == 'd3m.primitives.data_cleaning.string_imputer.SKlearn':
-        set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace')
-    elif primitive_name == 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn':
+    if primitive_name == 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn':
         set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace', handle_unknown='ignore')
     elif primitive_name == 'd3m.primitives.data_cleaning.imputer.SKlearn':
-        set_hyperparams(db, pipeline, primitive, strategy='most_frequent')
+        set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace', strategy='most_frequent')
+    elif primitive_name.endswith('.SKlearn') and not (primitive.startswith('d3m.primitives.classification.') or
+                                                      primitive.startswith('d3m.primitives.regression.')):
+        set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace')
     elif primitive_name == 'd3m.primitives.clustering.k_means.DistilKMeans':
         set_hyperparams(db, pipeline, primitive, cluster_col_name='Class')
     elif primitive_name == 'd3m.primitives.data_transformation.encoder.DSBOX':
         set_hyperparams(db, pipeline, primitive, n_limit=50)
-    elif primitive_name == 'd3m.primitives.data_transformation.encoder.DistilTextEncoder':
-        set_hyperparams(db, pipeline, primitive, encoder_type='tfidf')
     elif primitive_name == 'd3m.primitives.data_transformation.enrich_dates.DistilEnrichDates':
         set_hyperparams(db, pipeline, primitive, replace=True)
     elif primitive_name == 'd3m.primitives.classification.text_classifier.DistilTextClassifier':
@@ -163,7 +156,6 @@ def encode_features(pipeline, attribute_step, target_step, features_metadata, db
             connect(db, pipeline, last_step, text_step)
         else:
             text_step = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.encoder.DistilTextEncoder')
-            set_hyperparams(db, pipeline, text_step, encoder_type='tfidf')
             connect(db, pipeline, last_step, text_step)
             connect(db, pipeline, target_step, text_step, to_input='outputs')
         last_step = text_step
@@ -335,13 +327,14 @@ class BaseBuilder:
                 count_steps += primitive_steps
 
             step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.column_parser.Common')
+            #set_hyperparams(db, pipeline, step2, exclude_columns=[8,10])
             connect(db, pipeline, prev_step, step2)
             count_steps += 1
 
             step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
             set_hyperparams(db, pipeline, step3,
                             semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute'],
-                            exclude_columns=privileged_data)
+                            exclude_columns=privileged_data)#+[8,10])
             connect(db, pipeline, step2, step3)
             count_steps += 1
 
@@ -433,7 +426,7 @@ class BaseBuilder:
             count_steps += 1
 
             step5 = make_pipeline_module(db, pipeline, imputer)
-            set_hyperparams(db, pipeline, step5, strategy='most_frequent')
+            set_hyperparams(db, pipeline, step5, use_semantic_types=True, return_result='replace', strategy='most_frequent')
             connect(db, pipeline, step3, step5)
             count_steps += 1
 
@@ -501,7 +494,7 @@ class BaseBuilder:
                 'd3m.primitives.classification.extra_trees.SKlearn',
                 'd3m.primitives.classification.gradient_boosting.SKlearn',
                 'd3m.primitives.classification.linear_svc.SKlearn',
-                'd3m.primitives.classification.sgd.SKlearn'
+                'd3m.primitives.classification.xgboost_gbtree.Common'
             ],
         )),
         'DEBUG_CLASSIFICATION': list(itertools.product(
@@ -520,9 +513,9 @@ class BaseBuilder:
             [
                 'd3m.primitives.regression.random_forest.SKlearn',
                 'd3m.primitives.regression.extra_trees.SKlearn',
-                'd3m.primitives.regression.sgd.SKlearn',
                 'd3m.primitives.regression.gradient_boosting.SKlearn',
-                'd3m.primitives.regression.lasso.SKlearn'
+                'd3m.primitives.regression.lasso.SKlearn',
+                'd3m.primitives.regression.xgboost_gbtree.Commo'
             ],
         )),
         'DEBUG_REGRESSION': list(itertools.product(
