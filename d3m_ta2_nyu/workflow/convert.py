@@ -3,6 +3,10 @@
 
 import importlib
 import pickle
+import logging
+from d3m.utils import compute_digest
+
+logger = logging.getLogger(__name__)
 
 
 def get_class(name):
@@ -105,7 +109,7 @@ def to_d3m_json(pipeline):
     for _, mod in sorted(modules.items(), key=lambda x: x[0]):
         _add_step(steps, modules, params, module_to_step, mod)
 
-    return {
+    json_pipeline = {
         'id': str(pipeline.id),
         'name': str(pipeline.id),
         'description': pipeline.origin or '',
@@ -124,3 +128,10 @@ def to_d3m_json(pipeline):
         ],
         'steps': steps,
     }
+
+    try:
+        json_pipeline['digest'] = compute_digest(json_pipeline)
+    except:
+        logger.error('Creating digest, skipping this field')
+
+    return json_pipeline
