@@ -46,6 +46,7 @@ def select_unkown_feature_types(csv_path, annotated_features):
 def indentify_feature_types(csv_path, unkown_feature_types, target_names):
     metadata = datamart_profiler.process_dataset(csv_path)
     inferred_feature_types = {}
+    has_missing_values = False
 
     for index, item in enumerate(metadata['columns']):
         feature_name = item['name']
@@ -68,22 +69,22 @@ def indentify_feature_types(csv_path, unkown_feature_types, target_names):
             elif feature_name in target_names:
                 role = 'https://metadata.datadrivendiscovery.org/types/TrueTarget'
             inferred_feature_types[feature_name] = (role, d3m_semantic_types, index)
+        if 'missing_values_ratio' in item and feature_name not in target_names:
+            has_missing_values = True
 
     logger.info('Inferred feature types:\n%s',
                 '\n'.join(['%s = [%s]' % (k, ', '.join([i for i in v[1]])) for k, v in inferred_feature_types.items()]))
 
-    return inferred_feature_types
+    return inferred_feature_types, has_missing_values
 
 
 def profile_data(csv_path, target_names, dataset_doc):
     annotated_feature_types = select_annotated_feature_types(dataset_doc)
     unkown_feature_types = select_unkown_feature_types(csv_path, annotated_feature_types.keys())
-    inferred_feature_types = {}
-    if len(unkown_feature_types) > 0:
-        inferred_feature_types = indentify_feature_types(csv_path, unkown_feature_types, target_names)
-
+    inferred_feature_types, has_missing_values = indentify_feature_types(csv_path, unkown_feature_types, target_names)
     only_attribute_types = set()
     semantictypes_by_index = {}
+
     for role, semantic_types, index in annotated_feature_types.values():
         if role == 'https://metadata.datadrivendiscovery.org/types/Attribute':
             only_attribute_types.update(semantic_types)
@@ -96,6 +97,7 @@ def profile_data(csv_path, target_names, dataset_doc):
             if semantic_type not in semantictypes_by_index:
                 semantictypes_by_index[semantic_type] = []
             semantictypes_by_index[semantic_type].append(index)
-    features_metadata = {'semantictypes_indices': semantictypes_by_index, 'only_attribute_types': only_attribute_types}
+    features_metadata = {'semantictypes_indices': semantictypes_by_index, 'only_attribute_types': only_attribute_types,
+                         'use_imputer': has_missing_values}
 
     return features_metadata

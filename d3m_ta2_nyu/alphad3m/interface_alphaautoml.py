@@ -7,7 +7,7 @@ import json
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
 from d3m_ta2_nyu.primitive_loader import get_primitives_by_type
-from d3m_ta2_nyu.grammar_loader import format_grammar
+from d3m_ta2_nyu.grammar_loader import create_game_grammar
 from alphaAutoMLEdit.Coach import Coach
 from alphaAutoMLEdit.pipeline.PipelineGame import PipelineGame
 from alphaAutoMLEdit.pipeline.NNet import NNetWrapper
@@ -225,10 +225,11 @@ def generate(task_keywords, dataset, pipeline_template, metrics, problem, target
         builder = BaseBuilder()
 
     encoders = select_encoders(features_metadata['only_attribute_types'])
+    use_imputer = features_metadata['use_imputer']
 
     def update_config(primitives, task_name):
         metafeatures_extractor = ComputeMetafeatures(dataset, targets, features, DBSession)
-        config['GRAMMAR'] = format_grammar(task_name + '_TASK', primitives, encoders)
+        config['GRAMMAR'] = create_game_grammar(task_name + '_TASK', primitives, encoders, use_imputer)
         config['PROBLEM'] = task_name
         config['DATA_TYPE'] = 'TABULAR'
         config['METRIC'] = metrics[0]['metric'].name

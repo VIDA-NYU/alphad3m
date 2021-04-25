@@ -784,6 +784,7 @@ class D3mTa2(Observable):
 
             json_pipeline = to_d3m_json(pipeline)
             d3m_pipeline = pipeline_module.Pipeline.from_json_structure(json_pipeline, )
+            # FIXME: from_json_structure is returning a different digest
 
             return d3m_pipeline
 

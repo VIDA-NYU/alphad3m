@@ -9,16 +9,26 @@ COMPLETE_GRAMMAR_PATH = os.path.join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'co
 TASK_GRAMMAR_PATH = os.path.join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'task_grammar.bnf')
 
 
-def load_grammar(grammar_path):
+def load_grammar(grammar_path, encoders, use_imputer):
     logger.info('Loading grammar in %s' % grammar_path)
+    line_list = []
     with open(grammar_path) as fin:
-        grammar_string = fin.read()
+        for line in fin.readlines():
+            if line.startswith('ENCODERS -> '):
+                if len(encoders) > 0:
+                    line = 'ENCODERS -> %s' % ' '.join(encoders)
+                else:
+                    line = "ENCODERS -> 'E'"
+            elif line.startswith('IMPUTATION -> '):
+                if not use_imputer:
+                    line = "IMPUTATION -> 'E'"
+            line_list.append(line.strip())
 
+    grammar_string = '\n'.join(line_list)
     return CFG.fromstring(grammar_string)
 
 
-def create_completegrammar(primitives):
-    base_grammar = load_grammar(BASE_GRAMMAR_PATH)
+def create_global_grammar(base_grammar, primitives):
     new_productions = []
 
     for production in base_grammar.productions():
@@ -43,30 +53,24 @@ def create_completegrammar(primitives):
     return complete_grammar
 
 
-def create_taskgrammar(grammar, task, encoders):
+def create_task_grammar(global_grammar, task):
     logger.info('Creating specific grammar for task %s' % task)
-    productions = grammar.productions(Nonterminal(task))
+    productions = global_grammar.productions(Nonterminal(task))
     start_token = Nonterminal('S')
     new_productions = []
 
     for start_production in productions:
         first_token = start_production.rhs()[0]
         if is_nonterminal(first_token) and first_token.symbol().endswith('_TASK'):
-            for new_start_production in grammar.productions(first_token):
+            for new_start_production in global_grammar.productions(first_token):
                 new_productions.append(Production(start_token, new_start_production.rhs()))
         else:
             new_productions.append(Production(start_token, start_production.rhs()))
 
-    for production in grammar.productions():
+    for production in global_grammar.productions():
         for new_production in new_productions:
             if production.lhs() in new_production.rhs() and production not in new_productions:
-                if production.lhs().symbol() == 'ENCODERS':  # Use encoders only for types of features in the dataset
-                    if len(encoders) > 0:
-                        new_productions.append(Production(production.lhs(), [Nonterminal(e) for e in encoders]))
-                    else:
-                        new_productions.append(Production(production.lhs(), ['E']))
-                else:
-                    new_productions.append(production)
+                new_productions.append(production)
 
     task_grammar = CFG(start_token, new_productions)
 
@@ -76,32 +80,33 @@ def create_taskgrammar(grammar, task, encoders):
     return task_grammar
 
 
-def format_grammar(task, primitives, encoders=[]):
-    grammar = create_completegrammar(primitives)
-    grammar = create_taskgrammar(grammar, task, encoders)
-    formatted_grammar = {'NON_TERMINALS': {}, 'TERMINALS': {}, 'RULES': {}, 'RULES_LOOKUP': {}}
-    formatted_grammar['START'] = grammar.start().symbol()
+def create_game_grammar(task, primitives, encoders, use_imputer):
+    base_grammar = load_grammar(BASE_GRAMMAR_PATH, encoders, use_imputer)
+    global_grammar = create_global_grammar(base_grammar, primitives)
+    task_grammar = create_task_grammar(global_grammar, task)
+    game_grammar = {'NON_TERMINALS': {}, 'TERMINALS': {}, 'RULES': {}, 'RULES_LOOKUP': {}}
+    game_grammar['START'] = task_grammar.start().symbol()
     terminals = []
 
-    logger.info('Formating grammar to style of pipeline game')
-    for production in grammar.productions():
+    logger.info('Creating game grammar')
+    for production in task_grammar.productions():
         non_terminal = production.lhs().symbol()
         production_str = str(production).replace('\'', '')
 
-        formatted_grammar['RULES'][production_str] = len(formatted_grammar['RULES']) + 1
+        game_grammar['RULES'][production_str] = len(game_grammar['RULES']) + 1
 
-        if non_terminal not in formatted_grammar['NON_TERMINALS']:
-            formatted_grammar['NON_TERMINALS'][non_terminal] = len(formatted_grammar['NON_TERMINALS']) + 1
+        if non_terminal not in game_grammar['NON_TERMINALS']:
+            game_grammar['NON_TERMINALS'][non_terminal] = len(game_grammar['NON_TERMINALS']) + 1
 
-        if non_terminal not in formatted_grammar['RULES_LOOKUP']:
-            formatted_grammar['RULES_LOOKUP'][non_terminal] = []
-        formatted_grammar['RULES_LOOKUP'][non_terminal].append(production_str)
+        if non_terminal not in game_grammar['RULES_LOOKUP']:
+            game_grammar['RULES_LOOKUP'][non_terminal] = []
+        game_grammar['RULES_LOOKUP'][non_terminal].append(production_str)
 
         for token in production.rhs():
             if is_terminal(token) and token != 'E' and token not in terminals:
                 terminals.append(token)
 
-    formatted_grammar['TERMINALS'] = {t: i+len(formatted_grammar['NON_TERMINALS']) for i, t in enumerate(terminals, 1)}
-    formatted_grammar['TERMINALS']['E'] = 0  # Special case for the empty symbol
+    game_grammar['TERMINALS'] = {t: i+len(game_grammar['NON_TERMINALS']) for i, t in enumerate(terminals, 1)}
+    game_grammar['TERMINALS']['E'] = 0  # Special case for the empty symbol
 
-    return formatted_grammar
+    return game_grammar
