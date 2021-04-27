@@ -48,6 +48,7 @@ BLACK_LIST = {
     'd3m.primitives.feature_extraction.tfidf_vectorizer.BBNTfidfTransformer',
     'd3m.primitives.data_transformation.one_hot_encoder.DistilOneHotEncoder',
     'd3m.primitives.feature_selection.pca_features.Pcafeatures',
+    'd3m.primitives.classification.random_forest.Common',
     # Poor performance:
     'd3m.primitives.classification.cover_tree.Fastlvm',
     'd3m.primitives.classification.linear_svc.DistilRankedLinearSVC',
