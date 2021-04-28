@@ -253,6 +253,20 @@ def create_inputs_pofiler(dataset):
             json.dump(profiler_inputs, fout)
 
 
+def run_describe():
+    pipeline_path = '/usr/src/app/resource/pipelines/example_metalearningdb.json'
+    command = [
+        'python3', '-m', 'd3m',
+        'pipeline',
+        'describe',
+        pipeline_path,
+
+    ]
+
+    return_code = subprocess.call(command)
+    logger.info('Describe pipeline process done, returned %d ' % return_code)
+
+
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
     datasets = ['185_baseball_MIN_METADATA']
