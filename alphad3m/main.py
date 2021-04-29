@@ -7,7 +7,7 @@ different commands. They spin up a D3mTa2 object and use it.
 import logging
 import os
 import sys
-from d3m_ta2_nyu.ta2 import D3mTa2
+from alphad3m.automl import AutoML
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ def main_search():
     logger.info('Config loaded from environment variables D3MOUTPUTDIR=%r D3MTIMEOUT=%r',
                 os.environ['D3MOUTPUTDIR'], os.environ.get('D3MTIMEOUT'))
 
-    ta2 = D3mTa2(output_folder)
+    ta2 = AutoML(output_folder)
     dataset = '/input/TRAIN/dataset_TRAIN/datasetDoc.json'
     problem_path = '/input/TRAIN/problem_TRAIN/problemDoc.json'
     ta2.run_search(dataset, problem_path=problem_path, timeout=timeout)
@@ -53,5 +53,5 @@ def main_serve():
     logger.info('Config loaded from environment variables D3MOUTPUTDIR=%r D3MTIMEOUT=%r',
                 os.environ['D3MOUTPUTDIR'], os.environ.get('D3MTIMEOUT'))
 
-    ta2 = D3mTa2(output_folder)
+    ta2 = AutoML(output_folder)
     ta2.run_server(port)

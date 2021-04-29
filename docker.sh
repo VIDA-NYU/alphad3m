@@ -50,10 +50,9 @@ docker run -ti --rm \
     -e SKIPTEMPLATES=$SKIPTEMPLATES \
     $OPTS \
     -v "$PWD/alphaautoml:/usr/src/app/alphaautoml" \
-    -v "$PWD/d3m_ta2_nyu:/usr/src/app/d3m_ta2_nyu" \
+    -v "$PWD/alphad3m:/usr/src/app/alphad3m" \
     -v "$PWD/resource:/usr/src/app/resource" \
     -v "$PWD/tests:/usr/src/app/tests"\
-    -v "$PWD/tests.py:/usr/src/app/tests.py"\
     -v "$PWD/eval.sh:/usr/local/bin/eval.sh"\
     -v "$LOCAL_INPUT_ROOT/${INPUT}:/input" \
     -v "$LOCAL_OUTPUT_ROOT:/output" \

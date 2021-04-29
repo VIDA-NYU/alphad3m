@@ -13,7 +13,7 @@ import datetime
 import logging
 from uuid import UUID
 from os.path import join
-from d3m_ta2_nyu import __version__
+from alphad3m import __version__
 import d3m_automl_rpc.core_pb2 as pb_core
 import d3m_automl_rpc.core_pb2_grpc as pb_core_grpc
 import d3m_automl_rpc.problem_pb2 as pb_problem
@@ -25,9 +25,9 @@ from d3m_automl_rpc.utils import decode_pipeline_description, decode_problem_des
 from d3m.metadata import pipeline as pipeline_module
 from d3m.metadata.problem import Problem
 from google.protobuf.timestamp_pb2 import Timestamp
-from d3m_ta2_nyu.grpc_api.grpc_logger import log_service
-from d3m_ta2_nyu.primitive_loader import get_primitives_by_name
-from d3m_ta2_nyu.utils import PersistentQueue
+from alphad3m.grpc_api.grpc_logger import log_service
+from alphad3m.primitive_loader import get_primitives_by_name
+from alphad3m.utils import PersistentQueue
 
 logger = logging.getLogger(__name__)
 
@@ -131,11 +131,8 @@ class CoreService(pb_core_grpc.CoreServicer):
         timeout_run = request.time_bound_run
         report_rank = True if request.rank_solutions_limit > 0 else False
 
-        if timeout_search <= 0.0:
-            timeout_search = None
-
-        if timeout_run <= 0.0:
-            timeout_run = None
+        if timeout_search <= 0.0: timeout_search = None
+        if timeout_run <= 0.0: timeout_run = None
 
         search_id = self._ta2.new_session(problem)
         session = self._ta2.sessions[search_id]

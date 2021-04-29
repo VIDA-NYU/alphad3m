@@ -77,7 +77,7 @@ def run_process(target, tag, msg_queue, **kwargs):
         [
             sys.executable,
             '-c',
-            'from d3m_ta2_nyu.multiprocessing import _invoke; _invoke(%r, %r)' % (
+            'from alphad3m.multiprocessing import _invoke; _invoke(%r, %r)' % (
                 tag, target
             ),
             base64.b64encode(pickle.dumps(data)),

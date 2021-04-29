@@ -5,7 +5,7 @@ from ConfigSpace.hyperparameters import IntegerHyperparameter, FloatHyperparamet
     OrdinalHyperparameter
 from smac.facade.smac_facade import SMAC
 from smac.scenario.scenario import Scenario
-from d3m_ta2_nyu.parameter_tuning.primitive_config import load_primitive_configspace, load_hyperparameters
+from alphad3m.hyperparameter_tuning.primitive_config import load_primitive_configspace, load_hyperparameters
 
 
 MAX_RUNS = 100

@@ -3,7 +3,7 @@ import logging
 import json
 import os
 from d3m import index
-from d3m_ta2_nyu.primitive_loader import get_primitives_by_type
+from alphad3m.primitive_loader import get_primitives_by_type
 from d3m.metadata.hyperparams import Bounded, Enumeration, UniformInt, UniformBool, Uniform, Normal, Union, \
     Constant as ConstantD3M
 from ConfigSpace.configuration_space import ConfigurationSpace

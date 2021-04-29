@@ -98,7 +98,7 @@ def load_metalearningdb(task):
     return task_pipelines
 
 
-def create_vectors_from_metalearningdb(task, grammar):
+def create_vectors_from_metalearningdb5(task, grammar):
     pipelines_metalearningdb = load_metalearningdb(task)
     primitives_by_type = load_primitives_by_type()
     primitives_by_name = load_primitives_by_name()
@@ -141,7 +141,7 @@ def create_vectors_from_metalearningdb(task, grammar):
     return unique_pipelines
 
 
-def create_vectors_from_metalearningdb1(task, grammar):
+def create_vectors_from_metalearningdb(task, grammar):
     pipelines_metalearningdb = load_metalearningdb(task)
     primitives_by_type = load_primitives_by_type()
     primitives_by_name = load_primitives_by_name()
@@ -187,14 +187,14 @@ def create_vectors_from_metalearningdb1(task, grammar):
             primitive_types_vector = [0] * size_vector
             for primitive_id in pipeline:
                 primitive_type = primitives_by_type[primitive_id]
-                primitive_types_vector[current_primitive_types[primitive_type]] = 1
+                primitive_types_vector[current_primitive_types.get(primitive_type, current_primitive_types['TEXT_ENCODER'])] = 1
             train_example = (metafeature_vector + primitive_types_vector, action_vector, 0)  # Initially score zero
             train_examples.append(train_example)
 
             previous_step_vector = copy.deepcopy(primitive_types_vector)
             for index, primitive_id in enumerate(pipeline, 1):
                 primitive_type = primitives_by_type[primitive_id]
-                previous_step_vector[current_primitive_types[primitive_type]] = 0  # Replace primitive by its type
+                previous_step_vector[current_primitive_types.get(primitive_type, current_primitive_types['TEXT_ENCODER'])] = 0  # Replace primitive by its type
                 previous_step_vector[current_primitive_ids[primitive_id]] = 1
                 previous_step_vector = copy.deepcopy(previous_step_vector)
 

@@ -3,7 +3,7 @@ import os
 import pickle
 from os.path import join
 from d3m.container import Dataset, DataFrame
-from d3m_ta2_nyu.workflow import database
+from alphad3m.schema import database
 
 logger = logging.getLogger(__name__)
 

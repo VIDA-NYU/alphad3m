@@ -1,24 +1,25 @@
 import signal
 import os
 import sys
-import logging
 import json
 
 # Use a headless matplotlib backend
 os.environ['MPLBACKEND'] = 'Agg'
-from d3m_ta2_nyu.primitive_loader import get_primitives_by_type
-from d3m_ta2_nyu.grammar_loader import create_game_grammar
+
+from alphad3m.primitive_loader import get_primitives_by_type
+from alphad3m.grammar_loader import create_game_grammar
 from alphaAutoMLEdit.Coach import Coach
 from alphaAutoMLEdit.pipeline.PipelineGame import PipelineGame
 from alphaAutoMLEdit.pipeline.NNet import NNetWrapper
-from .d3mpipeline_builder import *
-from d3m_ta2_nyu.metafeature.metafeature_extractor import ComputeMetafeatures
+
+from alphad3m.search.d3mpipeline_builder import *
+from alphad3m.metafeature.metafeature_extractor import ComputeMetafeatures
 from d3m.metadata.problem import TaskKeyword
 from os.path import join
-from d3m_ta2_nyu.pipeline_execute import execute
-from d3m_ta2_nyu.data_ingestion.data_profiler import profile_data
-from d3m_ta2_nyu.metalearningdb_miner import create_vectors_from_metalearningdb
-from d3m_ta2_nyu.utils import get_collection_type
+from alphad3m.pipeline_operations.pipeline_execute import execute
+from alphad3m.data_ingestion.data_profiler import profile_data
+from alphad3m.utils import get_collection_type
+
 
 logger = logging.getLogger(__name__)
 

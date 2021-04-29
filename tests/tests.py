@@ -7,8 +7,8 @@ import shutil
 import tempfile
 import unittest
 from unittest import mock
-from d3m_ta2_nyu.ta2 import D3mTa2, Session, TuneHyperparamsJob
-from d3m_ta2_nyu.workflow import database
+from alphad3m.automl import AutoML, Session, TuneHyperparamsJob
+from alphad3m.schema import database
 from d3m.metadata.problem import PerformanceMetric
 
 
@@ -43,7 +43,7 @@ class TestSession(unittest.TestCase):
 
     def setUp(self):
         self._tmp = tempfile.mkdtemp(prefix='d3m_unittest_')
-        self._ta2 = D3mTa2(self._tmp)
+        self._ta2 = AutoML(self._tmp)
         self._problem = {
             'about': {'problemID': 'unittest_problem'},
             'inputs': {
@@ -80,12 +80,12 @@ class TestSession(unittest.TestCase):
                                                from_output_name='output',
                                                to_input_name='input'))
             self._pipelines.append(pipeline.id)
-        db.add(database.CrossValidation(
+        db.add(database.Evaluation(
             pipeline_id=self._pipelines[4],
             scores=[
-                database.CrossValidationScore(metric='F1_MACRO',
+                database.EvaluationScore(metric='F1_MACRO',
                                               value=55.0),
-                database.CrossValidationScore(metric='EXECUTION_TIME',
+                database.EvaluationScore(metric='EXECUTION_TIME',
                                               value=0.2),
             ],
         ))
@@ -141,36 +141,36 @@ class TestSession(unittest.TestCase):
         compare_scores(session.get_top_pipelines(db, PerformanceMetric.F1_MACRO), [])
 
         # Pipelines finished scoring
-        db.add(database.CrossValidation(
+        db.add(database.Evaluation(
             pipeline_id=self._pipelines[0],
             scores=[
-                database.CrossValidationScore(fold=0,
+                database.EvaluationScore(fold=0,
                                               metric='F1_MACRO',
                                               value=41.5),
-                database.CrossValidationScore(fold=1,
+                database.EvaluationScore(fold=1,
                                               metric='F1_MACRO',
                                               value=42.5),
-                database.CrossValidationScore(fold=0,
+                database.EvaluationScore(fold=0,
                                               metric='EXECUTION_TIME',
                                               value=1.3),
-                database.CrossValidationScore(fold=1,
+                database.EvaluationScore(fold=1,
                                               metric='EXECUTION_TIME',
                                               value=1.5),
             ],
         ))
-        db.add(database.CrossValidation(
+        db.add(database.Evaluation(
             pipeline_id=self._pipelines[1],
             scores=[
-                database.CrossValidationScore(fold=0,
+                database.EvaluationScore(fold=0,
                                               metric='F1_MACRO',
                                               value=16.5),
-                database.CrossValidationScore(fold=1,
+                database.EvaluationScore(fold=1,
                                               metric='F1_MACRO',
                                               value=17.5),
-                database.CrossValidationScore(fold=0,
+                database.EvaluationScore(fold=0,
                                               metric='EXECUTION_TIME',
                                               value=0.5),
-                database.CrossValidationScore(fold=1,
+                database.EvaluationScore(fold=1,
                                               metric='EXECUTION_TIME',
                                               value=0.9),
             ],
@@ -205,19 +205,19 @@ class TestSession(unittest.TestCase):
             )
 
             # Add tuned pipeline scores
-            db.add(database.CrossValidation(
+            db.add(database.Evaluation(
                 pipeline_id=self._pipelines[2],
                 scores=[
-                    database.CrossValidationScore(fold=0,
+                    database.EvaluationScore(fold=0,
                                                   metric='F1_MACRO',
                                                   value=21.0),
-                    database.CrossValidationScore(fold=1,
+                    database.EvaluationScore(fold=1,
                                                   metric='F1_MACRO',
                                                   value=22.0),
-                    database.CrossValidationScore(fold=0,
+                    database.EvaluationScore(fold=0,
                                                   metric='EXECUTION_TIME',
                                                   value=0.9),
-                    database.CrossValidationScore(fold=1,
+                    database.EvaluationScore(fold=1,
                                                   metric='EXECUTION_TIME',
                                                   value=1.1),
                 ],

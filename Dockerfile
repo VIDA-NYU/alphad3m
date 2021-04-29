@@ -26,7 +26,7 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
     rm prev_reqs.txt new_reqs.txt
 
 # Install TA2
-COPY d3m_ta2_nyu /usr/src/app/d3m_ta2_nyu
+COPY alphad3m /usr/src/app/alphad3m
 COPY resource /usr/src/app/resource
 COPY setup.py README.md /usr/src/app/
 RUN pip3 freeze | sort >prev_reqs.txt && \

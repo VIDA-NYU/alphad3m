@@ -12,7 +12,7 @@ from sqlalchemy.sql import functions
 from sqlalchemy.types import Binary, Boolean, DateTime, Enum, Float, Integer, \
     String
 
-from d3m_ta2_nyu.workflow.sql_uuid import UUID, UuidMixin
+from alphad3m.schema.sql_uuid import UUID, UuidMixin
 
 
 logger = logging.getLogger(__name__)
@@ -89,22 +89,22 @@ class PipelineParameter(Base):
     value = Column(String, nullable=True)
 
 
-class CrossValidation(UuidMixin, Base):
-    __tablename__ = 'cross_validations'
+class Evaluation(UuidMixin, Base):
+    __tablename__ = 'evaluations'
 
     pipeline_id = Column(UUID, ForeignKey('pipelines.id'), nullable=False)
     pipeline = relationship('Pipeline')
     date = Column(DateTime, nullable=False,
                   server_default=functions.now())
-    scores = relationship('CrossValidationScore', lazy='joined')
+    scores = relationship('EvaluationScore', lazy='joined')
 
 
-class CrossValidationScore(Base):
-    __tablename__ = 'cross_validation_scores'
+class EvaluationScore(Base):
+    __tablename__ = 'evaluation_scores'
 
-    cross_validation_id = Column(UUID, ForeignKey('cross_validations.id'),
+    evaluation_id = Column(UUID, ForeignKey('evaluations.id'),
                                  primary_key=True)
-    cross_validation = relationship('CrossValidation')
+    evaluation = relationship('Evaluation')
     fold = Column(Integer, primary_key=True, nullable=True)
     metric = Column(String, primary_key=True)
     value = Column(Float, nullable=False)

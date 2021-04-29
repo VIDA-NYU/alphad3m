@@ -9,11 +9,12 @@ import d3m_automl_rpc.core_pb2_grpc as pb_core_grpc
 from datetime import datetime
 from os.path import join
 from d3m.metadata.pipeline import Pipeline
-from d3m_ta2_nyu.grpc_api.grpc_logger import LoggingStub
+from alphad3m.grpc_api.grpc_logger import LoggingStub
 from d3m_automl_rpc.utils import encode_pipeline_description, decode_value
 from d3m.metadata.problem import Problem, PerformanceMetric
 from d3m.utils import yaml_load_all, fix_uri
-from client import do_search, do_score, do_train, do_test, do_export, do_describe, do_load_solution, do_save_fitted_solution
+from alphad3m.grpc_api.grpc_client import do_search, do_score, do_train, do_test, do_export, do_describe, \
+    do_load_solution, do_save_fitted_solution
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
@@ -270,6 +271,6 @@ def run_describe():
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
     datasets = ['185_baseball_MIN_METADATA']
-    search_pipelines(datasets, 5)
+    search_pipelines(datasets, 1)
     evaluate_pipelines(datasets)
 

@@ -7,32 +7,24 @@ import d3m.metadata.base
 import d3m.runtime
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
-from d3m_ta2_nyu.workflow import database, convert
-from d3m_ta2_nyu.utils import is_collection, get_dataset_sample
+from alphad3m.schema import database, convert
+from alphad3m.utils import is_collection, get_dataset_sample
 from d3m.metadata.pipeline import Pipeline
 from d3m.metadata.problem import PerformanceMetric, TaskKeyword
 
 logger = logging.getLogger(__name__)
 
 
-with pkg_resources.resource_stream(
-        'd3m_ta2_nyu',
-        '../resource/pipelines/kfold_tabular_split.yaml') as fp:
+with pkg_resources.resource_stream('alphad3m', '../resource/pipelines/kfold_tabular_split.yaml') as fp:
     kfold_tabular_split = Pipeline.from_yaml(fp)
 
-with pkg_resources.resource_stream(
-        'd3m_ta2_nyu',
-        '../resource/pipelines/kfold_timeseries_split.yaml') as fp:
+with pkg_resources.resource_stream('alphad3m', '../resource/pipelines/kfold_timeseries_split.yaml') as fp:
     kfold_timeseries_split = Pipeline.from_yaml(fp)
 
-with pkg_resources.resource_stream(
-        'd3m_ta2_nyu',
-        '../resource/pipelines/train-test-tabular-split.yaml') as fp:
+with pkg_resources.resource_stream('alphad3m', '../resource/pipelines/train-test-tabular-split.yaml') as fp:
     train_test_tabular_split = Pipeline.from_yaml(fp)
 
-with pkg_resources.resource_stream(
-        'd3m_ta2_nyu',
-        '../resource/pipelines/scoring.yaml') as fp:
+with pkg_resources.resource_stream('alphad3m', '../resource/pipelines/scoring.yaml') as fp:
     scoring_pipeline = Pipeline.from_yaml(fp)
 
 
@@ -70,6 +62,7 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
 
     dataset = Dataset.load(dataset_uri_touse)
     # Get pipeline from database
+
     pipeline = (
         db.query(database.Pipeline)
             .filter(database.Pipeline.id == pipeline_id)
@@ -116,8 +109,7 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
             scores_db = add_scores_db(scores, scores_db)
             logger.info("Evaluation results for RANK metric: \n%s", scores)
 
-    # TODO Should we rename CrossValidation table?
-    record_db = database.CrossValidation(pipeline_id=pipeline_id, scores=scores_db)  # Store scores
+    record_db = database.Evaluation(pipeline_id=pipeline_id, scores=scores_db)  # Store scores
     db.add(record_db)
     db.commit()
 
@@ -195,7 +187,7 @@ def change_name_metric(scores, metrics, new_metric):
 def add_scores_db(scores_dict, scores_db):
     for fold, fold_scores in scores_dict.items():
         for metric, value in fold_scores.items():
-            scores_db.append(database.CrossValidationScore(fold=fold, metric=metric, value=value))
+            scores_db.append(database.EvaluationScore(fold=fold, metric=metric, value=value))
 
     return scores_db
 

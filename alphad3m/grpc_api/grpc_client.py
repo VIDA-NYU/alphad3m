@@ -9,7 +9,7 @@ import d3m_automl_rpc.core_pb2 as pb_core
 import d3m_automl_rpc.core_pb2_grpc as pb_core_grpc
 import d3m_automl_rpc.value_pb2 as pb_value
 from d3m_automl_rpc.utils import encode_problem_description, encode_performance_metric
-from d3m_ta2_nyu.grpc_api.grpc_logger import LoggingStub
+from alphad3m.grpc_api.grpc_logger import LoggingStub
 
 
 logger = logging.getLogger(__name__)

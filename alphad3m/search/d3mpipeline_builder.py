@@ -2,10 +2,10 @@ import os
 import pickle
 import logging
 import itertools
-from d3m_ta2_nyu.workflow import database
+from alphad3m.schema import database
 from d3m import index
 from d3m.container import Dataset, DataFrame, ndarray, List
-from d3m_ta2_nyu.utils import is_collection, get_collection_type
+from alphad3m.utils import is_collection, get_collection_type
 
 
 # Use a headless matplotlib backend

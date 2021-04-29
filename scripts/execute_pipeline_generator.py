@@ -1,5 +1,5 @@
 import os
-from d3m_ta2_nyu.alphad3m import interface_alphaautoml
+from alphad3m.search import interface_alphaautoml
 import pickle
 import sys
 

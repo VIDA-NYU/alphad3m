@@ -4,20 +4,17 @@ import sys
 import shutil
 import pickle
 from os.path import join
-from d3m import index
 from copy import deepcopy
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
-from d3m_ta2_nyu.pipeline_score import evaluate, kfold_tabular_split, score
-from d3m_ta2_nyu.workflow import database
-from d3m_ta2_nyu.parameter_tuning.primitive_config import is_tunable
-from d3m_ta2_nyu.parameter_tuning.bayesian import HyperparameterTuning, get_new_hyperparameters
+from alphad3m.pipeline_operations.pipeline_score import evaluate, kfold_tabular_split, score
+from alphad3m.schema import database
+from alphad3m.hyperparameter_tuning.primitive_config import is_tunable
+from alphad3m.hyperparameter_tuning.bayesian import HyperparameterTuning, get_new_hyperparameters
 from d3m.metadata.problem import PerformanceMetric, TaskKeyword
-from d3m_ta2_nyu.utils import create_outputfolders
+from alphad3m.utils import create_outputfolders
 
 logger = logging.getLogger(__name__)
-
-PRIMITIVES = index.search()
 
 
 @database.with_db

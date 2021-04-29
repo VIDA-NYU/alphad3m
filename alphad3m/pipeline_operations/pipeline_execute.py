@@ -4,7 +4,7 @@ import d3m.metadata.base
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from d3m.metadata import base as metadata_base
-from d3m_ta2_nyu.workflow import database, convert
+from alphad3m.schema import database, convert
 from multiprocessing import Manager, Process
 
 
