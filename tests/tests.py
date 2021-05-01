@@ -67,11 +67,11 @@ class TestSession(unittest.TestCase):
                                          dataset='file:///data/test.csv')
             db.add(pipeline)
             mod1 = database.PipelineModule(pipeline=pipeline,
-                                           name='tests.FakePrimitive',
+                                           name='tests.tests.FakePrimitive',
                                            package='d3m', version='0.0')
             db.add(mod1)
             mod2 = database.PipelineModule(pipeline=pipeline,
-                                           name='tests.FakePrimitive',
+                                           name='tests.tests.FakePrimitive',
                                            package='d3m', version='0.0')
             db.add(mod2)
             db.add(database.PipelineConnection(pipeline=pipeline,
