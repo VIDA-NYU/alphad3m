@@ -117,8 +117,8 @@ def evaluate_pipelines(datasets, top=10, option='fit-score'):
             #pipeline_path = '/usr/src/app/resource/pipelines/example_metalearningdb.json'
             output_path = join(D3MOUTPUTDIR, 'temp', 'runtime_output', '%s_%s.csv' % (option, top_pipeline_id))
             try:
-                command = create_command(option, pipeline_path, output_path, problem_path, dataset_train_path,
-                                         dataset_test_path, dataset_score_path)
+                command = create_command(option, top_pipeline_id, pipeline_path, output_path, problem_path,
+                                         dataset_train_path, dataset_test_path, dataset_score_path)
                 subprocess.call(command)
                 if option == 'fit-score':
                     df = pd.read_csv(output_path)
@@ -142,7 +142,7 @@ def evaluate_pipelines(datasets, top=10, option='fit-score'):
         #create_dupms(search_id, performance_top_pipelines.keys())
 
 
-def create_command(option, pipeline_path, output_path, problem_path, train_path, test_path, score_path=None):
+def create_command(option, pipeline_id, pipeline_path, output_path, problem_path, train_path, test_path, score_path=None):
     command = [
         'python3', '-m', 'd3m',
         'runtime',
@@ -154,7 +154,7 @@ def create_command(option, pipeline_path, output_path, problem_path, train_path,
         '--problem', problem_path,
         '--input', train_path,
         '--test-input', test_path,
-        #'-E', join(D3MOUTPUTDIR, 'temp', 'runtime_output'),
+        '-E', join(D3MOUTPUTDIR, 'temp', 'runtime_output', pipeline_id),
         #'--output-run', join(D3MOUTPUTDIR, search_id, 'pipeline_runs', 'run_%s.yml' % top_pipeline_id)
     ]
 
