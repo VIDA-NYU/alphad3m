@@ -9,7 +9,7 @@ set -eu
 
 OPTS=""
 TIMEOUT=10
-SKIPTEMPLATES="not"
+
 while true; do
     if [ "$1" = "fast" ]; then
         OPTS="$OPTS -e TA2_DEBUG_BE_FAST=1"
@@ -47,7 +47,6 @@ docker run -ti --rm \
     -e D3MCPU=4 \
     -e D3MRAM=4Gi \
     -e D3MTIMEOUT=$TIMEOUT \
-    -e SKIPTEMPLATES=$SKIPTEMPLATES \
     $OPTS \
     -v "$PWD/alphaautoml:/usr/src/app/alphaautoml" \
     -v "$PWD/alphad3m:/usr/src/app/alphad3m" \
