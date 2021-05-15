@@ -272,7 +272,7 @@ def run_describe():
 
 
 def debug_pipeline(dataset_uri):
-    logger.info('Debugging pipeline steps')
+    logger.info('Debugging pipeline step by step')
     start = time.time()
     dataset = Dataset.load(dataset_uri)
     duration = time.time() - start
@@ -295,7 +295,7 @@ def debug_pipeline(dataset_uri):
     logger.info('Time after dataset_to_dataframe: %5f' % duration)
 
     start = time.time()
-    primitive_class = d3m_index.get_primitive('d3m.primitives.data_transformation.column_parser.DistilColumnParser')#d3m.primitives.data_transformation.column_parser.Common')
+    primitive_class = d3m_index.get_primitive('d3m.primitives.data_transformation.column_parser.Common')
     primitive_hyperparams = primitive_class.metadata.query()['primitive_code']['class_type_arguments']['Hyperparams']
     primitive_dataframe = primitive_class(hyperparams=primitive_hyperparams.defaults())
     primitive_output = primitive_dataframe.produce(inputs=primitive_output).value
