@@ -1,6 +1,7 @@
 import os
 import csv
 import json
+import time
 import grpc
 import logging
 import subprocess
@@ -11,6 +12,8 @@ from os.path import join
 from d3m.metadata.pipeline import Pipeline
 from alphad3m.grpc_api.grpc_logger import LoggingStub
 from d3m_automl_rpc.utils import encode_pipeline_description, decode_value
+from d3m import index as d3m_index
+from d3m.container import Dataset
 from d3m.metadata.problem import Problem, PerformanceMetric
 from d3m.utils import yaml_load_all, fix_uri
 from alphad3m.grpc_api.grpc_client import do_search, do_score, do_train, do_test, do_export, do_describe, \
@@ -52,7 +55,7 @@ def search_pipelines(datasets, time_bound=10, use_template=False):
         except:
             logger.exception('Error parsing problem')
             continue
-
+        #debug_pipeline(fix_uri(dataset_train_path))
         task_keywords = '_'.join([x.name for x in problem['problem']['task_keywords']])
         search_id, pipelines = do_search(core, problem, dataset_train_path, time_bound=time_bound, pipelines_limit=0,
                                         pipeline_template=pipeline_template)
@@ -266,6 +269,38 @@ def run_describe():
 
     return_code = subprocess.call(command)
     logger.info('Describe pipeline process done, returned %d ' % return_code)
+
+
+def debug_pipeline(dataset_uri):
+    logger.info('Debugging pipeline steps')
+    start = time.time()
+    dataset = Dataset.load(dataset_uri)
+    duration = time.time() - start
+    logger.info('Time after load dataset: %5f' % duration)
+
+    start = time.time()
+    primitive_class = d3m_index.get_primitive('d3m.primitives.data_transformation.denormalize.Common')
+    primitive_hyperparams = primitive_class.metadata.query()['primitive_code']['class_type_arguments']['Hyperparams']
+    primitive_denormalize = primitive_class(hyperparams=primitive_hyperparams.defaults())
+    primitive_output = primitive_denormalize.produce(inputs=dataset).value
+    duration = time.time() - start
+    logger.info('Time after denormoralize: %5f' % duration)
+
+    start = time.time()
+    primitive_class = d3m_index.get_primitive('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
+    primitive_hyperparams = primitive_class.metadata.query()['primitive_code']['class_type_arguments']['Hyperparams']
+    primitive_dataframe = primitive_class(hyperparams=primitive_hyperparams.defaults())
+    primitive_output = primitive_dataframe.produce(inputs=primitive_output).value
+    duration = time.time() - start
+    logger.info('Time after dataset_to_dataframe: %5f' % duration)
+
+    start = time.time()
+    primitive_class = d3m_index.get_primitive('d3m.primitives.data_transformation.column_parser.DistilColumnParser')#d3m.primitives.data_transformation.column_parser.Common')
+    primitive_hyperparams = primitive_class.metadata.query()['primitive_code']['class_type_arguments']['Hyperparams']
+    primitive_dataframe = primitive_class(hyperparams=primitive_hyperparams.defaults())
+    primitive_output = primitive_dataframe.produce(inputs=primitive_output).value
+    duration = time.time() - start
+    logger.info('Time after column_parser: %5f' % duration)
 
 
 if __name__ == '__main__':
