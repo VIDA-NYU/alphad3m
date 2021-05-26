@@ -337,10 +337,7 @@
         "d3m.primitives.time_series_classification.k_neighbors.Kanine"
     ],
     "TIME_SERIES_FORECASTING": [
-        "d3m.primitives.time_series_forecasting.arima.DSBOX",
         "d3m.primitives.time_series_forecasting.esrnn.RNN",
-        "d3m.primitives.time_series_forecasting.feed_forward_neural_net.NBEATS",
-        "d3m.primitives.time_series_forecasting.lstm.DeepAR",
         "d3m.primitives.time_series_forecasting.nbeats.DeepNeuralNetwork",
         "d3m.primitives.time_series_forecasting.vector_autoregression.VAR"
     ],
