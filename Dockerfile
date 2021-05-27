@@ -45,6 +45,6 @@ RUN pip3 install -e git+https://gitlab.com/datadrivendiscovery/sklearn-wrap.git@
 
 COPY eval.sh /usr/local/bin/eval.sh
 
-CMD "/usr/local/bin/eval.sh" RUN pip3 freeze
+CMD "/usr/local/bin/eval.sh"
 
 EXPOSE 45042
