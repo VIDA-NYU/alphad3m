@@ -19,6 +19,11 @@ from d3m.utils import yaml_load_all, fix_uri
 from alphad3m.grpc_api.grpc_client import do_search, do_score, do_train, do_test, do_export, do_describe, \
     do_load_solution, do_save_fitted_solution
 
+import glob
+import pkg_resources
+import d3m.runtime
+from d3m.metadata.pipeline import Pipeline
+
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -276,7 +281,7 @@ def debug_pipeline(dataset_uri):
     start = time.time()
     dataset = Dataset.load(dataset_uri)
     duration = time.time() - start
-    logger.info('Time after load dataset: %5f' % duration)
+    logger.info('Time after load dataset: %.5f' % duration)
 
     start = time.time()
     primitive_class = d3m_index.get_primitive('d3m.primitives.data_transformation.denormalize.Common')
@@ -284,7 +289,7 @@ def debug_pipeline(dataset_uri):
     primitive_denormalize = primitive_class(hyperparams=primitive_hyperparams.defaults())
     primitive_output = primitive_denormalize.produce(inputs=dataset).value
     duration = time.time() - start
-    logger.info('Time after denormoralize: %5f' % duration)
+    logger.info('Time after denormoralize: %.5f' % duration)
 
     start = time.time()
     primitive_class = d3m_index.get_primitive('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
@@ -292,7 +297,7 @@ def debug_pipeline(dataset_uri):
     primitive_dataframe = primitive_class(hyperparams=primitive_hyperparams.defaults())
     primitive_output = primitive_dataframe.produce(inputs=primitive_output).value
     duration = time.time() - start
-    logger.info('Time after dataset_to_dataframe: %5f' % duration)
+    logger.info('Time after dataset_to_dataframe: %.5f' % duration)
 
     start = time.time()
     primitive_class = d3m_index.get_primitive('d3m.primitives.data_transformation.column_parser.Common')
@@ -300,7 +305,75 @@ def debug_pipeline(dataset_uri):
     primitive_dataframe = primitive_class(hyperparams=primitive_hyperparams.defaults())
     primitive_output = primitive_dataframe.produce(inputs=primitive_output).value
     duration = time.time() - start
-    logger.info('Time after column_parser: %5f' % duration)
+    logger.info('Time after column_parser: %.5f' % duration)
+
+
+def score_pipeline(task, json_pipeline):
+    with pkg_resources.resource_stream('alphad3m', '../resource/pipelines/kfold_tabular_split.yaml') as fp:
+        data_pipeline = Pipeline.from_yaml(fp)
+
+    with pkg_resources.resource_stream('alphad3m', '../resource/pipelines/scoring.yaml') as fp:
+        scoring_pipeline = Pipeline.from_yaml(fp)
+
+    dataset_path = join(D3MINPUTDIR, task, 'openml_dataset_*/datasetDoc.json')
+    dataset_path = glob.glob(dataset_path)[0]
+    problem_path = join(D3MINPUTDIR, task, 'openml_problem_*/problemDoc.json')
+    problem_path = glob.glob(problem_path)[0]
+
+    dataset = Dataset.load(fix_uri(dataset_path))
+    problem = Problem.load(problem_uri=fix_uri(problem_path))
+    d3m_pipeline = Pipeline.from_json_structure(json_pipeline)
+    metrics = problem['problem']['performance_metrics']
+    scoring_config = {'shuffle': 'true', 'method': 'K_FOLD', 'number_of_folds': '10', 'stratified': 'true'}
+
+    run_scores, run_results = d3m.runtime.evaluate(
+        pipeline=d3m_pipeline,
+        data_pipeline=data_pipeline,
+        scoring_pipeline=scoring_pipeline,
+        problem_description=problem,
+        inputs=[dataset],
+        data_params=scoring_config,
+        metrics=metrics,
+        volumes_dir=os.environ.get('D3MSTATICDIR', None),
+        context=d3m.metadata.base.Context.TESTING,
+        random_seed=0,
+    )
+
+    for result in run_results:
+        if result.has_error():
+            raise RuntimeError(result.pipeline_run.status['message'])
+
+    try:
+        scores = d3m.runtime.combine_folds([fold for fold in run_scores])
+        logger.info('Cross-validation scores:\n%s'% scores.to_string())
+        avg_score = round(scores['value'].mean(), 3)
+    except:
+        logger.error('Scoring pipeline')
+        avg_score = 0
+
+    logger.info('Task: %s, average score: %.3f' % (task, avg_score))
+
+    return avg_score
+
+
+def evaluate_openml_tasks():
+    directory_path = join(D3MOUTPUTDIR, 'openml_pipelines')
+    tasks = sorted(os.listdir(directory_path))
+    scores = {}
+    for task in tasks:
+        if task in {'.DS_Store'}: continue
+        try:
+            with open(join(directory_path, task, 'pipeline.json')) as fin:
+                json_pipeline = json.load(fin)
+        except:
+            scores[task] = 0
+            continue
+
+        score = score_pipeline(task, json_pipeline)
+        scores[task] = score
+
+    for task, score in sorted(scores.items(), key=lambda x: x[0]):
+        logger.info('Task: %s, average score: %.3f' % (task, score))
 
 
 if __name__ == '__main__':
@@ -308,4 +381,3 @@ if __name__ == '__main__':
     datasets = ['185_baseball_MIN_METADATA']
     search_pipelines(datasets, 5)
     evaluate_pipelines(datasets)
-
