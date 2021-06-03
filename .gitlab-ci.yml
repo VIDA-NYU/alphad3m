@@ -4,6 +4,7 @@ stages:
 
 variables:
   DOCKER_DRIVER: overlay2
+  DOCKER_BUILDKIT: "1"
   IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
   GIT_SUBMODULE_STRATEGY: recursive
 
@@ -19,17 +20,9 @@ build_image:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
     - docker login -u ${D3M_GITLAB_USER} -p ${D3M_GITLAB_TOKEN} registry.datadrivendiscovery.org
     - INIT="$(< alphad3m/__init__.py)"; echo "$INIT" | sed 's/__version__ = .*$/__version__ = '"'$(git describe)'/" >alphad3m/__init__.py
+    - docker build --cache-from $CI_REGISTRY_IMAGE:latest --cache-from $CI_REGISTRY_IMAGE:devel --cache-from $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME --build-arg BUILDKIT_INLINE_CACHE=1 -t $IMAGE .
     - |
-      CACHE_FROM="--cache-from $CI_REGISTRY_IMAGE:latest" && docker pull $CI_REGISTRY_IMAGE:latest
-      if [ "$CI_COMMIT_REF_NAME" != devel ]; then
-        if docker pull "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"; then
-          CACHE_FROM="$CACHE_FROM --cache-from $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
-        fi
-      fi
-      echo "Docker cache: $CACHE_FROM"
-    - docker build $CACHE_FROM -t $IMAGE .
-    - docker push $IMAGE
-    - |
+      docker push $IMAGE
       if [ "$CI_COMMIT_REF_NAME" = master ]; then
         docker tag $IMAGE $CI_REGISTRY_IMAGE:latest
         docker push $CI_REGISTRY_IMAGE:latest
