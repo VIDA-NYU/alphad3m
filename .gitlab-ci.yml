@@ -4,7 +4,7 @@ stages:
 
 variables:
   DOCKER_DRIVER: overlay2
-  IMAGE: $CI_REGISTRY_IMAGE:devel
+  IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
   GIT_SUBMODULE_STRATEGY: recursive
 
 services:
