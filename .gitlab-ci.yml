@@ -28,7 +28,6 @@ build_image:
       fi
       echo "Docker cache: $CACHE_FROM"
     - docker build $CACHE_FROM -t $IMAGE .
-    - |
     - docker push $IMAGE
     - |
       if [ "$CI_COMMIT_REF_NAME" = master ]; then
