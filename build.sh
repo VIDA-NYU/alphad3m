@@ -15,4 +15,14 @@ else
     IMAGE="registry.gitlab.com/vida-nyu/d3m/alphad3m:$(git describe)"
 fi
 
-docker build -t "$IMAGE" .
+echo "Building $IMAGE" >&2
+
+docker build \
+    -t "$IMAGE" \
+    --build-arg VERSION=$(git describe) \
+    --build-arg GIT_COMMIT=$(git rev-parse HEAD) \
+    .
+
+echo "Done" >&2
+echo "Push using:" >&2
+echo "    docker push $IMAGE" >&2

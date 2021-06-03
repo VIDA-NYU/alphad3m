@@ -45,6 +45,12 @@ RUN pip3 install -e git+https://gitlab.com/datadrivendiscovery/sklearn-wrap.git@
 
 COPY eval.sh /usr/local/bin/eval.sh
 
+ARG VERSION
+ARG GIT_COMMIT
+
+LABEL version=$VERSION \
+    commit=$GIT_COMMIT
+
 CMD "/usr/local/bin/eval.sh"
 
 EXPOSE 45042
