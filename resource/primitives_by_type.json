@@ -65,7 +65,8 @@
         "d3m.primitives.collaborative_filtering.link_prediction.DistilCollaborativeFiltering"
     ],
     "COMMUNITY_DETECTION": [
-        "d3m.primitives.community_detection.parser.DistilCommunityDetection"
+        "d3m.primitives.community_detection.parser.DistilCommunityDetection",
+        "d3m.primitives.graph_clustering.gaussian_clustering.JHU"
     ],
     "CONVOLUTIONAL_NEURAL_NETWORK": [
         "d3m.primitives.data_cleaning.column_type_profiler.Simon"
