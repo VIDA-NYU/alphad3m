@@ -15,7 +15,7 @@ in
         exec ta2_search
     ;;
     ta2|ta2ta3)
-        exec ta2_serve 45042
+        exec ta2_serve ${D3MPORT:-45042}
     ;;
     *)
         echo "\$D3MRUN is not set" >&2
