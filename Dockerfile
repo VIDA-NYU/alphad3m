@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-stable-20201201-223410
+FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-master-20210624-071708
 
 MAINTAINER "remi.rampin@nyu.edu, raoni@nyu.edu, rlopez@nyu.edu"
 
@@ -40,8 +40,6 @@ RUN pip3 install d3m-automl-rpc==1.0.0
 RUN pip3 install nltk==3.4.5
 RUN pip3 install datamart-profiler==0.9
 RUN pip3 install datamart-materialize==0.6.1
-
-RUN pip3 install -e git+https://gitlab.com/datadrivendiscovery/sklearn-wrap.git@dev-dist#egg=sklearn_wrap
 
 COPY eval.sh /usr/local/bin/eval.sh
 
