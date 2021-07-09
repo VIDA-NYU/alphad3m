@@ -90,7 +90,6 @@
         "d3m.primitives.data_transformation.dataframe_to_ndarray.Common",
         "d3m.primitives.data_transformation.dataset_to_dataframe.Common",
         "d3m.primitives.data_transformation.datetime_field_compose.Common",
-        "d3m.primitives.data_transformation.grouping_field_compose.Common",
         "d3m.primitives.data_transformation.horizontal_concat.DSBOX",
         "d3m.primitives.data_transformation.i_vector_extractor.IVectorExtractor",
         "d3m.primitives.data_transformation.list_to_dataframe.Common",
@@ -327,10 +326,13 @@
         "d3m.primitives.feature_construction.corex_text.DSBOX",
         "d3m.primitives.feature_extraction.count_vectorizer.SKlearn"
     ],
-    "TIMESERIES_FEATURIZER": [
+    "TIME_SERIES_FEATURIZER": [
         "d3m.primitives.feature_extraction.random_projection_timeseries_featurization.DSBOX"
     ],
-    "TIMESERIES_READER": [
+    "TIME_SERIES_GROUPER": [
+        "d3m.primitives.data_transformation.grouping_field_compose.Common"
+    ],
+    "TIME_SERIES_READER": [
         "d3m.primitives.data_transformation.time_series_to_list.DSBOX"
     ],
     "TIME_SERIES_CLASSIFICATION": [
