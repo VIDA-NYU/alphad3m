@@ -74,12 +74,12 @@ def search_pipelines(datasets, time_bound=10, use_template=False):
             sorted_pipelines = sorted(pipelines.items(), key=lambda x: x[1][0], reverse=True)
             all_scores = []
 
-            for pipeline_id, (_, pipeline, _) in sorted_pipelines:
+            for pipeline_id, (_, pipeline, pipeline_time) in sorted_pipelines:
                 if use_template:  # FIXME: Pipeline's score is not calculate when working with fully defined template
                     pipeline_score = 1.0
                 else:
                     pipeline_score = decode_value(pipeline[0].scores[0].value)['value']
-                all_scores.append({'id': pipeline_id, 'score': pipeline_score})
+                all_scores.append({'id': pipeline_id, 'score': pipeline_score, 'time': pipeline_time})
                 #do_score(core, problem, [pipeline_id], dataset_train_path)
                 #fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
                 #do_save_fitted_solution(core, fitted_pipeline)
