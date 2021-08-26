@@ -328,16 +328,11 @@
     "TEXT_CLASSIFIER": [
         "d3m.primitives.classification.text_classifier.DistilTextClassifier"
     ],
-    "TEXT_ENCODER": [
+    "TEXT_FEATURIZER": [
+        "d3m.primitives.feature_extraction.count_vectorizer.SKlearn",
         "d3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn",
         "d3m.primitives.data_transformation.encoder.DistilTextEncoder",
         "d3m.primitives.feature_construction.corex_text.DSBOX"
-    ],
-    "TEXT_FEATURIZER": [
-        "d3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn",
-        "d3m.primitives.data_transformation.encoder.DistilTextEncoder",
-        "d3m.primitives.feature_construction.corex_text.DSBOX",
-        "d3m.primitives.feature_extraction.count_vectorizer.SKlearn"
     ],
     "TIME_SERIES_CLASSIFICATION": [
         "d3m.primitives.time_series_classification.convolutional_neural_net.LSTM_FCN",

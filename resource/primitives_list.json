@@ -285,7 +285,7 @@
         "version": "2021.3.19",
         "python_path": "d3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn",
         "digest": "df47837b69c49b2eac76424916d643ed455b893a69a0e20042dc196c0608cac0",
-        "type": "TEXT_ENCODER"
+        "type": "TEXT_FEATURIZER"
     },
     {
         "id": "9231fde3-7322-3c41-b4cf-d00a93558c44",
@@ -949,7 +949,7 @@
         "version": "0.6.0",
         "python_path": "d3m.primitives.data_transformation.encoder.DistilTextEncoder",
         "digest": "0779aac61eb53ab38fec4c1f127d20932e21275e8405520a3807fabc63b5d34b",
-        "type": "TEXT_ENCODER"
+        "type": "TEXT_FEATURIZER"
     },
     {
         "id": "b1367f5b-bab1-4dfc-a1a9-6a56430e516a",
@@ -1405,7 +1405,7 @@
         "version": "1.0.0",
         "python_path": "d3m.primitives.feature_construction.corex_text.DSBOX",
         "digest": "2d89e83baf59a185d012f7e7536afc76abf2170603745b1211060c5a96acea68",
-        "type": "TEXT_ENCODER"
+        "type": "TEXT_FEATURIZER"
     },
     {
         "id": "e659ef3a-f17c-4bbf-9e5a-13de79a4e55b",
