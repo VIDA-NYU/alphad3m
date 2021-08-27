@@ -32,6 +32,14 @@
         "type": "CLASSIFICATION"
     },
     {
+        "id": "a1056ddf-2e89-3d8d-8308-2146170ae54d",
+        "name": "sklearn.dummy.DummyClassifier",
+        "version": "2021.3.19",
+        "python_path": "d3m.primitives.classification.dummy.SKlearn",
+        "digest": "493d29580e6a1bed09ad2ed34b76215f74bd0759b79bb7a62a63dc86163df70c",
+        "type": "CLASSIFICATION"
+    },
+    {
         "id": "c8a28f02-ef4a-35a8-87f1-cf79980f5c3e",
         "name": "sklearn.ensemble.forest.ExtraTreesClassifier",
         "version": "2021.3.19",
@@ -152,6 +160,14 @@
         "type": "CLASSIFICATION"
     },
     {
+        "id": "13777068-9dc0-3c5b-b4da-99350d67ee3f",
+        "name": "sklearn.preprocessing.data.Binarizer",
+        "version": "2021.3.19",
+        "python_path": "d3m.primitives.data_cleaning.binarizer.SKlearn",
+        "digest": "9115f75c4205c942c0a66cfbc6a4f0b5bb7681c0da56d8d16a0eac1df061bcb9",
+        "type": "ENCODE_BINARY"
+    },
+    {
         "id": "d016df89-de62-3c53-87ed-c06bb6a23cde",
         "name": "sklearn.impute.SimpleImputer",
         "version": "2021.3.19",
@@ -173,6 +189,22 @@
         "version": "2021.3.19",
         "python_path": "d3m.primitives.data_cleaning.min_max_scaler.SKlearn",
         "digest": "62675f6361a6bd9c1b11f94f0b1cdaf58889fdc84dd8ec58e435d66ba28a0ab4",
+        "type": "FEATURE_SCALING"
+    },
+    {
+        "id": "94c5c918-9ad5-3496-8e52-2359056e0120",
+        "name": "sklearn.impute.MissingIndicator",
+        "version": "2021.3.19",
+        "python_path": "d3m.primitives.data_cleaning.missing_indicator.SKlearn",
+        "digest": "c2f862340619e5c02eefc03546caf7ea5c3503cf6161a05dace8a5b731e00938",
+        "type": "IMPUTATION"
+    },
+    {
+        "id": "980b3a2d-1574-31f3-8326-ddc62f8fc2c3",
+        "name": "sklearn.preprocessing.data.Normalizer",
+        "version": "2021.3.19",
+        "python_path": "d3m.primitives.data_cleaning.normalizer.SKlearn",
+        "digest": "e7ce6ee48a3cf7b5cc61ecdb9e44cba82fcce43875095248997e6cda686aa92a",
         "type": "FEATURE_SCALING"
     },
     {
@@ -200,11 +232,27 @@
         "type": "FEATURE_SCALING"
     },
     {
+        "id": "caeed986-cd1b-303b-900f-868dfc665341",
+        "name": "sklearn.impute.SimpleImputer",
+        "version": "2021.3.19",
+        "python_path": "d3m.primitives.data_cleaning.string_imputer.SKlearn",
+        "digest": "f585c75fce63926de4c9a91db02e9d596ea2fbcca01fc420e9169d492863ce8a",
+        "type": "IMPUTATION"
+    },
+    {
         "id": "03633ffa-425e-37d4-9f1c-bbb552f1e995",
         "name": "sklearn.decomposition.fastica_.FastICA",
         "version": "2021.3.19",
         "python_path": "d3m.primitives.data_transformation.fast_ica.SKlearn",
         "digest": "49be88d59fd6c04c0f64d1ad8d5e585c5bb1af18d5e0bf48a3477a8a138dcedd",
+        "type": "DIMENSIONALITY_REDUCTION"
+    },
+    {
+        "id": "fc933ab9-baaf-47ca-a373-bdd33081f5fa",
+        "name": "sklearn.random_projection.GaussianRandomProjection",
+        "version": "2021.3.19",
+        "python_path": "d3m.primitives.data_transformation.gaussian_random_projection.SKlearn",
+        "digest": "4a61f33e7e7bd7af965000ad40b948d84e4ef171080153d59f15c00281ae41df",
         "type": "DIMENSIONALITY_REDUCTION"
     },
     {
@@ -256,12 +304,28 @@
         "type": "KERNEL_METHOD"
     },
     {
+        "id": "43ddd6be-bb4f-3fd0-8765-df961c16d7dc",
+        "name": "sklearn.random_projection.SparseRandomProjection",
+        "version": "2021.3.19",
+        "python_path": "d3m.primitives.data_transformation.sparse_random_projection.SKlearn",
+        "digest": "5d8acf995ff33d6cef6a46752ce75ac2470320990a14be4d00eb85c146f86256",
+        "type": "DIMENSIONALITY_REDUCTION"
+    },
+    {
         "id": "0609859b-8ed9-397f-ac7a-7c4f63863560",
         "name": "sklearn.feature_extraction.text.CountVectorizer",
         "version": "2021.3.19",
         "python_path": "d3m.primitives.feature_extraction.count_vectorizer.SKlearn",
         "digest": "9ef18367110912008c54ad29c92d7c2fdefed696709d183831fa3b70da38ae7a",
         "type": "TEXT_FEATURIZER"
+    },
+    {
+        "id": "f259b009-5e0f-37b1-b117-441aba2b65c8",
+        "name": "sklearn.cluster.hierarchical.FeatureAgglomeration",
+        "version": "2021.3.19",
+        "python_path": "d3m.primitives.feature_extraction.feature_agglomeration.SKlearn",
+        "digest": "7ea8be94cbfd6ade7c51d5914b772d2ad60bc11a40f27af86e51dd8d6e9c5da5",
+        "type": "FEATURE_SELECTION"
     },
     {
         "id": "fec6eba2-4a1b-3ea9-a31f-1da371941ede",
@@ -357,6 +421,14 @@
         "version": "2021.3.19",
         "python_path": "d3m.primitives.regression.decision_tree.SKlearn",
         "digest": "5bc9a6e726adeb13360b3d7a01df6dd4013225060e6d1aa5e50ffadfeb0059da",
+        "type": "REGRESSION"
+    },
+    {
+        "id": "05aa5b6a-3b27-34dc-9ba7-8511fb13f253",
+        "name": "sklearn.dummy.DummyRegressor",
+        "version": "2021.3.19",
+        "python_path": "d3m.primitives.regression.dummy.SKlearn",
+        "digest": "44377d849a2d7e6a9a77cdab63f6a64b5410e38249ae0f5d65c3dd857ed23db9",
         "type": "REGRESSION"
     },
     {
@@ -504,12 +576,52 @@
         "type": "CLASSIFICATION"
     },
     {
+        "id": "7c305f3a-442a-41ad-b9db-8c437753b119",
+        "name": "BERT pair classification",
+        "version": "0.6.0",
+        "python_path": "d3m.primitives.classification.bert_classifier.DistilBertPairClassification",
+        "digest": "7d3d8e5003038b383617b8f1be2ef32b67f3e440b070d01eafc55312f6243b35",
+        "type": "TEXT_CLASSIFIER"
+    },
+    {
+        "id": "28e8840d-7794-40d2-b5d6-c9e136a6e51e",
+        "name": "Canonical Correlation Forests Classifier",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.classification.canonical_correlation_forests.UBC",
+        "digest": "66415d502a5c54c8af660a0acf17def2e752d3f817692fa3720a26fa42fc121d",
+        "type": "CLASSIFICATION"
+    },
+    {
+        "id": "e770fae6-da6d-45f8-86bf-38a121a4e65a",
+        "name": "Nearest Neighbor Classification with Cover Trees",
+        "version": "3.1.1",
+        "python_path": "d3m.primitives.classification.cover_tree.Fastlvm",
+        "digest": "dce84fbbc15712c3aa996b7217e1a3063402ddc99c11fafa64cefdf19f656da3",
+        "type": "CLASSIFICATION"
+    },
+    {
+        "id": "dsbox-ensemble-voting",
+        "name": "DSBox ensemble voting",
+        "version": "1.5.3",
+        "python_path": "d3m.primitives.classification.ensemble_voting.DSBOX",
+        "digest": "684354b22d166773855ac48db0a4d8b9abf1557b7a7e691d8c913a3ab4f4712f",
+        "type": "CLASSIFICATION"
+    },
+    {
         "id": "c9d5da5d-0520-468e-92df-bd3a85bb4fac",
         "name": "jhu.gclass",
         "version": "0.1.0",
         "python_path": "d3m.primitives.classification.gaussian_classification.JHU",
         "digest": "6a33b6253d040ad67d8671401d3f827c091a29d23430cbacd6994aef1fb68bb5",
         "type": "VERTEX_CLASSIFICATION"
+    },
+    {
+        "id": "4e74a859-fe9f-4520-a9d7-a023bb2a805f",
+        "name": "Global Causal Discovery",
+        "version": "v2020.5.18",
+        "python_path": "d3m.primitives.classification.global_causal_discovery.ClassifierRPI",
+        "digest": "480dc30e875704b85bd7898333f39512cd85ab586211e0d5b4674a082bf56da6",
+        "type": "CLASSIFICATION"
     },
     {
         "id": "259aa747-795c-435e-8e33-8c32a4c83c6b",
@@ -520,12 +632,100 @@
         "type": "CLASSIFICATION"
     },
     {
+        "id": "10d21bbe-9c58-4dc1-8f71-2b3834b71a5e",
+        "name": "DistilRankedLinearSVC",
+        "version": "0.6.0",
+        "python_path": "d3m.primitives.classification.linear_svc.DistilRankedLinearSVC",
+        "digest": "fcdc6b6f326a77bdbeea6d04a1c443d640cd2f1d0736b9cf708ac02a71740d95",
+        "type": "CLASSIFICATION"
+    },
+    {
+        "id": "8a992784-3b41-4915-bb47-3ff00e51e60f",
+        "name": "Bayesian Logistic Regression",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.classification.logistic_regression.UBC",
+        "digest": "b1d8c90957da68c9bb176fc96bb9ebc77626ef4f4e568daa3d25ccc2c4468d97",
+        "type": "CLASSIFICATION"
+    },
+    {
+        "id": "dsbox-featurizer-video-classification-lstm",
+        "name": "DSBox Video Classification LSTM",
+        "version": "1.5.3",
+        "python_path": "d3m.primitives.classification.lstm.DSBOX",
+        "digest": "916863cdb942fab70438c7e72dd92f3c35d45d6db04afe735f128095b5e85998",
+        "type": "CLASSIFICATION"
+    },
+    {
+        "id": "cdb18166-e2ca-4418-b5a4-fffbe98f7844",
+        "name": "BBN MLP Classifier",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.classification.mlp.BBNMLPClassifier",
+        "digest": "cda42f1489bb95a52c8ce0240fb676731dbced3428893869e2e8fa1b0133e779",
+        "type": "CLASSIFICATION"
+    },
+    {
+        "id": "11ca2c30-576d-40cf-ab65-24e6c114a160",
+        "name": "Neural Network Classifier",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.classification.multilayer_perceptron.UBC",
+        "digest": "6bd16a5d5900f521c6474075f14a928519acbab8de13660cd0e0d940923e0ac8",
+        "type": "CLASSIFICATION"
+    },
+    {
+        "id": "b8d0d982-fc53-4a3f-8a8c-a284fdd45bfd",
+        "name": "Random Classifier",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.classification.random_classifier.Test",
+        "digest": "09a1b5820fb740bff068bf7e3d15374dc4a11f49800df9fc05f5b405848c1a17",
+        "type": "CLASSIFICATION"
+    },
+    {
+        "id": "37c2b19d-bdab-4a30-ba08-6be49edcc6af",
+        "name": "Random forest classifier",
+        "version": "0.4.0",
+        "python_path": "d3m.primitives.classification.random_forest.Common",
+        "digest": "1e37d4b6a38072a264d2a34456f1ef38998acc8964dae4a9e157e1c62b584811",
+        "type": "CLASSIFICATION"
+    },
+    {
+        "id": "84f39131-6618-4d90-9590-b79d41dfb093",
+        "name": "find projections",
+        "version": "2.3.1",
+        "python_path": "d3m.primitives.classification.search.Find_projections",
+        "digest": "73d50123368a6dbcc20a2578c8dca7ec708337f97a2e3ba92a94b73b0a8f0827",
+        "type": "CLASSIFICATION"
+    },
+    {
+        "id": "448590e7-8cf6-4bfd-abc4-db2980d8114e",
+        "name": "find projections",
+        "version": "2.3.1",
+        "python_path": "d3m.primitives.classification.search_hybrid.Find_projections",
+        "digest": "ad1a4c5269edd8e85f24f0895c7aefd6e1082e8e23c9963c940a0370e55f3d6f",
+        "type": "CLASSIFICATION"
+    },
+    {
+        "id": "166ccbaf-3621-4654-9928-bf7ef17d5c2d",
+        "name": "Simple CNAPS primitive",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.classification.simple_cnaps.UBC",
+        "digest": "e55c7fa0d9b519352903847bccc943f2d73c1069a78f7b04555d01fc41fe24a7",
+        "type": "CLASSIFICATION"
+    },
+    {
         "id": "24f51246-7487-454e-8d69-7cdf289994d1",
         "name": "Text Classifier",
         "version": "0.6.0",
         "python_path": "d3m.primitives.classification.text_classifier.DistilTextClassifier",
         "digest": "8b83a3bc4549eb284ba83df2a8a0683ab24c0163419db897ae192bd27f28858f",
         "type": "TEXT_CLASSIFIER"
+    },
+    {
+        "id": "2fa0afb2-1b7b-462d-a7c9-11b44efe9eb0",
+        "name": "Tree-Augmented Naive Bayes Classifier",
+        "version": "v2020.5.18",
+        "python_path": "d3m.primitives.classification.tree_augmented_naive_bayes.BayesianInfRPI",
+        "digest": "b52a4aad92e553e54ac29a465abe62e38fabbb368ef50eefca53c336d39a3fa0",
+        "type": "CLASSIFICATION"
     },
     {
         "id": "7476950e-4373-4cf5-a852-7e16afb8e098",
@@ -542,6 +742,14 @@
         "python_path": "d3m.primitives.classification.xgboost_gbtree.Common",
         "digest": "feadb0fdb1fa7180956380d37f54653cb753adfac87c484a4382acf18845d846",
         "type": "CLASSIFICATION"
+    },
+    {
+        "id": "b358a1fd-8bf8-4991-935f-2f1806dae54d",
+        "name": "Clustering for Curve Fitting",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.clustering.cluster_curve_fitting_kmeans.ClusterCurveFittingKMeans",
+        "digest": "64aca5474d1f452b134a549b9026c014dd15b3e09e3a3c0745236663ba4756de",
+        "type": "CLUSTERING"
     },
     {
         "id": "49af9397-d9a2-450f-93eb-c3b631ba6646",
@@ -581,6 +789,22 @@
         "version": "2.0.5",
         "python_path": "d3m.primitives.clustering.k_means.Sloth",
         "digest": "93447fb0a7124273c7a77f62ac78266b08d180c4e5ecb7d5e834433b4fac3778",
+        "type": "CLUSTERING"
+    },
+    {
+        "id": "8ddde4a3-5b50-4bae-8c1e-69d4a5cf4d38",
+        "name": "KMeans Clustering",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.clustering.kmeans_clustering.UBC",
+        "digest": "bd1b7eeb6320094b2fbad592e54b882f134351d0a2a6b4ca423515803da30a49",
+        "type": "CLUSTERING"
+    },
+    {
+        "id": "d13a4529-f0ba-44ee-a867-e0fdbb71d6e2",
+        "name": "tsne",
+        "version": "1.0.0",
+        "python_path": "d3m.primitives.clustering.spectral_graph.SpectralClustering",
+        "digest": "6444431f577fc271213aca48c4fed7c2329a28cdabbeed0d5021ce99ef4e4cd4",
         "type": "CLUSTERING"
     },
     {
@@ -656,12 +880,44 @@
         "type": "NUMERICAL_METHOD"
     },
     {
+        "id": "ebebb1fa-a20c-38b9-9f22-bc92bc548c19",
+        "name": "DSBox Greedy Imputer",
+        "version": "1.5.3",
+        "python_path": "d3m.primitives.data_cleaning.greedy_imputation.DSBOX",
+        "digest": "c736032b8abeb806ca9da711d41cef28ec14bf2f920948485d1ca60db27e7009",
+        "type": "IMPUTATION"
+    },
+    {
+        "id": "f70b2324-1102-35f7-aaf6-7cd8e860acc4",
+        "name": "DSBox Iterative Regression Imputer",
+        "version": "1.5.3",
+        "python_path": "d3m.primitives.data_cleaning.iterative_regression_imputation.DSBOX",
+        "digest": "bafc679a7f5afc343bd2bb7361128c0d5d6ae174433c14b1f33d5aa5bef672ce",
+        "type": "IMPUTATION"
+    },
+    {
         "id": "dsbox-multi-table-feature-labler",
         "name": "DSBox feature labeler",
         "version": "1.5.3",
         "python_path": "d3m.primitives.data_cleaning.label_encoder.DSBOX",
         "digest": "ca16463eb7d19974afb39dc94ca25a6a56fbb764be5cc35b09f1df6fc31402ba",
         "type": "DATA_NORMALIZATION"
+    },
+    {
+        "id": "7894b699-61e9-3a50-ac9f-9bc510466667",
+        "name": "DSBox Mean Imputer",
+        "version": "1.5.3",
+        "python_path": "d3m.primitives.data_cleaning.mean_imputation.DSBOX",
+        "digest": "c975084d0404e65e811f0add38b5630eb33a90a0b4128369da7aa3f1da5b111e",
+        "type": "IMPUTATION"
+    },
+    {
+        "id": "6c425897-6ffe-45b8-949f-002d872ccf12",
+        "name": "Annotated tabular extractor",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_cleaning.tabular_extractor.Common",
+        "digest": "916cc62a97f9bb5897e9b78c556b512c1c99a85f33aad05971aa6f10089a2207",
+        "type": "IMPUTATION"
     },
     {
         "id": "46612a42-6120-3559-9db9-3aa9a76eb94f",
@@ -718,6 +974,14 @@
         "python_path": "d3m.primitives.data_preprocessing.largest_connected_component.JHU",
         "digest": "3a50c0720507dd53fea03388cc46e6510e7de47b8ae43eb0c101d416672b4411",
         "type": "NONOVERLAPPING_COMMUNITY_DETECTION"
+    },
+    {
+        "id": "ebfeb6f0-e366-4082-b1a7-602fd50acc96",
+        "name": "Random Sampling Imputer",
+        "version": "0.7.5",
+        "python_path": "d3m.primitives.data_preprocessing.random_sampling_imputer.BYU",
+        "digest": "9608306a676d8b542a2f7e15dd045ff0bb07bea1b6c453ea6b259a21590d7dbe",
+        "type": "IMPUTATION"
     },
     {
         "id": "1ea935ec-e767-4a18-bbd5-b5f66855f4f3",
@@ -1032,6 +1296,14 @@
         "type": "FILE_MANIPULATION"
     },
     {
+        "id": "0a9936f3-7784-4697-82f0-2a5fcc744c16",
+        "name": "Categorical imputer",
+        "version": "0.6.0",
+        "python_path": "d3m.primitives.data_transformation.imputer.DistilCategoricalImputer",
+        "digest": "ab7a642e4fdb5f07feb532207e599550c73c900a841d66e7fa4d5330e82d46af",
+        "type": "IMPUTATION"
+    },
+    {
         "id": "39ae30f7-39ed-40af-8679-5cf108499605",
         "name": "Label decoder for UnseenLabelEncoderPrimitive",
         "version": "0.1.0",
@@ -1150,6 +1422,30 @@
         "python_path": "d3m.primitives.data_transformation.numeric_range_filter.Common",
         "digest": "3c0de491e55234bf5ceba57e1f4efad01192c1850c8d8944120ee41cd5ac23e9",
         "type": "ARRAY_SLICING"
+    },
+    {
+        "id": "d3d421cb-9601-43f0-83d9-91a9c4199a06",
+        "name": "One-hot encoder",
+        "version": "0.6.0",
+        "python_path": "d3m.primitives.data_transformation.one_hot_encoder.DistilOneHotEncoder",
+        "digest": "ed7e3c92a20ff21d9befae760a85bb86de632310e08667d29d6ffb61330b63f3",
+        "type": "CATEGORICAL_ENCODER"
+    },
+    {
+        "id": "eaec420d-46eb-4ddf-a2cd-b8097345ff3e",
+        "name": "One-hot maker",
+        "version": "0.3.0",
+        "python_path": "d3m.primitives.data_transformation.one_hot_encoder.MakerCommon",
+        "digest": "276b7dcd65c717fdd29386100b89718ea478630eab92930fc50964bf31214fb7",
+        "type": "CATEGORICAL_ENCODER"
+    },
+    {
+        "id": "f6315ca9-ca39-4e13-91ba-1964ee27281c",
+        "name": "Pandas one hot encoder",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_transformation.one_hot_encoder.PandasCommon",
+        "digest": "0e02164ab914ec3ede5c54412085996672e3dc3dd94c0555b697f81b935b4527",
+        "type": "CATEGORICAL_ENCODER"
     },
     {
         "id": "fe87544d-ef93-48d0-b420-76768d351f39",
@@ -1304,6 +1600,14 @@
         "type": "DATA_CONVERSION"
     },
     {
+        "id": "DSBox-unary-encoder",
+        "name": "DSBox Unary Data Encoder",
+        "version": "1.5.3",
+        "python_path": "d3m.primitives.data_transformation.unary_encoder.DSBOX",
+        "digest": "49d5d7a382266490d01214f568b70cefa35dd9a34863383a83d44a25e203b417",
+        "type": "CATEGORICAL_ENCODER"
+    },
+    {
         "id": "dsbox-vertical-concat",
         "name": "DSBox vertically concat",
         "version": "1.5.3",
@@ -1325,6 +1629,14 @@
         "version": "0.2.0",
         "python_path": "d3m.primitives.dimensionality_reduction.principal_component_analysis.UBC",
         "digest": "7dc58babf575d1f4f59883758f1e335d077c5c0306b75b55d25ebbe173355a7c",
+        "type": "DIMENSIONALITY_REDUCTION"
+    },
+    {
+        "id": "15586787-80d5-423e-b232-b61f55a117ce",
+        "name": "tsne",
+        "version": "1.0.0",
+        "python_path": "d3m.primitives.dimensionality_reduction.t_distributed_stochastic_neighbor_embedding.Tsne",
+        "digest": "bf88d2a50018ba32430910154ee79992558b5175a91cd2cd46993c30c4cf769e",
         "type": "DIMENSIONALITY_REDUCTION"
     },
     {
@@ -1456,6 +1768,22 @@
         "type": "AUDIO_FEATURIZER"
     },
     {
+        "id": "5df70f68-b78f-4104-81ab-a935f4007316",
+        "name": "Bag of Characters",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.feature_extraction.boc.UBC",
+        "digest": "923e0e49036de6dc68c624bc22f2e930e7dc124ce68924c13ad8794b7fa19881",
+        "type": "TEXT_FEATURIZER"
+    },
+    {
+        "id": "21e73615-de5c-47e2-b52b-fa8c7e62f74f",
+        "name": "Bag of Words",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.feature_extraction.bow.UBC",
+        "digest": "d88a4d2c670e77a76eafaa9b7e566c25ff3aecae906bbd469f75584aee6266bc",
+        "type": "TEXT_FEATURIZER"
+    },
+    {
         "id": "5335758b-9977-4d53-a3d1-e33a352d214d",
         "name": "Convolutional Neural Network",
         "version": "0.2.0",
@@ -1502,6 +1830,14 @@
         "python_path": "d3m.primitives.feature_extraction.multitable_featurization.DSBOX",
         "digest": "3f5804bb0665ab7804598dbcf4634a151e8ccef8f751552ba31ee95901f0872a",
         "type": "FEATURE_EXTRACTION"
+    },
+    {
+        "id": "cf450079-9333-4a3f-aed4-b77a4e8c7be7",
+        "name": "sent2vec_wrapper",
+        "version": "1.3.0",
+        "python_path": "d3m.primitives.feature_extraction.nk_sent2vec.Sent2Vec",
+        "digest": "165d10d5513527ba7ec3429ca9e8cf6b3926cc6914e37192180e92b3042bd67e",
+        "type": "TEXT_FEATURIZER"
     },
     {
         "id": "2b39791f-03aa-41ea-b370-abdd043a8887",
@@ -1568,6 +1904,14 @@
         "type": "FEATURE_EXTRACTION"
     },
     {
+        "id": "fefcb78f-c2f5-4557-a23b-0910b2127769",
+        "name": "Tfidf Transformer",
+        "version": "0.1.4",
+        "python_path": "d3m.primitives.feature_extraction.tfidf_vectorizer.BBNTfidfTransformer",
+        "digest": "00b7baac64cf3e5d64d5b2df6a1253605e15831e66696008881136f7a7d0d2fc",
+        "type": "TEXT_FEATURIZER"
+    },
+    {
         "id": "dsbox-featurizer-image-vgg16",
         "name": "DSBox Image Featurizer VGG16",
         "version": "1.5.3",
@@ -1590,6 +1934,46 @@
         "python_path": "d3m.primitives.feature_extraction.yolo.DSBOX",
         "digest": "01531a7d68c90966261ad232c88238573264432b676e99b0c1fc23a798c72403",
         "type": "OBJECT_DETECTION"
+    },
+    {
+        "id": "4d46e77b-9c29-4631-b382-02333e928f10",
+        "name": "JMIplus_auto feature selector",
+        "version": "v2020.5.18",
+        "python_path": "d3m.primitives.feature_selection.joint_mutual_information.AutoRPI",
+        "digest": "f3ee828d741c8844a2321420a4d388c730a9823a6897b01a4e7b714901a4d224",
+        "type": "FEATURE_SELECTION"
+    },
+    {
+        "id": "04573880-d64f-4791-8932-52b7c3877639",
+        "name": "PCA Features",
+        "version": "3.1.2",
+        "python_path": "d3m.primitives.feature_selection.pca_features.Pcafeatures",
+        "digest": "161e2f5c20263af00f1c7b8fbb690ffc39a830ea55d614eea06a3276d7c68a2f",
+        "type": "DIMENSIONALITY_REDUCTION"
+    },
+    {
+        "id": "ef6f3887-b253-4bfd-8b35-ada449efad0c",
+        "name": "RF Features",
+        "version": "3.1.2",
+        "python_path": "d3m.primitives.feature_selection.rffeatures.Rffeatures",
+        "digest": "923e16b8fd89cdceac9342d1b8eec5da6394ddca6db6a3591100396d6ed7d0be",
+        "type": "FEATURE_SELECTION"
+    },
+    {
+        "id": "215f554e-15f4-4174-9743-03cddad91dc4",
+        "name": "S2TMBplus feature selector",
+        "version": "v2020.5.18",
+        "python_path": "d3m.primitives.feature_selection.score_based_markov_blanket.RPI",
+        "digest": "df1083c09fd827f7f293ee30d723b08806e9ff9b356e9b80220b207259f8f692",
+        "type": "FEATURE_SELECTION"
+    },
+    {
+        "id": "9d1a2e58-5f97-386c-babd-5a9b4e9b6d6c",
+        "name": "STMBplus_auto feature selector",
+        "version": "v2020.5.18",
+        "python_path": "d3m.primitives.feature_selection.simultaneous_markov_blanket.AutoRPI",
+        "digest": "2528d29b7f03dcb65669dc6e9d4440fada0c61b834e2b2064ac8b7832cd66d1b",
+        "type": "FEATURE_SELECTION"
     },
     {
         "id": "f32dcb25-4cd0-4bb9-9408-ade1edfa2b53",
@@ -1688,6 +2072,30 @@
         "type": "METALEARNING"
     },
     {
+        "id": "a3d490a4-ef39-4de1-be02-4c43726b3b24",
+        "name": "Gaussian Latent Dirichlet Allocation Topic Modelling",
+        "version": "3.1.1",
+        "python_path": "d3m.primitives.natural_language_processing.glda.Fastlvm",
+        "digest": "6020d8419cc66c61a6144fd879d4603e38c002462631b2d77859f4bb6c2643e4",
+        "type": "NATURAL_LANGUAGE_PROCESSING"
+    },
+    {
+        "id": "e582e738-2f7d-4b5d-964f-022d15f19018",
+        "name": "Hierarchical Dirichlet Process Topic Modelling",
+        "version": "3.1.1",
+        "python_path": "d3m.primitives.natural_language_processing.hdp.Fastlvm",
+        "digest": "4b55a4e918238c6adbd3f6baeb9986dfbce699329a8d9b9aba26e3a6b391b996",
+        "type": "NATURAL_LANGUAGE_PROCESSING"
+    },
+    {
+        "id": "f410b951-1cb6-481c-8d95-2d97b31d411d",
+        "name": "Latent Dirichlet Allocation Topic Modelling",
+        "version": "3.1.1",
+        "python_path": "d3m.primitives.natural_language_processing.lda.Fastlvm",
+        "digest": "26abce5f2f2e6fb2e56b017fa657d53e89506ddbbf0d15c5a5bc011c6586d5d0",
+        "type": "NATURAL_LANGUAGE_PROCESSING"
+    },
+    {
         "id": "dsbox-multi-table-feature-scaler",
         "name": "DSBox feature scaler",
         "version": "1.5.3",
@@ -1776,11 +2184,99 @@
         "type": "OPERATOR"
     },
     {
+        "id": "23b044e9-32df-4bf8-aedd-9040d928416c",
+        "name": "Canonical Correlation Forests Regressor",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.regression.canonical_correlation_forests.UBC",
+        "digest": "8e3652f45059d9c92179a644b7e256244b29c9738d3638c99f4968258af90ea6",
+        "type": "REGRESSION"
+    },
+    {
+        "id": "92360c43-6e6f-4ff3-b1e6-5851792d8fcc",
+        "name": "Nearest Neighbor Regressor with Cover Trees",
+        "version": "3.1.1",
+        "python_path": "d3m.primitives.regression.cover_tree.Fastlvm",
+        "digest": "9bc6d4f75191fbadf7c53cecc2e7e2ec2b743ce6b7d8203539555fac62377d29",
+        "type": "REGRESSION"
+    },
+    {
         "id": "18e63b10-c5b7-34bc-a670-f2c831d6b4bf",
         "name": "EchoLinearRegression",
         "version": "1.0.0",
         "python_path": "d3m.primitives.regression.echo_linear.DSBOX",
         "digest": "d0c1a63436f742afbe690d8bee4130a7eaa68b9c32a798f7c6564add6a01af4e",
+        "type": "REGRESSION"
+    },
+    {
+        "id": "05dce570-ce88-45f6-a270-72dd10bc001c",
+        "name": "Global Causal Discovery",
+        "version": "v2020.5.18",
+        "python_path": "d3m.primitives.regression.global_causal_discovery.RegressorRPI",
+        "digest": "9a8dc82881f62d25ada071f4d8bd07ff79bd18c1903ecda155c198d20b9d21a2",
+        "type": "REGRESSION"
+    },
+    {
+        "id": "7288e169-5c2b-434a-96f8-cb2144e7f9cc",
+        "name": "Bayesian Linear Regression",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.regression.linear_regression.UBC",
+        "digest": "e490a12cdfbb341d6849394c87709442d1fd4ab488dc8ec1be462a23bc52fb1e",
+        "type": "REGRESSION"
+    },
+    {
+        "id": "4a0336ae-63b9-4a42-860e-86c5b64afbdd",
+        "name": "Monomial Regressor",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.regression.monomial.Test",
+        "digest": "2264018941dc746d9c04a72bde52a8753360b238638626850c0afecfca7b09ee",
+        "type": "REGRESSION"
+    },
+    {
+        "id": "73c21d0c-8364-4bd2-ab6b-06c53f251674",
+        "name": "Neural Network Regressor",
+        "version": "0.2.0",
+        "python_path": "d3m.primitives.regression.multilayer_perceptron.UBC",
+        "digest": "cd0146cc1d425bc1f28cad99cdb96b2942fd3c1bc100bb220475a67007e32c09",
+        "type": "REGRESSION"
+    },
+    {
+        "id": "90d9eefc-2db3-4738-a0e7-72eedab2d93a",
+        "name": "RFM Preconditioned Gaussian Kernel Ridge Regression",
+        "version": "3.0.2",
+        "python_path": "d3m.primitives.regression.rfm_precondition_ed_gaussian_krr.RFMPreconditionedGaussianKRR",
+        "digest": "1d3dda3bf1116f0c532510b705a1d17001ac03de2f72cf50c5e3ab53e8c39ceb",
+        "type": "REGRESSION"
+    },
+    {
+        "id": "c7a35a32-444c-4530-aeb4-e7a95cbe2cbf",
+        "name": "RFM Preconditioned Polynomial Kernel Ridge Regression",
+        "version": "3.0.2",
+        "python_path": "d3m.primitives.regression.rfm_precondition_ed_polynomial_krr.RFMPreconditionedPolynomialKRR",
+        "digest": "a6d1c16bac5350c7ae537a298481d845bdb6c2dcdc87eecb0d6a61d268112d12",
+        "type": "REGRESSION"
+    },
+    {
+        "id": "2a581b8d-baf0-4278-842e-082b796f3edd",
+        "name": "find projections",
+        "version": "2.3.1",
+        "python_path": "d3m.primitives.regression.search_hybrid_numeric.Find_projections",
+        "digest": "fd09e72134dbab10e2b6b87fc98904535b0ea6f6e51656c2ffb7754a3518e7e0",
+        "type": "REGRESSION"
+    },
+    {
+        "id": "fbc8d328-a553-4289-a21c-b1407a21a900",
+        "name": "find projections numeric",
+        "version": "2.3.1",
+        "python_path": "d3m.primitives.regression.search_numeric.Find_projections",
+        "digest": "05db14b364d9a2e68582e0125ec3665265eabdb1a4b983df3aeb97824d8e7716",
+        "type": "REGRESSION"
+    },
+    {
+        "id": "79a494ee-22a2-4768-8dcb-aa282486c5ef",
+        "name": "Tensor Machine Regularized Least Squares",
+        "version": "3.0.2",
+        "python_path": "d3m.primitives.regression.tensor_machines_regularized_least_squares.TensorMachinesRegularizedLeastSquares",
+        "digest": "29db0231e6d4159b93b72bcdd0f1bc8de2205a2afb3206cdd89ecc36e8eb83ae",
         "type": "REGRESSION"
     },
     {
