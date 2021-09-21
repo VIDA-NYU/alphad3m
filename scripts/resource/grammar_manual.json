@@ -1,0 +1,26 @@
+{"185_baseball_MIN_METADATA": {
+        "search_id": "d26e5805-08ed-4ded-8dc9-87facb0653c3",
+        "task": "CLASSIFICATION_MULTICLASS_TABULAR",
+        "search_time": "0:03:22.247795",
+        "pipelines": 3,
+        "best_time": "0:01:04.138656",
+        "best_score": 0.646089733039835,
+        "all_scores": [
+            {
+                "id": "cb78aa55-9f73-42d1-9890-767c4cb8a39b",
+                "score": 0.646089733039835,
+                "time": "0:03:20.069441"
+            },
+            {
+                "id": "08d0d4aa-6bb2-4c4c-a6cc-9e47ec9d0ea2",
+                "score": 0.6248424643144727,
+                "time": "0:01:04.138656"
+            },
+            {
+                "id": "e7d58bc7-0f1d-4a63-9802-ad21435ef84d",
+                "score": 0.3170413659898891,
+                "time": "0:02:24.126050"
+            }
+        ]
+    }
+}
