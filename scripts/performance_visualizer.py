@@ -3,12 +3,13 @@ import altair as alt
 
 
 def load_search_performances(dataset, file_path, method):
-    search_results = {'method': [], 'score': [], 'time': []}
+    search_results = {'dataset': [], 'method': [], 'score': [], 'time': []}
 
     with open(file_path) as fin:
         search_data = json.load(fin)
 
     for pipeline in search_data[dataset]['all_scores']:
+        search_results['dataset'].append(dataset)
         search_results['method'].append(method)
         search_results['score'].append(pipeline['score'])
         search_results['time'].append(pipeline['time'])
