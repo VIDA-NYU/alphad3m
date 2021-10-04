@@ -24,6 +24,9 @@
     "AUDIO_MIXING": [
         "d3m.primitives.data_preprocessing.channel_averager.ChannelAverager"
     ],
+    "AUDIO_READER": [
+        "d3m.primitives.data_transformation.audio_reader.DistilAudioDatasetLoader"
+    ],
     "CATEGORICAL_ENCODER": [
         "d3m.primitives.data_transformation.one_hot_encoder.SKlearn",
         "d3m.primitives.data_transformation.encoder.DSBOX"
@@ -201,7 +204,6 @@
     "FILE_MANIPULATION": [
         "d3m.primitives.data_preprocessing.dataset_text_reader.DatasetTextReader",
         "d3m.primitives.data_transformation.audio_reader.Common",
-        "d3m.primitives.data_transformation.audio_reader.DistilAudioDatasetLoader",
         "d3m.primitives.data_transformation.csv_reader.Common",
         "d3m.primitives.data_transformation.image_reader.Common",
         "d3m.primitives.data_transformation.satellite_image_loader.DistilSatelliteImageLoader",
