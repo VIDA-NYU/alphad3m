@@ -1,31 +1,41 @@
 {
     "124_120_mnist_8747": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Integer",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
     "124_138_cifar100_1858": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Integer",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
     "124_16_fashion_mnist": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Integer",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
     "124_174_cifar10_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Integer",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
     "124_188_usps_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Integer",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
@@ -197,13 +207,19 @@
     },
     "313_spectrometer": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Float",
+            "http://schema.org/Integer",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
     "313_spectrometer_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Float",
+            "http://schema.org/Integer",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
@@ -261,15 +277,21 @@
     },
     "4550_MiceProtein": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Enumeration",
+            "http://schema.org/Float",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
-        "missing_values": false
+        "missing_values": true
     },
     "4550_MiceProtein_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Enumeration",
+            "http://schema.org/Float",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
-        "missing_values": false
+        "missing_values": true
     },
     "49_facebook_MIN_METADATA": {
         "feature_types": [
@@ -381,9 +403,15 @@
     },
     "JIDO_SOHR_Tab_Articles_8569": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Boolean",
+            "http://schema.org/DateTime",
+            "http://schema.org/Enumeration",
+            "http://schema.org/Text",
+            "http://schema.org/URL",
+            "http://schema.org/identifier",
+            "https://metadata.datadrivendiscovery.org/types/MissingData"
         ],
-        "missing_values": false
+        "missing_values": true
     },
     "LL0_1100_popularkids": {
         "feature_types": [
@@ -469,13 +497,22 @@
     },
     "LL1_336_MS_Geolife_transport_mode_prediction_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/DateTime",
+            "http://schema.org/Enumeration",
+            "http://schema.org/Float",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
     "LL1_336_MS_Geolife_transport_mode_prediction_separate_lat_lon_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/DateTime",
+            "http://schema.org/Enumeration",
+            "http://schema.org/Float",
+            "http://schema.org/identifier",
+            "http://schema.org/latitude",
+            "http://schema.org/longitude"
         ],
         "missing_values": false
     },
@@ -506,13 +543,17 @@
     },
     "LL1_736_population_spawn_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Enumeration",
+            "http://schema.org/Integer",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
     "LL1_736_population_spawn_simpler_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Enumeration",
+            "http://schema.org/Integer",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
@@ -527,7 +568,11 @@
     },
     "LL1_ACLED_TOR_online_behavior_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/DateTime",
+            "http://schema.org/Enumeration",
+            "http://schema.org/Integer",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
@@ -590,7 +635,9 @@
     },
     "LL1_ElectricDevices_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Integer",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
@@ -630,7 +677,9 @@
     },
     "LL1_GT_actor_group_association_prediction_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Float",
+            "http://schema.org/Integer",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
@@ -678,9 +727,13 @@
     },
     "LL1_MITLL_synthetic_vora_E_2538": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Boolean",
+            "http://schema.org/Enumeration",
+            "http://schema.org/Float",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
-        "missing_values": false
+        "missing_values": true
     },
     "LL1_Meat_MIN_METADATA": {
         "feature_types": [
@@ -709,19 +762,26 @@
     },
     "LL1_PHEM_weeklyData_malnutrition_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/DateTime",
+            "http://schema.org/Enumeration",
+            "http://schema.org/Integer",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
     "LL1_TXT_CLS_3746_newsgroup_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Enumeration",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
     "LL1_TXT_CLS_SST_Binary": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Boolean",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
@@ -791,13 +851,18 @@
     },
     "LL1_ViEWS_PGM_S1": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Float",
+            "http://schema.org/Integer",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
     "LL1_bigearth_landuse_detection": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/DateTime",
+            "http://schema.org/Enumeration",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
@@ -862,25 +927,38 @@
     },
     "LL1_terra_canopy_height_long_form_s4_70_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Enumeration",
+            "http://schema.org/Integer",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
     "LL1_terra_canopy_height_long_form_s4_80_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Enumeration",
+            "http://schema.org/Integer",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
     "LL1_terra_canopy_height_long_form_s4_90_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Enumeration",
+            "http://schema.org/Integer",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
     "LL1_terra_leaf_angle_mean_long_form_s4_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Enumeration",
+            "http://schema.org/Float",
+            "http://schema.org/Integer",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
@@ -894,13 +972,17 @@
     },
     "SEMI_1040_sylva_prior": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Boolean",
+            "http://schema.org/Integer",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
     "SEMI_1040_sylva_prior_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Boolean",
+            "http://schema.org/Integer",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
@@ -924,15 +1006,23 @@
     },
     "SEMI_1053_jm1": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Boolean",
+            "http://schema.org/Enumeration",
+            "http://schema.org/Float",
+            "http://schema.org/Integer",
+            "http://schema.org/identifier"
         ],
-        "missing_values": false
+        "missing_values": true
     },
     "SEMI_1053_jm1_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Boolean",
+            "http://schema.org/Enumeration",
+            "http://schema.org/Float",
+            "http://schema.org/Integer",
+            "http://schema.org/identifier"
         ],
-        "missing_values": false
+        "missing_values": true
     },
     "SEMI_1217_click_prediction_small_MIN_METADATA": {
         "feature_types": [
@@ -945,13 +1035,17 @@
     },
     "SEMI_1459_artificial_characters": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Float",
+            "http://schema.org/Integer",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
     "SEMI_1459_artificial_characters_MIN_METADATA": {
         "feature_types": [
-            "http://schema.org/Text"
+            "http://schema.org/Float",
+            "http://schema.org/Integer",
+            "http://schema.org/identifier"
         ],
         "missing_values": false
     },
@@ -1033,6 +1127,16 @@
         "missing_values": false
     },
     "uu3_world_development_indicators_MIN_METADATA": {
+        "feature_types": [
+            "http://schema.org/DateTime",
+            "http://schema.org/Enumeration",
+            "http://schema.org/Float",
+            "http://schema.org/Text",
+            "http://schema.org/identifier"
+        ],
+        "missing_values": false
+    },
+    "uu3_world_development_indicators_raw": {
         "feature_types": [
             "http://schema.org/DateTime",
             "http://schema.org/Enumeration",
