@@ -2,19 +2,22 @@
     "124_120_mnist_8747": {
         "task_keywords": [
             "classification",
-            "multiClass"
+            "multiClass",
+            "image"
         ]
     },
     "124_138_cifar100_1858": {
         "task_keywords": [
             "classification",
-            "multiClass"
+            "multiClass",
+            "image"
         ]
     },
     "124_16_fashion_mnist": {
         "task_keywords": [
             "classification",
-            "multiClass"
+            "multiClass",
+            "image"
         ]
     },
     "124_174_cifar10_MIN_METADATA": {
