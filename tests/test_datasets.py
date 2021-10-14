@@ -36,7 +36,7 @@ D3MSTATICDIR = os.environ.get('D3MSTATICDIR')
 def search_pipelines(datasets, time_bound=10, use_template=False):
     search_results_path = join(D3MOUTPUTDIR, 'temp', 'search_results.json')
     search_results = load_search_results(search_results_path)
-    channel = grpc.insecure_channel('localhost:45042')
+    channel = grpc.insecure_channel('localhost:{0}'.format(os.environ.get('D3MPORT', 45042)))
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
     size = len(datasets)
     pipeline_template = None

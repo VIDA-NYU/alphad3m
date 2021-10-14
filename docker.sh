@@ -28,6 +28,9 @@ case "$1" in
     ta2ta3)
         MODE=ta2ta3
         INPUT="$2"
+        if [ "x${D3MPORT:-}" = x ]; then
+          D3MPORT=45042
+        fi
         shift 2
     ;;
     *)
@@ -39,7 +42,7 @@ case "$1" in
 esac
 
 docker run -ti --rm \
-    -p 45042:45042 \
+    -p ${D3MPORT}:45042 \
     -e D3MRUN="$MODE" \
     -e D3MINPUTDIR=/input \
     -e D3MOUTPUTDIR=/output \
