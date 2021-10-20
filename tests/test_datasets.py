@@ -1,6 +1,7 @@
 import os
 import csv
 import json
+import sys
 import time
 import grpc
 import logging
@@ -36,7 +37,7 @@ D3MSTATICDIR = os.environ.get('D3MSTATICDIR')
 def search_pipelines(datasets, time_bound=10, use_template=False):
     search_results_path = join(D3MOUTPUTDIR, 'temp', 'search_results.json')
     search_results = load_search_results(search_results_path)
-    channel = grpc.insecure_channel('localhost:45042')
+    channel = grpc.insecure_channel('localhost:{0}'.format(os.environ.get('D3MPORT', 45042)))
     core = LoggingStub(pb_core_grpc.CoreStub(channel), logger)
     size = len(datasets)
     pipeline_template = None
@@ -378,6 +379,7 @@ def evaluate_openml_tasks():
 
 if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
-    datasets = ['185_baseball_MIN_METADATA']
+    if len(sys.argv) > 1:
+        datasets = sys.argv[1:]
     search_pipelines(datasets, 5)
     evaluate_pipelines(datasets)
