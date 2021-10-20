@@ -151,7 +151,8 @@ def evaluate_pipelines(datasets, top=10, option='fit-score'):
         #create_dupms(search_id, performance_top_pipelines.keys())
 
 
-def create_command(option, pipeline_id, pipeline_path, output_path, problem_path, train_path, test_path, score_path=None):
+def create_command(option, pipeline_id, pipeline_path, output_path, problem_path, train_path, test_path,
+                   score_path=None, expose_outputs=False):
     command = [
         'python3', '-m', 'd3m',
         'runtime',
@@ -162,11 +163,12 @@ def create_command(option, pipeline_id, pipeline_path, output_path, problem_path
         '--pipeline', pipeline_path,
         '--problem', problem_path,
         '--input', train_path,
-        '--test-input', test_path,
-        '-E', join(D3MOUTPUTDIR, 'temp', 'runtime_output', pipeline_id),
+        '--test-input', test_path
         #'--output-run', join(D3MOUTPUTDIR, search_id, 'pipeline_runs', 'run_%s.yml' % top_pipeline_id)
     ]
 
+    if expose_outputs:
+        command += ['-E', join(D3MOUTPUTDIR, 'temp', 'runtime_output', pipeline_id)]
     if option == 'fit-produce':
         command += ['--output', output_path]
     elif option == 'fit-score':
@@ -223,7 +225,7 @@ def create_dupms(search_id, top_pipelines):
         fout.write('\n'.join(pipeline_runs_list))
 
 
-def create_inputs_pofiler(dataset):
+def create_inputs_pipelineprofiler(dataset):
     search_results_path = join(D3MOUTPUTDIR, 'temp', 'search_results.json')
     search_results = load_search_results(search_results_path)
     search_id = search_results[dataset]['search_id']
@@ -270,7 +272,6 @@ def run_describe():
         'pipeline',
         'describe',
         pipeline_path,
-
     ]
 
     return_code = subprocess.call(command)
@@ -359,10 +360,9 @@ def score_pipeline(task, json_pipeline):
 
 def evaluate_openml_tasks():
     directory_path = join(D3MOUTPUTDIR, 'openml_pipelines')
-    tasks = sorted(os.listdir(directory_path))
+    tasks = sorted([x for x in os.listdir(directory_path) if os.path.isdir(join(directory_path, x))])
     scores = {}
     for task in tasks:
-        if task in {'.DS_Store'}: continue
         try:
             with open(join(directory_path, task, 'pipeline.json')) as fin:
                 json_pipeline = json.load(fin)
