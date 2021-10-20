@@ -2,11 +2,10 @@ import os
 import re
 import logging
 import pandas as pd
+from bs4 import BeautifulSoup
 from os.path import join, exists
 from prettytable import PrettyTable
-from bs4 import BeautifulSoup
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
 ALL_TA2S = {'NYU-TA2', 'CMU-TA2', 'UCB-TA2', 'Uncharted-TA2', 'SRI-TA2', 'Texas A&M-TA2', 'D3M ENSEMBLE-TA2', 'NEW-NYU-TA2'}
@@ -91,9 +90,6 @@ def get_leaderboard(leaderboard_path):
             baseline = cells[7].get_text()
             metric = cells[9].get_text()
 
-            #if 'TA1' in team:
-            #    team = 'TA1'
-
             if team == 'NYU-TA2' and task_types[dataset_name] not in {'TABULAR_CLASSIFICATION', 'TABULAR_REGRESSION'}:
                 team = None  # We consider NYU-TA2 as the system that supports only classification and regression
 
@@ -176,7 +172,7 @@ def calculate_statistics(leaderboard):
     for team in team_statistics:
         team_statistics[team]['avg_rank'] = round(team_statistics[team]['avg_rank'] / total_datasets, 3)
 
-    team_statistics = sorted(team_statistics.items(), key=lambda x:x[1]['winner_pipelines'], reverse=True)
+    team_statistics = sorted(team_statistics.items(), key=lambda x: x[1]['winner_pipelines'], reverse=True)
 
     table = PrettyTable()
     table.field_names = ['Team', 'Winner Pipelines', 'Avg. Rank']
