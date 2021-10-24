@@ -1,4 +1,9 @@
 SQLAlchemy==1.2.16
+d3m-automl-rpc==1.0.0
+#d3m-automl-rpc @ git+https://gitlab.com/datadrivendiscovery/automl-rpc.git@dev-dist-python
+datamart-materialize==0.6.1
+datamart-profiler==0.9
+nltk==3.4.5
 numpy==1.18.2
 scipy==1.4.1
 smac==0.13.1
