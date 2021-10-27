@@ -36,12 +36,6 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
     comm -23 prev_reqs.txt new_reqs.txt | while read i; do echo "Removed package $i" >&2; exit 1; done && \
     rm prev_reqs.txt new_reqs.txt
 
-RUN pip3 install d3m-automl-rpc==1.0.0
-#RUN pip3 install git+https://gitlab.com/datadrivendiscovery/automl-rpc.git@dev-dist-python
-RUN pip3 install nltk==3.4.5
-RUN pip3 install datamart-profiler==0.9
-RUN pip3 install datamart-materialize==0.6.1
-
 COPY eval.sh /usr/local/bin/eval.sh
 
 ARG VERSION
