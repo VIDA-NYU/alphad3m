@@ -7,7 +7,7 @@ from setuptools import setup
 os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
 
-with io.open('README.rst', encoding='utf-8') as fp:
+with io.open('README.md', encoding='utf-8') as fp:
     description = fp.read()
 req = [
     'grpcio',
@@ -17,20 +17,24 @@ req = [
     'scikit-image',
     'pandas',
     'smac']
-setup(name='d3m_ta2_nyu',
-      version='0.9',
-      packages=['d3m_ta2_nyu'],
-      package_data={'d3m_ta2_nyu': 'pipelines/*.yaml'},
+setup(name='alphad3m',
+      version='2020.12.08',
+      packages=['alphad3m'],
+      package_data={'alphad3m': ['pipelines/*.yaml']},
       entry_points={
           'console_scripts': [
-              'ta2_search = d3m_ta2_nyu.main:main_search',
-              'ta2_serve = d3m_ta2_nyu.main:main_serve',
-              'ta2_test = d3m_ta2_nyu.main:main_test']},
+              'ta2_search = alphad3m.main:main_search',
+              'ta2_serve = alphad3m.main:main_serve',
+              'ta2_test = alphad3m.main:main_test']},
       install_requires=req,
-      description="NYU's TA2 system",
+      description="AlphaD3M: NYU's AutoML System",
       long_description=description,
-      author="Remi Rampin, Raoni Lourenco, Roque Lopez",
-      author_email='remi.rampin@nyu.edu, raoni@nyu.edu, rlopez@nyu.edu',
-      maintainer="Remi Rampin, Raoni Lourenco, Roque Lopez",
-      maintainer_email='remi.rampin@nyu.edu, raoni@nyu.edu, rlopez@nyu.edu',
-      keywords=['datadrivendiscovery', 'automl', 'd3m', 'ta2', 'nyu'])
+      author="Remi Rampin, Roque Lopez, Raoni Lourenco",
+      author_email='remi.rampin@nyu.edu, rlopez@nyu.edu, raoni@nyu.edu',
+      maintainer="Remi Rampin, Roque Lopez, Raoni Lourenco",
+      maintainer_email='remi.rampin@nyu.edu, rlopez@nyu.edu, raoni@nyu.edu',
+      keywords=['datadrivendiscovery', 'automl', 'd3m', 'ta2', 'nyu'],
+      license='Apache-2.0',
+      classifiers=[
+          'License :: OSI Approved :: Apache Software License',
+      ])

@@ -1,22 +1,19 @@
 #!/bin/sh
 
-# Example train: ./docker.sh fast search seed_datasets_current/185_baseball/TRAIN ta2:latest
-# Example ta2ta3: ./docker.sh ta2ta3 seed_datasets_current/185_baseball/ ta2:latest
-# Example test: ./docker.sh test seed_datasets_current/185_baseball/TEST ta2:latest
+# Example search: ./docker.sh fast search seed_datasets_current/185_baseball/ alphad3m:latest
+# Example ta2ta3: ./docker.sh ta2ta3 seed_datasets_current/185_baseball/ alphad3m:latest
 
-# Change this if you're not Remi
-LOCAL_DATA_ROOT="/Users/rlopez/D3M/datasets"
-LOCAL_OUTPUT_ROOT="/Users/rlopez/D3M/tmp"
-LOCAL_STATIC_ROOT="/Users/rlopez/D3M/static"
+# You should have defined these enviroment variables: $LOCAL_INPUT_ROOT, $LOCAL_OUTPUT_ROOT and $LOCAL_STATIC_ROOT
 
 set -eu
 
 OPTS=""
-TIMEOUT=3
+TIMEOUT=10
+
 while true; do
     if [ "$1" = "fast" ]; then
         OPTS="$OPTS -e TA2_DEBUG_BE_FAST=1"
-        TIMEOUT=5
+        TIMEOUT=1
         shift
     else
         break
@@ -31,12 +28,10 @@ case "$1" in
     ta2ta3)
         MODE=ta2ta3
         INPUT="$2"
+        if [ "x${D3MPORT:-}" = x ]; then
+          D3MPORT=45042
+        fi
         shift 2
-    ;;
-    test)
-        MODE=test
-        INPUT="$2"
-        set -- "$3" bash -c "cd /output/executables; for i in *; do D3MTESTOPT=/output/executables/\$i eval.sh; done"
     ;;
     *)
         echo "Usage:\n  $(basename $0) search seed_datasets_current/185_baseball/TRAIN <image>" >&2
@@ -47,7 +42,7 @@ case "$1" in
 esac
 
 docker run -ti --rm \
-    -p 45042:45042 \
+    -p ${D3MPORT}:45042 \
     -e D3MRUN="$MODE" \
     -e D3MINPUTDIR=/input \
     -e D3MOUTPUTDIR=/output \
@@ -56,11 +51,12 @@ docker run -ti --rm \
     -e D3MRAM=4Gi \
     -e D3MTIMEOUT=$TIMEOUT \
     $OPTS \
-    -v "$PWD/d3m_ta2_nyu:/usr/src/app/d3m_ta2_nyu" \
+    -v "$PWD/alphaautoml:/usr/src/app/alphaautoml" \
+    -v "$PWD/alphad3m:/usr/src/app/alphad3m" \
     -v "$PWD/resource:/usr/src/app/resource" \
-    -v "$PWD/tests.py:/usr/src/app/tests.py"\
+    -v "$PWD/tests:/usr/src/app/tests"\
     -v "$PWD/eval.sh:/usr/local/bin/eval.sh"\
-    -v "$LOCAL_DATA_ROOT/${INPUT}:/input" \
+    -v "$LOCAL_INPUT_ROOT/${INPUT}:/input" \
     -v "$LOCAL_OUTPUT_ROOT:/output" \
     -v "$LOCAL_STATIC_ROOT:/static" \
     --name ta2_container \

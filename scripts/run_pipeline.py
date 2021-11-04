@@ -4,7 +4,7 @@ import os
 import sys
 import uuid
 
-from d3m_ta2_nyu.ta2 import D3mTa2
+from alphad3m.automl import AutoML
 
 
 if __name__ == '__main__':
@@ -16,7 +16,7 @@ if __name__ == '__main__':
         config = json.load(config_file)
     storage = config['temp_storage_root']
 
-    ta2 = D3mTa2(storage_root=storage,
+    ta2 = AutoML(storage_root=storage,
                  pipelines_considered=os.path.join(storage, 'pipelines_considered'),
                  executables_root=os.path.join(storage, 'executables'))
 
