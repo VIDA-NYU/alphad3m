@@ -89,6 +89,6 @@ performs hyperparameter optimization of the best pipelines using SMAC.
 
 For more information about how AlphaD3M works, see our papers:
 
-- [AlphaD3M: Machine Learning Pipeline Synthesis](https://cims.nyu.edu/~drori/alphad3m-paper.pdf)
+- [AlphaD3M: Machine Learning Pipeline Synthesis](https://arxiv.org/abs/2111.02508)
 
 - [Automatic Machine Learning by Pipeline Synthesis using Model-Based Reinforcement Learning and a Grammar](https://arxiv.org/abs/1905.10345)
