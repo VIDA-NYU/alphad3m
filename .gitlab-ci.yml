@@ -17,7 +17,6 @@ build_image:
   script:
     - curl -Lo /tmp/docker.tgz https://get.docker.com/builds/Linux/x86_64/docker-17.05.0-ce.tgz && tar -xf /tmp/docker.tgz -C /usr/local && rm /tmp/docker.tgz && export PATH=/usr/local/docker:$PATH && export DOCKER_HOST=tcp://docker:2375
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
-    - docker login -u ${D3M_GITLAB_USER} -p ${D3M_GITLAB_TOKEN} registry.datadrivendiscovery.org
     - INIT="$(< alphad3m/__init__.py)"; echo "$INIT" | sed 's/__version__ = .*$/__version__ = '"'$(git describe)'/" >alphad3m/__init__.py
     - docker build --cache-from $CI_REGISTRY_IMAGE:latest --cache-from $CI_REGISTRY_IMAGE:devel --cache-from $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME --build-arg BUILDKIT_INLINE_CACHE=1 -t $IMAGE .
     - |
