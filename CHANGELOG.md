@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.9.x (2021.xx.xx)
+0.10.dev0 (xxxx-xx-xx)
 ------------------
 * Added support to save and load pipelines.
 * Use timeout_run parameter to score pipelines during search.
