@@ -18,7 +18,7 @@ req = [
     'pandas',
     'smac']
 setup(name='alphad3m',
-      version='2020.12.08',
+      version='0.10.dev0',
       packages=['alphad3m'],
       package_data={'alphad3m': ['pipelines/*.yaml']},
       entry_points={
