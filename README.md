@@ -37,7 +37,7 @@ information, hit at K, R2, recall, mean reciprocal rank, precision, and precisio
 Installation
 ------------
 You can use AlphaD3M through [d3m-interface](https://d3m-interface.readthedocs.io/en/latest/).  d3m-interface is a 
-Python library to use D3M AutoML systems. This package works with Python 3.6 and  you need to have Docker installed on 
+Python library to use D3M AutoML systems. This package works with Python 3.6 through 3.8 and  you need to have Docker installed on 
 your operating system.
 
 You  can install the latest stable version of this library from [PyPI](https://pypi.org/project/d3m-interface/):
