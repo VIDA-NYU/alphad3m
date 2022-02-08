@@ -11,5 +11,3 @@ scikit-image==0.17.2
 torch==1.7
 torchvision
 PyYAML==5.1.2
-d3m==2021.12.19
-d3m-common-primitives==2022.1.5
