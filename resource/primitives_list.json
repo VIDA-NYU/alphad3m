@@ -560,6 +560,14 @@
         "type": "REGRESSION"
     },
     {
+        "id": "58d6d30b-877b-4404-98f0-54aa871f3287",
+        "name": "Distil Bert Text Classification Wrapper",
+        "version": "1.9.6",
+        "python_path": "d3m.primitives.classification.bert_classifier.DistilBertTextClassification",
+        "digest": "d3c7df79b61f6b75fa156c3b6361e93e745a1c3966a47eb72e3cb1a726e20c88",
+        "type": "CLASSIFICATION"
+    },
+    {
         "id": "7476950e-4373-4cf5-a852-7e16afb8e098",
         "name": "XGBoost DART classifier",
         "version": "0.1.0",
@@ -576,12 +584,60 @@
         "type": "DATA_AUGMENTATION"
     },
     {
+        "id": "dsbox-cleaning-featurizer",
+        "name": "DSBox Cleaning Featurizer",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.data_cleaning.cleaning_featurizer.DSBOX",
+        "digest": "0d36a3aa06279e6a963445bea710586eeb6c63c0caa02b3e3d266bdb6fbdfb73",
+        "type": "DATA_CONVERSION"
+    },
+    {
+        "id": "ebebb1fa-a20c-38b9-9f22-bc92bc548c19",
+        "name": "DSBox Greedy Imputer",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.data_cleaning.greedy_imputation.DSBOX",
+        "digest": "ecffe12156b27cb7b65f6e9822d705bd7a86426461b15a40592c911f2813a78d",
+        "type": "IMPUTATION"
+    },
+    {
+        "id": "f70b2324-1102-35f7-aaf6-7cd8e860acc4",
+        "name": "DSBox Iterative Regression Imputer",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.data_cleaning.iterative_regression_imputation.DSBOX",
+        "digest": "238cf4ef9191b54049ac3db1f15cdb6ef2942692a68dc710cfb63eaffadc5e0c",
+        "type": "IMPUTATION"
+    },
+    {
+        "id": "dsbox-multi-table-feature-labler",
+        "name": "DSBox feature labeler",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.data_cleaning.label_encoder.DSBOX",
+        "digest": "5738a0d511c9910afa9cc7808d41891802dfb2ad848d6876bf1e53ba297fae4d",
+        "type": "DATA_NORMALIZATION"
+    },
+    {
+        "id": "7894b699-61e9-3a50-ac9f-9bc510466667",
+        "name": "DSBox Mean Imputer",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.data_cleaning.mean_imputation.DSBOX",
+        "digest": "c0723231a8dc338f6ac5cd84293649e148cb426bb0244a8f6b416f5c95aedb87",
+        "type": "IMPUTATION"
+    },
+    {
         "id": "6c425897-6ffe-45b8-949f-002d872ccf12",
         "name": "Annotated tabular extractor",
         "version": "0.1.0",
         "python_path": "d3m.primitives.data_cleaning.tabular_extractor.Common",
         "digest": "a4c48e664e959ef1ba0cea2881b65e5f246b9a783f69f4f06b7741cf6c737d1b",
         "type": "IMPUTATION"
+    },
+    {
+        "id": "005941a3-e3ca-49d9-9e99-4f5566831acd",
+        "name": "Columns text reader",
+        "version": "1.9.6",
+        "python_path": "d3m.primitives.data_preprocessing.dataset_text_reader.DatasetTextReader",
+        "digest": "b01599fa4900f87a1bd0aeac5ae2d90d1937e717255835757c058a838b8fed19",
+        "type": "FILE_MANIPULATION"
     },
     {
         "id": "d7e14b12-abeb-42d8-942f-bdb077b4fd37",
@@ -605,6 +661,14 @@
         "version": "0.6.0",
         "python_path": "d3m.primitives.data_transformation.column_parser.Common",
         "digest": "b681b9785d13d64b2d9f4eddd857a7e8311e70de35fbda7fe33886314bb65c8d",
+        "type": "DATA_CONVERSION"
+    },
+    {
+        "id": "6fdcf530-2cfe-4e87-9d9e-b8770753e19c",
+        "name": "Autoflow Data Conditioner",
+        "version": "1.9.6",
+        "python_path": "d3m.primitives.data_transformation.conditioner.Conditioner",
+        "digest": "116a3c73e97e2c52081401a9cca6c803640dad15b74e05c4abcf4b7c4015c08e",
         "type": "DATA_CONVERSION"
     },
     {
@@ -704,6 +768,30 @@
         "type": "DATA_DENORMALIZATION"
     },
     {
+        "id": "dsbox-featurizer-do-nothing",
+        "name": "DSBox do-nothing primitive",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.data_transformation.do_nothing.DSBOX",
+        "digest": "000b35dadc71ca63b7948a355d7be7305c537874f5ddc96b894fcbae5fc01182",
+        "type": "NUMERICAL_METHOD"
+    },
+    {
+        "id": "dsbox-featurizer-do-nothing-dataset-version",
+        "name": "DSBox do-nothing primitive dataset version",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.data_transformation.do_nothing_for_dataset.DSBOX",
+        "digest": "03779abf2e7d23482b6602f02cfc247482e0c8ad23e39e1ca2bed44e2419ebfd",
+        "type": "NUMERICAL_METHOD"
+    },
+    {
+        "id": "18f0bb42-6350-3753-8f2d-d1c3da70f279",
+        "name": "ISI DSBox Data Encoder",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.data_transformation.encoder.DSBOX",
+        "digest": "f0089db99a5136a63996b6894e2b999c18fd0fb8fc7ed7e329bee3fb1a2a6599",
+        "type": "CATEGORICAL_ENCODER"
+    },
+    {
         "id": "81d7e261-e25b-4721-b091-a31cd46e99ae",
         "name": "Extracts columns",
         "version": "0.1.0",
@@ -742,6 +830,14 @@
         "python_path": "d3m.primitives.data_transformation.grouping_field_compose.Common",
         "digest": "22b6d7c37aeb0a15e14d3fd17d33b8e26555d7d63c23faa695e4c1c90ff5e6df",
         "type": "TIME_SERIES_GROUPER"
+    },
+    {
+        "id": "dsbox-horizontal-concat",
+        "name": "DSBox horizontal concat",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.data_transformation.horizontal_concat.DSBOX",
+        "digest": "1d42981b486021b0c1b428553232ebf77721458ee7ecff749f062ab00d3e9c97",
+        "type": "DATA_CONVERSION"
     },
     {
         "id": "aff6a77a-faa0-41c5-9595-de2e7f7c4760",
@@ -896,6 +992,22 @@
         "type": "DATA_CONVERSION"
     },
     {
+        "id": "d519cb7a-1782-4f51-b44c-58f0236e47c7",
+        "name": "Parses strings into their types",
+        "version": "1.9.6",
+        "python_path": "d3m.primitives.data_transformation.simple_column_parser.DataFrameCommon",
+        "digest": "ee2fe78b30eada760e8430b00376188d0e459c2cd19fbe8bbabc66700577b348",
+        "type": "DATA_CONVERSION"
+    },
+    {
+        "id": "DSBox-splitter",
+        "name": "DSBox Splitter",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.data_transformation.splitter.DSBOX",
+        "digest": "0ba2e9b52bd321991e2884d720bd411305d00dc55a1e70d5db8c938dcbe65383",
+        "type": "DATA_SPLITTING"
+    },
+    {
         "id": "48c99864-14f3-4a61-b3a6-e439f22825f6",
         "name": "Stack numpy arrays in a column",
         "version": "0.1.0",
@@ -918,6 +1030,38 @@
         "python_path": "d3m.primitives.data_transformation.text_reader.Common",
         "digest": "a4d620d21ee9ff4bdf22ffc892ec6709a0db6dd73399c670d8bab90b725ecec6",
         "type": "FILE_MANIPULATION"
+    },
+    {
+        "id": "dsbox-featurizer-timeseries-to-dataframe",
+        "name": "DSBox Timeseries Featurizer dataframe to List Transformer",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.data_transformation.time_series_to_list.DSBOX",
+        "digest": "7ee0357334b9413563658b681b68f4770271aba0f53bd40c0c7e2c575f091ae5",
+        "type": "TIME_SERIES_READER"
+    },
+    {
+        "id": "7ddf2fd8-2f7f-4e53-96a7-0d9f5aeecf93",
+        "name": "ISI DSBox To Numeric DataFrame",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.data_transformation.to_numeric.DSBOX",
+        "digest": "eccd312ca50da0f66b80320e112ec8830b07141961781fa65fc8b7375105a53a",
+        "type": "DATA_CONVERSION"
+    },
+    {
+        "id": "DSBox-unary-encoder",
+        "name": "DSBox Unary Data Encoder",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.data_transformation.unary_encoder.DSBOX",
+        "digest": "37afa722d2c32a471e1ba05b92962b38de5d811013382f766cfce915b1bb2a89",
+        "type": "CATEGORICAL_ENCODER"
+    },
+    {
+        "id": "dsbox-vertical-concat",
+        "name": "DSBox vertically concat",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.data_transformation.vertical_concatenate.DSBOX",
+        "digest": "04be03f4e0218be3b7bff7aba2afd2a4486bfe89e5646fda922966e2717d1d19",
+        "type": "DATA_CONVERSION"
     },
     {
         "id": "a29b0080-aeff-407d-9edb-0aa3eefbde01",
@@ -992,12 +1136,44 @@
         "type": "FEATURE_CONSTRUCTION"
     },
     {
+        "id": "dsbox-multi-table-featurization-aggregation",
+        "name": "DSBox Multiple Table Featurizer Aggregation",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.feature_extraction.multitable_featurization.DSBOX",
+        "digest": "9cf263b15159062b118973be2f98a3c60b2e3bb5ba450d71906a0aa6e4892092",
+        "type": "FEATURE_EXTRACTION"
+    },
+    {
+        "id": "dsbox.timeseries_featurization.random_projection",
+        "name": "DSBox random projection timeseries featurization ",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.feature_extraction.random_projection_timeseries_featurization.DSBOX",
+        "digest": "5202ca4040588ef2f73820a0fa5c1e011eb53b2bf5ecc750ce3fef2fbc891f4f",
+        "type": "TIME_SERIES_FEATURIZER"
+    },
+    {
+        "id": "03b1288c-d4f5-4fa8-9a49-32e82c5efaf2",
+        "name": "General Relational",
+        "version": "1.9.6",
+        "python_path": "d3m.primitives.learner.model.GeneralRelational",
+        "digest": "46a0e93fb24136aebf06c3420c8a5deeb1098506298352a46855778f6273f259",
+        "type": "LEARNER"
+    },
+    {
         "id": "915832a4-8059-438d-9118-f4fb4f7b0aaf",
         "name": "Compute meta-features",
         "version": "0.1.0",
         "python_path": "d3m.primitives.metalearning.metafeature_extractor.Common",
         "digest": "b07d644eae1aa6c796f67cbabb8ae4a26298b4f9bf2632aed0697966261c6f2e",
         "type": "METALEARNING"
+    },
+    {
+        "id": "dsbox-multi-table-feature-scaler",
+        "name": "DSBox feature scaler",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.normalization.iqr_scaler.DSBOX",
+        "digest": "e7a3aee70256173a13a240cabd40757ccd877e7b2991230144f579157f08bce3",
+        "type": "FEATURE_SCALING"
     },
     {
         "id": "dd580c45-9fbe-493d-ac79-6e9f706a3619",
@@ -1014,5 +1190,21 @@
         "python_path": "d3m.primitives.schema_discovery.profiler.Common",
         "digest": "4e4a19d3ea3e1f6c7667b98428fa8a98e49490c21f7a58ba2cf20834517b26ec",
         "type": "SCHEMA_DISCOVERY"
+    },
+    {
+        "id": "b2612849-39e4-33ce-bfda-24f3e2cb1e93",
+        "name": "DSBox Profiler",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.schema_discovery.profiler.DSBOX",
+        "digest": "f60716b8f60ea5f1a43cc960e27aa6bf6f4d7d5ae7a4e87e03535f191208ea12",
+        "type": "SCHEMA_DISCOVERY"
+    },
+    {
+        "id": "b2e4e8ea-76dc-439e-8e46-b377bf616a35",
+        "name": "DSBox Arima Primitive",
+        "version": "1.6.1",
+        "python_path": "d3m.primitives.time_series_forecasting.arima.DSBOX",
+        "digest": "6bfe784a38dce25f1432811a947d00032716602a96c84189aae03381db7552e9",
+        "type": "TIME_SERIES_FORECASTING"
     }
 ]
