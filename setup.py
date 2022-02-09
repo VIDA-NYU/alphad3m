@@ -11,6 +11,7 @@ with io.open('README.md', encoding='utf-8') as fp:
     description = fp.read()
 
 req = [
+    # Non-D3M dependencies:
     'SQLAlchemy==1.2.16',
     'datamart-materialize==0.6.1',
     'datamart-profiler==0.9',
@@ -23,6 +24,7 @@ req = [
     'torch==1.7',
     'PyYAML==5.1.2',
     'metalearn',
+    # D3M dependencies:
     'd3m==2021.12.19',
     'd3m-automl-rpc==1.2.0',
     'd3m-sklearn-wrap==2022.2.8',
