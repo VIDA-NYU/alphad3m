@@ -1,13 +1,12 @@
 from __future__ import print_function
-import sys
 import os
 import pickle
 import math
 import logging
 from copy import deepcopy
-sys.path.append('..')
-from ..Game import Game
-from .PipelineLogic import Board
+
+from alphad3m.pipeline_search.Game import Game
+from alphad3m.pipeline_search.pipeline.PipelineLogic import Board
 import numpy as np
 import traceback
 import time

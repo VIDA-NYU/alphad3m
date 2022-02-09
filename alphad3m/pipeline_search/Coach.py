@@ -1,10 +1,12 @@
 import logging
-from collections import deque
-from .Arena import Arena
-from .MCTS import MCTS
-import numpy as np
-from .utils import Bar, AverageMeter
 import time
+import numpy as np
+from collections import deque
+from alphad3m.pipeline_search.Arena import Arena
+from alphad3m.pipeline_search.MCTS import MCTS
+
+#from alphad3m.pipeline_search.utils import Bar, AverageMeter
+
 
 logger = logging.getLogger(__name__)
 
@@ -79,8 +81,8 @@ class Coach():
         for i in range(self.args.get('numIters')):
             # bookkeeping
             logger.info('------ITER ' + str(i+1) + '------')
-            eps_time = AverageMeter()
-            bar = Bar('Self Play', max=self.args.get('numEps'))
+            #eps_time = AverageMeter()
+            #bar = Bar('Self Play', max=self.args.get('numEps'))
             end = time.time()
 
             for eps in range(self.args.get('numEps')):
@@ -88,12 +90,12 @@ class Coach():
                 trainExamples += self.executeEpisode()
 
                 # bookkeeping + plot progress
-                eps_time.update(time.time() - end)
+                #eps_time.update(time.time() - end)
                 end = time.time()
-                bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(eps=eps+1, maxeps=self.args.get('numEps'), et=eps_time.avg,
-                                                                                                           total=bar.elapsed_td, eta=bar.eta_td)
-                bar.next()
-            bar.finish()
+                #bar.suffix = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(eps=eps+1, maxeps=self.args.get('numEps'), et=eps_time.avg,
+                #                                                                                           total=bar.elapsed_td, eta=bar.eta_td)
+                #bar.next()
+            #bar.finish()
             
             # training new network, keeping a copy of the old one
             self.nnet.save_checkpoint(folder=self.args.get('checkpoint'), filename='temp.pth.tar')

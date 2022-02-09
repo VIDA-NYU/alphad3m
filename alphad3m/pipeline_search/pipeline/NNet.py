@@ -6,16 +6,16 @@ import random
 import numpy as np
 import sys
 import logging
-sys.path.append('../../')
-from alphaautoml.alphaAutoMLEdit.utils import Bar, AverageMeter
-from alphaautoml.alphaAutoMLEdit.NeuralNet import NeuralNet
+
+#from alphad3m.pipeline_search.utils import Bar, AverageMeter
+from alphad3m.pipeline_search.NeuralNet import NeuralNet
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 
-from alphaautoml.alphaAutoMLEdit.pipeline.PipelineNNet import PipelineNNet as onnet
+from alphad3m.pipeline_search.pipeline.PipelineNNet import PipelineNNet as onnet
 
 logger = logging.getLogger(__name__)
 
@@ -45,14 +45,14 @@ class NNetWrapper(NeuralNet):
         for epoch in range(args.get('epochs')):
             logger.info('EPOCH ::: %s', str(epoch+1))
             self.nnet.train()
-            data_time = AverageMeter()
-            batch_time = AverageMeter()
-            pi_losses = AverageMeter()
-            v_losses = AverageMeter()
-            end = time.time()
+            #data_time = AverageMeter()
+            #batch_time = AverageMeter()
+            #pi_losses = AverageMeter()
+            #v_losses = AverageMeter()
+            #end = time.time()
 
             batch_size = args.get('batch_size')
-            bar = Bar('Training Net', max=int(len(examples)/batch_size))
+            #bar = Bar('Training Net', max=int(len(examples)/batch_size))
             batch_idx = 0
 
             while batch_idx < int(len(examples)/batch_size):
@@ -70,7 +70,7 @@ class NNetWrapper(NeuralNet):
 
 
                 # measure data loading time
-                data_time.update(time.time() - end)
+                #data_time.update(time.time() - end)
 
                 # compute output
                 #print(boards)
@@ -80,8 +80,8 @@ class NNetWrapper(NeuralNet):
                 total_loss = l_pi + l_v
 
                 # record loss
-                pi_losses.update(l_pi.data, boards.size(0))
-                v_losses.update(l_v.data, boards.size(0))
+                #pi_losses.update(l_pi.data, boards.size(0))
+                #v_losses.update(l_v.data, boards.size(0))
 
                 # compute gradient and do SGD step
                 optimizer.zero_grad()
@@ -89,23 +89,23 @@ class NNetWrapper(NeuralNet):
                 optimizer.step()
 
                 # measure elapsed time
-                batch_time.update(time.time() - end)
+                #batch_time.update(time.time() - end)
                 end = time.time()
                 batch_idx += 1
 
                 # plot progress
-                bar.suffix  = '({batch}/{size}) Data: {data:.3f}s | Batch: {bt:.3f}s | Total: {total:} | ETA: {eta:} | Loss_pi: {lpi:.4f} | Loss_v: {lv:.3f}'.format(
-                            batch=batch_idx,
-                            size=int(len(examples)/batch_size),
-                            data=data_time.avg,
-                            bt=batch_time.avg,
-                            total=bar.elapsed_td,
-                            eta=bar.eta_td,
-                            lpi=pi_losses.avg,
-                            lv=v_losses.avg,
-                            )
-                bar.next()
-            bar.finish()
+                #bar.suffix  = '({batch}/{size}) Data: {data:.3f}s | Batch: {bt:.3f}s | Total: {total:} | ETA: {eta:} | Loss_pi: {lpi:.4f} | Loss_v: {lv:.3f}'.format(
+                #            batch=batch_idx,
+                #            size=int(len(examples)/batch_size),
+                #            data=data_time.avg,
+                #            bt=batch_time.avg,
+                #            total=bar.elapsed_td,
+                #            eta=bar.eta_td,
+                #            lpi=pi_losses.avg,
+                #            lv=v_losses.avg,
+                #            )
+                #bar.next()
+            #bar.finish()
 
 
     def predict(self, board):
