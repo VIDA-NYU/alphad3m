@@ -28,8 +28,9 @@ req = [
     'd3m==2021.12.19',
     'd3m-automl-rpc==1.2.0',
     'd3m-sklearn-wrap==2022.2.8',
-    'dsbox-primitives==1.6.0',
+    'dsbox-primitives==1.6.1',
     'dsbox-corex==1.1.0',
+    'sri-d3m==1.9.6',
     'd3m-common-primitives==2022.1.5']
 
 setup(name='alphad3m',
