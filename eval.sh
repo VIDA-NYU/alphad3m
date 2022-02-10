@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # This is the entrypoint used by Data Machines
-# It reads the environment variables and calls the TA2 correctly
+# It reads the environment variables and calls AlphaD3M correctly
 
 
 if [ -z "$D3MINPUTDIR" ]; then
@@ -11,11 +11,8 @@ fi
 
 case "$D3MRUN"
 in
-    search)
-        exec ta2_search
-    ;;
-    ta2|ta2ta3)
-        exec ta2_serve ${D3MPORT:-45042}
+    ta2ta3)
+        exec alphad3m_serve_dmc ${D3MPORT:-45042}
     ;;
     *)
         echo "\$D3MRUN is not set" >&2
