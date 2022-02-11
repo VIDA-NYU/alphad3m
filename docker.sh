@@ -51,7 +51,6 @@ docker run -ti --rm \
     -e D3MRAM=4Gi \
     -e D3MTIMEOUT=$TIMEOUT \
     $OPTS \
-    -v "$PWD/alphaautoml:/usr/src/app/alphaautoml" \
     -v "$PWD/alphad3m:/usr/src/app/alphad3m" \
     -v "$PWD/resource:/usr/src/app/resource" \
     -v "$PWD/tests:/usr/src/app/tests"\

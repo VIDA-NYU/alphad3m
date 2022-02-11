@@ -1,6 +1,6 @@
 import logging
 from d3m.metadata.problem import TaskKeyword
-from alphad3m.search.d3mpipeline_builder import BaseBuilder
+from alphad3m.pipeline_synthesis.d3mpipeline_builder import BaseBuilder
 from alphad3m.data_ingestion.data_profiler import get_privileged_data
 from alphad3m.utils import load_primitives_types
 
@@ -65,7 +65,7 @@ def generate_pipelines(task_keywords, dataset, problem, targets, features, hyper
     preprocessing_primitives = ['d3m.primitives.data_cleaning.imputer.SKlearn']
 
     if 'http://schema.org/Text' in feature_types:
-        preprocessing_primitives.append('d3m.primitives.data_transformation.encoder.DistilTextEncoder')
+        preprocessing_primitives.append('d3m.primitives.feature_extraction.tfidf_vectorizer.SKlearn')
     if 'http://schema.org/DateTime' in feature_types:
         preprocessing_primitives.append('d3m.primitives.data_transformation.enrich_dates.DistilEnrichDates')
     if 'https://metadata.datadrivendiscovery.org/types/CategoricalData' in feature_types:

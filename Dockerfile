@@ -1,6 +1,6 @@
 FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python38-master-20220107-233203
 
-MAINTAINER "remi.rampin@nyu.edu, raoni@nyu.edu, rlopez@nyu.edu"
+MAINTAINER "remi.rampin@nyu.edu, rlopez@nyu.edu, raoni@nyu.edu"
 
 RUN apt-get update -yy && \
     apt-get install -yy git swig sqlite3 && \
@@ -8,32 +8,27 @@ RUN apt-get update -yy && \
 
 WORKDIR /usr/src/app
 
-# Install requirements
-COPY requirements.txt /usr/src/app/requirements.txt
-RUN pip3 freeze | sort >prev_reqs.txt && \
-    pip3 install Cython==0.29.24 && \
-    pip3 install -r requirements.txt && \
-    pip3 freeze | sort >new_reqs.txt && \
-    comm -23 prev_reqs.txt new_reqs.txt | while read i; do echo "Removed package $i" >&2; exit 1; done && \
-    rm prev_reqs.txt new_reqs.txt
-
-# Install alphaautoml
-COPY alphaautoml /usr/src/app/alphaautoml
-RUN pip3 freeze | sort >prev_reqs.txt && \
-    pip3 install -e /usr/src/app/alphaautoml && \
-    pip3 freeze | sort >new_reqs.txt && \
-    comm -23 prev_reqs.txt new_reqs.txt | while read i; do echo "Removed package $i" >&2; exit 1; done && \
-    rm prev_reqs.txt new_reqs.txt
-
-# Install TA2
+# Install AlphaD3M
 COPY alphad3m /usr/src/app/alphad3m
 COPY resource /usr/src/app/resource
 COPY setup.py README.md /usr/src/app/
-RUN pip3 freeze | sort >prev_reqs.txt && \
-    pip3 install -e /usr/src/app && \
-    pip3 freeze | sort >new_reqs.txt && \
-    comm -23 prev_reqs.txt new_reqs.txt | while read i; do echo "Removed package $i" >&2; exit 1; done && \
-    rm prev_reqs.txt new_reqs.txt
+
+# TODO: Improve this installation
+RUN pip3 install -e .
+
+# TODO: Install here all non-d3m dependencies:
+# 'SQLAlchemy==1.2.16',
+# 'datamart-materialize==0.6.1',
+# 'datamart-profiler==0.9',
+# 'nltk==3.6.7',
+# 'numpy==1.18.2',
+# 'scipy==1.4.1',
+# 'smac==0.13.1',
+# 'scikit-learn==0.22.2.post1',
+# 'scikit-image==0.17.2',
+# 'torch==1.7',
+# 'PyYAML==5.1.2',
+# 'metalearn',
 
 COPY eval.sh /usr/local/bin/eval.sh
 
