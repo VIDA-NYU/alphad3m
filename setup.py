@@ -1,6 +1,6 @@
 import io
 import os
-from setuptools import setup
+import setuptools
 
 
 # pip workaround
@@ -19,12 +19,13 @@ req = [
     'numpy==1.18.2',
     'scipy==1.4.1',
     'smac==0.13.1',
+    'tensorflow==2.2.0',
     'ConfigSpace==0.4.20',
     'scikit-learn==0.22.2.post1',
     'scikit-image==0.17.2',
     'torch==1.7',
     'PyYAML==5.1.2',
-    'metalearn',
+    'metalearn==0.6.2',
     # D3M dependencies:
     'd3m==2021.12.19',
     'd3m-automl-rpc==1.2.0',
@@ -34,10 +35,9 @@ req = [
     'sri-d3m==1.9.6',
     'd3m-common-primitives==2022.1.5']
 
-setup(name='alphad3m',
+setuptools.setup(name='alphad3m',
       version='0.10.dev0',
-      packages=['alphad3m'],
-      package_data={'alphad3m': ['pipelines/*.yaml']},
+      packages=setuptools.find_packages(),
       entry_points={
           'console_scripts': [
               'alphad3m_serve = alphad3m.main:main_serve',
@@ -48,6 +48,7 @@ setup(name='alphad3m',
       description="AlphaD3M: NYU's AutoML System",
       long_description=description,
       long_description_content_type='text/markdown',
+      include_package_data=True,
       author='Remi Rampin, Roque Lopez, Raoni Lourenco',
       author_email='remi.rampin@nyu.edu, rlopez@nyu.edu, raoni@nyu.edu',
       maintainer='Remi Rampin, Roque Lopez, Raoni Lourenco',
