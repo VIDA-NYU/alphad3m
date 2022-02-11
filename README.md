@@ -64,7 +64,7 @@ $ pip install alphad3m
 $ pip install d3m-common-primitives d3m-sklearn-wrap dsbox-corex dsbox-primitives sri-d3m
 ```
 
-The last command install the primitives available on PyPI. 
+The last command installs the primitives available on PyPI. 
 
 :warning: If you have issues with the installation of 'opencv-python-headless' (dependency of d3m-common-primitives).
 We would recommend you to install it directly from its [Python wheels](https://pypi.org/project/opencv-python-headless/4.5.4.58/#files). :warning: 
