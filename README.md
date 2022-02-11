@@ -39,19 +39,9 @@ information, hit at K, R2, recall, mean reciprocal rank, precision, and precisio
 You can use AlphaD3M through [d3m-interface](https://d3m-interface.readthedocs.io/en/latest/).  d3m-interface is a 
 Python library to use D3M AutoML systems. 
 
-### PyPI (lightweight version)
-Currently, this version has support for classification and regression tabular problems. This package works with Python 3.8.
-
-To install, run these commands:
-
-```
-$ pip install alphad3m
-$ pip install d3m-interface
-```
-
 ### Docker/Singularity containers (full version)
-The system will be available as a container. This version works with Python 3.6 through 3.8, and supports all 
-the ML tasks and data types mentioned in the first section. You need to have Docker or Singularity installed on your operating system.
+AlphaD3M and the D3M Core will be deployed as a container. This version works with Python 3.6 through 3.8, and supports all 
+the ML tasks and data types mentioned above. You need to have Docker or Singularity installed on your operating system.
 
 For this version, you just need to install d3m-interface:
 
@@ -59,7 +49,19 @@ For this version, you just need to install d3m-interface:
 $ pip install d3m-interface
 ```
 
-The first time d3m-interface is used, it automatically downloads a Docker image containing the D3M Core and AlphaD3M.
+The first time d3m-interface is used, it automatically downloads a Docker image containing AlphaD3M and the D3M Core.
+
+
+
+### PyPI (lightweight version)
+Currently, this version has support for classification and regression tabular problems. This package works with Python 3.8.
+
+To install, run these commands:
+
+```
+$ pip install d3m-interface
+$ pip install alphad3m
+```
 
 
 ## Documentation
