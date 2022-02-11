@@ -12,11 +12,9 @@ WORKDIR /usr/src/app
 COPY alphad3m /usr/src/app/alphad3m
 COPY resource /usr/src/app/resource
 COPY setup.py README.md /usr/src/app/
-RUN pip3 freeze | sort >prev_reqs.txt && \
-    pip3 install -e /usr/src/app && \
-    pip3 freeze | sort >new_reqs.txt && \
-    comm -23 prev_reqs.txt new_reqs.txt | while read i; do echo "Removed package $i" >&2; exit 1; done && \
-    rm prev_reqs.txt new_reqs.txt
+
+# TODO: Improve this installation
+RUN pip3 install -e .
 
 # TODO: Install here all non-d3m dependencies:
 # 'SQLAlchemy==1.2.16',
