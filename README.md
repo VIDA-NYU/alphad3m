@@ -49,9 +49,9 @@ $ pip install alphad3m
 $ pip install d3m-interface
 ```
 
-### Docker (full version)
-The system will be available as a Docker container. This version works with Python 3.6 through 3.8, and supports all 
-the ML tasks and data types mentioned in the first section. You need to have Docker installed on your operating system.
+### Docker/Singularity containers (full version)
+The system will be available as a container. This version works with Python 3.6 through 3.8, and supports all 
+the ML tasks and data types mentioned in the first section. You need to have Docker or Singularity installed on your operating system.
 
 For this version, you just need to install d3m-interface:
 
