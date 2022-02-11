@@ -36,7 +36,7 @@ req = [
     'd3m-common-primitives==2022.1.5']
 
 setuptools.setup(name='alphad3m',
-      version='0.10.dev0',
+      version='0.10.dev1',
       packages=setuptools.find_packages(),
       entry_points={
           'console_scripts': [
