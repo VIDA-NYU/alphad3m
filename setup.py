@@ -13,6 +13,11 @@ with io.open('README.md', encoding='utf-8') as fp:
 with open('requirements.txt') as fp:
     req = [line for line in fp if line and not line.startswith('#')]
 
+# Temporary workaround until BYU primitives get updated
+req.extend([
+    'metalearn==0.6.2',
+])
+
 setuptools.setup(name='alphad3m',
       version='0.10.dev1',
       packages=setuptools.find_packages(),

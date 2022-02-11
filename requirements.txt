@@ -13,7 +13,6 @@ scikit-learn==0.22.2.post1
 scikit-image==0.17.2
 torch==1.7
 PyYAML==5.1.2
-metalearn==0.6.2
 
 # D3M dependencies:
 d3m==2021.12.19
