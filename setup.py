@@ -10,30 +10,13 @@ os.chdir(os.path.abspath(os.path.dirname(__file__)))
 with io.open('README.md', encoding='utf-8') as fp:
     description = fp.read()
 
-req = [
-    # Non-D3M dependencies:
-    'SQLAlchemy==1.2.16',
-    'datamart-materialize==0.6.1',
-    'datamart-profiler==0.9',
-    'nltk==3.6.7',
-    'numpy==1.18.2',
-    'scipy==1.4.1',
-    'smac==0.13.1',
-    'tensorflow==2.2.0',
-    'ConfigSpace==0.4.20',
-    'scikit-learn==0.22.2.post1',
-    'scikit-image==0.17.2',
-    'torch==1.7',
-    'PyYAML==5.1.2',
+with open('requirements.txt') as fp:
+    req = [line for line in fp if line and not line.startswith('#')]
+
+# Temporary workaround until BYU primitives get updated
+req.extend([
     'metalearn==0.6.2',
-    # D3M dependencies:
-    'd3m==2021.12.19',
-    'd3m-automl-rpc==1.2.0',
-    'd3m-sklearn-wrap==2022.2.8',
-    'dsbox-primitives==1.6.1',
-    'dsbox-corex==1.1.0',
-    'sri-d3m==1.9.6',
-    'd3m-common-primitives==2022.1.5']
+])
 
 setuptools.setup(name='alphad3m',
       version='0.10.dev1',
