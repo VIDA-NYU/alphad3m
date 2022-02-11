@@ -3,5 +3,4 @@ include NOTICE.txt
 include README.md
 include resource/*.json
 include resource/*.bnf
-include resource/*.pkl
 include resource/pipelines/*.yaml
