@@ -13,8 +13,8 @@ This repository is part of New York University's implementation of the
 [Data Driven Discovery project (D3M)](https://datadrivendiscovery.org/).
 
 
-Support for Many ML Problems
-----------------------------
+## Support for Many ML Problems
+
 AlphaD3M uses a comprehensive collection of primitives developed under the D3M program as well as primitives provided 
 in open-source libraries, such as scikit-learn, to derive pipelines for a wide range of machine learning tasks. These 
 pipelines can be applied to different data types and derive standard performance metrics.
@@ -34,13 +34,26 @@ detection AP, hamming loss, ROC-AUC, ROC-AUC macro, ROC-AUC micro, jaccard simil
 information, hit at K, R2, recall, mean reciprocal rank, precision, and precision at top K.
 
 
-Installation
-------------
-You can use AlphaD3M through [d3m-interface](https://d3m-interface.readthedocs.io/en/latest/).  d3m-interface is a 
-Python library to use D3M AutoML systems. This package works with Python 3.6 through 3.8 and  you need to have Docker installed on 
-your operating system.
+## Installation
 
-You  can install the latest stable version of this library from [PyPI](https://pypi.org/project/d3m-interface/):
+You can use AlphaD3M through [d3m-interface](https://d3m-interface.readthedocs.io/en/latest/).  d3m-interface is a 
+Python library to use D3M AutoML systems. 
+
+### PyPI (lightweight version)
+Currently, this version has support for classification and regression tabular problems. This package works with Python 3.8.
+
+To install, run these commands:
+
+```
+$ pip install alphad3m
+$ pip install d3m-interface
+```
+
+### Docker (full version)
+The system will be available as a Docker container. This version works with Python 3.6 through 3.8, and supports all 
+the ML tasks and data types mentioned in the first section. You need to have Docker installed on your operating system.
+
+For this version, you just need to install d3m-interface:
 
 ```
 $ pip install d3m-interface
@@ -49,14 +62,16 @@ $ pip install d3m-interface
 The first time d3m-interface is used, it automatically downloads a Docker image containing the D3M Core and AlphaD3M.
 
 
+## Documentation
+
 The documentation of our system can be found [here](https://d3m-interface.readthedocs.io/).
 To help users get started with AlphaD3M, we provide Jupyter Notebooks in our
 [public repository](https://gitlab.com/ViDA-NYU/d3m/d3m_interface/-/tree/master/examples) that show examples of how the 
 library can be used. We also have documentation for the [API](https://d3m-interface.readthedocs.io/en/latest/api.html).
 
 
-Usability, Model Exploration and Explanation
---------------------------------------------
+## Usability, Model Exploration and Explanation
+
 AlphaD3M greatly simplifies the process to create predictive models. Users can interact with the system from a 
 Jupyter notebook, and derive models using a few lines of Python code.
 
@@ -74,8 +89,8 @@ selecting models for a given application.
 model predictions and their association with words and entities present in the classified documents.
 
 
-How AlphaD3M works?
--------------------
+## How AlphaD3M works?
+
 
 Inspired by  AlphaZero, AlphaD3M frames the problem of pipeline synthesis for model discovery as a single-player game 
 where the player iteratively builds a pipeline by selecting actions (insertion, deletion and replacement of pipeline 
