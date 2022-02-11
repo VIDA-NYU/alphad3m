@@ -1,8 +1,11 @@
 Changelog
 =========
 
-0.10.dev0 (xxxx-xx-xx)
+
+0.10 (2022-02-11)
 ------------------
+* Implemented the PyPI version (lightweight)
+* Added support to to blacklist and whitelist primitives
 * Added support to save and load pipelines.
 * Use timeout_run parameter to score pipelines during search.
 * Use the AutoML RPC utils for encoding GRPC pipelines.
