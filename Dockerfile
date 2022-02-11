@@ -10,7 +10,6 @@ WORKDIR /usr/src/app
 
 # Install AlphaD3M
 COPY alphad3m /usr/src/app/alphad3m
-COPY resource /usr/src/app/resource
 COPY setup.py README.md /usr/src/app/
 
 # TODO: Improve this installation

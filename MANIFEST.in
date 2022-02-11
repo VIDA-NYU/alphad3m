@@ -1,6 +1,6 @@
 include LICENSE.txt
 include NOTICE.txt
 include README.md
-include resource/*.json
-include resource/*.bnf
-include resource/pipelines/*.yaml
+include alphad3m/resource/*.json
+include alphad3m/resource/*.bnf
+include alphad3m/resource/pipelines/*.yaml
