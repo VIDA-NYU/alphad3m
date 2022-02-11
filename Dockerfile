@@ -8,26 +8,22 @@ RUN apt-get update -yy && \
 
 WORKDIR /usr/src/app
 
+# Install requirements
+# (making sure to install Cython first, it is a build dependency)
+# This checks that no dependency already installed (from the base image) gets
+# removed or replaced, which would break primitives
+COPY requirements.txt /usr/src/app/requirements.txt
+RUN pip3 freeze | sort >prev_reqs.txt && \
+    pip3 install $(grep -i Cython requirements.txt) && \
+    pip3 install -r requirements.txt && \
+    pip3 freeze | sort >new_reqs.txt && \
+    comm -23 prev_reqs.txt new_reqs.txt | while read i; do echo "Removed package $i" >&2; exit 1; done && \
+    rm prev_reqs.txt new_reqs.txt
+
 # Install AlphaD3M
 COPY alphad3m /usr/src/app/alphad3m
 COPY setup.py README.md /usr/src/app/
-
-# TODO: Improve this installation
-RUN pip3 install -e .
-
-# TODO: Install here all non-d3m dependencies:
-# 'SQLAlchemy==1.2.16',
-# 'datamart-materialize==0.6.1',
-# 'datamart-profiler==0.9',
-# 'nltk==3.6.7',
-# 'numpy==1.18.2',
-# 'scipy==1.4.1',
-# 'smac==0.13.1',
-# 'scikit-learn==0.22.2.post1',
-# 'scikit-image==0.17.2',
-# 'torch==1.7',
-# 'PyYAML==5.1.2',
-# 'metalearn',
+RUN pip3 install --no-deps -e .
 
 COPY eval.sh /usr/local/bin/eval.sh
 
