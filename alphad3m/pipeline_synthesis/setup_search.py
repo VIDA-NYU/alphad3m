@@ -6,12 +6,12 @@ import sys
 os.environ['MPLBACKEND'] = 'Agg'
 
 from os.path import join, dirname
-from alphaAutoMLEdit.Coach import Coach
-from alphaAutoMLEdit.pipeline.PipelineGame import PipelineGame
-from alphaAutoMLEdit.pipeline.NNet import NNetWrapper
+from alphad3m.pipeline_search.Coach import Coach
+from alphad3m.pipeline_search.pipeline.PipelineGame import PipelineGame
+from alphad3m.pipeline_search.pipeline.NNet import NNetWrapper
 from alphad3m.grammar_loader import load_manual_grammar, load_automatic_grammar
 from alphad3m.data_ingestion.data_profiler import get_privileged_data, select_encoders
-from alphad3m.search.d3mpipeline_builder import *
+from alphad3m.pipeline_synthesis.d3mpipeline_builder import *
 from alphad3m.metafeature.metafeature_extractor import ComputeMetafeatures
 from alphad3m.utils import get_collection_type
 from d3m.metadata.problem import TaskKeyword, TaskKeywordBase
@@ -69,8 +69,19 @@ config = {
 }
 
 
+def signal_handler(signal_num, frame):
+    logger.info('Receiving signal %s, terminating process' % signal.Signals(signal_num).name)
+    signal.alarm(0)  # Disable the alarm
+    sys.exit(0)
+
+
 @database.with_sessionmaker
-def generate_pipelines(task_keywords, dataset, metrics, problem, targets, features, metadata, pipeline_template, msg_queue, DBSession):
+def generate_pipelines(task_keywords, dataset, metrics, problem, targets, features, hyperparameters, metadata,
+                       pipeline_template, time_bound, msg_queue, DBSession):
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGALRM, signal_handler)
+    signal.alarm(int(time_bound))
+
     builder = None
     task_name = 'CLASSIFICATION' if TaskKeyword.CLASSIFICATION in task_keywords else 'REGRESSION'
     # Primitives for LUPI problems are no longer available. So, just exclude privileged data
@@ -80,8 +91,6 @@ def generate_pipelines(task_keywords, dataset, metrics, problem, targets, featur
     def eval_pipeline(primitive_names, origin):
         pipeline_id = builder.make_d3mpipeline(primitive_names, origin, dataset, pipeline_template, targets,
                                                features, metadata, metrics, DBSession=DBSession)
-        #execute(pipeline_id, dataset, problem, join(os.environ.get('D3MOUTPUTDIR'), 'output_dataframe.csv'), None,
-        #        db_filename=join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'db.sqlite3'))
         # Evaluate the pipeline if syntax is correct:
         if pipeline_id:
             msg_queue.send(('eval', pipeline_id))
@@ -109,13 +118,13 @@ def generate_pipelines(task_keywords, dataset, metrics, problem, targets, featur
         builder = BaseBuilder()
     elif TaskKeyword.OBJECT_DETECTION in task_keywords:
         task_name = 'OBJECT_DETECTION'
-        builder = ObjectDetectionBuilder()
+        builder = BaseBuilder()
     elif TaskKeyword.GRAPH_MATCHING in task_keywords:
         task_name = 'GRAPH_MATCHING'
         builder = BaseBuilder()
     elif TaskKeyword.TIME_SERIES in task_keywords and TaskKeyword.CLASSIFICATION in task_keywords:
         task_name = 'TIME_SERIES_CLASSIFICATION'
-        builder = TimeseriesClassificationBuilder()
+        builder = BaseBuilder()
     elif TaskKeyword.VERTEX_CLASSIFICATION in task_keywords or TaskKeyword.VERTEX_NOMINATION in task_keywords:
         task_name = 'VERTEX_CLASSIFICATION'
         builder = BaseBuilder()
@@ -143,7 +152,9 @@ def generate_pipelines(task_keywords, dataset, metrics, problem, targets, featur
         task_name = 'NA'
         builder = BaseBuilder()
 
-    use_automatic_grammar = True
+    use_automatic_grammar = False
+    include_primitives = hyperparameters.get('include_primitives', []) or []  # Use empty list when the value is None
+    exclude_primitives = hyperparameters.get('exclude_primitives', []) or []  # Use empty list when the value is None
 
     def update_config(task_name):
         config['PROBLEM'] = task_name
@@ -160,50 +171,24 @@ def generate_pipelines(task_keywords, dataset, metrics, problem, targets, featur
         if use_automatic_grammar:
             dataset_path = join(dirname(dataset[7:]), 'tables', 'learningData.csv')
             target_column = problem['inputs'][0]['targets'][0]['column_name']
-            grammar = load_automatic_grammar(task_name_id, dataset_path, target_column, task_keyword_ids)
+            grammar = load_automatic_grammar(task_name_id, dataset_path, target_column, task_keyword_ids,
+                                             include_primitives, exclude_primitives)
 
         if grammar is None:
             encoders = select_encoders(metadata['only_attribute_types'])
             use_imputer = metadata['missing_values']
-            grammar = load_manual_grammar(task_name_id, task_keyword_ids, encoders, use_imputer)
+            grammar = load_manual_grammar(task_name_id, task_keyword_ids, encoders, use_imputer, include_primitives,
+                                          exclude_primitives)
         config['GRAMMAR'] = grammar
         metafeatures_extractor = ComputeMetafeatures(dataset, targets, features, DBSession)
         config['DATASET_METAFEATURES'] = [0] * 50 #metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
 
         return config
 
-    def signal_handler(signal, frame):
-        logger.info('Receiving SIGTERM signal')
-        sys.exit(0)
-
-    signal.signal(signal.SIGTERM, signal_handler)
-
     config_updated = update_config(task_name)
 
-    ############
-    '''metalearning_pipelines = create_vectors_from_metalearningdb(task_name, config_updated['GRAMMAR'])
-    def my_eval(primitive_names, origin):
-        pipeline_representation = ' '.join(sorted(primitive_names))
-        if pipeline_representation in metalearning_pipelines:
-            score = metalearning_pipelines[pipeline_representation]
-            print('>>>>>>>>>>yes', pipeline_representation, score)
-        else:
-            print('>>>>>>>>>>no', pipeline_representation)
-            score = None
-        return score
-
-    game = PipelineGame(config_updated, my_eval)'''
-    ############
     game = PipelineGame(config_updated, eval_pipeline)
     nnet = NNetWrapper(game)
-
-    ########
-    '''train_examples = create_vectors_from_metalearningdb(task_name, config_updated['GRAMMAR'])
-    nnet.train(train_examples)
-    nnet.save_checkpoint(join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'nn_models'))
-    print('saved')
-    sys.exit(0)'''
-    #######
 
     if config['ARGS'].get('load_model'):
         model_file = join(config['ARGS'].get('load_folder_file')[0],

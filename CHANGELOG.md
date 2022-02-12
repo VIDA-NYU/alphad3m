@@ -1,57 +1,69 @@
 Changelog
 =========
 
-Version v2021.xx.xx
-------------------
+0.10 (2022-02-11)
+-----------------
+
+* Implemented the PyPI version (lightweight)
+* Added support to to blacklist and whitelist primitives
 * Added support to save and load pipelines.
 * Use timeout_run parameter to score pipelines during search.
 * Use the AutoML RPC utils for encoding GRPC pipelines.
 * Implemented the method SaveFittedSolution of the AutoML RPC API.
+* Restructure packages (rename d3m_ta2_nyu to alphad3m).
+* Expose outputs of each step within the pipeline.
+* Build automatically the grammar from the metalearning database.
+* Calculate primitive correlations.
+* Add scripts for running on SLURM/Singularity.
 
-Version v2020.12.08
-------------------
+Version v2020.12.08 (internal)
+------------------------------
+
 * Added encoders (text, datetime, etc.) to the grammar.
-* Added timeout for pipeline execution (during search). 
+* Added timeout for pipeline execution (during search).
 * Added support to expouse outputs of the pipeline steps.
 * Added support for ROC AUC metric.
-* Renamed repository to AlphaD3M
+* Renamed repository to AlphaD3M.
 
-Version v2020.07.24
-------------------
+Version v2020.07.24 (internal)
+------------------------------
+
 * Added support for video data type.
 * Improved support for semi-supervised task through SemisupervisedClassificationBuilder class.
 * Updated license to Apache-2.0.
 
-Version v2020.06.21
-------------------
+Version v2020.06.21 (internal)
+------------------------------
+
 * Added support for clustering problems.
 * Created NN inputs for AlphaD3M from the metalearningDB [#46](https://gitlab.com/ViDA-NYU/d3m/ta2/-/issues/46) [!49](https://gitlab.com/ViDA-NYU/d3m/ta2/-/merge_requests/49)
 * Changed the structure of the preprocessing module. Added text and datetime encoders.
 * Updated to core package v2020.5.18 and TA2-TA3 API v2020.6.2.
 
-Version v2020.02.16
-------------------
+Version v2020.02.16 (internal)
+------------------------------
+
 Submission for Winter evaluation.
 
 * Added data profiler to the workflow. [#39](https://gitlab.com/ViDA-NYU/d3m/ta2/issues/39) [!47](https://gitlab.com/ViDA-NYU/d3m/ta2/-/merge_requests/47)
 * Added support for LUPI problems.
 * Added encoders to the search by AlphaD3M.
-* Changed versioning to CalVer format.
 * Updated to core package v2020.1.9 and TA2-TA3 API v2020.2.11.
 
-1.0 (2019-12-8)
-------------------
+Version v2019.12.8 (internal)
+-----------------------------
+
 Submission for December dry-run.
 
 * Added different tasks to the grammar. [#35](https://gitlab.com/ViDA-NYU/d3m/ta2/issues/35) [!42](https://gitlab.com/ViDA-NYU/d3m/ta2/-/merge_requests/42)
-* Updated sampling strategy. [#30](https://gitlab.com/ViDA-NYU/d3m/ta2/issues/30) 
+* Updated sampling strategy. [#30](https://gitlab.com/ViDA-NYU/d3m/ta2/issues/30)
 [#32](https://gitlab.com/ViDA-NYU/d3m/ta2/issues/32)
 * Added templates to external process.
 * Updated to core package v2019.11.10 and TA2-TA3 API v2020.12.4.
- 
+* Changed internal versioning to CalVer format.
 
 0.9 (2019-06-18)
-------------------
+----------------
 
 Submission for June dry-run.
 

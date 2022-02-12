@@ -17,6 +17,7 @@ from sqlalchemy.orm import aliased, joinedload, lazyload
 from sqlalchemy.sql import func
 from os.path import join, exists
 import shutil
+import multiprocessing
 import subprocess
 import threading
 import time
@@ -26,7 +27,7 @@ from alphad3m import __version__
 from alphad3m.multiprocessing import Receiver, run_process
 from alphad3m.grpc_api import grpc_server
 from alphad3m.data_ingestion.data_profiler import profile_data
-from alphad3m.search.templates import generate_pipelines
+from alphad3m.pipeline_synthesis.templates import generate_pipelines
 from alphad3m.utils import Observable, ProgressStatus, is_collection, get_dataset_sample, create_outputfolders, \
     read_streams, get_internal_scoring_config
 from alphad3m.schema import database
@@ -37,17 +38,12 @@ from d3m.metadata.problem import TaskKeyword, parse_problem_description
 from d3m.metadata import pipeline as pipeline_module
 
 
-PIPELINES_TO_TUNE = 5  # Number of pipelines (top k) to be tuned.
+PIPELINES_TO_TUNE = 0  # Number of pipelines (top k) to be tuned.
 TIME_TO_TUNE = 0.15  # The ratio of the time to be used for the tuning phase.
 TIME_TO_SCORE = 5  # In minutes. Internal time to score a pipeline during the searching phase.
 MAX_RUNNING_TIME = 43800  # In minutes. If time is not provided for the searching either scoring, run it for 1 month.
-MAX_RUNNING_PROCESSES = 6
+MAX_RUNNING_PROCESSES = int(os.environ.get('D3MCPU', multiprocessing.cpu_count()))  # Number of processes to be used
 SEARCH_STRATEGIES = ['TEMPLATES', 'ALPHA_AUTOML']
-
-if 'TA2_DEBUG_BE_FAST' in os.environ:
-    PIPELINES_TO_TUNE = 0
-    SEARCH_STRATEGIES.remove('ALPHA_AUTOML')
-
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +55,7 @@ class AutoML(Observable):
         #  Internal folders
         self.internal_folder = os.path.join(self.output_folder, 'temp')
         self.runtime_folder = os.path.join(self.output_folder, 'temp', 'runtime_output')
+        # TODO: Remove the runtime_folder. Use internal_folder instead
         create_outputfolders(self.internal_folder)
         create_outputfolders(self.runtime_folder)
         self.db_filename = os.path.join(self.internal_folder, 'db.sqlite3')
@@ -98,7 +95,7 @@ class AutoML(Observable):
 
         # Create pipelines, NO TUNING
         with session.with_observer_queue() as queue:
-            self.build_pipelines(session.id, dataset_path, task_keywords, session.metrics, timeout, None,
+            self.build_pipelines(session.id, dataset_path, task_keywords, session.metrics, timeout, None, None,
                                  tune=PIPELINES_TO_TUNE)
 
             while queue.get(True)[0] != 'done_searching':
@@ -118,6 +115,7 @@ class AutoML(Observable):
         This is called by the ``ta2_serve`` executable. It is part of the
         TA2+TA3 evaluation.
         """
+
         if not port:
             port = 45042
         core_rpc = grpc_server.CoreService(self)
@@ -190,7 +188,7 @@ class AutoML(Observable):
         if timeout_run is None:
             timeout_run = MAX_RUNNING_TIME
 
-        timeout_run = timeout_run * 60  # Minutes to seconds# Minutes to seconds
+        timeout_run = timeout_run * 60  # Minutes to seconds
 
         job = ScoreJob(self, pipeline_id, dataset_uri, metrics, problem, scoring_config, timeout_run)
         self._run_queue.put(job)
@@ -328,10 +326,10 @@ class AutoML(Observable):
 
         return None
 
-    def build_pipelines(self, session_id, dataset, task_keywords, metrics, timeout_search, timeout_run, template=None,
-                        targets=None, features=None, tune=None, report_rank=False):
-        self.executor.submit(self._build_pipelines, session_id, dataset, task_keywords, metrics, timeout_search, timeout_run,
-                             template, targets, features, tune, report_rank)
+    def build_pipelines(self, session_id, dataset, task_keywords, metrics, timeout_search, timeout_run, hyperparameters,
+                        template=None, targets=None, features=None, tune=None, report_rank=False):
+        self.executor.submit(self._build_pipelines, session_id, dataset, task_keywords, metrics, timeout_search,
+                             timeout_run, hyperparameters, template, targets, features, tune, report_rank)
 
     def build_fixed_pipeline(self, session_id, pipeline, dataset, targets=None, features=None):
         self.executor.submit(self._build_fixed_pipeline, session_id, pipeline, dataset, targets, features)
@@ -439,8 +437,8 @@ class AutoML(Observable):
             db.close()
 
     # Runs in a worker thread from executor
-    def _build_pipelines(self, session_id, dataset_uri, task_keywords, metrics, timeout_search, timeout_run, pipeline_template,
-                         targets, features, tune, report_rank):
+    def _build_pipelines(self, session_id, dataset_uri, task_keywords, metrics, timeout_search, timeout_run,
+                         hyperparameters, pipeline_template, targets, features, tune, report_rank):
         """Generates pipelines for the session.
         """
         session = self.sessions[session_id]
@@ -482,20 +480,20 @@ class AutoML(Observable):
 
         if 'TEMPLATES' in SEARCH_STRATEGIES:
             self._build_pipeline_from_template(session, task_keywords, dataset_uri, sample_dataset_uri, metrics,
-                                               metadata, timeout_search_internal)
+                                               hyperparameters, metadata, timeout_search_internal)
         if 'ALPHA_AUTOML' in SEARCH_STRATEGIES:
             self._build_pipelines_from_generator(session, task_keywords, dataset_uri, sample_dataset_uri, metrics,
-                                                 metadata, timeout_search_internal, pipeline_template)
+                                                 hyperparameters, metadata, timeout_search_internal, pipeline_template)
 
         session.tune_when_ready(tune)
 
     def _build_pipelines_from_generator(self, session, task_keywords, dataset_uri, sample_dataset_uri, metrics,
-                                        metadata, timeout_search, pipeline_template):
+                                        hyperparameters, metadata, timeout_search, pipeline_template):
 
         logger.info("Starting AlphaD3M process, timeout is %s", timeout_search)
         msg_queue = Receiver()
         proc = run_process(
-            'alphad3m.search.alphaautoml.generate_pipelines',
+            'alphad3m.pipeline_synthesis.setup_search.generate_pipelines',
             'generate',
             msg_queue,
             task_keywords=task_keywords,
@@ -504,69 +502,72 @@ class AutoML(Observable):
             problem=session.problem,
             targets=session.targets,
             features=session.features,
+            hyperparameters=hyperparameters,
             metadata=metadata,
             pipeline_template=pipeline_template,
+            time_bound=timeout_search,
             db_filename=self.db_filename,
         )
 
         start = time.time()
-        stopped = False
+        stop = False
 
         # Now we wait for pipelines to be sent over the pipe
         while proc.poll() is None:
-            if not stopped:
+            if not stop:
                 if session.stop_requested:
                     logger.error("Session stop requested, sending SIGTERM to generator process")
-                    proc.terminate()
-                    stopped = True
+                    stop = True
 
                 if time.time() > start + timeout_search:
                     logger.error("Reached search timeout (%d > %d seconds), sending SIGTERM to generator process",
                                  time.time() - start, timeout_search)
-                    proc.terminate()
-                    stopped = True
+                    stop = True
 
+                if stop:
+                    proc.terminate()
+                    try:
+                        proc.wait(30)
+                    except subprocess.TimeoutExpired:
+                        proc.kill()
+                        proc.wait()
             try:
                 msg, *args = msg_queue.recv(3)
             except Empty:
                 continue
 
             if msg == 'eval':
-                if stopped:
-                    return
                 pipeline_id, = args
                 logger.info("Got pipeline %s from generator process", pipeline_id)
                 score = self.run_pipeline(session, dataset_uri, sample_dataset_uri, task_keywords, pipeline_id)
-
                 logger.info("Sending score to generator process")
-                try:  # Fixme, just to avoid Broken pipe error
+                if not stop:
                     msg_queue.send(score)
-                except:
-                    logger.error("Broken pipe")
-                    return
             else:
                 raise RuntimeError("Got unknown message from generator process: %r" % msg)
 
         logger.warning("Generator process exited with %r", proc.returncode)
 
     def _build_pipeline_from_template(self, session, task_keywords, dataset_uri, sample_dataset_uri, metrics,
-                                      metadata, timeout_search):
+                                      hyperparameters, metadata, timeout_search):
 
         pipeline_ids = generate_pipelines(task_keywords, dataset_uri, session.problem, session.targets, session.features,
-                                          metadata,  metrics, self.DBSession)
+                                          hyperparameters, metadata,  metrics, self.DBSession)
         for pipeline_id in pipeline_ids:
-            try:
-                # Add it to the session
-                session.add_scoring_pipeline(pipeline_id)
-                logger.info('Created pipeline %s', pipeline_id)
-                scoring_config = get_internal_scoring_config(task_keywords)
+            if pipeline_id is not None:
+                try:
+                    # Add it to the session
+                    session.add_scoring_pipeline(pipeline_id)
+                    logger.info('Created pipeline %s', pipeline_id)
+                    scoring_config = get_internal_scoring_config(task_keywords)
 
-                self._run_queue.put(ScoreJob(self, pipeline_id, dataset_uri, session.metrics, session.problem,
-                                             scoring_config, timeout_search, session.report_rank, sample_dataset_uri))
+                    self._run_queue.put(ScoreJob(self, pipeline_id, dataset_uri, session.metrics, session.problem,
+                                                 scoring_config, timeout_search, session.report_rank,
+                                                 sample_dataset_uri))
 
-                session.notify('new_pipeline', pipeline_id=pipeline_id)
-            except Exception:
-                logger.exception('Error building pipeline from template')
+                    session.notify('new_pipeline', pipeline_id=pipeline_id)
+                except Exception:
+                    logger.exception('Error building pipeline from template')
 
     def run_pipeline(self, session, dataset_uri, sample_dataset_uri, task_keywords, pipeline_id):
 
@@ -903,7 +904,7 @@ class Session(Observable):
                         timeout_tuning = self.expected_search_end - time.time()
                         for pipeline_id in tune:
                             logger.info("    %s", pipeline_id)
-                            self._ta2._run_queue.put(TuneHyperparamsJob(self, pipeline_id, self.problem, timeout_tuning))
+                            self._ta2._run_queue.put(TuneHyperparamsJob(self._ta2, self, pipeline_id, self.problem, timeout_tuning))
                             self.pipelines_tuning.add(pipeline_id)
                         return
                     logger.info("Found no pipeline to tune")
@@ -1074,6 +1075,7 @@ class ScoreJob(Job):
         self.problem = problem
         self.scoring_config = scoring_config
         self.timeout_run = timeout_run
+        self.expected_end = time.time() + timeout_run
         self.report_rank = report_rank
 
     def start(self, db_filename, **kwargs):
@@ -1087,14 +1089,14 @@ class ScoreJob(Job):
                                 scoring_config=self.scoring_config,
                                 report_rank=self.report_rank,
                                 db_filename=db_filename)
-        self.started = time.time()
+
         self.ta2.notify('scoring_start',
                         pipeline_id=self.pipeline_id,
                         job_id=id(self))
 
     def poll(self):
         timeout_reached = False
-        if self.started + self.timeout_run < time.time():
+        if time.time() > self.expected_end:
             timeout_reached = True
             logger.error('Reached timeout (%d seconds) to score a pipeline' % self.timeout_run)
             self.proc.terminate()
@@ -1221,12 +1223,14 @@ class TestJob(Job):
 
 
 class TuneHyperparamsJob(Job):
-    def __init__(self, session, pipeline_id, problem, timeout_tuning):
+    def __init__(self, ta2, session, pipeline_id, problem, timeout_tuning):
         Job.__init__(self)
+        self.ta2 = ta2
         self.session = session
         self.pipeline_id = pipeline_id
         self.problem = problem
         self.timeout_tuning = timeout_tuning
+        self.expected_end = time.time() + timeout_tuning
 
     def start(self, db_filename, **kwargs):
         logger.info("Running tuning for %s (session %s has %d pipelines left to tune)",
@@ -1238,6 +1242,7 @@ class TuneHyperparamsJob(Job):
         self.proc = run_process('alphad3m.pipeline_operations.pipeline_tune.tune',
                                 'tune', self.msg,
                                 pipeline_id=self.pipeline_id,
+                                storage_dir=self.ta2.internal_folder,
                                 dataset_uri=self.session.dataset_uri,
                                 sample_dataset_uri=self.session.sample_dataset_uri,
                                 metrics=self.session.metrics,
@@ -1246,14 +1251,14 @@ class TuneHyperparamsJob(Job):
                                 report_rank=self.session.report_rank,
                                 timeout_tuning=self.timeout_tuning,
                                 db_filename=db_filename)
-        self.started = time.time()
+
         self.session.notify('tuning_start',
                             pipeline_id=self.pipeline_id,
                             job_id=id(self))
 
     def poll(self):
-        if self.started + self.timeout_tuning < time.time():
-            logger.error("Tunning process is stuck, terminating after %d seconds", time.time() - self.started)
+        if time.time() > self.expected_end:
+            logger.error('Reached timeout (%d seconds) to tune a pipeline' % self.timeout_tuning)
             self.proc.terminate()
             try:
                 self.proc.wait(30)
