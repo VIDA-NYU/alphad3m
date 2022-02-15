@@ -19,7 +19,7 @@ req.extend([
 ])
 
 setuptools.setup(name='alphad3m',
-      version='0.11.dev0',
+      version='0.11.0.dev0',
       packages=setuptools.find_packages(),
       entry_points={
           'console_scripts': [
