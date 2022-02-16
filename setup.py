@@ -24,8 +24,7 @@ setuptools.setup(name='alphad3m',
       entry_points={
           'console_scripts': [
               'alphad3m_serve = alphad3m.main:main_serve',
-              'alphad3m_search = alphad3m.main:main_search',
-              'alphad3m_serve_dmc = alphad3m.main:main_serve_dmc'
+              'alphad3m_search = alphad3m.main:main_search'
               ]},
       install_requires=req,
       description="AlphaD3M: NYU's AutoML System",
