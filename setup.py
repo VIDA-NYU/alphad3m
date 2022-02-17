@@ -20,7 +20,6 @@ req = [
     'numpy',
     'scipy',
     'smac>=0.13,<0.14',
-    'tensorflow>=2.2.0,<2.3',
     'ConfigSpace>=0.4.20,<0.5',
     'scikit-learn==0.22.2.post1',
     'scikit-image==0.17.2',
