@@ -12,7 +12,8 @@ fi
 case "$D3MRUN"
 in
     ta2ta3)
-        exec alphad3m_serve ${D3MPORT:-45042}
+        export D3MPORT=45042
+        exec alphad3m_serve
     ;;
     *)
         echo "\$D3MRUN is not set" >&2
