@@ -34,13 +34,12 @@ req = [
 ]
 
 setuptools.setup(name='alphad3m',
-      version='0.11.dev0',
+      version='0.11.0.dev0',
       packages=setuptools.find_packages(),
       entry_points={
           'console_scripts': [
               'alphad3m_serve = alphad3m.main:main_serve',
-              'alphad3m_search = alphad3m.main:main_search',
-              'alphad3m_serve_dmc = alphad3m.main:main_serve_dmc'
+              'alphad3m_search = alphad3m.main:main_search'
               ]},
       install_requires=req,
       description="AlphaD3M: NYU's AutoML System",
