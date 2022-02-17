@@ -7,6 +7,7 @@ variables:
   DOCKER_BUILDKIT: "1"
   IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
   GIT_SUBMODULE_STRATEGY: recursive
+  DOCKER_TLS_CERTDIR: ""
 
 services:
   - docker:dind
