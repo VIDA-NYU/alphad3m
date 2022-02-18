@@ -10,22 +10,34 @@ os.chdir(os.path.abspath(os.path.dirname(__file__)))
 with io.open('README.md', encoding='utf-8') as fp:
     description = fp.read()
 
-with open('requirements.txt') as fp:
-    req = [line for line in fp if line and not line.startswith('#')]
+req = [
+    # Non-D3M dependencies:
+    'Cython',
+    'SQLAlchemy==1.2.16',
+    'datamart-materialize>=0.9,<0.10',
+    'datamart-profiler>=0.9,<0.10',
+    'nltk',
+    'numpy',
+    'scipy',
+    'smac>=0.13,<0.14',
+    'ConfigSpace>=0.4.20,<0.5',
+    'scikit-learn==0.22.2.post1',
+    'torch>=1.7',
+    'PyYAML',
 
-# Temporary workaround until BYU primitives get updated
-req.extend([
+    # D3M dependencies:
+    'd3m==2021.12.19',
+    'd3m-automl-rpc==1.2.0',
     'metalearn==0.6.2',
-])
+]
 
 setuptools.setup(name='alphad3m',
-      version='0.10',
+      version='0.11.0',
       packages=setuptools.find_packages(),
       entry_points={
           'console_scripts': [
               'alphad3m_serve = alphad3m.main:main_serve',
-              'alphad3m_search = alphad3m.main:main_search',
-              'alphad3m_serve_dmc = alphad3m.main:main_serve_dmc'
+              'alphad3m_search = alphad3m.main:main_search'
               ]},
       install_requires=req,
       description="AlphaD3M: NYU's AutoML System",

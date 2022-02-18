@@ -1,3 +1,5 @@
+[![PyPI version](https://badge.fury.io/py/alphad3m.svg)](https://badge.fury.io/py/alphad3m)
+
 <img src="https://gitlab.com/ViDA-NYU/d3m/alphad3m/-/raw/devel/AlphaD3M_logo.png" width=30%>
 
 
@@ -37,7 +39,8 @@ information, hit at K, R2, recall, mean reciprocal rank, precision, and precisio
 ## Installation
 
 You can use AlphaD3M through [d3m-interface](https://d3m-interface.readthedocs.io/en/latest/).  d3m-interface is a 
-Python library to use D3M AutoML systems. 
+Python library to use D3M AutoML systems. There are two ways to use AlphaD3M: 1) via Docker/Singularity containers 
+(full version), and 2) via PyPI installation (lightweight version).
 
 ### Docker/Singularity containers (full version)
 AlphaD3M and the D3M Core will be deployed as a container. This version works with Python 3.6 through 3.8, and supports all 
@@ -54,20 +57,19 @@ The first time d3m-interface is used, it automatically downloads a Docker image 
 
 
 ### PyPI (lightweight version)
-Currently, this version has support for classification and regression tabular problems. This package works with Python 3.8.
+Currently, this version has support for classification, regression and forecasting tasks (using a limited set of primitives). 
+It supports tabular, text and image data types. This package works with Python 3.8 in Linux and Mac.
 
 To install, run these commands:
 
 ```
 $ pip install d3m-interface
 $ pip install alphad3m
-$ pip install d3m-common-primitives d3m-sklearn-wrap dsbox-corex dsbox-primitives sri-d3m
+$ pip install d3m-common-primitives d3m-sklearn-wrap dsbox-corex dsbox-primitives sri-d3m distil-primitives d3m-esrnn d3m-nbeats
 ```
 
 The last command installs the primitives available on PyPI. 
 
-:warning: If you have issues with the installation of 'opencv-python-headless' (dependency of d3m-common-primitives).
-We would recommend you to install it directly from its [Python wheels](https://pypi.org/project/opencv-python-headless/4.5.4.58/#files). :warning: 
 
 ## Documentation
 

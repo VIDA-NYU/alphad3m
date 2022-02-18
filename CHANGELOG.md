@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.11.0 (2022-02-18)
+-----------------------
+* Use D3MPORT env variable.
+* Added instructions for releases.
+* Relax requirements.
+* Disable reuse port in GRPC.
+
 0.10 (2022-02-11)
 -----------------
 
@@ -14,7 +21,7 @@ Changelog
 * Expose outputs of each step within the pipeline.
 * Build automatically the grammar from the metalearning database.
 * Calculate primitive correlations.
-* Add scripts for running on SLURM/Singularity.
+* Added scripts for running on SLURM/Singularity.
 
 Version v2020.12.08 (internal)
 ------------------------------
