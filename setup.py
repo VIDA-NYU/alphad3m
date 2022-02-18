@@ -13,7 +13,7 @@ with io.open('README.md', encoding='utf-8') as fp:
 req = [
     # Non-D3M dependencies:
     'Cython',
-    'SQLAlchemy',
+    'SQLAlchemy==1.2.16',
     'datamart-materialize>=0.9,<0.10',
     'datamart-profiler>=0.9,<0.10',
     'nltk',
