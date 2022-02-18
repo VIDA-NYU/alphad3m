@@ -57,14 +57,15 @@ The first time d3m-interface is used, it automatically downloads a Docker image 
 
 
 ### PyPI (lightweight version)
-Currently, this version has support for classification and regression tabular problems. This package works with Python 3.8.
+Currently, this version has support for classification, regression and forecasting tasks (using a limited set of primitives). 
+It supports tabular, text and image data types. This package works with Python 3.8 in Linux and Mac.
 
 To install, run these commands:
 
 ```
 $ pip install d3m-interface
 $ pip install alphad3m
-$ pip install d3m-common-primitives d3m-sklearn-wrap dsbox-corex dsbox-primitives sri-d3m
+$ pip install d3m-common-primitives d3m-sklearn-wrap dsbox-corex dsbox-primitives sri-d3m distil-primitives d3m-esrnn d3m-nbeats
 ```
 
 The last command installs the primitives available on PyPI. 
