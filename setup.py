@@ -1,14 +1,27 @@
-import io
 import os
 import setuptools
 
-
-# pip workaround
-os.chdir(os.path.abspath(os.path.dirname(__file__)))
+package_name = 'alphad3m'
 
 
-with io.open('README.md', encoding='utf-8') as fp:
-    description = fp.read()
+def read_readme():
+    with open(os.path.join(os.path.dirname(__file__), 'README.md'), encoding='utf8') as file:
+        return file.read()
+
+
+def read_version():
+    module_path = os.path.join(package_name, '__init__.py')
+    with open(module_path) as file:
+        for line in file:
+            parts = line.strip().split(' ')
+            if parts and parts[0] == '__version__':
+                return parts[-1].strip("'")
+
+    raise KeyError('Version not found in {0}'.format(module_path))
+
+
+description = read_readme()
+version = read_version()
 
 req = [
     # Non-D3M dependencies:
@@ -31,28 +44,29 @@ req = [
     'metalearn==0.6.2',
 ]
 
-setuptools.setup(name='alphad3m',
-      version='0.12.0.dev0',
-      packages=setuptools.find_packages(),
-      entry_points={
-          'console_scripts': [
-              'alphad3m_serve = alphad3m.main:main_serve',
-              'alphad3m_search = alphad3m.main:main_search'
-              ]},
-      install_requires=req,
-      description="AlphaD3M: NYU's AutoML System",
-      long_description=description,
-      long_description_content_type='text/markdown',
-      include_package_data=True,
-      author='Remi Rampin, Roque Lopez, Raoni Lourenco',
-      author_email='remi.rampin@nyu.edu, rlopez@nyu.edu, raoni@nyu.edu',
-      maintainer='Remi Rampin, Roque Lopez, Raoni Lourenco',
-      maintainer_email='remi.rampin@nyu.edu, rlopez@nyu.edu, raoni@nyu.edu',
-      keywords=['datadrivendiscovery', 'automl', 'd3m', 'ta2', 'nyu'],
-      license='Apache-2.0',
-      classifiers=[
-          'Development Status :: 5 - Production/Stable',
-          'Intended Audience :: Science/Research',
-          'License :: OSI Approved :: Apache Software License',
-          'Topic :: Scientific/Engineering',
-      ])
+setuptools.setup(
+    name=package_name,
+    version=version,
+    packages=setuptools.find_packages(),
+    entry_points={
+        'console_scripts': [
+            'alphad3m_serve = alphad3m.main:main_serve',
+            'alphad3m_search = alphad3m.main:main_search'
+          ]},
+    install_requires=req,
+    description="AlphaD3M: NYU's AutoML System",
+    long_description=description,
+    long_description_content_type='text/markdown',
+    include_package_data=True,
+    author='Remi Rampin, Roque Lopez, Raoni Lourenco',
+    author_email='remi.rampin@nyu.edu, rlopez@nyu.edu, raoni@nyu.edu',
+    maintainer='Remi Rampin, Roque Lopez, Raoni Lourenco',
+    maintainer_email='remi.rampin@nyu.edu, rlopez@nyu.edu, raoni@nyu.edu',
+    keywords=['datadrivendiscovery', 'automl', 'd3m', 'ta2', 'nyu'],
+    license='Apache-2.0',
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: Apache Software License',
+        'Topic :: Scientific/Engineering',
+    ])
