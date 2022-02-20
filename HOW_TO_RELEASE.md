@@ -12,6 +12,7 @@
   * Merge `devel` into `master` branch: `git merge devel`
   * `git push`
   * Release a package to PyPI:
+    * `rm -rf dist/`
     * `python setup.py sdist bdist_wheel`
     * `twine upload dist/*`
   * Create a tag for the new version, `git tag <tag_name>` and push it `git push origin <tag_name>`
