@@ -20,7 +20,7 @@ def read_version():
     raise KeyError('Version not found in {0}'.format(module_path))
 
 
-description = read_readme()
+long_description = read_readme()
 version = read_version()
 
 req = [
@@ -55,7 +55,7 @@ setuptools.setup(
           ]},
     install_requires=req,
     description="AlphaD3M: NYU's AutoML System",
-    long_description=description,
+    long_description=long_description,
     long_description_content_type='text/markdown',
     include_package_data=True,
     author='Remi Rampin, Roque Lopez, Raoni Lourenco',
