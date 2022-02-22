@@ -26,7 +26,7 @@ version = read_version()
 req = [
     # Non-D3M dependencies:
     'Cython',
-    'SQLAlchemy==1.2.16',
+    'SQLAlchemy>=1.2,<1.4',
     'datamart-materialize>=0.9,<0.10',
     'datamart-profiler>=0.9,<0.10',
     'nltk',
