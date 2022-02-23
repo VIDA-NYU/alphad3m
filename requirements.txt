@@ -10,7 +10,7 @@ smac==0.13.1
 ConfigSpace==0.4.20
 scikit-learn==0.22.2.post1
 scikit-image==0.17.2
-torch>=1.7
+torch==1.7.0
 PyYAML==5.1.2
 
 # D3M dependencies:
