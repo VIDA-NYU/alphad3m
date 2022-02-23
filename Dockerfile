@@ -23,7 +23,7 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
 
 # Install AlphaD3M
 COPY alphad3m /usr/src/app/alphad3m
-COPY setup.py README.md /usr/src/app/
+COPY setup.py requirements.txt README.md /usr/src/app/
 RUN pip3 install --no-deps -e .
 
 COPY eval.sh /usr/local/bin/eval.sh
