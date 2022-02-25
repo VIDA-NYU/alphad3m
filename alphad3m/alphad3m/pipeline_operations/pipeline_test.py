@@ -3,13 +3,11 @@ import os
 import pickle
 from os.path import join
 from d3m.container import Dataset, DataFrame
-from alphad3m.schema import database
 
 logger = logging.getLogger(__name__)
 
 
-@database.with_db
-def test(pipeline_id, dataset, storage_dir, steps_to_expose, msg_queue, db):
+def test(pipeline_id, dataset, storage_dir, steps_to_expose, msg_queue):
     dataset = Dataset.load(dataset)
     logger.info('Loaded dataset')
 
