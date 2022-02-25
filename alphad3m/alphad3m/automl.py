@@ -17,21 +17,20 @@ from sqlalchemy.orm import aliased, joinedload, lazyload
 from sqlalchemy.sql import func
 from os.path import join, exists
 import shutil
-import multiprocessing
-import subprocess
+from multiprocessing import cpu_count
 import threading
 import time
 import d3m_automl_rpc.core_pb2_grpc as pb_core_grpc
-from uuid import uuid4, UUID
+from uuid import uuid4
 from alphad3m import __version__
-from alphad3m.multiprocessing import Receiver, run_process
 from alphad3m.grpc_api import grpc_server
 from alphad3m.data_ingestion.data_profiler import profile_data
 from alphad3m.pipeline_synthesis.templates import generate_pipelines
 from alphad3m.utils import Observable, ProgressStatus, is_collection, get_dataset_sample, create_outputfolders, \
-    read_streams, get_internal_scoring_config
+    get_internal_scoring_config
 from alphad3m.schema import database
 from alphad3m.schema.convert import to_d3m_json
+from alphad3m.multiprocessing import run_process
 from d3m.container import Dataset
 from d3m.metadata.problem import TaskKeyword, parse_problem_description
 from d3m.metadata import pipeline as pipeline_module
@@ -42,7 +41,7 @@ PIPELINES_TO_TUNE = 0  # Number of pipelines (top k) to be tuned.
 TIME_TO_TUNE = 0.15  # The ratio of the time to be used for the tuning phase.
 TIME_TO_SCORE = 5  # In minutes. Internal time to score a pipeline during the searching phase.
 MAX_RUNNING_TIME = 43800  # In minutes. If time is not provided for the searching either scoring, run it for 1 month.
-MAX_RUNNING_PROCESSES = int(os.environ.get('D3MCPU', multiprocessing.cpu_count()))  # Number of processes to be used
+MAX_RUNNING_PROCESSES = int(os.environ.get('D3MCPU', cpu_count()))  # Number of processes to be used
 USE_AUTOMATIC_GRAMMAR = False
 PRIORITIZE_PRIMITIVES = True
 EXCLUDE_PRIMITIVES = []
@@ -498,11 +497,9 @@ class AutoML(Observable):
     def _build_pipelines_from_generator(self, session, task_keywords, dataset_uri, sample_dataset_uri, metrics,
                                         hyperparameters, metadata, timeout_search, pipeline_template):
         logger.info("Starting AlphaD3M process, timeout is %s", timeout_search)
-        msg_queue = Receiver()
-        proc = run_process(
+        proc, msg_queue = run_process(
             'alphad3m.pipeline_synthesis.setup_search.generate_pipelines',
             'generate',
-            msg_queue,
             task_keywords=task_keywords,
             dataset=dataset_uri,
             metrics=metrics,
@@ -520,7 +517,7 @@ class AutoML(Observable):
         stop = False
 
         # Now we wait for pipelines to be sent over the pipe
-        while proc.poll() is None:
+        while proc.is_alive():
             if not stop:
                 if session.stop_requested:
                     logger.error("Session stop requested, sending SIGTERM to generator process")
@@ -533,14 +530,18 @@ class AutoML(Observable):
 
                 if stop:
                     proc.terminate()
-                    try:
-                        proc.wait(30)
-                    except subprocess.TimeoutExpired:
+                    proc.join(30)
+                    if proc.is_alive():
                         proc.kill()
-                        proc.wait()
-            try:
-                msg, *args = msg_queue.recv(3)
-            except Empty:
+                        proc.join()
+
+            if msg_queue.poll(3):
+                try:
+                    msg, *args = msg_queue.recv()
+                except EOFError:
+                    proc.join(3)
+                    continue
+            else:
                 continue
 
             if msg == 'eval':
@@ -553,7 +554,7 @@ class AutoML(Observable):
             else:
                 raise RuntimeError("Got unknown message from generator process: %r" % msg)
 
-        logger.warning("Generator process exited with %r", proc.returncode)
+        logger.warning("Generator process exited with %r", proc.exitcode)
 
     def _build_pipeline_from_template(self, session, task_keywords, dataset_uri, sample_dataset_uri, metrics,
                                       hyperparameters, metadata, timeout_search):
@@ -1054,11 +1055,8 @@ class Job(object):
 
     def check(self):
         if self.msg is not None:
-            try:
-                while True:
-                    self.message(*self.msg.recv(0))
-            except Empty:
-                pass
+            while self.msg.poll():
+                self.message(*self.msg.recv())
 
         return self.poll()
 
@@ -1086,16 +1084,18 @@ class ScoreJob(Job):
         self.report_rank = report_rank
 
     def start(self, db_filename, **kwargs):
-        self.msg = Receiver()
-        self.proc = run_process('alphad3m.pipeline_operations.pipeline_score.score', 'score', self.msg,
-                                pipeline_id=self.pipeline_id,
-                                dataset_uri=self.dataset_uri,
-                                sample_dataset_uri=self.sample_dataset_uri,
-                                metrics=self.metrics,
-                                problem=self.problem,
-                                scoring_config=self.scoring_config,
-                                report_rank=self.report_rank,
-                                db_filename=db_filename)
+        self.proc, self.msg = run_process(
+            'alphad3m.pipeline_operations.pipeline_score.score',
+            'score',
+            pipeline_id=self.pipeline_id,
+            dataset_uri=self.dataset_uri,
+            sample_dataset_uri=self.sample_dataset_uri,
+            metrics=self.metrics,
+            problem=self.problem,
+            scoring_config=self.scoring_config,
+            report_rank=self.report_rank,
+            db_filename=db_filename,
+        )
 
         self.ta2.notify('scoring_start',
                         pipeline_id=self.pipeline_id,
@@ -1107,22 +1107,18 @@ class ScoreJob(Job):
             timeout_reached = True
             logger.error('Reached timeout (%d seconds) to score a pipeline' % self.timeout_run)
             self.proc.terminate()
-            try:
-                self.proc.wait(30)
-            except subprocess.TimeoutExpired:
+            self.proc.join(30)
+            if self.proc.is_alive():
                 self.proc.kill()
-                self.proc.wait()
+                self.proc.join()
 
-        if self.proc.poll() is None:
+        if not self.proc.is_alive():
             return False
 
-        error_msg = read_streams(self.proc)
-        if timeout_reached:
-            error_msg = 'Reached timeout (%d seconds) to score a pipeline' % self.timeout_run
-        log = logger.info if self.proc.returncode == 0 else logger.error
-        log('Pipeline scoring process done, returned %d (pipeline: %s)', self.proc.returncode, self.pipeline_id)
+        log = logger.info if self.proc.exitcode == 0 else logger.error
+        log('Pipeline scoring process done, returned %d (pipeline: %s)', self.proc.exitcode, self.pipeline_id)
 
-        if self.proc.returncode == 0:
+        if self.proc.exitcode == 0:
             self.ta2.notify('scoring_success',
                             pipeline_id=self.pipeline_id,
                             job_id=id(self))
@@ -1133,8 +1129,7 @@ class ScoreJob(Job):
             )
             self.ta2.notify('scoring_error',
                             pipeline_id=self.pipeline_id,
-                            job_id=id(self),
-                            error_msg=error_msg)
+                            job_id=id(self))
         return True
 
 
@@ -1149,27 +1144,28 @@ class TrainJob(Job):
 
     def start(self, db_filename, **kwargs):
         logger.info('Training pipeline for %s', self.pipeline_id)
-        self.msg = Receiver()
-        self.proc = run_process('alphad3m.pipeline_operations.pipeline_train.train', 'train', self.msg,
-                                pipeline_id=self.pipeline_id,
-                                dataset=self.dataset,
-                                problem=self.problem,
-                                storage_dir=self.ta2.runtime_folder,
-                                steps_to_expose=self.steps_to_expose,
-                                db_filename=db_filename)
+        self.proc, self.msg = run_process(
+            'alphad3m.pipeline_operations.pipeline_train.train',
+            'train',
+            pipeline_id=self.pipeline_id,
+            dataset=self.dataset,
+            problem=self.problem,
+            storage_dir=self.ta2.runtime_folder,
+            steps_to_expose=self.steps_to_expose,
+            db_filename=db_filename,
+        )
         self.ta2.notify('training_start',
                         pipeline_id=self.pipeline_id,
                         job_id=id(self))
 
     def poll(self):
-        if self.proc.poll() is None:
+        if not self.proc.is_alive():
             return False
 
-        error_msg = read_streams(self.proc)
-        log = logger.info if self.proc.returncode == 0 else logger.error
-        log('Pipeline training process done, returned %d (pipeline: %s)', self.proc.returncode, self.pipeline_id)
+        log = logger.info if self.proc.exitcode == 0 else logger.error
+        log('Pipeline training process done, returned %d (pipeline: %s)', self.proc.exitcode, self.pipeline_id)
 
-        if self.proc.returncode == 0:
+        if self.proc.exitcode == 0:
             steps_to_expose = []
             for step_id in self.steps_to_expose:
                 if exists(join(self.ta2.runtime_folder, 'fit_%s_%s.csv' % (self.pipeline_id, step_id))):
@@ -1186,8 +1182,7 @@ class TrainJob(Job):
             )
             self.ta2.notify('training_error',
                             pipeline_id=self.pipeline_id,
-                            job_id=id(self),
-                            error_msg=error_msg)
+                            job_id=id(self))
         return True
 
 
@@ -1201,26 +1196,27 @@ class TestJob(Job):
 
     def start(self, db_filename, **kwargs):
         logger.info("Testing pipeline for %s", self.pipeline_id)
-        self.msg = Receiver()
-        self.proc = run_process('alphad3m.pipeline_operations.pipeline_test.test', 'test', self.msg,
-                                pipeline_id=self.pipeline_id,
-                                dataset=self.dataset,
-                                storage_dir=self.ta2.runtime_folder,
-                                steps_to_expose=self.steps_to_expose,
-                                db_filename=db_filename)
+        self.proc, self.msg = run_process(
+            'alphad3m.pipeline_operations.pipeline_test.test',
+            'test',
+            pipeline_id=self.pipeline_id,
+            dataset=self.dataset,
+            storage_dir=self.ta2.runtime_folder,
+            steps_to_expose=self.steps_to_expose,
+            db_filename=db_filename,
+        )
         self.ta2.notify('testing_start',
                         pipeline_id=self.pipeline_id,
                         job_id=id(self))
 
     def poll(self):
-        if self.proc.poll() is None:
+        if not self.proc.is_alive():
             return False
 
-        error_msg = read_streams(self.proc)
-        log = logger.info if self.proc.returncode == 0 else logger.error
-        log('Pipeline testing process done, returned %d (pipeline: %s)', self.proc.returncode, self.pipeline_id)
+        log = logger.info if self.proc.exitcode == 0 else logger.error
+        log('Pipeline testing process done, returned %d (pipeline: %s)', self.proc.exitcode, self.pipeline_id)
 
-        if self.proc.returncode == 0:
+        if self.proc.exitcode == 0:
             steps_to_expose = []
             for step_id in self.steps_to_expose:
                 if exists(join(self.ta2.runtime_folder, 'produce_%s_%s.csv' % (self.pipeline_id, step_id))):
@@ -1237,8 +1233,7 @@ class TestJob(Job):
             )
             self.ta2.notify('testing_error',
                             pipeline_id=self.pipeline_id,
-                            job_id=id(self),
-                            error_msg=error_msg)
+                            job_id=id(self))
         return True
 
 
@@ -1257,20 +1252,20 @@ class TuneHyperparamsJob(Job):
                     self.pipeline_id, self.session.id,
                     len(self.session.pipelines_tuning))
 
-        self.msg = Receiver()
-
-        self.proc = run_process('alphad3m.pipeline_operations.pipeline_tune.tune',
-                                'tune', self.msg,
-                                pipeline_id=self.pipeline_id,
-                                storage_dir=self.ta2.internal_folder,
-                                dataset_uri=self.session.dataset_uri,
-                                sample_dataset_uri=self.session.sample_dataset_uri,
-                                metrics=self.session.metrics,
-                                problem=self.problem,
-                                scoring_config=get_internal_scoring_config(self.problem['problem']['task_keywords']),
-                                report_rank=self.session.report_rank,
-                                timeout_tuning=self.timeout_tuning,
-                                db_filename=db_filename)
+        self.proc, self.msg = run_process(
+            'alphad3m.pipeline_operations.pipeline_tune.tune',
+            'tune',
+            pipeline_id=self.pipeline_id,
+            storage_dir=self.ta2.internal_folder,
+            dataset_uri=self.session.dataset_uri,
+            sample_dataset_uri=self.session.sample_dataset_uri,
+            metrics=self.session.metrics,
+            problem=self.problem,
+            scoring_config=get_internal_scoring_config(self.problem['problem']['task_keywords']),
+            report_rank=self.session.report_rank,
+            timeout_tuning=self.timeout_tuning,
+            db_filename=db_filename,
+        )
 
         self.session.notify('tuning_start',
                             pipeline_id=self.pipeline_id,
@@ -1280,21 +1275,19 @@ class TuneHyperparamsJob(Job):
         if time.time() > self.expected_end:
             logger.error('Reached timeout (%d seconds) to tune a pipeline' % self.timeout_tuning)
             self.proc.terminate()
-            try:
-                self.proc.wait(30)
-            except subprocess.TimeoutExpired:
+            self.proc.join(30)
+            if self.proc.is_alive():
                 self.proc.kill()
-                self.proc.wait()
+                self.proc.join()
 
-        if self.proc.poll() is None:
+        if not self.proc.is_alive():
             return False
 
-        error_msg = read_streams(self.proc)
-        log = logger.info if self.proc.returncode == 0 else logger.error
+        log = logger.info if self.proc.exitcode == 0 else logger.error
         log("Pipeline tuning process done, returned %d (pipeline: %s)",
-            self.proc.returncode, self.pipeline_id)
+            self.proc.exitcode, self.pipeline_id)
 
-        if self.proc.returncode == 0:
+        if self.proc.exitcode == 0:
             logger.info("New pipeline: %s)", self.tuned_pipeline_id)
             self.session.notify('tuning_success',
                                 old_pipeline_id=self.pipeline_id,
@@ -1312,8 +1305,7 @@ class TuneHyperparamsJob(Job):
             )
             self.session.notify('tuning_error',
                                 pipeline_id=self.pipeline_id,
-                                job_id=id(self),
-                                error_msg=error_msg)
+                                job_id=id(self))
             self.session.pipeline_tuning_done(self.pipeline_id)
         return True
 
