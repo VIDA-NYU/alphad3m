@@ -11,7 +11,6 @@ def test(pipeline_id, dataset, storage_dir, steps_to_expose, msg_queue):
     dataset = Dataset.load(dataset)
     logger.info('Loaded dataset')
 
-    runtime = None
     with open(os.path.join(storage_dir, 'fitted_solution_%s.pkl' % pipeline_id), 'rb') as fin:
         runtime = pickle.load(fin)
 

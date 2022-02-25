@@ -7,6 +7,7 @@ from os.path import join
 from sqlalchemy.orm import joinedload
 from d3m.container import Dataset, DataFrame
 from d3m.metadata import base as metadata_base
+import d3m.metadata.pipeline
 from alphad3m.schema import database, convert
 
 
