@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 @database.with_db
-def train(pipeline_id, dataset, problem, storage_dir, steps_to_expose, msg_queue, db):
+def train(pipeline_id, dataset, problem, storage_dir, steps_to_expose, pipe, db):
     # Get pipeline from database
     pipeline = (
         db.query(database.Pipeline)

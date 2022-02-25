@@ -53,7 +53,7 @@ def check_timeindicator(dataset_path):
 
 
 @database.with_db
-def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, report_rank, msg_queue, db):
+def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config, report_rank, pipe, db):
     # Get pipeline from database
     logger.info('About to score pipeline, id=%s, metrics=%s', pipeline_id, metrics)
     pipeline = (

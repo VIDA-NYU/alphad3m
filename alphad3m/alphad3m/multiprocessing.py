@@ -57,7 +57,7 @@ def _invoke(tag, target, pipe, kwargs):
     function = getattr(module, function)
 
     try:
-        function(msg_queue=pipe, **kwargs)
+        function(pipe=pipe, **kwargs)
     except Exception:
         logging.exception("Uncaught exception in subprocess %s", tag)
         error = traceback.format_exc()

@@ -74,7 +74,7 @@ def signal_handler(signal_num, frame):
 
 @database.with_sessionmaker
 def generate_pipelines(task_keywords, dataset, metrics, problem, targets, features, hyperparameters, metadata,
-                       pipeline_template, time_bound, msg_queue, DBSession):
+                       pipeline_template, time_bound, pipe, DBSession):
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGALRM, signal_handler)
     signal.alarm(int(time_bound))
@@ -90,8 +90,8 @@ def generate_pipelines(task_keywords, dataset, metrics, problem, targets, featur
                                                features, metadata, metrics, DBSession=DBSession)
         # Evaluate the pipeline if syntax is correct:
         if pipeline_id:
-            msg_queue.send(('eval', pipeline_id))
-            return msg_queue.recv()
+            pipe.send(('eval', pipeline_id))
+            return pipe.recv()
         else:
             return None
 

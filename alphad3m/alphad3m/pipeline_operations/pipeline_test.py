@@ -7,7 +7,7 @@ from d3m.container import Dataset, DataFrame
 logger = logging.getLogger(__name__)
 
 
-def test(pipeline_id, dataset, storage_dir, steps_to_expose, msg_queue):
+def test(pipeline_id, dataset, storage_dir, steps_to_expose, pipe):
     dataset = Dataset.load(dataset)
     logger.info('Loaded dataset')
 

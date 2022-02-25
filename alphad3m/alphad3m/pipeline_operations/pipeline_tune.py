@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 @database.with_db
-def tune(pipeline_id, dataset_uri, sample_dataset_uri, storage_dir, metrics, problem, scoring_config, report_rank, timeout_tuning, msg_queue, db):
+def tune(pipeline_id, dataset_uri, sample_dataset_uri, storage_dir, metrics, problem, scoring_config, report_rank, timeout_tuning, pipe, db):
     # Load pipeline from database
     pipeline = (
         db.query(database.Pipeline)
@@ -97,4 +97,4 @@ def tune(pipeline_id, dataset_uri, sample_dataset_uri, storage_dir, metrics, pro
     save_scores(new_pipeline.id, best_scores, metrics, report_rank, db)
     shutil.rmtree(output_directory)
     logger.info('Tuning done, generated new pipeline %s', new_pipeline.id)
-    msg_queue.send(('tuned_pipeline_id', new_pipeline.id))
+    pipe.send(('tuned_pipeline_id', new_pipeline.id))
