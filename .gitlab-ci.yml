@@ -10,7 +10,8 @@ variables:
   DOCKER_TLS_CERTDIR: ""
 
 services:
-  - docker:dind
+  - name: docker:dind
+    command: ["--mtu=1450"]
 
 build_image:
   stage: build
