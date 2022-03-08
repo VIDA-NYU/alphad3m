@@ -9,6 +9,7 @@ set -eu
 
 OPTS=""
 TIMEOUT=10
+PORT=45042
 
 while true; do
     if [ "$1" = "fast" ]; then
@@ -28,9 +29,6 @@ case "$1" in
     ta2ta3)
         MODE=ta2ta3
         INPUT="$2"
-        if [ "x${D3MPORT:-}" = x ]; then
-          D3MPORT=45042
-        fi
         shift 2
     ;;
     *)
@@ -42,7 +40,7 @@ case "$1" in
 esac
 
 docker run -ti --rm \
-    -p ${D3MPORT}:45042 \
+    -p ${PORT}:45042 \
     -e D3MRUN="$MODE" \
     -e D3MINPUTDIR=/input \
     -e D3MOUTPUTDIR=/output \
@@ -50,6 +48,7 @@ docker run -ti --rm \
     -e D3MCPU=4 \
     -e D3MRAM=4Gi \
     -e D3MTIMEOUT=$TIMEOUT \
+    -e D3MPORT=$PORT \
     $OPTS \
     -v "$PWD/alphad3m:/usr/src/app/alphad3m" \
     -v "$PWD/tests:/usr/src/app/tests"\
