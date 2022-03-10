@@ -123,7 +123,7 @@ def evaluate_pipelines(datasets, top=10, option='fit-score'):
             search_id = search_results[dataset]['search_id']
             logger.info('Scoring top pipeline id=%s' % top_pipeline_id)
             pipeline_path = join(D3MOUTPUTDIR, search_id, 'pipelines_searched', '%s.json' % top_pipeline_id)
-            #pipeline_path = '/usr/src/app/resource/pipelines/example_metalearningdb.json'
+            #pipeline_path = '/usr/src/app/alphad3m/resource/pipelines/example_metalearningdb.json'
             output_path = join(D3MOUTPUTDIR, 'temp', 'runtime_output', '%s_%s.csv' % (option, top_pipeline_id))
             try:
                 command = create_command(option, top_pipeline_id, pipeline_path, output_path, problem_path,
@@ -193,7 +193,7 @@ def load_search_results(file_path):
 
 
 def load_template():
-    with open(join(os.path.dirname(__file__), '../resource/pipelines/example_metalearningdb.json')) as fin:
+    with open(join(os.path.dirname(__file__), '../alphad3m/resource/pipelines/example_metalearningdb.json')) as fin:
         json_pipeline = json.load(fin)
 
     d3m_pipeline = Pipeline.from_json_structure(json_pipeline, )
@@ -266,7 +266,7 @@ def create_inputs_pipelineprofiler(dataset):
 
 
 def run_describe():
-    pipeline_path = '/usr/src/app/resource/pipelines/example_metalearningdb.json'
+    pipeline_path = '/usr/src/app/alphad3m/resource/pipelines/example_metalearningdb.json'
     command = [
         'python3', '-m', 'd3m',
         'pipeline',
@@ -311,10 +311,10 @@ def debug_pipeline(dataset_uri):
 
 
 def score_pipeline(task, json_pipeline):
-    with pkg_resources.resource_stream('alphad3m', '../resource/pipelines/kfold_tabular_split.yaml') as fp:
+    with pkg_resources.resource_stream('alphad3m', 'resource/pipelines/kfold_tabular_split.yaml') as fp:
         data_pipeline = Pipeline.from_yaml(fp)
 
-    with pkg_resources.resource_stream('alphad3m', '../resource/pipelines/scoring.yaml') as fp:
+    with pkg_resources.resource_stream('alphad3m', 'resource/pipelines/scoring.yaml') as fp:
         scoring_pipeline = Pipeline.from_yaml(fp)
 
     dataset_path = join(D3MINPUTDIR, task, 'openml_dataset_*/datasetDoc.json')
@@ -381,5 +381,5 @@ if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
     if len(sys.argv) > 1:
         datasets = sys.argv[1:]
-    search_pipelines(datasets, 5)
+    search_pipelines(datasets, 60)
     evaluate_pipelines(datasets)
