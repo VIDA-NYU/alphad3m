@@ -36,10 +36,14 @@ def get_task_name(task_keywords):
         task_name = 'TIME_SERIES_CLASSIFICATION'
     elif 'vertex' in task_keywords:
         task_name = 'VERTEX_CLASSIFICATION'
+    elif 'multipleInstanceLearning' in task_keywords:
+        task_name = 'MULTIPLE_INSTANCE_LEARNING'
     elif 'text' in task_keywords:
         task_name = 'TEXT_CLASSIFICATION'
     elif 'image' in task_keywords and 'classification' in task_keywords:
         task_name = 'IMAGE_CLASSIFICATION'
+    elif 'image' in task_keywords and 'regression' in task_keywords:
+        task_name = 'IMAGE_REGRESSION'
     elif 'audio' in task_keywords:
         task_name = 'AUDIO_CLASSIFICATION'
     elif 'video' in task_keywords:
@@ -97,7 +101,7 @@ def get_leaderboard(leaderboard_path):
                 ranking.append((team, round(float(score), 3)))
 
         new_ranking = add_rank(ranking)
-        leaderboard[dataset_name] = new_ranking
+        leaderboard[dataset_name] = {'ranking': new_ranking, 'task': task_types[dataset_name]}
 
     return leaderboard
 
@@ -140,7 +144,8 @@ def collect_new_scores():
 
 
 def update_leaderboard(leaderboard, new_scores, new_team):
-    for dataset, ranking in leaderboard.items():
+    for dataset, ranking_info in leaderboard.items():
+        ranking = ranking_info['ranking']
         ranking = [(t, s['score']) for t, s in ranking.items() if s['score'] is not None]
         if dataset in new_scores:
             new_score = new_scores[dataset]['score']
@@ -152,7 +157,7 @@ def update_leaderboard(leaderboard, new_scores, new_team):
             logger.warning('No new score found for dataset %s', dataset)
 
         new_ranking = add_rank(ranking)
-        leaderboard[dataset] = new_ranking
+        leaderboard[dataset] = {'ranking': new_ranking, 'task': ranking_info['task']}
 
     return leaderboard
 
@@ -160,7 +165,7 @@ def update_leaderboard(leaderboard, new_scores, new_team):
 def calculate_statistics(leaderboard):
     team_statistics = {x: {'winner_pipelines': 0, 'avg_rank': 0} for x in ALL_TA2S}
     for dataset in leaderboard:
-        dataset_ranking = leaderboard[dataset]
+        dataset_ranking = leaderboard[dataset]['ranking']
         for team in ALL_TA2S:
             team_rank = dataset_ranking[team]['rank']
             if team_rank == 1:
@@ -174,12 +179,34 @@ def calculate_statistics(leaderboard):
 
     team_statistics = sorted(team_statistics.items(), key=lambda x: x[1]['winner_pipelines'], reverse=True)
 
-    table = PrettyTable()
-    table.field_names = ['Team', 'Winner Pipelines', 'Avg. Rank']
+    table_team = PrettyTable()
+    table_team.field_names = ['Team', 'Winner Pipelines', 'Avg. Rank']
     for team, statistics in team_statistics:
-        table.add_row([team, statistics['winner_pipelines'], statistics['avg_rank']])
+        table_team.add_row([team, statistics['winner_pipelines'], statistics['avg_rank']])
 
-    print(table)
+    print(table_team)
+
+    task_statistics = {}
+    for dataset in leaderboard:
+        task = leaderboard[dataset]['task']
+        if task not in task_statistics:
+            task_statistics[task] = {'teams': {}, 'total': 0}
+        task_statistics[task]['total'] += 1
+
+        for team in ALL_TA2S:
+            team_score = leaderboard[dataset]['ranking'][team]['score']
+            if team not in task_statistics[task]['teams']:
+                task_statistics[task]['teams'][team] = 0
+            if team_score is not None:
+                task_statistics[task]['teams'][team] += 1
+
+    ta2s = sorted(ALL_TA2S)
+    table_task = PrettyTable()
+    table_task.field_names = ['Tasks', 'Total'] + ta2s
+    for task in task_statistics:
+        table_task.add_row([task, task_statistics[task]['total']] + [task_statistics[task]['teams'][x] for x in ta2s])
+
+    print(table_task)
 
 
 logger.info('Top 1 pipeline')
@@ -188,8 +215,3 @@ leaderboard = get_leaderboard(leaderboard_path)
 new_scores = collect_new_scores()
 leaderboard = update_leaderboard(leaderboard, new_scores, 'NEW-NYU-TA2')
 calculate_statistics(leaderboard)
-
-#logger.info('Top 20 pipeline')
-#leaderboard_path = '../../evaluations/leaderboard_october_2021_rank20.html'
-#new_leaderboard = get_leaderboard(leaderboard_path)
-#calculate_statistics(new_leaderboard)
