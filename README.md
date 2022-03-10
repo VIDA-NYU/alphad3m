@@ -70,6 +70,8 @@ $ pip install d3m-common-primitives d3m-sklearn-wrap dsbox-corex dsbox-primitive
 
 The last command installs the primitives available on PyPI. 
 
+On non-Linux platforms, you will need swig to compile pyrfr. You can obtain swig from [homebrew](https://formulae.brew.sh/formula/swig@3), [anaconda](https://anaconda.org/anaconda/swig), or [the swig website](http://www.swig.org/download.html).
+
 
 ## Documentation
 
