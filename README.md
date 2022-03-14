@@ -46,15 +46,25 @@ Python library to use D3M AutoML systems. There are two ways to use AlphaD3M: 1)
 AlphaD3M and the D3M Core will be deployed as a container. This version works with Python 3.6 through 3.8, and supports all 
 the ML tasks and data types mentioned above. You need to have Docker or Singularity installed on your operating system.
 
-For this version, you just need to install d3m-interface:
+For this version, you need to install d3m-interface:
 
 ```
 $ pip install d3m-interface
 ```
 
-The first time d3m-interface is used, it automatically downloads a Docker image containing AlphaD3M and the D3M Core.
+Once the installation is completed, you need to pull manually the Docker image of AlphaD3M.
 
+For Docker:
 
+```
+$ docker pull registry.gitlab.com/vida-nyu/d3m/alphad3m:latest
+```
+
+or for Singularity:
+
+```
+$ singularity pull docker://registry.gitlab.com/vida-nyu/d3m/alphad3m:latest
+```
 
 ### PyPI (lightweight version)
 Currently, this version has support for classification, regression and forecasting tasks (using a limited set of primitives). 
