@@ -1,6 +1,9 @@
 Changelog
 =========
 
+0.21.0.dev0 (yyyy-mm-dd)
+------------------------
+
 0.20.0 (2022-03-21)
 -------------------
 * Restructure repository and implement a new API.
