@@ -1,8 +1,12 @@
 Changelog
 =========
 
-0.12.0.dev0 (yyyy-mm-dd)
-------------------------
+0.2.0 (2022-03-21)
+-------------------
+* Restructure repository and implement a new API.
+* Read version from file.
+* Update instructions for releases.
+* Move dependencies from setup.py to requirements.txt.
 
 
 0.11.0 (2022-02-18)
