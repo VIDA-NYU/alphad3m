@@ -1,7 +1,7 @@
 API
 =========
 
-.. module:: alphad3m_engine.alphad3m.api
+.. module:: alphad3m.alphad3m.api
 
 .. autoclass:: AutoML
    :members:
