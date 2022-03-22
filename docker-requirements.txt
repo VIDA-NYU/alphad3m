@@ -11,4 +11,4 @@ scikit-learn==0.22.2.post1
 torch==1.7.0
 PyYAML==5.4.1
 d3m-automl-rpc==1.2.0
-d3m-interface==0.5.0
+d3m-interface==0.6.0
