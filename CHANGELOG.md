@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.2.0 (2022-03-21)
+0.20.0 (2022-03-21)
 -------------------
 * Restructure repository and implement a new API.
 * Read version from file.
