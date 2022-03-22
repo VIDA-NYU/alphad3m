@@ -50,7 +50,7 @@ docker run -ti --rm \
     -e D3MTIMEOUT=$TIMEOUT \
     -e D3MPORT=$PORT \
     $OPTS \
-    -v "$PWD/alphad3m:/usr/src/app/alphad3m" \
+    -v "$PWD/alphad3m/alphad3m:/usr/src/app/alphad3m" \
     -v "$PWD/tests:/usr/src/app/tests"\
     -v "$PWD/eval.sh:/usr/local/bin/eval.sh"\
     -v "$LOCAL_INPUT_ROOT/${INPUT}:/input" \

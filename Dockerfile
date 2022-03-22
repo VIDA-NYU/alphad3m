@@ -22,8 +22,8 @@ RUN pip3 freeze | sort >prev_reqs.txt && \
     rm prev_reqs.txt new_reqs.txt docker-requirements.txt
 
 # Install AlphaD3M
-COPY alphad3m /usr/src/app/alphad3m
-COPY setup.py requirements.txt README.md /usr/src/app/
+COPY alphad3m/alphad3m /usr/src/app/alphad3m
+COPY alphad3m/setup.py alphad3m/requirements.txt alphad3m/README.md /usr/src/app/
 RUN pip3 install --no-deps -e .
 
 COPY eval.sh /usr/local/bin/eval.sh
