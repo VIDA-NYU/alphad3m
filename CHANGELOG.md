@@ -1,11 +1,15 @@
 Changelog
 =========
 
-0.21.0.dev0 (yyyy-mm-dd)
-------------------------
+0.21.0 (2022-03-22)
+--------------------
+* Add 'resource_folder' parameter to the API.
+* Remove unused data reader module.
+* Add more Jupyter Notebook examples.
 
 0.20.0 (2022-03-21)
 -------------------
+* Add alpha-containers package.
 * Restructure repository and implement a new API.
 * Read version from file.
 * Update instructions for releases.
