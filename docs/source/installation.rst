@@ -45,4 +45,7 @@ To install, run these commands:
 
 The second command installs the primitives available on PyPI.
 
+Warning: Recently, has been an update of the regex package, (version 2022.3.15) which breaks the dateparser package
+used in d3m core package. To avoid this error, you need to install `pip install regex==2022.1.18`.
+
 On non-Linux platforms, you will need `swig` to compile pyrfr. You can obtain swig from `homebrew <https://formulae.brew.sh/formula/swig@3>`__, `anaconda <https://anaconda.org/anaconda/swig>`__, or `the swig website <http://www.swig.org/download.html>`__.
