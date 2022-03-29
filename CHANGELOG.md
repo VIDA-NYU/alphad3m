@@ -1,7 +1,9 @@
 Changelog
 =========
-0.22.0.dev0 (yyyy-mm-dd)
--------------------------
+0.21.1 (2022-03-29)
+--------------------
+* Unlock d3m dependencies.
+* Update documentation.
 
 
 0.21.0 (2022-03-22)
