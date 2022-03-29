@@ -33,19 +33,16 @@ PyPI (lightweight version)
 ---------------------------
 Currently, this version has support for classification, regression, time-series classification, time-series forecasting,
 semi-supervised classification, collaborative filtering, and clustering (using a limited set of primitives).
-It supports tabular, text and image data types. This package works with Python 3.8 in Linux and Mac.
+It supports tabular, text, image and video data types. This package works with Python 3.8 in Linux and Mac.
 
 To install, run these commands:
 
 ::
 
    $ pip install alphad3m
-   $ pip install d3m-common-primitives d3m-sklearn-wrap dsbox-corex dsbox-primitives sri-d3m distil-primitives rpi-d3m-primitives kf-d3m-primitives d3m-esrnn d3m-nbeats --no-binary pmdarima
+   $ pip install d3m-common-primitives d3m-sklearn-wrap dsbox-corex dsbox-primitives sri-d3m distil-primitives rpi-d3m-primitives kf-d3m-primitives autonbox fastlvm d3m-esrnn d3m-nbeats --no-binary pmdarima
 
 
 The second command installs the primitives available on PyPI.
-
-Warning: Recently, there was an update of the regex package, (version 2022.3.15) which breaks the dateparser package
-used in d3m core package. To avoid this error, you need to install: `pip install regex==2022.3.2`.
 
 On non-Linux platforms, you will need `swig` to compile pyrfr. You can obtain swig from `homebrew <https://formulae.brew.sh/formula/swig@3>`__, `anaconda <https://anaconda.org/anaconda/swig>`__, or `the swig website <http://www.swig.org/download.html>`__.
