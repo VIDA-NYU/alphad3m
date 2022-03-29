@@ -45,4 +45,15 @@ To install, run these commands:
 
 The second command installs the primitives available on PyPI.
 
-On non-Linux platforms, you will need `swig` to compile pyrfr. You can obtain swig from `homebrew <https://formulae.brew.sh/formula/swig@3>`__, `anaconda <https://anaconda.org/anaconda/swig>`__, or `the swig website <http://www.swig.org/download.html>`__.
+|:warning:| WARNING |:warning:|
+
+On non-Linux platforms:
+
+- You will need `swig` to compile pyrfr. You can obtain swig from
+  `homebrew <https://formulae.brew.sh/formula/swig@3>`__, `anaconda <https://anaconda.org/anaconda/swig>`__, or
+  `the swig website <http://www.swig.org/download.html>`__.
+- To install fastlvm primitives, run:
+
+  ::
+
+     CFLAGS=-mmacosx-version-min=10.12 CXXFLAGS=-mmacosx-version-min=10.12 python -m pip install fastlvm
