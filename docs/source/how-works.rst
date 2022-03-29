@@ -14,7 +14,8 @@ performs hyperparameter optimization of the best pipelines using SMAC.
 For more information about how AlphaD3M works, see our papers:
 
 - `AlphaD3M: Machine Learning Pipeline Synthesis <https://arxiv.org/abs/2111.02508>`__
-- `Automatic Machine Learning by Pipeline Synthesis using Model-Based Reinforcement Learning and a Grammar <https://arxiv.org/abs/1905.10345>`__
+- `Automatic Machine Learning by Pipeline Synthesis using Model-Based Reinforcement Learning and a Grammar
+  <https://arxiv.org/abs/1905.10345>`__
 
 
 
@@ -25,12 +26,10 @@ AlphaD3M uses a comprehensive collection of primitives developed under the D3M p
 in open-source libraries, such as scikit-learn, to derive pipelines for a wide range of machine learning tasks. These
 pipelines can be applied to different data types and derive standard performance metrics.
 
-- *Learning Tasks*: classification (semi-supervised, binary, multiclass, and multi-label), regression (univariate, and
-  multivariate), time series (forecasting, hierarchical forecasting, and classification),  image-based problems (object
-  detection, remote sensing, and image recognition), graph-based problems (collaborative filtering, community detection,
-  graph matching, link prediction, and vertex classification),  multi-instance learning and clustering.
-- *Data Types*: tabular, time series, hierarchical (grouped, multi-index) time series, geospatial, images, multi-spectral
-  imagery, relational, text, graph, audio, video.
+- *Learning Tasks*: classification, regression, clustering, time series forecasting, time series classification, object
+  detection, LUPI, community detection, link prediction, graph matching, vertex classification, collaborative filtering,
+  and semi-supervised classification.
+- *Data Types*: tabular, text, images, text, audio, video, and graph.
 - *Data Formats*: D3M, raw CSV, raw text files, OpenML, and scikit-learn datasets.
 - *Metrics*: accuracy, F1, macro F1, micro F1, mean squared error, mean absolute error, root mean squared error, object
   detection AP, hamming loss, ROC-AUC, ROC-AUC macro, ROC-AUC micro, jaccard similarity score, normalized mutual
