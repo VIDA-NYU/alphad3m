@@ -31,9 +31,9 @@ or for Singularity:
 
 PyPI (lightweight version)
 ---------------------------
-Currently, this version has support for classification, regression, time-series classification, time-series forecasting,
-semi-supervised classification, collaborative filtering, and clustering (using a limited set of primitives).
-It supports tabular, text, image and video data types. This package works with Python 3.8 in Linux and Mac.
+Currently, this version has support for classification, regression, clustering, time-series forecasting, time-series
+classification, collaborative filtering, and semi-supervised classification (using a limited set of primitives).
+It supports tabular, text, image, audio, and video data types. This package works with Python 3.8 in Linux and Mac.
 
 To install, run these commands:
 
@@ -52,7 +52,7 @@ On non-Linux platforms:
 - You will need `swig` to compile pyrfr. You can obtain swig from
   `homebrew <https://formulae.brew.sh/formula/swig@3>`__, `anaconda <https://anaconda.org/anaconda/swig>`__, or
   `the swig website <http://www.swig.org/download.html>`__.
-- To install fastlvm primitives, run:
+- To install fastlvm primitives on Mac, run:
 
   ::
 
