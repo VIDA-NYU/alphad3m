@@ -7,7 +7,7 @@ There are two ways to use AlphaD3M: 1) via Docker/Singularity containers (full v
 Docker/Singularity containers (full version)
 ---------------------------------------------
 AlphaD3M and the primitives will be deployed as a container. This version works with Python 3.6 through 3.8 in Linux,
-Mac and Windows. It supports all the ML tasks and data types mentioned :doc:`here <index>`.
+Mac and Windows. It supports all the ML tasks and data types mentioned :doc:`here <how-works>`.
 You need to have Docker or Singularity installed on your operating system.
 
 To install, run:
