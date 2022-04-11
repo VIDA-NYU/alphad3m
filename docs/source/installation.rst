@@ -34,8 +34,9 @@ PyPI (lightweight version)
 Currently, this version has support for classification, regression, clustering, time-series forecasting, time-series
 classification, collaborative filtering, and semi-supervised classification (using a limited set of primitives).
 It supports tabular, text, image, audio, and video data types. This package works with Python 3.8 in Linux and Mac.
-We recommend to have a version of `pip >= 20.3` to leverage the improved dependency resolver, as lower versions may raise
-dependency conflicts.
+Installation will require a version of `pip >= 20.3` to leverage the improved dependency resolver, as lower versions may
+raise dependency conflicts. You might need GCC or other C/C++ compilers to install packages like NumPy, which uses C
+extensions.
 
 To install, run these commands:
 
