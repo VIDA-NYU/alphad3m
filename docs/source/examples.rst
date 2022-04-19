@@ -1,7 +1,7 @@
 Examples
 ==========
 
-Here can find different Jupyter notebook examples about how to use `alphad3m`:
+Here can find different Jupyter notebook examples about how to use `AlphaD3M`:
 
 - `Tabular classification <https://gitlab.com/ViDA-NYU/d3m/alphad3m/-/blob/devel/examples/tabular_classification.ipynb?expanded=true&rich=true>`__
 - `Tabular regression <https://gitlab.com/ViDA-NYU/d3m/alphad3m/-/blob/devel/examples/tabular_regression.ipynb?expanded=true&rich=true>`__
