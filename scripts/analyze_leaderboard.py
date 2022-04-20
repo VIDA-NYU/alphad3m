@@ -3,7 +3,7 @@ import re
 import logging
 import pandas as pd
 from bs4 import BeautifulSoup
-from os.path import join, exists
+from os.path import join, exists, dirname
 from prettytable import PrettyTable
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ def get_task_name(task_keywords):
     elif 'vertex' in task_keywords:
         task_name = 'VERTEX_CLASSIFICATION'
     elif 'multipleInstanceLearning' in task_keywords:
-        task_name = 'MULTIPLE_INSTANCE_LEARNING'
+        task_name = 'TABULAR_CLASSIFICATION'  # There are no primitives for multi instance classification
     elif 'text' in task_keywords:
         task_name = 'TEXT_CLASSIFICATION'
     elif 'image' in task_keywords and 'classification' in task_keywords:
@@ -124,9 +124,8 @@ def add_rank(ranking, worst_rank=len(ALL_TA2S)):
     return new_ranking
 
 
-def collect_new_scores():
+def collect_new_scores(folder_path):
     new_scores = {}
-    folder_path = '../../evaluations/new_results'
     datasets = sorted([x for x in os.listdir(folder_path) if os.path.isdir(join(folder_path, x))])
 
     for dataset in datasets:
@@ -210,8 +209,9 @@ def calculate_statistics(leaderboard):
 
 
 logger.info('Top 1 pipeline')
-leaderboard_path = '../../evaluations/leaderboard_december_2020_rank1.html'
+leaderboard_path = join(dirname(__file__), '../../evaluations/leaderboard_december_2020_rank1.html')
 leaderboard = get_leaderboard(leaderboard_path)
-new_scores = collect_new_scores()
+new_results_path = join(dirname(__file__), '../../evaluations/new_results')
+new_scores = collect_new_scores(new_results_path)
 leaderboard = update_leaderboard(leaderboard, new_scores, 'NEW-NYU-TA2')
 calculate_statistics(leaderboard)
