@@ -76,7 +76,7 @@ def search_pipelines(datasets, time_bound=10, use_template=False):
             all_scores = []
 
             for pipeline_id, (_, pipeline, pipeline_time) in sorted_pipelines:
-                if use_template:  # FIXME: Pipeline's score is not calculate when working with fully defined template
+                if use_template:  # FIXME: Pipeline's score is not calculated when working with fully defined template
                     pipeline_score = 1.0
                 else:
                     pipeline_score = decode_value(pipeline[0].scores[0].value)['value']
@@ -381,5 +381,7 @@ if __name__ == '__main__':
     datasets = sorted([x for x in os.listdir(D3MINPUTDIR) if os.path.isdir(join(D3MINPUTDIR, x))])
     if len(sys.argv) > 1:
         datasets = sys.argv[1:]
+    else:
+        datasets = ['185_baseball_MIN_METADATA']
     search_pipelines(datasets, 60)
     evaluate_pipelines(datasets)
