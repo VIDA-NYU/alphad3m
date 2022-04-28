@@ -22,8 +22,12 @@ def load_search_performances(file_path, method):
     return search_performances
 
 
-def plot_search_performances(performances, dataset):
+def plot_search_performances(performances, dataset, max_minutes=None):
     filtered_performances = performances[performances['dataset'] == dataset]
+
+    if max_minutes is not None:
+        filtered_performances = filtered_performances[(filtered_performances['time'].dt.minute < max_minutes) &
+                                                      (filtered_performances['time'].dt.hour == 0)]
 
     return alt.Chart(filtered_performances).mark_line(point=True).encode(
         alt.X('hoursminutes(time):T', title='Time'),
