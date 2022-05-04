@@ -1117,7 +1117,8 @@ class ScoreJob(Job):
             return False
 
         error_msg = read_streams(self.proc)
-        if timeout_reached: error_msg = 'Reached timeout (%d seconds) to score a pipeline' % self.timeout_run
+        if timeout_reached:
+            error_msg = 'Reached timeout (%d seconds) to score a pipeline' % self.timeout_run
         log = logger.info if self.proc.returncode == 0 else logger.error
         log('Pipeline scoring process done, returned %d (pipeline: %s)', self.proc.returncode, self.pipeline_id)
 
@@ -1126,6 +1127,10 @@ class ScoreJob(Job):
                             pipeline_id=self.pipeline_id,
                             job_id=id(self))
         else:
+            logger.error(
+                "Error from scoring process:\n%s",
+                '\n'.join('  ' + l for l in error_msg.splitlines()),
+            )
             self.ta2.notify('scoring_error',
                             pipeline_id=self.pipeline_id,
                             job_id=id(self),
@@ -1175,6 +1180,10 @@ class TrainJob(Job):
                             steps_to_expose=steps_to_expose,
                             job_id=id(self))
         else:
+            logger.error(
+                "Error from training process:\n%s",
+                '\n'.join('  ' + l for l in error_msg.splitlines()),
+            )
             self.ta2.notify('training_error',
                             pipeline_id=self.pipeline_id,
                             job_id=id(self),
@@ -1222,6 +1231,10 @@ class TestJob(Job):
                             steps_to_expose=steps_to_expose,
                             job_id=id(self))
         else:
+            logger.error(
+                "Error from testing process:\n%s",
+                '\n'.join('  ' + l for l in error_msg.splitlines()),
+            )
             self.ta2.notify('testing_error',
                             pipeline_id=self.pipeline_id,
                             job_id=id(self),
@@ -1293,6 +1306,10 @@ class TuneHyperparamsJob(Job):
             self.session.pipeline_tuning_done(self.pipeline_id,
                                               self.tuned_pipeline_id)
         else:
+            logger.error(
+                "Error from tuning process:\n%s",
+                '\n'.join('  ' + l for l in error_msg.splitlines()),
+            )
             self.session.notify('tuning_error',
                                 pipeline_id=self.pipeline_id,
                                 job_id=id(self),
