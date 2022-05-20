@@ -1,7 +1,15 @@
 Changelog
 =========
-0.22.0.dev0 (yyyy-mm-dd)
-------------------------
+
+0.22.0 (2022-05-20)
+--------------------
+* Send the path (to save model weights) as hyperparameter.
+* Remove warning about the absolute paths.
+* Show error from scoring process.
+* Use raw datasets for the examples.
+* Add datasets for the examples.
+* Add observations to the installation procedure.
+* Update documentation.
 
 
 0.21.1 (2022-03-29)
