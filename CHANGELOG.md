@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.23.0.dev0 (yyyy-mm-dd)
+-------------------------
+
+
 0.22.0 (2022-05-20)
 --------------------
 * Send the path (to save model weights) as hyperparameter.
