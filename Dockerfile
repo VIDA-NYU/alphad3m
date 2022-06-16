@@ -2,7 +2,8 @@ FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-pyt
 
 MAINTAINER "remi.rampin@nyu.edu, rlopez@nyu.edu, raoni@nyu.edu"
 
-RUN apt-get update -yy && \
+RUN curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub | apt-key add - && \
+    apt-get update -yy && \
     apt-get install -yy git swig sqlite3 && \
     apt-get clean
 
