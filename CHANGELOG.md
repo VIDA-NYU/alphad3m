@@ -1,8 +1,11 @@
 Changelog
 =========
 
-0.23.0.dev0 (yyyy-mm-dd)
--------------------------
+0.23.0 (2022-07-04)
+--------------------
+* Create a compressed Meta-learning DB.
+* Add support for LUPI tasks.
+* Fix CI.
 
 
 0.22.0 (2022-05-20)
