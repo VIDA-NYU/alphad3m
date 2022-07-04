@@ -29,7 +29,7 @@ pipelines can be applied to different data types and derive standard performance
 - *Learning Tasks*: classification, regression, clustering, time series forecasting, time series classification, object
   detection, LUPI, community detection, link prediction, graph matching, vertex classification, collaborative filtering,
   and semi-supervised classification.
-- *Data Types*: tabular, text, images, audio, video, and graph.
+- *Data Types*: tabular, text, image, audio, video, and graph.
 - *Data Formats*: CSV, D3M, raw text files, OpenML, and scikit-learn datasets.
 - *Metrics*: accuracy, F1, macro F1, micro F1, mean squared error, mean absolute error, root mean squared error, object
   detection AP, hamming loss, ROC-AUC, ROC-AUC macro, ROC-AUC micro, jaccard similarity score, normalized mutual
