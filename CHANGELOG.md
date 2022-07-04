@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.24.0.dev0 (yyyy-mm-dd)
+-------------------------
+
+
 0.23.0 (2022-07-04)
 --------------------
 * Create a compressed Meta-learning DB.
