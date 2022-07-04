@@ -31,19 +31,18 @@ or for Singularity:
 
 PyPI (lightweight version)
 ---------------------------
-Currently, this version has support for classification, regression, clustering, time-series forecasting, time-series
-classification, object detection, collaborative filtering, and semi-supervised classification (using a limited set of primitives).
-It supports tabular, text, image, audio, and video data types. This package works with Python 3.8 in Linux and Mac.
+Currently, this version has supports all the ML tasks and data types mentioned :doc:`here <how-works>`. (using a limited
+set of primitives). This package works with Python 3.8 in Linux and Mac.
 Installation will require a version of `pip >= 20.3` to leverage the improved dependency resolver, as lower versions may
 raise dependency conflicts. You might need GCC or other C/C++ compilers to install packages like NumPy, which uses C
-extensions. Also, you will need to have `git` installed in your machine.
+extensions.
 
 To install, run these commands:
 
 ::
 
    $ pip install alphad3m
-   $ pip install d3m-common-primitives d3m-sklearn-wrap dsbox-corex dsbox-primitives sri-d3m distil-primitives rpi-d3m-primitives kf-d3m-primitives autonbox fastlvm d3m-esrnn d3m-nbeats --no-binary pmdarima
+   $ pip install d3m-common-primitives d3m-sklearn-wrap dsbox-corex dsbox-primitives sri-d3m distil-primitives rpi-d3m-primitives kf-d3m-primitives autonbox lupi-mfa d3m-jhu-primitives fastlvm d3m-esrnn d3m-nbeats --no-binary pmdarima
 
 
 The second command installs the primitives available on PyPI.
