@@ -1,9 +1,8 @@
-FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python38-master-20220217-044937
+FROM registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python38-master-20220628-080800
 
 MAINTAINER "remi.rampin@nyu.edu, rlopez@nyu.edu, raoni@nyu.edu"
 
-RUN curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub | apt-key add - && \
-    apt-get update -yy && \
+RUN apt-get update -yy && \
     apt-get install -yy git swig sqlite3 && \
     apt-get clean
 
