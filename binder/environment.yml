@@ -2,6 +2,8 @@ name: binder-confs
 dependencies:
   - python=3.8
   - pip
-  - alphad3m
-  - d3m-common-primitives
-  - d3m-sklearn-wrap
+  - pip:
+    - alphad3m
+    - d3m-common-primitives
+    - d3m-sklearn-wrap
+    - dsbox-primitives
