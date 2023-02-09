@@ -1,5 +1,4 @@
 [![PyPI version](https://badge.fury.io/py/alphad3m.svg)](https://badge.fury.io/py/alphad3m)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gl/ViDA-NYU%2Fd3m%2Falphad3m/devel?urlpath=lab/tree/examples/tabular_classification.ipynb)
 
 <img src="https://gitlab.com/ViDA-NYU/d3m/alphad3m/-/raw/devel/AlphaD3M_logo.png" width=30%>
 
