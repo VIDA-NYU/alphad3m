@@ -19,8 +19,8 @@ sys.path.insert(0, os.path.abspath('../../'))
 # -- Project information -----------------------------------------------------
 
 project = 'AlphaD3M'
-copyright = '2022, New York University'
-author = 'New York University'
+copyright = '2022, VIDA NYU'
+author = 'VIDA NYU'
 
 # The full version, including alpha/beta/rc tags
 release = ''
@@ -53,6 +53,13 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 #html_static_path = ['_static']
+
+html_logo = 'images/logo.png'
+
+html_theme_options = {
+    'logo_only': True,
+    'display_version': True,
+}
 
 autodoc_member_order = 'bysource'
 
