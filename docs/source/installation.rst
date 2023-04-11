@@ -1,14 +1,13 @@
 Installation
 ============
 
-There are two ways to use AlphaD3M: 1) via Docker/Singularity containers (full version), and 2) via PyPI installation
-(lightweight version).
+There are two ways to use AlphaD3M: 1) via Docker/Singularity containers, and 2) via PyPI installation.
 
-Docker/Singularity containers (full version)
----------------------------------------------
-AlphaD3M and the primitives will be deployed as a container. This version works with Python 3.6 through 3.8 in Linux,
-Mac and Windows. It supports all the ML tasks and data types mentioned :doc:`here <how-works>`.
-You need to have Docker or Singularity installed on your operating system.
+Docker/Singularity containers
+------------------------------
+This version works with Python 3.6 through 3.8 in Linux and Mac. It supports all the ML tasks and data types
+mentioned :doc:`here <how-works>`. You need to have Docker or Singularity installed on your operating system.
+In this version, a container runs in the background, but AlphaD3M continues to be used as a standard Python library.
 
 To install, run:
 
@@ -29,8 +28,8 @@ or for Singularity:
 
    $ singularity pull docker://registry.gitlab.com/vida-nyu/d3m/alphad3m:latest
 
-PyPI (lightweight version)
----------------------------
+PyPI
+-----
 Currently, this version has supports all the ML tasks and data types mentioned :doc:`here <how-works>`. (using a limited
 set of primitives). This package works with Python 3.8 in Linux and Mac.
 Installation will require a version of `pip >= 20.3` to leverage the improved dependency resolver, as lower versions may
