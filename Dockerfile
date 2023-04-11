@@ -14,7 +14,7 @@ WORKDIR /usr/src/app
 # removed or replaced, which would break primitives
 COPY docker-requirements.txt /usr/src/app/docker-requirements.txt
 
-RUN python3 -m pip3 install pip3==23.0.1
+RUN python3 -m pip install pip==23.0.1
 
 RUN pip3 freeze | sort >prev_reqs.txt && \
     pip3 install $(grep -i Cython docker-requirements.txt) && \
