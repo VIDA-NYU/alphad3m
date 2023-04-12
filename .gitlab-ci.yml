@@ -29,7 +29,6 @@ build_image:
         slept=$((slept + 1))
       done
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
-    - INIT="$(< alphad3m/alphad3m/__init__.py)"; echo "$INIT" | sed 's/__version__ = .*$/__version__ = '"'$(git describe)'/" >alphad3m/alphad3m/__init__.py
     - docker build --cache-from $CI_REGISTRY_IMAGE:latest --cache-from $CI_REGISTRY_IMAGE:devel --cache-from $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME --build-arg BUILDKIT_INLINE_CACHE=1 -t $IMAGE .
     - |
       docker push $IMAGE
