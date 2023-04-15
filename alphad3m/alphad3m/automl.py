@@ -863,7 +863,7 @@ class Session(Observable):
         q = (
             db.query(pipeline, evaluation_score)
             .filter(pipeline.id.in_(self.pipelines))
-            .filter(evaluation_score is not None)
+            .filter(evaluation_score != None)
             # FIXME: Using a joined load here results in duplicated results
             .options(lazyload(pipeline.parameters))
             .order_by(eval_score_order)
