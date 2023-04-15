@@ -30,7 +30,7 @@ def select_annotated_feature_types(dataset_doc_path):
                         if 'refersTo' in column:  # It's a foreign key
                             role = 'https://metadata.datadrivendiscovery.org/types/PrimaryKey'
                         feature_types[column['colName']] = (role, semantic_type, column['colIndex'])
-    except:
+    except Exception:
         logger.exception('Error reading the type of attributes')
 
     logger.info('Features with annotated types: [%s]', ', '.join(feature_types.keys()))
@@ -43,7 +43,7 @@ def select_unkown_feature_types(csv_path, annotated_features):
     unkown_feature_types = []
 
     for feature_name in all_features:
-        match = re.match('(.*)\.\d$', feature_name)  # To verify if pandas renames features with same names
+        match = re.match(r'(.*)\.\d$', feature_name)  # To verify if pandas renames features with same names
         if match:
             feature_name = match.group(1)
         if feature_name not in annotated_features:
@@ -79,7 +79,8 @@ def select_identified_feature_types(metadata, unkown_feature_types, target_names
             identified_feature_types[feature_name] = (role, d3m_semantic_types, index)
 
     logger.info('Inferred feature types:\n%s',
-                '\n'.join(['%s = [%s]' % (k, ', '.join([i for i in v[1]])) for k, v in identified_feature_types.items()]))
+                '\n'.join(['%s = [%s]' % (k, ', '.join([i for i in v[1]])) for k, v in
+                           identified_feature_types.items()]))
 
     return identified_feature_types
 
@@ -91,7 +92,8 @@ def get_extra_metadata(metadata, exclude_columns):
         if 'missing_values_ratio' in item and item['name'] not in exclude_columns:
             extra_metadata['missing_values'] = True
 
-        if 'structural_type' in item and 'https://metadata.datadrivendiscovery.org/types/MissingData' in item['structural_type']:
+        if 'structural_type' in item and 'https://metadata.datadrivendiscovery.org/types/MissingData' in \
+                item['structural_type']:
             extra_metadata['exclude_columns'].append(index)
 
     if 'nb_rows' in metadata and metadata['nb_rows'] > 1000000:
@@ -156,7 +158,7 @@ def denormalize_dataset(dataset_uri):
 
         csv_path = join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'denormalized_dataset.csv')
         primitive_output.to_csv(csv_path)
-    except:
+    except Exception:
         csv_path = join(dirname(dataset_uri[7:]),  'tables', 'learningData.csv')
         logger.exception('Error denormalizing dataset, using only learningData.csv file')
 
@@ -175,7 +177,8 @@ def get_privileged_data(problem, task_keywords):
 def select_encoders(feature_types):
     encoders = []
     mapping_feature_types = {'https://metadata.datadrivendiscovery.org/types/CategoricalData': 'CATEGORICAL_ENCODER',
-                             'http://schema.org/Text': 'TEXT_FEATURIZER', 'http://schema.org/DateTime': 'DATETIME_ENCODER'}
+                             'http://schema.org/Text': 'TEXT_FEATURIZER',
+                             'http://schema.org/DateTime': 'DATETIME_ENCODER'}
 
     for features_type in feature_types:
         if features_type in mapping_feature_types:

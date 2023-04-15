@@ -18,9 +18,8 @@ def train(pipeline_id, dataset, problem, storage_dir, steps_to_expose, msg_queue
     # Get pipeline from database
     pipeline = (
         db.query(database.Pipeline)
-            .filter(database.Pipeline.id == pipeline_id)
-            .options(joinedload(database.Pipeline.modules),
-                     joinedload(database.Pipeline.connections))
+        .filter(database.Pipeline.id == pipeline_id)
+        .options(joinedload(database.Pipeline.modules), joinedload(database.Pipeline.connections))
     ).one()
 
     logger.info('About to train pipeline, id=%s, dataset=%r',

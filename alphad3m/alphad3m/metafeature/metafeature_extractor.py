@@ -92,9 +92,10 @@ class ComputeMetafeatures():
         for target in self.targets:
             resource_id = target[0]
             target_name = target[1]
-            for column_index in range(self.dataset.metadata.query((resource_id, metadata_base.ALL_ELEMENTS))['dimension']['length']):
-                if self.dataset.metadata.query((resource_id, metadata_base.ALL_ELEMENTS, column_index)).get('name',
-                                                                                                None) == target_name:
+            for column_index in range(self.dataset.metadata.query(
+                    (resource_id, metadata_base.ALL_ELEMENTS))['dimension']['length']):
+                if self.dataset.metadata.query((resource_id, metadata_base.ALL_ELEMENTS, column_index))\
+                        .get('name', None) == target_name:
                     semantic_types = list(self.dataset.metadata.query(
                         (resource_id, metadata_base.ALL_ELEMENTS, column_index)).get('semantic_types', []))
 
@@ -150,12 +151,12 @@ class ComputeMetafeatures():
         ))
 
         # FIXME: Denormalize?
-        #step0 = make_primitive_module('d3m.primitives.data_transformation.denormalize.Common')
-        #connect(input_data, step0, from_output='dataset')
+        # step0 = make_primitive_module('d3m.primitives.data_transformation.denormalize.Common')
+        # connect(input_data, step0, from_output='dataset')
 
         step1 = make_primitive_module('d3m.primitives.data_transformation.dataset_to_dataframe.Common')
         connect(input_data, step1, from_output='dataset')
-        #connect(step0, step1)
+        # connect(step0, step1)
 
         step2 = make_primitive_module('d3m.primitives.data_transformation.column_parser.Common')
         connect(step1, step2)
@@ -182,7 +183,7 @@ class ComputeMetafeatures():
             # TODO Improve the sending of parameters
             outputs = execute(pipeline_id, self.dataset_uri, None, None, None,
                               db_filename=os.path.join(os.environ.get('D3MOUTPUTDIR'), 'temp', 'db.sqlite3'))
-                             # TODO: Change this static string path
+            #  TODO: Change this static string path
             for key, value in outputs.items():
                 metafeature_results = value.metadata.query(())['data_metafeatures']
                 for metafeature_key, metafeature_value in metafeature_results.items():

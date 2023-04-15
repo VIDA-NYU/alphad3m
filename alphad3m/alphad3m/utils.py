@@ -195,7 +195,7 @@ def get_dataset_sample(dataset, problem, dataset_sample_path=None):
             try:
                 x_train, x_test, y_train, y_test = train_test_split(dataset[res_id], labels, random_state=RANDOM_SEED,
                                                                     test_size=ratio, stratify=labels)
-            except:
+            except Exception:
                 # Not using stratified sampling when the minority class has few instances, not enough for all the folds
                 x_train, x_test, y_train, y_test = train_test_split(dataset[res_id], labels, random_state=RANDOM_SEED,
                                                                     test_size=ratio)
@@ -208,7 +208,7 @@ def get_dataset_sample(dataset, problem, dataset_sample_path=None):
 
         else:
             logger.info('Not doing sampling for small dataset (size = %d)', original_size)
-    except:
+    except Exception:
         logger.error('Error sampling in dataset %s')
 
     return dataset

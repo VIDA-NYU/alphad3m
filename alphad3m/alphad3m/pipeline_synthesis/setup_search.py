@@ -3,13 +3,14 @@ import os
 import sys
 import logging
 from os.path import join, dirname
+from alphad3m.schema import database
 from alphad3m.pipeline_search.Coach import Coach
 from alphad3m.pipeline_search.pipeline.PipelineGame import PipelineGame
 from alphad3m.pipeline_search.pipeline.NNet import NNetWrapper
 from alphad3m.grammar_loader import load_manual_grammar, load_automatic_grammar
-from alphad3m.data_ingestion.data_profiler import get_privileged_data, select_encoders
-from alphad3m.pipeline_synthesis.d3mpipeline_builder import *
-from alphad3m.metafeature.metafeature_extractor import ComputeMetafeatures
+from alphad3m.data_ingestion.data_profiler import select_encoders
+from alphad3m.pipeline_synthesis.d3mpipeline_builder import BaseBuilder, AudioBuilder
+# from alphad3m.metafeature.metafeature_extractor import ComputeMetafeatures
 from alphad3m.utils import get_collection_type
 from d3m.metadata.problem import TaskKeyword, TaskKeywordBase
 
@@ -119,7 +120,8 @@ def generate_pipelines(task_keywords, dataset, metrics, problem, targets, featur
         task_name = 'TEXT_' + task_name
     elif get_collection_type(dataset[7:]) == 'image' or TaskKeyword.IMAGE in task_keywords and (
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
-        if TaskKeyword.IMAGE not in task_keywords: task_keywords.append(TaskKeyword.IMAGE)
+        if TaskKeyword.IMAGE not in task_keywords:
+            task_keywords.append(TaskKeyword.IMAGE)
         task_name = 'IMAGE_' + task_name
     elif TaskKeyword.AUDIO in task_keywords and (
             TaskKeyword.REGRESSION in task_keywords or TaskKeyword.CLASSIFICATION in task_keywords):
@@ -167,8 +169,9 @@ def generate_pipelines(task_keywords, dataset, metrics, problem, targets, featur
             grammar = load_manual_grammar(task_name_id, task_keyword_ids, encoders, use_imputer, include_primitives,
                                           exclude_primitives)
         config['GRAMMAR'] = grammar
-        metafeatures_extractor = ComputeMetafeatures(dataset, targets, features, DBSession)
-        config['DATASET_METAFEATURES'] = [0] * 50 #metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
+        # metafeatures_extractor = ComputeMetafeatures(dataset, targets, features, DBSession)
+        # metafeatures_extractor.compute_metafeatures('AlphaD3M_compute_metafeatures')
+        config['DATASET_METAFEATURES'] = [0] * 50  # metafeatures_extractor
 
         return config
 

@@ -9,7 +9,7 @@ from sqlalchemy.orm import joinedload
 from d3m.container import Dataset
 from alphad3m.schema import database, convert
 from alphad3m.utils import is_collection, get_dataset_sample
-from d3m.metrics import class_map
+# from d3m.metrics import class_map
 from d3m.metadata.pipeline import Pipeline
 from d3m.metadata.problem import PerformanceMetric, TaskKeyword
 
@@ -48,7 +48,7 @@ def check_timeindicator(dataset_path):
         try:
             with open(dataset_path, 'w') as fout:
                 json.dump(dataset_doc, fout, indent=4)
-        except:
+        except Exception:
             logger.error('Saving timeIndicator on dataset')
 
 
@@ -58,9 +58,8 @@ def score(pipeline_id, dataset_uri, sample_dataset_uri, metrics, problem, scorin
     logger.info('About to score pipeline, id=%s, metrics=%s', pipeline_id, metrics)
     pipeline = (
         db.query(database.Pipeline)
-            .filter(database.Pipeline.id == pipeline_id)
-            .options(joinedload(database.Pipeline.modules),
-                     joinedload(database.Pipeline.connections))
+        .filter(database.Pipeline.id == pipeline_id)
+        .options(joinedload(database.Pipeline.modules), joinedload(database.Pipeline.connections))
     ).one()
 
     scores = calculate_scores(pipeline, dataset_uri, sample_dataset_uri, metrics, problem, scoring_config)
@@ -101,7 +100,8 @@ def calculate_scores(pipeline, dataset_uri, sample_dataset_uri, metrics, problem
 
     # FIXME: Splitting pipeline fails when works with F1 and semisupervised task, so use F1_MACRO instead
     # See https://gitlab.com/datadrivendiscovery/common-primitives/-/issues/92#note_520784899
-    if metrics[0]['metric'] == PerformanceMetric.F1 and TaskKeyword.SEMISUPERVISED in problem['problem']['task_keywords']:
+    if metrics[0]['metric'] == PerformanceMetric.F1 and TaskKeyword.SEMISUPERVISED in \
+            problem['problem']['task_keywords']:
         new_metrics = [{'metric': PerformanceMetric.F1_MACRO}]
         scores = evaluate(pipeline, pipeline_split, dataset, new_metrics, problem, scoring_config, dataset_uri)
         scores = change_name_metric(scores, new_metrics, new_metric=metrics[0]['metric'].name)
@@ -160,7 +160,7 @@ def evaluate(pipeline, data_pipeline, dataset, metrics, problem, scoring_config,
             else:
                 raise RuntimeError(result.pipeline_run.status['message'])
 
-    #save_pipeline_runs(run_results.pipeline_runs)
+    # save_pipeline_runs(run_results.pipeline_runs)
     combined_folds = d3m.runtime.combine_folds([fold for fold in run_scores])
     scores = {}
 

@@ -102,8 +102,7 @@ class Evaluation(UuidMixin, Base):
 class EvaluationScore(Base):
     __tablename__ = 'evaluation_scores'
 
-    evaluation_id = Column(UUID, ForeignKey('evaluations.id'),
-                                 primary_key=True)
+    evaluation_id = Column(UUID, ForeignKey('evaluations.id'), primary_key=True)
     evaluation = relationship('Evaluation')
     fold = Column(Integer, primary_key=True, nullable=True)
     metric = Column(String, primary_key=True)

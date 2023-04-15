@@ -66,7 +66,7 @@ def connect(db, pipeline, from_module, to_module, from_output='produce', to_inpu
         arguments = to_module_prim.metadata.query()['primitive_code']['arguments']
 
         if to_input not in arguments:
-             raise NameError('Argument %s not found in %s' % (to_input, to_module.name))
+            raise NameError('Argument %s not found in %s' % (to_input, to_module.name))
 
         if to_module.name == 'd3m.primitives.feature_extraction.audio_transfer.DistilAudioTransfer':
             from_output = 'produce_collection'
@@ -104,9 +104,11 @@ def set_hyperparams(db, pipeline, module, **hyperparams):
 
 def change_default_hyperparams(db, pipeline, primitive_name, primitive, learner_index=None):
     if primitive_name == 'd3m.primitives.data_transformation.one_hot_encoder.SKlearn':
-        set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace', handle_unknown='ignore')
+        set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace',
+                        handle_unknown='ignore')
     elif primitive_name == 'd3m.primitives.data_cleaning.imputer.SKlearn':
-        set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace', strategy='most_frequent', error_on_no_input=False)
+        set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace',
+                        strategy='most_frequent', error_on_no_input=False)
     elif primitive_name.endswith('.SKlearn') and not (primitive_name.startswith('d3m.primitives.classification.') or
                                                       primitive_name.startswith('d3m.primitives.regression.')):
         set_hyperparams(db, pipeline, primitive, use_semantic_types=True, return_result='replace')
@@ -260,7 +262,8 @@ def add_file_readers(db, pipeline, prev_step, dataset_path):
 
 
 def add_rocauc_primitives(pipeline, current_step, prev_step, target_step, dataframe_step, learner_index, db):
-    horizontal_concat = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.horizontal_concat.DataFrameCommon')
+    horizontal_concat = make_pipeline_module(db, pipeline,
+                                             'd3m.primitives.data_transformation.horizontal_concat.DataFrameCommon')
     # 'index'  is an artificial connection, just to guarantee the order of the steps
     connect(db, pipeline, current_step, horizontal_concat, from_output='index', to_input='index')
     connect(db, pipeline, prev_step, horizontal_concat, to_input='left')
@@ -269,7 +272,8 @@ def add_rocauc_primitives(pipeline, current_step, prev_step, target_step, datafr
     compute_values = make_pipeline_module(db, pipeline, 'd3m.primitives.operator.compute_unique_values.Common')
     connect(db, pipeline, horizontal_concat, compute_values)
 
-    construct_confidence = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.construct_confidence.Common')
+    construct_confidence = make_pipeline_module(db, pipeline,
+                                                'd3m.primitives.data_transformation.construct_confidence.Common')
     set_hyperparams(db, pipeline, construct_confidence, primitive_learner={"type": "PRIMITIVE", "data": learner_index})
     connect(db, pipeline, compute_values, construct_confidence)
     connect(db, pipeline, dataframe_step, construct_confidence, to_input='reference')
@@ -329,7 +333,8 @@ class BaseBuilder:
             step0 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.denormalize.Common')
 
             if metadata['large_rows']:
-                step_sample = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.dataset_sample.Common')
+                step_sample = make_pipeline_module(db, pipeline,
+                                                   'd3m.primitives.data_transformation.dataset_sample.Common')
                 set_hyperparams(db, pipeline, step_sample, sample_size=metadata['sample_size'])
                 connect(db, pipeline, step0, step_sample)
                 count_steps += 1
@@ -366,15 +371,18 @@ class BaseBuilder:
             connect(db, pipeline, prev_step, step2)
             count_steps += 1
 
-            step3 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
+            step3 = make_pipeline_module(db, pipeline,
+                                         'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
             set_hyperparams(db, pipeline, step3,
                             semantic_types=['https://metadata.datadrivendiscovery.org/types/Attribute'],
                             exclude_columns=metadata['exclude_columns'])
             connect(db, pipeline, step2, step3)
             count_steps += 1
 
-            step4 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
-            set_hyperparams(db, pipeline, step4, semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
+            step4 = make_pipeline_module(db, pipeline,
+                                         'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
+            set_hyperparams(db, pipeline, step4,
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
             if need_parsed_targets(primitives):
                 connect(db, pipeline, step2, step4)
             else:
@@ -404,7 +412,8 @@ class BaseBuilder:
             if 'ROC_AUC' in metrics[0]['metric'].name:
                 add_rocauc_primitives(pipeline, current_step, preprev_step, step4, dataframe_step, learner_index, db)
             else:
-                step5 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.construct_predictions.Common')
+                step5 = make_pipeline_module(db, pipeline,
+                                             'd3m.primitives.data_transformation.construct_predictions.Common')
                 connect(db, pipeline, current_step, step5)
                 connect(db, pipeline, dataframe_step, step5, to_input='reference')
 
@@ -442,7 +451,7 @@ class BaseBuilder:
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
 
-        except:
+        except Exception:
             logger.exception('Error creating pipeline id=%s, primitives=%s', pipeline.id, str(primitives))
             return None
         finally:
@@ -526,7 +535,7 @@ class BaseBuilder:
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
 
-        except:
+        except Exception:
             logger.exception('Error creating pipeline id=%s, primitives=%s', pipeline.id, str(primitives))
             return None
         finally:
@@ -568,8 +577,10 @@ class AudioBuilder(BaseBuilder):
             connect(db, pipeline, prev_step, step1)
             count_steps += 1
 
-            step2 = make_pipeline_module(db, pipeline, 'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
-            set_hyperparams(db, pipeline, step2, semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
+            step2 = make_pipeline_module(db, pipeline,
+                                         'd3m.primitives.data_transformation.extract_columns_by_semantic_types.Common')
+            set_hyperparams(db, pipeline, step2,
+                            semantic_types=['https://metadata.datadrivendiscovery.org/types/TrueTarget'])
             connect(db, pipeline, step1, step2)
             count_steps += 1
 
@@ -599,7 +610,7 @@ class AudioBuilder(BaseBuilder):
             db.commit()
             logger.info('%s PIPELINE ID: %s', origin, pipeline.id)
             return pipeline.id
-        except:
+        except Exception:
             logger.exception('Error creating pipeline id=%s, primitives=%s', pipeline.id, str(primitives))
             return None
         finally:

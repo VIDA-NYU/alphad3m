@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 import shutil
 import pickle
@@ -15,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 @database.with_db
-def tune(pipeline_id, dataset_uri, sample_dataset_uri, storage_dir, metrics, problem, scoring_config, report_rank, timeout_tuning, msg_queue, db):
+def tune(pipeline_id, dataset_uri, sample_dataset_uri, storage_dir, metrics, problem, scoring_config, report_rank,
+         timeout_tuning, msg_queue, db):
     # Load pipeline from database
     pipeline = (
         db.query(database.Pipeline)
