@@ -3,10 +3,10 @@ import numpy as np
 from scipy import sparse
 from collections import Counter
 from sklearn.preprocessing import OneHotEncoder
-from sklearn.utils import check_array
-from imblearn.over_sampling import SMOTE, SMOTENC
-from imblearn.under_sampling import EditedNearestNeighbours, RandomUnderSampler, NearMiss
-from imblearn.combine import SMOTEENN, SMOTETomek
+from sklearn.utils import SMOTENC, check_array
+# from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import EditedNearestNeighbours  # RandomUnderSampler, NearMiss
+# from imblearn.combine import SMOTEENN, SMOTETomek
 from imblearn.pipeline import make_pipeline
 from sklearn.impute import SimpleImputer
 
@@ -40,9 +40,9 @@ class NEW_ENN:
 
 
 target_name = 'CASE_STATUS'
-categorical_features = [0, 1,2,3,4,13,15,16,17,21,22,23,24,25,26,27,28]
-#target_name = 'Hall_of_Fame'
-#categorical_features = [0, 16]
+categorical_features = [0, 1, 2, 3, 4, 13, 15, 16, 17, 21, 22, 23, 24, 25, 26, 27, 28]
+# target_name = 'Hall_of_Fame'
+# categorical_features = [0, 16]
 index_name = 'd3mIndex'
 
 data = pd.read_csv('/Users/rlopez/D3M/others/learningData_visa.csv')
@@ -63,4 +63,3 @@ print(sorted(Counter(y_resampled).items()))
 new_X = pd.concat([pd.DataFrame(X_resampled, columns=X.columns), pd.DataFrame(y_resampled, columns=[target_name])], axis=1)
 new_X.to_csv('/Users/rlopez/D3M/others/learningData.csv', index_label=index_name)
 print(new_X)
-

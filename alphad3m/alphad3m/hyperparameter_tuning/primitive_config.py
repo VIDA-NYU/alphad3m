@@ -7,9 +7,9 @@ from alphad3m.primitive_loader import load_primitives_hierarchy
 from d3m.metadata.hyperparams import Bounded, Enumeration, UniformInt, UniformBool, Uniform, Normal, Union, \
     Constant as ConstantD3M
 from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.conditions import EqualsCondition, InCondition
+from ConfigSpace.conditions import EqualsCondition
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformFloatHyperparameter, \
-     UniformIntegerHyperparameter, UnParametrizedHyperparameter, Constant, NormalFloatHyperparameter
+     UniformIntegerHyperparameter, Constant, NormalFloatHyperparameter
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +40,9 @@ def load_hyperparameters(primitive_name):
 
     if hyperparameter_class:
         for hp_name, hp_value in hyperparameter_class.configuration.items():
-            if 'https://metadata.datadrivendiscovery.org/types/TuningParameter' in hyperparameters_metadata[hp_name]['semantic_types']:
-                    hyperparameters[hp_name] = hp_value
+            if 'https://metadata.datadrivendiscovery.org/types/TuningParameter' \
+                    in hyperparameters_metadata[hp_name]['semantic_types']:
+                hyperparameters[hp_name] = hp_value
 
     return hyperparameters
 
@@ -132,7 +133,7 @@ def cast_hyperparameter(hyperparameter, name):
 
     try:
         if isinstance(hyperparameter, Bounded):
-            lower = hyperparameter.lower 
+            lower = hyperparameter.lower
             upper = hyperparameter.upper
             default = hyperparameter.get_default()
             if lower is None:

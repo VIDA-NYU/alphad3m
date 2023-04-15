@@ -18,7 +18,7 @@ import d3m_automl_rpc.core_pb2 as pb_core
 import d3m_automl_rpc.core_pb2_grpc as pb_core_grpc
 import d3m_automl_rpc.problem_pb2 as pb_problem
 import d3m_automl_rpc.value_pb2 as pb_value
-import d3m_automl_rpc.pipeline_pb2 as pb_pipeline
+# import d3m_automl_rpc.pipeline_pb2 as pb_pipeline
 import d3m_automl_rpc.primitive_pb2 as pb_primitive
 from d3m_automl_rpc.utils import decode_pipeline_description, decode_problem_description, decode_performance_metric, \
     encode_pipeline_description, decode_value
@@ -131,8 +131,10 @@ class CoreService(pb_core_grpc.CoreServicer):
         timeout_run = request.time_bound_run
         report_rank = True if request.rank_solutions_limit > 0 else False
 
-        if timeout_search <= 0.0: timeout_search = None
-        if timeout_run <= 0.0: timeout_run = None
+        if timeout_search <= 0.0:
+            timeout_search = None
+        if timeout_run <= 0.0:
+            timeout_run = None
 
         search_id = self._ta2.new_session(problem)
         session = self._ta2.sessions[search_id]
@@ -170,7 +172,7 @@ class CoreService(pb_core_grpc.CoreServicer):
                     metric = session.metrics[0]['metric']
                     try:
                         internal_score = metric.normalize(scores[metric.name])
-                    except:
+                    except Exception:
                         internal_score = scores[metric.name]
                         logger.warning('Problems normalizing metric, using the raw value: %.2f' % scores[metric.name])
                 else:
@@ -279,7 +281,7 @@ class CoreService(pb_core_grpc.CoreServicer):
 
         metrics = []
         for metric in request.performance_metrics:
-                metrics.append(decode_performance_metric(metric))
+            metrics.append(decode_performance_metric(metric))
 
         logger.info("Got ScoreSolution request, dataset=%s, "
                     "metrics=%s",

@@ -6,6 +6,8 @@ pandas.set_option('display.max_columns', None)
 pandas.set_option('display.width', None)
 pandas.set_option('display.max_colwidth', -1)
 
+image = 'registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-v2020.1.9-20200212-063959'
+
 
 class AlphaAutoml:
 
@@ -41,7 +43,7 @@ class AlphaAutoml:
                 'docker', 'run',
                 '-v', '%s:/output' % self.output_folder,
                 '-e', 'D3MOUTPUTDIR=/output',
-                'registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-v2020.1.9-20200212-063959',
+                image,
                 'python3', '-m', 'd3m', 'runtime', 'fit', '--pipeline', pipeline_path,
                 '--input', '/output/ta2/dataset_d3mformat/dataset/datasetDoc.json',
                 '--problem', '/output/ta2/dataset_d3mformat/problem/problemDoc.json',
@@ -56,9 +58,10 @@ class AlphaAutoml:
                 'docker', 'run',
                 '-v', '%s:/output/ta2/dataset_d3mformat/dataset/tables/learningData.csv' % test_dataset,
                 '-v', '%s:/output' % self.output_folder,
-                'registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-v2020.1.9-20200212-063959',
+                image,
                 'python3', '-m', 'd3m', 'runtime', 'produce', '--fitted-pipeline', '/output/model.pkl',
-                '--test-input', '/output/ta2/dataset_d3mformat/dataset/datasetDoc.json', '--output', '/output/predictions.csv'
+                '--test-input', '/output/ta2/dataset_d3mformat/dataset/datasetDoc.json',
+                '--output', '/output/predictions.csv'
             ]
         )
         process.wait()
@@ -73,7 +76,7 @@ def test_model(model_path, new_dataset_path, result_path):
                     '-v', '%s:/input/model.pkl' % model_path,
                     '-v', '%s:/data' % new_dataset_path,
                     '-v', '%s:/output' % result_path,
-                    'registry.gitlab.com/datadrivendiscovery/images/primitives:ubuntu-bionic-python36-v2020.1.9-20200212-063959'
+                    image,
                     'python3', '-m', 'd3m', 'runtime', 'produce', '--fitted-pipeline', '/input/model.pkl',
                     '--test-input', '/data/datasetDoc.json', '--output', '/output/predictions.csv'
                 ]

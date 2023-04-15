@@ -11,7 +11,7 @@ PRIMITIVES_HIERARCHY_PATH = join(dirname(__file__), 'resource/primitives_hierarc
 INSTALLED_PRIMITIVES = sorted(index.search(), key=lambda x: x.endswith('SKlearn'), reverse=True)
 
 BLACK_LIST = {
-     # Not working primitives:
+    # Not working primitives:
     'd3m.primitives.classification.random_classifier.Test',
     'd3m.primitives.classification.global_causal_discovery.ClassifierRPI',
     'd3m.primitives.classification.tree_augmented_naive_bayes.BayesianInfRPI',
@@ -227,12 +227,12 @@ def create_primitives_list():
     primitives = []
 
     for primitive_name in INSTALLED_PRIMITIVES:
-            try:
-                primitive_info = get_primitive_info(primitive_name)
-            except Exception as e:
-                logger.error('Loading metadata about primitive %s', primitive_name, exc_info=e)
-                continue
-            primitives.append(primitive_info)
+        try:
+            primitive_info = get_primitive_info(primitive_name)
+        except Exception as e:
+            logger.error('Loading metadata about primitive %s', primitive_name, exc_info=e)
+            continue
+        primitives.append(primitive_info)
 
     with open(PRIMITIVES_LIST_PATH, 'w') as fout:
         json.dump(primitives, fout, indent=4)

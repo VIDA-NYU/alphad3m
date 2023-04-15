@@ -42,10 +42,3 @@ def main_search():
     problem_path = '/input/TRAIN/problem_TRAIN/problemDoc.json'
     automl = AutoML(output_folder)
     automl.run_search(dataset, problem_path=problem_path, timeout=timeout)
-
-
-
-
-
-
-

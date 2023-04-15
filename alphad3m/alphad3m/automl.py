@@ -22,7 +22,7 @@ import subprocess
 import threading
 import time
 import d3m_automl_rpc.core_pb2_grpc as pb_core_grpc
-from uuid import uuid4, UUID
+from uuid import uuid4
 from alphad3m import __version__
 from alphad3m.multiprocessing import Receiver, run_process
 from alphad3m.grpc_api import grpc_server
@@ -143,9 +143,8 @@ class AutoML(Observable):
         try:
             pipeline = (
                 db.query(database.Pipeline)
-                    .filter(database.Pipeline.id == pipeline_id)
-                    .options(joinedload(database.Pipeline.modules),
-                             joinedload(database.Pipeline.connections))
+                .filter(database.Pipeline.id == pipeline_id)
+                .options(joinedload(database.Pipeline.modules), joinedload(database.Pipeline.connections))
             ).one()
 
             json_pipeline = to_d3m_json(pipeline)
@@ -398,13 +397,13 @@ class AutoML(Observable):
                     step = make_primitive_module(pipeline_step['primitive']['python_path'])
                     if 'outputs' in pipeline_step:
                         for output in pipeline_step['outputs']:
-                            prev_steps['steps.%d.%s' % (count_template_steps,output['id'])] = step
+                            prev_steps['steps.%d.%s' % (count_template_steps, output['id'])] = step
 
                     count_template_steps += 1
                     if 'hyperparams' in pipeline_step:
                         hyperparams = {}
                         for hyper, desc in pipeline_step['hyperparams'].items():
-                            hyperparams[hyper] = {'type':desc['type'] ,'data':desc['data']}
+                            hyperparams[hyper] = {'type': desc['type'], 'data': desc['data']}
                         set_hyperparams(step, **hyperparams)
                 else:
                     # TODO In the future we should be able to handle subpipelines
@@ -412,7 +411,8 @@ class AutoML(Observable):
                 if prev_step:
                     if 'arguments' in pipeline_step:
                         for argument, desc in pipeline_step['arguments'].items():
-                            connect(prev_steps[desc['data']], step, from_output=desc['data'].split('.')[-1], to_input=argument)
+                            connect(prev_steps[desc['data']], step, from_output=desc['data'].split('.')[-1],
+                                    to_input=argument)
                     connect(prev_step, step, from_output='index', to_input='index')
                 else:
                     connect(input_data, step, from_output='dataset')
@@ -558,8 +558,8 @@ class AutoML(Observable):
     def _build_pipeline_from_template(self, session, task_keywords, dataset_uri, sample_dataset_uri, metrics,
                                       hyperparameters, metadata, timeout_search):
 
-        pipeline_ids = generate_pipelines(task_keywords, dataset_uri, session.problem, session.targets, session.features,
-                                          hyperparameters, metadata,  metrics, self.DBSession)
+        pipeline_ids = generate_pipelines(task_keywords, dataset_uri, session.problem, session.targets,
+                                          session.features, hyperparameters, metadata,  metrics, self.DBSession)
         for pipeline_id in pipeline_ids:
             if pipeline_id is not None:
                 try:
@@ -616,18 +616,14 @@ class AutoML(Observable):
             # Find most recent evaluation
             evaluation_id = (
                 select([database.Evaluation.id])
-                    .where(database.Evaluation.pipeline_id == pipeline_id)
-                    .order_by(database.Evaluation.date.desc())
+                .where(database.Evaluation.pipeline_id == pipeline_id)
+                .order_by(database.Evaluation.date.desc())
             ).as_scalar()
             # Get scores from that evaluation
             scores = db.query(
                 select([func.avg(database.EvaluationScore.value),
-                        database.EvaluationScore.metric])
-                    .where(
-                    database.EvaluationScore.evaluation_id ==
-                    evaluation_id
-                )
-                    .group_by(database.EvaluationScore.metric)
+                        database.EvaluationScore.metric]).where(database.EvaluationScore.evaluation_id == evaluation_id)
+                .group_by(database.EvaluationScore.metric)
             ).all()
 
             first_metric = session.metrics[0]['metric'].name
@@ -762,7 +758,7 @@ class Session(Observable):
         else:
             # Read targets from problem
             targets = set()
-            #assert len(self.problem['inputs']) == 1
+            # assert len(self.problem['inputs']) == 1
             for target in self.problem['inputs'][0]['targets']:
                 targets.add((target['resource_id'], target['column_name']))
             return targets
@@ -867,7 +863,7 @@ class Session(Observable):
         q = (
             db.query(pipeline, evaluation_score)
             .filter(pipeline.id.in_(self.pipelines))
-            .filter(evaluation_score != None)
+            .filter(evaluation_score is not None)
             # FIXME: Using a joined load here results in duplicated results
             .options(lazyload(pipeline.parameters))
             .order_by(eval_score_order)
@@ -911,7 +907,8 @@ class Session(Observable):
                         timeout_tuning = self.expected_search_end - time.time()
                         for pipeline_id in tune:
                             logger.info("    %s", pipeline_id)
-                            self._ta2._run_queue.put(TuneHyperparamsJob(self._ta2, self, pipeline_id, self.problem, timeout_tuning))
+                            self._ta2._run_queue.put(TuneHyperparamsJob(self._ta2, self, pipeline_id, self.problem,
+                                                                        timeout_tuning))
                             self.pipelines_tuning.add(pipeline_id)
                         return
                     logger.info("Found no pipeline to tune")
@@ -1127,10 +1124,10 @@ class ScoreJob(Job):
                             pipeline_id=self.pipeline_id,
                             job_id=id(self))
         else:
-            logger.error(
-                "Error from scoring process:\n%s",
-                '\n'.join('  ' + l for l in error_msg.splitlines()),
-            )
+            logger.error("Error from scoring process:\n%s",
+                         '\n'.join('  ' + i for i in error_msg.splitlines()),
+                         )
+
             self.ta2.notify('scoring_error',
                             pipeline_id=self.pipeline_id,
                             job_id=id(self),
@@ -1182,7 +1179,7 @@ class TrainJob(Job):
         else:
             logger.error(
                 "Error from training process:\n%s",
-                '\n'.join('  ' + l for l in error_msg.splitlines()),
+                '\n'.join('  ' + i for i in error_msg.splitlines()),
             )
             self.ta2.notify('training_error',
                             pipeline_id=self.pipeline_id,
@@ -1233,7 +1230,7 @@ class TestJob(Job):
         else:
             logger.error(
                 "Error from testing process:\n%s",
-                '\n'.join('  ' + l for l in error_msg.splitlines()),
+                '\n'.join('  ' + i for i in error_msg.splitlines()),
             )
             self.ta2.notify('testing_error',
                             pipeline_id=self.pipeline_id,
@@ -1308,7 +1305,7 @@ class TuneHyperparamsJob(Job):
         else:
             logger.error(
                 "Error from tuning process:\n%s",
-                '\n'.join('  ' + l for l in error_msg.splitlines()),
+                '\n'.join('  ' + i for i in error_msg.splitlines()),
             )
             self.session.notify('tuning_error',
                                 pipeline_id=self.pipeline_id,

@@ -8,7 +8,8 @@ from prettytable import PrettyTable
 
 logger = logging.getLogger(__name__)
 
-ALL_TA2S = {'NYU-TA2', 'CMU-TA2', 'UCB-TA2', 'Uncharted-TA2', 'SRI-TA2', 'Texas A&M-TA2', 'D3M ENSEMBLE-TA2', 'NEW-NYU-TA2'}
+ALL_TA2S = {'NYU-TA2', 'CMU-TA2', 'UCB-TA2', 'Uncharted-TA2', 'SRI-TA2', 'Texas A&M-TA2', 'D3M ENSEMBLE-TA2',
+            'NEW-NYU-TA2'}
 SKIP_DATASETS = {'LL1_FB15k_237', 'LL1_FB15k_237_V2'}  # These datasets use unsupported  metrics, so skip them
 
 
@@ -70,10 +71,10 @@ def get_leaderboard(leaderboard_path):
 
     for item in items:
         dataset_description = item.get_text().replace('\n', ' ')
-        match = re.search('(.+) \((.+)\)', dataset_description)
+        match = re.search(r'(.+) \((.+)\)', dataset_description)
         dataset_name, task_keywords = match.group(1), match.group(2)
         dataset_name = dataset_name.rstrip()
-        task_keywords = re.split('\s+', task_keywords.strip())
+        task_keywords = re.split(r'\s+', task_keywords.strip())
         datasets.append(dataset_name)
         task_types[dataset_name] = get_task_name(task_keywords)
 
@@ -91,8 +92,8 @@ def get_leaderboard(leaderboard_path):
             cells = row.find_all('td')
             team = cells[1].get_text()
             score = cells[6].get_text()
-            baseline = cells[7].get_text()
-            metric = cells[9].get_text()
+            # baseline = cells[7].get_text()
+            # metric = cells[9].get_text()
 
             if team == 'NYU-TA2' and task_types[dataset_name] not in {'TABULAR_CLASSIFICATION', 'TABULAR_REGRESSION'}:
                 team = None  # We consider NYU-TA2 as the system that supports only classification and regression

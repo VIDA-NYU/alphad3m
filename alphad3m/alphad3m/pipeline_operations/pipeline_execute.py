@@ -10,15 +10,15 @@ from multiprocessing import Manager, Process
 
 logger = logging.getLogger(__name__)
 
+
 @database.with_db
 def execute(pipeline_id, dataset, problem, results_path, msg_queue, db):
     # Get pipeline from database
 
     pipeline = (
         db.query(database.Pipeline)
-            .filter(database.Pipeline.id == pipeline_id)
-            .options(joinedload(database.Pipeline.modules),
-                     joinedload(database.Pipeline.connections))
+        .filter(database.Pipeline.id == pipeline_id)
+        .options(joinedload(database.Pipeline.modules), joinedload(database.Pipeline.connections))
     ).one()
 
     logger.info('About to execute pipeline, id=%s, dataset=%r',

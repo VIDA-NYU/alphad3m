@@ -83,10 +83,8 @@ class TestSession(unittest.TestCase):
         db.add(database.Evaluation(
             pipeline_id=self._pipelines[4],
             scores=[
-                database.EvaluationScore(metric='F1_MACRO',
-                                              value=55.0),
-                database.EvaluationScore(metric='EXECUTION_TIME',
-                                              value=0.2),
+                database.EvaluationScore(metric='F1_MACRO', value=55.0),
+                database.EvaluationScore(metric='EXECUTION_TIME', value=0.2),
             ],
         ))
         db.commit()
@@ -144,35 +142,19 @@ class TestSession(unittest.TestCase):
         db.add(database.Evaluation(
             pipeline_id=self._pipelines[0],
             scores=[
-                database.EvaluationScore(fold=0,
-                                              metric='F1_MACRO',
-                                              value=41.5),
-                database.EvaluationScore(fold=1,
-                                              metric='F1_MACRO',
-                                              value=42.5),
-                database.EvaluationScore(fold=0,
-                                              metric='EXECUTION_TIME',
-                                              value=1.3),
-                database.EvaluationScore(fold=1,
-                                              metric='EXECUTION_TIME',
-                                              value=1.5),
+                database.EvaluationScore(fold=0, metric='F1_MACRO', value=41.5),
+                database.EvaluationScore(fold=1, metric='F1_MACRO', value=42.5),
+                database.EvaluationScore(fold=0, metric='EXECUTION_TIME', value=1.3),
+                database.EvaluationScore(fold=1, metric='EXECUTION_TIME', value=1.5),
             ],
         ))
         db.add(database.Evaluation(
             pipeline_id=self._pipelines[1],
             scores=[
-                database.EvaluationScore(fold=0,
-                                              metric='F1_MACRO',
-                                              value=16.5),
-                database.EvaluationScore(fold=1,
-                                              metric='F1_MACRO',
-                                              value=17.5),
-                database.EvaluationScore(fold=0,
-                                              metric='EXECUTION_TIME',
-                                              value=0.5),
-                database.EvaluationScore(fold=1,
-                                              metric='EXECUTION_TIME',
-                                              value=0.9),
+                database.EvaluationScore(fold=0, metric='F1_MACRO', value=16.5),
+                database.EvaluationScore(fold=1, metric='F1_MACRO', value=17.5),
+                database.EvaluationScore(fold=0, metric='EXECUTION_TIME', value=0.5),
+                database.EvaluationScore(fold=1, metric='EXECUTION_TIME', value=0.9),
             ],
         ))
         db.commit()
@@ -208,18 +190,10 @@ class TestSession(unittest.TestCase):
             db.add(database.Evaluation(
                 pipeline_id=self._pipelines[2],
                 scores=[
-                    database.EvaluationScore(fold=0,
-                                                  metric='F1_MACRO',
-                                                  value=21.0),
-                    database.EvaluationScore(fold=1,
-                                                  metric='F1_MACRO',
-                                                  value=22.0),
-                    database.EvaluationScore(fold=0,
-                                                  metric='EXECUTION_TIME',
-                                                  value=0.9),
-                    database.EvaluationScore(fold=1,
-                                                  metric='EXECUTION_TIME',
-                                                  value=1.1),
+                    database.EvaluationScore(fold=0, metric='F1_MACRO', value=21.0),
+                    database.EvaluationScore(fold=1, metric='F1_MACRO', value=22.0),
+                    database.EvaluationScore(fold=0, metric='EXECUTION_TIME', value=0.9),
+                    database.EvaluationScore(fold=1, metric='EXECUTION_TIME', value=1.1),
                 ],
             ))
             db.commit()

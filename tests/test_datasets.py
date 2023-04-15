@@ -10,15 +10,15 @@ import pandas as pd
 import d3m_automl_rpc.core_pb2_grpc as pb_core_grpc
 from datetime import datetime
 from os.path import join
-from d3m.metadata.pipeline import Pipeline
+# from d3m.metadata.pipeline import Pipeline
 from alphad3m.grpc_api.grpc_logger import LoggingStub
 from d3m_automl_rpc.utils import encode_pipeline_description, decode_value
 from d3m import index as d3m_index
 from d3m.container import Dataset
 from d3m.metadata.problem import Problem, PerformanceMetric
 from d3m.utils import yaml_load_all, fix_uri
-from alphad3m.grpc_api.grpc_client import do_search, do_score, do_train, do_test, do_export, do_describe, \
-    do_load_solution, do_save_fitted_solution
+from alphad3m.grpc_api.grpc_client import do_search  # do_score, do_train, do_test, do_export, do_describe, \
+#    do_load_solution, do_save_fitted_solution
 
 import glob
 import pkg_resources
@@ -58,14 +58,14 @@ def search_pipelines(datasets, time_bound=10, use_template=False):
 
         try:
             problem = Problem.load(problem_uri=fix_uri(problem_path))
-        except:
+        except Exception:
             logger.exception('Error parsing problem')
             continue
-        #debug_pipeline(fix_uri(dataset_train_path))
+        # debug_pipeline(fix_uri(dataset_train_path))
         task_keywords = '_'.join([x.name for x in problem['problem']['task_keywords']])
         search_id, pipelines = do_search(core, problem, dataset_train_path, time_bound=time_bound, pipelines_limit=0,
-                                        pipeline_template=pipeline_template)
-        #print(dataset, problem['problem']['performance_metrics'][0]['metric'].name, task_keywords)
+                                         pipeline_template=pipeline_template)
+        # print(dataset, problem['problem']['performance_metrics'][0]['metric'].name, task_keywords)
         number_pipelines = len(pipelines)
         result = {'search_id': search_id, 'task': task_keywords, 'search_time': str(datetime.now() - start_time),
                   'pipelines': number_pipelines, 'best_time': 'None', 'best_score': 'None', 'all_scores': []}
@@ -81,13 +81,13 @@ def search_pipelines(datasets, time_bound=10, use_template=False):
                 else:
                     pipeline_score = decode_value(pipeline[0].scores[0].value)['value']
                 all_scores.append({'id': pipeline_id, 'score': pipeline_score, 'time': pipeline_time})
-                #do_score(core, problem, [pipeline_id], dataset_train_path)
-                #fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
-                #do_save_fitted_solution(core, fitted_pipeline)
-                #do_test(core, fitted_pipeline, dataset_train_path.replace('TRAIN', 'TEST'))
-                #do_export(core, fitted_pipeline)
-                #do_describe(core, [pipeline_id])
-                #pipeline_id =  do_load_solution(core, '/output/saved_pipeline')
+                # do_score(core, problem, [pipeline_id], dataset_train_path)
+                # fitted_pipeline = do_train(core, [pipeline_id], dataset_train_path)
+                # do_save_fitted_solution(core, fitted_pipeline)
+                # do_test(core, fitted_pipeline, dataset_train_path.replace('TRAIN', 'TEST'))
+                # do_export(core, fitted_pipeline)
+                # do_describe(core, [pipeline_id])
+                # pipeline_id =  do_load_solution(core, '/output/saved_pipeline')
 
             result['pipelines'] = number_pipelines
             result['best_time'] = best_time
@@ -123,7 +123,7 @@ def evaluate_pipelines(datasets, top=10, option='fit-score'):
             search_id = search_results[dataset]['search_id']
             logger.info('Scoring top pipeline id=%s' % top_pipeline_id)
             pipeline_path = join(D3MOUTPUTDIR, search_id, 'pipelines_searched', '%s.json' % top_pipeline_id)
-            #pipeline_path = '/usr/src/app/alphad3m/resource/pipelines/example_metalearningdb.json'
+            # pipeline_path = '/usr/src/app/alphad3m/resource/pipelines/example_metalearningdb.json'
             output_path = join(D3MOUTPUTDIR, 'temp', 'runtime_output', '%s_%s.csv' % (option, top_pipeline_id))
             try:
                 command = create_command(option, top_pipeline_id, pipeline_path, output_path, problem_path,
@@ -136,7 +136,7 @@ def evaluate_pipelines(datasets, top=10, option='fit-score'):
                     normalized_score = PerformanceMetric[metric].normalize(score)
                     performance_top_pipelines[top_pipeline_id] = (score, normalized_score)
                     logger.info('Scored top pipeline id=%s, %s=%.6f' % (top_pipeline_id, metric, score))
-            except:
+            except Exception:
                 logger.exception('Error during the process %s' % option)
 
         if len(performance_top_pipelines) > 0:
@@ -148,7 +148,7 @@ def evaluate_pipelines(datasets, top=10, option='fit-score'):
         row = [dataset, search_results[dataset]['pipelines'], search_results[dataset]['best_time'],
                search_results[dataset]['search_time'], best_score, metric, search_results[dataset]['task'], best_id]
         save_row(statistics_path, row)
-        #create_dupms(search_id, performance_top_pipelines.keys())
+        # create_dupms(search_id, performance_top_pipelines.keys())
 
 
 def create_command(option, pipeline_id, pipeline_path, output_path, problem_path, train_path, test_path,
@@ -164,7 +164,7 @@ def create_command(option, pipeline_id, pipeline_path, output_path, problem_path
         '--problem', problem_path,
         '--input', train_path,
         '--test-input', test_path
-        #'--output-run', join(D3MOUTPUTDIR, search_id, 'pipeline_runs', 'run_%s.yml' % top_pipeline_id)
+        # '--output-run', join(D3MOUTPUTDIR, search_id, 'pipeline_runs', 'run_%s.yml' % top_pipeline_id)
     ]
 
     if expose_outputs:
@@ -347,9 +347,9 @@ def score_pipeline(task, json_pipeline):
 
     try:
         scores = d3m.runtime.combine_folds([fold for fold in run_scores])
-        logger.info('Cross-validation scores:\n%s'% scores.to_string())
+        logger.info('Cross-validation scores:\n%s' % scores.to_string())
         avg_score = round(scores['value'].mean(), 3)
-    except:
+    except Exception:
         logger.error('Scoring pipeline')
         avg_score = 0
 
@@ -366,7 +366,7 @@ def evaluate_openml_tasks():
         try:
             with open(join(directory_path, task, 'pipeline.json')) as fin:
                 json_pipeline = json.load(fin)
-        except:
+        except Exception:
             scores[task] = 0
             continue
 

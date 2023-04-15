@@ -131,7 +131,7 @@ def to_d3m_json(pipeline):
 
     try:
         json_pipeline['digest'] = compute_digest(json_pipeline)
-    except:
+    except Exception:
         logger.error('Creating digest, skipping this field')
 
     return json_pipeline
