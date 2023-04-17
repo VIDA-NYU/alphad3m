@@ -210,7 +210,7 @@ def calculate_statistics(leaderboard):
 
 
 logger.info('Top 1 pipeline')
-leaderboard_path = join(dirname(__file__), '../../evaluations/leaderboard_december_2020_rank1.html')
+leaderboard_path = join(dirname(__file__), '../../evaluations/leaderboard_results.html')
 leaderboard = get_leaderboard(leaderboard_path)
 new_results_path = join(dirname(__file__), '../../evaluations/new_results')
 new_scores = collect_new_scores(new_results_path)
