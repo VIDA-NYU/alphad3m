@@ -2,6 +2,7 @@ import logging
 import sys
 import shutil
 import pickle
+import multiprocessing
 from os.path import join
 from sqlalchemy.orm import joinedload
 from alphad3m.pipeline_operations.pipeline_score import calculate_scores, save_scores
@@ -9,6 +10,7 @@ from alphad3m.schema import database
 from alphad3m.hyperparameter_tuning.primitive_config import is_tunable
 from alphad3m.hyperparameter_tuning.bayesian import HyperparameterTuning, get_new_hyperparameters
 from alphad3m.utils import create_outputfolders
+
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +26,7 @@ def tune(pipeline_id, dataset_uri, sample_dataset_uri, storage_dir, metrics, pro
                  joinedload(database.Pipeline.connections))
     ).one()
 
-    timeout_tuning = timeout_tuning - 90  # Reduce 1.5 minutes to finish safely the tuning process
+    timeout_tuning = timeout_tuning - 60  # Reduce 1 minute to finish safely the tuning process
     logger.info('About to tune pipeline, id=%s, timeout=%d secs', pipeline_id, timeout_tuning)
     tunable_primitives = {}
 
@@ -37,6 +39,7 @@ def tune(pipeline_id, dataset_uri, sample_dataset_uri, storage_dir, metrics, pro
         sys.exit(1)
 
     logger.info('Tuning primitives: %s', ', '.join(tunable_primitives.values()))
+
 
     def evaluate_tune(hyperparameter_configuration):
         new_hyperparams = []
@@ -67,6 +70,8 @@ def tune(pipeline_id, dataset_uri, sample_dataset_uri, storage_dir, metrics, pro
 
         return cost, scores
 
+    # To avoid 'Can’t pickle local object' error in macOS: https://tinyurl.com/cb9deppt
+    multiprocessing.set_start_method('fork')
     # Run tuning, gets best configuration
     tuning = HyperparameterTuning(tunable_primitives.values())
     output_directory = join(storage_dir, 'tuning', str(pipeline_id))
