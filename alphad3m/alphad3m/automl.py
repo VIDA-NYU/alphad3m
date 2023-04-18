@@ -38,7 +38,7 @@ from d3m.metadata import pipeline as pipeline_module
 
 
 #  #### These are hyperparameters of the search ####
-PIPELINES_TO_TUNE = 0  # Number of pipelines (top k) to be tuned.
+PIPELINES_TO_TUNE = 5  # Number of pipelines (top k) to be tuned.
 TIME_TO_TUNE = 0.15  # The ratio of the time to be used for the tuning phase.
 TIME_TO_SCORE = 5  # In minutes. Internal time to score a pipeline during the searching phase.
 MAX_RUNNING_TIME = 43800  # In minutes. If time is not provided for the searching either scoring, run it for 1 month.
@@ -91,8 +91,7 @@ class AutoML(Observable):
 
         # Create pipelines, NO TUNING
         with session.with_observer_queue() as queue:
-            self.build_pipelines(session.id, dataset_path, task_keywords, session.metrics, timeout, None, None,
-                                 tune=PIPELINES_TO_TUNE)
+            self.build_pipelines(session.id, dataset_path, task_keywords, session.metrics, timeout, None, None)
 
             while queue.get(True)[0] != 'done_searching':
                 pass
@@ -322,9 +321,9 @@ class AutoML(Observable):
         return None
 
     def build_pipelines(self, session_id, dataset, task_keywords, metrics, timeout_search, timeout_run, hyperparameters,
-                        template=None, targets=None, features=None, tune=None, report_rank=False):
+                        template=None, targets=None, features=None, report_rank=False):
         self.executor.submit(self._build_pipelines, session_id, dataset, task_keywords, metrics, timeout_search,
-                             timeout_run, hyperparameters, template, targets, features, tune, report_rank)
+                             timeout_run, hyperparameters, template, targets, features, report_rank)
 
     def build_fixed_pipeline(self, session_id, pipeline, dataset, targets=None, features=None):
         self.executor.submit(self._build_fixed_pipeline, session_id, pipeline, dataset, targets, features)
@@ -434,7 +433,7 @@ class AutoML(Observable):
 
     # Runs in a worker thread from executor
     def _build_pipelines(self, session_id, dataset_uri, task_keywords, metrics, timeout_search, timeout_run,
-                         hyperparameters, pipeline_template, targets, features, tune, report_rank):
+                         hyperparameters, pipeline_template, targets, features, report_rank):
         """Generates pipelines for the session.
         """
         session = self.sessions[session_id]
@@ -468,10 +467,13 @@ class AutoML(Observable):
         if 'exclude_primitives' not in hyperparameters or hyperparameters['exclude_primitives'] is None:
             hyperparameters['exclude_primitives'] = EXCLUDE_PRIMITIVES
 
+        if 'pipelines_to_tune' not in hyperparameters or hyperparameters['pipelines_to_tune'] is None:
+            hyperparameters['pipelines_to_tune'] = PIPELINES_TO_TUNE
+
         timeout_search = timeout_search * 60  # Minutes to seconds
         timeout_search_internal = timeout_search
 
-        if PIPELINES_TO_TUNE > 0:
+        if hyperparameters['pipelines_to_tune'] > 0:
             timeout_search_internal = timeout_search * (1 - TIME_TO_TUNE)
 
         now = time.time()
@@ -493,7 +495,7 @@ class AutoML(Observable):
             self._build_pipelines_from_generator(session, task_keywords, dataset_uri, sample_dataset_uri, metrics,
                                                  hyperparameters, metadata, timeout_search_internal, pipeline_template)
 
-        session.tune_when_ready(tune)
+        session.tune_when_ready(hyperparameters['pipelines_to_tune'])
 
     def _build_pipelines_from_generator(self, session, task_keywords, dataset_uri, sample_dataset_uri, metrics,
                                         hyperparameters, metadata, timeout_search, pipeline_template):
@@ -805,9 +807,7 @@ class Session(Observable):
                 self.notify(event, **kwargs)
                 self.pipeline_scoring_done(kwargs['pipeline_id'], event)
 
-    def tune_when_ready(self, tune=None):
-        if tune is None:
-            tune = PIPELINES_TO_TUNE
+    def tune_when_ready(self, tune=0):
         self._tune_when_ready = tune
         self.working = True
         self.check_status()
