@@ -549,7 +549,10 @@ class AutoML(Observable):
                 score = self.run_pipeline(session, dataset_uri, sample_dataset_uri, task_keywords, pipeline_id)
                 logger.info("Sending score to generator process")
                 if not stop:
-                    msg_queue.send(score)
+                    try:
+                        msg_queue.send(score)
+                    except Exception:
+                        logger.warning('Generator process has been stopped, do not send the pipeline score')
             else:
                 raise RuntimeError("Got unknown message from generator process: %r" % msg)
 
