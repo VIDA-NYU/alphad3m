@@ -40,7 +40,6 @@ def tune(pipeline_id, dataset_uri, sample_dataset_uri, storage_dir, metrics, pro
 
     logger.info('Tuning primitives: %s', ', '.join(tunable_primitives.values()))
 
-
     def evaluate_tune(hyperparameter_configuration):
         new_hyperparams = []
 
