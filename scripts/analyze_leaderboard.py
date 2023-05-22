@@ -88,12 +88,13 @@ def get_leaderboard(leaderboard_path):
             continue
         rows = table.find('tbody').find_all('tr')
         ranking = []
+        metric = None
         for index_row, row in enumerate(rows):
             cells = row.find_all('td')
             team = cells[1].get_text()
             score = cells[6].get_text()
+            metric = cells[9].get_text()
             # baseline = cells[7].get_text()
-            # metric = cells[9].get_text()
 
             if team == 'NYU-TA2' and task_types[dataset_name] not in {'TABULAR_CLASSIFICATION', 'TABULAR_REGRESSION'}:
                 team = None  # We consider NYU-TA2 as the system that supports only classification and regression
@@ -102,7 +103,7 @@ def get_leaderboard(leaderboard_path):
                 ranking.append((team, round(float(score), 3)))
 
         new_ranking = add_rank(ranking)
-        leaderboard[dataset_name] = {'ranking': new_ranking, 'task': task_types[dataset_name]}
+        leaderboard[dataset_name] = {'ranking': new_ranking, 'task': task_types[dataset_name], 'metric': metric}
 
     return leaderboard
 
@@ -157,7 +158,7 @@ def update_leaderboard(leaderboard, new_scores, new_team):
             logger.warning('No new score found for dataset %s', dataset)
 
         new_ranking = add_rank(ranking)
-        leaderboard[dataset] = {'ranking': new_ranking, 'task': ranking_info['task']}
+        leaderboard[dataset] = {'ranking': new_ranking, 'task': ranking_info['task'], 'metric': ranking_info['metric']}
 
     return leaderboard
 
@@ -209,10 +210,37 @@ def calculate_statistics(leaderboard):
     print(table_task)
 
 
+def to_csv(leaderboard, file_path):
+    teams = ['AlphaD3M', 'AutonML', 'Ensemble', 'Aika', 'Distil AutoML', 'Autoflow', 'Axolotl',  'Drori']
+    team_name_mapper = {'NEW-NYU-TA2': 'AlphaD3M',  'CMU-TA2': 'AutonML', 'UCB-TA2': 'Aika', 'SRI-TA2': 'Autoflow',
+                        'Uncharted-TA2': 'Distil AutoML', 'Texas A&M-TA2': 'Axolotl', 'D3M ENSEMBLE-TA2': 'Ensemble',
+                        'NYU-TA2': 'Drori'}
+
+    data = {'Dataset': [], 'Task': [], 'Metric': []}
+
+    for team in teams:
+        data[team] = []
+
+    for dataset in leaderboard:
+        task = leaderboard[dataset]['task']
+        metric = leaderboard[dataset]['metric']
+        data['Dataset'].append(dataset)
+        data['Task'].append(task)
+        data['Metric'].append(metric)
+        for team, team_data in leaderboard[dataset]['ranking'].items():
+            team = team_name_mapper[team]
+            score = team_data['score']
+            data[team].append(score)
+
+    data = pd.DataFrame(data)
+    data.to_csv(file_path, index=False)
+    logger.info('CSV file created!')
+
+
 logger.info('Top 1 pipeline')
 leaderboard_path = join(dirname(__file__), '../../evaluations/leaderboard_results.html')
 leaderboard = get_leaderboard(leaderboard_path)
 new_results_path = join(dirname(__file__), '../../evaluations/new_results')
 new_scores = collect_new_scores(new_results_path)
 leaderboard = update_leaderboard(leaderboard, new_scores, 'NEW-NYU-TA2')
-calculate_statistics(leaderboard)
+to_csv(leaderboard, join(dirname(__file__), './paper_automlconference/resource/d3m_leaderboard.csv'))
