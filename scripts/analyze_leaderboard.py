@@ -222,7 +222,7 @@ def to_csv(leaderboard, file_path):
         data[team] = []
 
     for dataset in leaderboard:
-        task = leaderboard[dataset]['task']
+        task = leaderboard[dataset]['task'].lower()
         metric = leaderboard[dataset]['metric']
         data['Dataset'].append(dataset)
         data['Task'].append(task)
