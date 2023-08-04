@@ -1,0 +1,113 @@
+dataset,method,score
+1491_one_hundred_plants_margin_MIN_METADATA,Full,0.82069
+1567_poker_hand_MIN_METADATA,Full,0.273227
+185_baseball_MIN_METADATA,Full,0.637257
+196_autoMpg_MIN_METADATA,Full,6.529278
+26_radon_seed_MIN_METADATA,Full,0.021976
+27_wordLevels_MIN_METADATA,Full,0.329749
+299_libras_move_MIN_METADATA,Full,0.981206
+313_spectrometer_MIN_METADATA,Full,0.428127
+38_sick_MIN_METADATA,Full,0.998234
+534_cps_85_wages_MIN_METADATA,Full,20.113742
+57_hypothyroid_MIN_METADATA,Full,0.973643
+LL0_1100_popularkids_MIN_METADATA,Full,0.398967
+LL0_186_braziltourism_MIN_METADATA,Full,0.144828
+LL0_207_autoPrice_MIN_METADATA,Full,9077874.134087
+LL0_jido_reduced_MIN_METADATA,Full,0.895688
+LL1_ACLED_TOR_online_behavior_MIN_METADATA,Full,0.397122
+LL1_GS_process_classification_tabular_MIN_METADATA,Full,0.788321
+LL1_MITLL_synthetic_vora_E_2538,Full,0.259863
+LL1_ViEWS_CM_S1,Full,0.957677
+LL1_ViEWS_PGM_S1,Full,0.0
+LL1_h1b_visa_apps_7480,Full,0.261477
+LL1_retail_sales_total_MIN_METADATA,Full,1985.679645
+kaggle_music_hackathon_MIN_METADATA,Full,21.877067
+loan_status_MIN_METADATA,Full,0.461922
+uu2_gp_hyperparameter_estimation_MIN_METADATA,Full,0.888575
+uu3_world_development_indicators_MIN_METADATA,Full,730201535883.0547
+uu3_world_development_indicators_raw,Full,936209175378.3988
+1491_one_hundred_plants_margin_MIN_METADATA,No Automatic Grammar,0.806921
+1567_poker_hand_MIN_METADATA,No Automatic Grammar,0.0
+185_baseball_MIN_METADATA,No Automatic Grammar,0.0
+196_autoMpg_MIN_METADATA,No Automatic Grammar,8.584761
+26_radon_seed_MIN_METADATA,No Automatic Grammar,0.0
+27_wordLevels_MIN_METADATA,No Automatic Grammar,0.0
+299_libras_move_MIN_METADATA,No Automatic Grammar,0.980156
+313_spectrometer_MIN_METADATA,No Automatic Grammar,0.0
+4550_MiceProtein_MIN_METADATA,No Automatic Grammar,0.0
+534_cps_85_wages_MIN_METADATA,No Automatic Grammar,19.616802
+57_hypothyroid_MIN_METADATA,No Automatic Grammar,0.977409
+LL0_1100_popularkids_MIN_METADATA,No Automatic Grammar,0.449968
+LL0_186_braziltourism_MIN_METADATA,No Automatic Grammar,0.158697
+LL0_207_autoPrice_MIN_METADATA,No Automatic Grammar,7538187.3534
+LL0_acled_reduced_MIN_METADATA,No Automatic Grammar,0.0
+LL0_jido_reduced_MIN_METADATA,No Automatic Grammar,0.0
+LL1_GS_process_classification_tabular_MIN_METADATA,No Automatic Grammar,0.0
+LL1_MITLL_synthetic_vora_E_2538,No Automatic Grammar,0.0
+LL1_ViEWS_CM_S1,No Automatic Grammar,0.849453
+LL1_ViEWS_PGM_S1,No Automatic Grammar,0.0
+LL1_h1b_visa_apps_7480,No Automatic Grammar,0.0
+LL1_retail_sales_total_MIN_METADATA,No Automatic Grammar,0.0
+kaggle_music_hackathon_MIN_METADATA,No Automatic Grammar,0.0
+loan_status_MIN_METADATA,No Automatic Grammar,0.0
+uu2_gp_hyperparameter_estimation_MIN_METADATA,No Automatic Grammar,0.0
+uu3_world_development_indicators_MIN_METADATA,No Automatic Grammar,1721547590242.8447
+uu3_world_development_indicators_raw,No Automatic Grammar,0.0
+1491_one_hundred_plants_margin_MIN_METADATA,No Prioritization,0.832159
+1567_poker_hand_MIN_METADATA,No Prioritization,0.18703
+185_baseball_MIN_METADATA,No Prioritization,0.648331
+196_autoMpg_MIN_METADATA,No Prioritization,8.484643
+26_radon_seed_MIN_METADATA,No Prioritization,0.021797
+27_wordLevels_MIN_METADATA,No Prioritization,0.327513
+299_libras_move_MIN_METADATA,No Prioritization,0.967774
+313_spectrometer_MIN_METADATA,No Prioritization,0.400434
+38_sick_MIN_METADATA,No Prioritization,0.998465
+4550_MiceProtein_MIN_METADATA,No Prioritization,1.0
+534_cps_85_wages_MIN_METADATA,No Prioritization,31.104456
+57_hypothyroid_MIN_METADATA,No Prioritization,0.991213
+LL0_1100_popularkids_MIN_METADATA,No Prioritization,0.428464
+LL0_186_braziltourism_MIN_METADATA,No Prioritization,0.144828
+LL0_207_autoPrice_MIN_METADATA,No Prioritization,7213454.419447
+LL0_acled_reduced_MIN_METADATA,No Prioritization,0.918345
+LL0_jido_reduced_MIN_METADATA,No Prioritization,0.913769
+LL1_ACLED_TOR_online_behavior_MIN_METADATA,No Prioritization,0.626552
+LL1_GS_process_classification_tabular_MIN_METADATA,No Prioritization,0.788321
+LL1_MITLL_synthetic_vora_E_2538,No Prioritization,0.233056
+LL1_ViEWS_CM_S1,No Prioritization,0.801409
+LL1_ViEWS_PGM_S1,No Prioritization,0.024635
+LL1_h1b_visa_apps_7480,No Prioritization,0.0
+LL1_retail_sales_total_MIN_METADATA,No Prioritization,1985.718714
+kaggle_music_hackathon_MIN_METADATA,No Prioritization,21.872087
+loan_status_MIN_METADATA,No Prioritization,0.461922
+uu2_gp_hyperparameter_estimation_MIN_METADATA,No Prioritization,0.888575
+uu3_world_development_indicators_MIN_METADATA,No Prioritization,730201535883.0547
+uu3_world_development_indicators_raw,No Prioritization,936209175378.3988
+1491_one_hundred_plants_margin_MIN_METADATA,No Tuning,0.812152
+1567_poker_hand_MIN_METADATA,No Tuning,0.273227
+185_baseball_MIN_METADATA,No Tuning,0.694398
+196_autoMpg_MIN_METADATA,No Tuning,6.544454
+26_radon_seed_MIN_METADATA,No Tuning,0.021976
+27_wordLevels_MIN_METADATA,No Tuning,0.302527
+299_libras_move_MIN_METADATA,No Tuning,0.981206
+313_spectrometer_MIN_METADATA,No Tuning,0.428127
+38_sick_MIN_METADATA,No Tuning,0.998234
+4550_MiceProtein_MIN_METADATA,No Tuning,1.0
+534_cps_85_wages_MIN_METADATA,No Tuning,20.168949
+57_hypothyroid_MIN_METADATA,No Tuning,0.962006
+LL0_1100_popularkids_MIN_METADATA,No Tuning,0.398967
+LL0_186_braziltourism_MIN_METADATA,No Tuning,0.144828
+LL0_207_autoPrice_MIN_METADATA,No Tuning,9077874.134087
+LL0_acled_reduced_MIN_METADATA,No Tuning,0.921816
+LL0_jido_reduced_MIN_METADATA,No Tuning,0.901947
+LL1_ACLED_TOR_online_behavior_MIN_METADATA,No Tuning,0.290323
+LL1_GS_process_classification_tabular_MIN_METADATA,No Tuning,0.80292
+LL1_MITLL_synthetic_vora_E_2538,No Tuning,0.291877
+LL1_ViEWS_CM_S1,No Tuning,0.814348
+LL1_ViEWS_PGM_S1,No Tuning,0.024604
+LL1_h1b_visa_apps_7480,No Tuning,0.433691
+LL1_retail_sales_total_MIN_METADATA,No Tuning,1988.085325
+kaggle_music_hackathon_MIN_METADATA,No Tuning,21.877067
+loan_status_MIN_METADATA,No Tuning,0.461922
+uu2_gp_hyperparameter_estimation_MIN_METADATA,No Tuning,0.888575
+uu3_world_development_indicators_MIN_METADATA,No Tuning,730201535883.0547
+uu3_world_development_indicators_raw,No Tuning,936209175378.3988
