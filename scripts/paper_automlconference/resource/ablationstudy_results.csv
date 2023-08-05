@@ -8,11 +8,13 @@ dataset,method,score
 299_libras_move_MIN_METADATA,Full,0.981206
 313_spectrometer_MIN_METADATA,Full,0.428127
 38_sick_MIN_METADATA,Full,0.998234
+4550_MiceProtein_MIN_METADATA,Full,0.0
 534_cps_85_wages_MIN_METADATA,Full,20.113742
 57_hypothyroid_MIN_METADATA,Full,0.973643
 LL0_1100_popularkids_MIN_METADATA,Full,0.398967
 LL0_186_braziltourism_MIN_METADATA,Full,0.144828
 LL0_207_autoPrice_MIN_METADATA,Full,9077874.134087
+LL0_acled_reduced_MIN_METADATA,Full,0.0
 LL0_jido_reduced_MIN_METADATA,Full,0.895688
 LL1_ACLED_TOR_online_behavior_MIN_METADATA,Full,0.397122
 LL1_GS_process_classification_tabular_MIN_METADATA,Full,0.788321
@@ -34,6 +36,7 @@ uu3_world_development_indicators_raw,Full,936209175378.3988
 27_wordLevels_MIN_METADATA,No Automatic Grammar,0.0
 299_libras_move_MIN_METADATA,No Automatic Grammar,0.980156
 313_spectrometer_MIN_METADATA,No Automatic Grammar,0.0
+38_sick_MIN_METADATA,No Automatic Grammar,0.0
 4550_MiceProtein_MIN_METADATA,No Automatic Grammar,0.0
 534_cps_85_wages_MIN_METADATA,No Automatic Grammar,19.616802
 57_hypothyroid_MIN_METADATA,No Automatic Grammar,0.977409
@@ -42,6 +45,7 @@ LL0_186_braziltourism_MIN_METADATA,No Automatic Grammar,0.158697
 LL0_207_autoPrice_MIN_METADATA,No Automatic Grammar,7538187.3534
 LL0_acled_reduced_MIN_METADATA,No Automatic Grammar,0.0
 LL0_jido_reduced_MIN_METADATA,No Automatic Grammar,0.0
+LL1_ACLED_TOR_online_behavior_MIN_METADATA,No Automatic Grammar,0.0
 LL1_GS_process_classification_tabular_MIN_METADATA,No Automatic Grammar,0.0
 LL1_MITLL_synthetic_vora_E_2538,No Automatic Grammar,0.0
 LL1_ViEWS_CM_S1,No Automatic Grammar,0.849453
