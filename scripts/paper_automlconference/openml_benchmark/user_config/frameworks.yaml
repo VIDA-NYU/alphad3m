@@ -1,18 +1,5 @@
 AlphaD3M:
   module: extensions.AlphaD3M
   version: 'stable'
-  project: https://scikit-learn.org/stable/modules/ensemble.html#stacking
-  description: "this will use mybranch branch from the autosklearn repository instead of the fixed version"
-
-
-Stacking:
-  module: extensions.Stacking
-  version: '0.22.1'
-  project: https://scikit-learn.org/stable/modules/ensemble.html#stacking
-  params:
-    _rf_params: {n_estimators: 200}
-    _gbm_params: {n_estimators: 200}
-    _linear_params: {penalty: elasticnet, loss: log}
-#    _svc_params: {tol: 1e-3, max_iter: 1e5}
-#    _final_params: {penalty: elasticnet, loss: log} # sgd linear
-    _final_params: {max_iter: 1000}  # logistic/linear
+  project: https://gitlab.com/ViDA-NYU/d3m/alphad3mable/modules/ensemble.html#stacking
+  description: 'AlphaD3M is an AutoML library that automatically searches for models and derives end-to-end pipelines that read, pre-process the data, and train the model.'
