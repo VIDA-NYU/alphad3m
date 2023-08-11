@@ -15,7 +15,7 @@ log = logging.getLogger(os.path.basename(__file__))
 
 
 def run(dataset, config):
-    log.info(f"\n**** Running AlphaD3M ****\n")
+    log.info(f'\n**** Running AlphaD3M ****\n')
 
     metrics_mapping = {'acc': 'accuracy'}
     task_types_mapping = {'multiclass': 'multiClass', 'binary': 'binary'}
@@ -30,10 +30,17 @@ def run(dataset, config):
     test_dataset = dataset.test.path
     target_name = dataset.target.name
     output_path = config.output_dir
-    time_bound = 3 #config.max_runtime_seconds
+    time_bound = 1 #config.max_runtime_seconds/60
+
+    log.info(f'Received parameters:\n'
+             f'train_dataset: {train_dataset}\n'
+             f'test_dataset: {test_dataset}\n'
+             f'target_name: {target_name}\n'
+             f'time_bound: {time_bound}\n'
+             f'metric: {metric}\n'
+             f'task_type: {task_type}\n')
 
     automl = AutoML(output_path)
-    predictions = None
 
     with Timer() as training:
         automl.search_pipelines(train_dataset, time_bound=time_bound, target=target_name, metric=metric,
@@ -42,14 +49,13 @@ def run(dataset, config):
         best_pipeline_id = automl.get_best_pipeline_id()
         model_id = automl.train(best_pipeline_id)
         predictions = automl.test(model_id, test_dataset)
+        predictions = predictions[target_name]
+        automl.end_session()
 
-    '''return result(output_file=config.output_predictions_file,
+    return result(output_file=config.output_predictions_file,
                   predictions=predictions,
-                  truth=y_test,
-                  probabilities=probabilities,
-                  target_is_encoded=is_classification,
-                  models_count=len(estimator.estimators_) + 1,
-                  training_duration=training.duration)'''
+                  training_duration=training.duration,
+                  target_is_encoded=False)
 
 
 if __name__ == '__main__':
