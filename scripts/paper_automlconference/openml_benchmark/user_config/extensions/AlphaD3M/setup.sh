@@ -2,7 +2,6 @@
 shopt -s expand_aliases
 HERE=$(dirname "$0")
 
-#. "$HERE/.setup_env"
 . "automlbenchmark/frameworks/shared/setup.sh" "$HERE" true
 export AR=/usr/bin/ar
 PIP install Cython==0.29.24
