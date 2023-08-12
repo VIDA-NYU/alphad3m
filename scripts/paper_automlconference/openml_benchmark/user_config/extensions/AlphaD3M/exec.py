@@ -1,17 +1,17 @@
 import logging
 import os
 import tempfile as tmp
+from alphad3m import AutoML
+from frameworks.shared.callee import call_run, result
+from frameworks.shared.utils import Timer
+import numpy as np
+import pandas as pd
 
 os.environ['JOBLIB_TEMP_FOLDER'] = tmp.gettempdir()
 os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 os.environ['MKL_NUM_THREADS'] = '1'
-
-from frameworks.shared.callee import call_run, result
-from frameworks.shared.utils import Timer
-from alphad3m import AutoML
-
-log = logging.getLogger(os.path.basename(__file__))
+log = logging.getLogger(__name__)
 
 
 def run(dataset, config):
@@ -30,7 +30,7 @@ def run(dataset, config):
     test_dataset = dataset.test.path
     target_name = dataset.target.name
     output_path = config.output_dir
-    time_bound = 1 #config.max_runtime_seconds/60
+    time_bound = config.max_runtime_seconds/60
 
     log.info(f'Received parameters:\n'
              f'train_dataset: {train_dataset}\n'
@@ -49,10 +49,15 @@ def run(dataset, config):
         best_pipeline_id = automl.get_best_pipeline_id()
         model_id = automl.train(best_pipeline_id)
         predictions = automl.test(model_id, test_dataset)
-        predictions = predictions[target_name]
+        predictions = predictions[[target_name]]
         automl.end_session()
 
-    return result(output_file=config.output_predictions_file,
+    classes = (predictions[target_name].unique())
+    probabilities = pd.DataFrame(0, index=np.arange(len(predictions)), columns=classes)
+
+    return result(dataset=dataset,
+                  output_file=config.output_predictions_file,
+                  probabilities=probabilities,
                   predictions=predictions,
                   training_duration=training.duration,
                   target_is_encoded=False)
