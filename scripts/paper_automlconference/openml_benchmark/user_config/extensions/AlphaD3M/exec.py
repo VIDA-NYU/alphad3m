@@ -52,8 +52,7 @@ def run(dataset, config):
         predictions = predictions[[target_name]]
         automl.end_session()
 
-    classes = (predictions[target_name].unique())
-    probabilities = pd.DataFrame(0, index=np.arange(len(predictions)), columns=classes)
+    probabilities = pd.DataFrame(0, index=np.arange(len(predictions)), columns=predictions[target_name].unique())
 
     return result(dataset=dataset,
                   output_file=config.output_predictions_file,
