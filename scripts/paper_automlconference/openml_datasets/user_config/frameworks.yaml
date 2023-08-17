@@ -1,5 +1,5 @@
 AlphaD3M:
   module: extensions.AlphaD3M
   version: 'stable'
-  project: https://gitlab.com/ViDA-NYU/d3m/alphad3mable/modules/ensemble.html#stacking
+  project: https://gitlab.com/ViDA-NYU/d3m/alphad3m
   description: 'AlphaD3M is an AutoML library that automatically searches for models and derives end-to-end pipelines that read, pre-process the data, and train the model.'

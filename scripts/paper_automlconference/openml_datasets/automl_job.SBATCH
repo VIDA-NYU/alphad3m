@@ -1,13 +1,9 @@
 #!/bin/bash
 #SBATCH -c 4
-#SBATCH --mem 16GB
-#SBATCH --time 01:10:00
-#SBATCH --job-name=automl_job
-#SBATCH --output logs/automl_job.out
+#SBATCH --mem 32GB
+#SBATCH --time 01:15:00
+#SBATCH --output logs/automl_job_%J.out
 #SBATCH --mail-user=rl3725@nyu.edu
 
-./sing << EOF
 
-python automlbenchmark/runbenchmark.py $1 $2 1h4c -f 0 -u user_config/
-
-EOF
+singularity exec --bind /scratch/rl3725/final_automlbenchmark_experiments:/scratch/rl3725/final_automlbenchmark_experiments  --overlay overlay-25GB-500K.ext3:ro /scratch/work/public/singularity/ubuntu-20.04.4.sif /bin/bash -c "source /ext3/env.sh; python automlbenchmark/runbenchmark.py ${1} ${2} 1h4c -f 0 -u user_config/ -i openml_datasets/"

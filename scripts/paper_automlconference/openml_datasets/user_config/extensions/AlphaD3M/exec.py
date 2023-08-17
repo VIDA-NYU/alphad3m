@@ -30,7 +30,7 @@ def run(dataset, config):
     test_dataset = dataset.test.path
     target_name = dataset.target.name
     output_path = config.output_dir
-    time_bound = config.max_runtime_seconds/60
+    time_bound = int(config.max_runtime_seconds/60)
 
     log.info(f'Received parameters:\n'
              f'train_dataset: {train_dataset}\n'
@@ -43,7 +43,7 @@ def run(dataset, config):
     automl = AutoML(output_path)
 
     with Timer() as training:
-        automl.search_pipelines(train_dataset, time_bound=time_bound, target=target_name, metric=metric,
+        automl.search_pipelines(train_dataset, time_bound=time_bound, time_bound_run=15, target=target_name, metric=metric,
                                 task_keywords=['classification', task_type, 'tabular'])
 
         best_pipeline_id = automl.get_best_pipeline_id()
@@ -52,7 +52,8 @@ def run(dataset, config):
         predictions = predictions[[target_name]]
         automl.end_session()
 
-    probabilities = pd.DataFrame(0, index=np.arange(len(predictions)), columns=predictions[target_name].unique())
+    classes = pd.read_csv(train_dataset)[target_name].unique()
+    probabilities = pd.DataFrame(0, index=np.arange(len(predictions)), columns=classes)
 
     return result(dataset=dataset,
                   output_file=config.output_predictions_file,
