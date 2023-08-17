@@ -15,5 +15,5 @@ score_dataset = '/Users/rlopez/D3M/datasets/seed_datasets_current/%s/SCORE' % da
 
 
 automl = AutoML(output_path, resource_folder=resource_path, verbose=True)
-automl.search_pipelines(train_dataset, time_bound=3)
+automl.search_pipelines(train_dataset, time_bound=10)
 automl.end_session()
