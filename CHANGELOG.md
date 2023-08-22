@@ -1,8 +1,11 @@
 Changelog
 =========
 
-0.24.0.dev0 (yyyy-mm-dd)
--------------------------
+0.24.0 (2023-08-22)
+--------------------
+* Add flake8 to the CI.
+* Use the metalearning weights when all actions have equals UCB.
+* Use the mean adtm values as probabilities for the patterns.
 
 
 0.23.0 (2022-07-04)
