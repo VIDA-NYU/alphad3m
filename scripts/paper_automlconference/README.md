@@ -22,7 +22,7 @@ cd automlbenchmark
 pip install -r requirements.txt
 ```
 
-4. To test the installation, run (you should get a valid ML pipeline):
+4. To test the installation, run the following command. You should get valid ML pipelines after running it.
 ```
 python automlbenchmark/runbenchmark.py AlphaD3M  openml/t/3945  -f 0 -u user_config/ -i openml_datasets/
 ```
@@ -32,7 +32,8 @@ SLURM batch jobs in the [NYU Greene Cluster](https://sites.google.com/nyu.edu/ny
 experiments in this cluster, run `./run_all_automlbenchmark.sh` otherwise run `./run_all_automlbenchmark_no_sbatch.sh`. 
 All the results will be stored in the `./results/results.csv` file.
 
-To generate all the tables and figures reported in the paper for these experiments, run the Jupyter Notebook 
+
+6. To generate all the tables and figures reported in the paper for these experiments, run the Jupyter Notebook 
 `d3m_datasets_experiments.ipynb`.
 
 
