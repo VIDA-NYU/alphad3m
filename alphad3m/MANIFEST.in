@@ -4,4 +4,5 @@ include README.md
 include requirements.txt
 include alphad3m/resource/*.json
 include alphad3m/resource/*.bnf
+include alphad3m/resource/*.gz
 include alphad3m/resource/pipelines/*.yaml
