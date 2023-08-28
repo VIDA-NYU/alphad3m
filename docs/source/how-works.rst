@@ -13,10 +13,10 @@ performs hyperparameter optimization of the best pipelines using SMAC.
 
 For more information about how AlphaD3M works, see our papers:
 
-- `AlphaD3M: Machine Learning Pipeline Synthesis <https://arxiv.org/abs/2111.02508>`__
+- `AlphaD3M: An Open-Source AutoML Library for Multiple ML Tasks <https://openreview.net/pdf?id=71eJdMzCCIi>`__  (preferred citation)
 - `Automatic Machine Learning by Pipeline Synthesis using Model-Based Reinforcement Learning and a Grammar
   <https://arxiv.org/abs/1905.10345>`__
-
+- `AlphaD3M: Machine Learning Pipeline Synthesis <https://arxiv.org/abs/2111.02508>`__
 
 
 Support for Many ML Problems
