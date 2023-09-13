@@ -20,3 +20,6 @@ This repository is part of New York University's implementation of the
 [Data Driven Discovery project (D3M)](https://datadrivendiscovery.org/).
 
 [Documentation is available here.](https://alphad3m.readthedocs.io/)
+
+NOTE:
+We recently updated AlphaD3M to use existing open-source primitives that are fully compatible with the scikit-learn API. We call this new version: [Alpha-AutoML](https://github.com/VIDA-NYU/alpha-automl).
