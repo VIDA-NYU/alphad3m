@@ -18,6 +18,8 @@ For more information about how AlphaD3M works, see our papers:
   <https://arxiv.org/abs/1905.10345>`__
 - `AlphaD3M: Machine Learning Pipeline Synthesis <https://arxiv.org/abs/2111.02508>`__
 
+You can also see how AlphaD3M works in `this video <https://www.youtube.com/watch?v=9qJvOUOh2zM>`__.
+
 
 Support for Many ML Problems
 -----------------------------

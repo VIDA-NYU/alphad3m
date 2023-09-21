@@ -25,7 +25,7 @@ We recently updated AlphaD3M to use existing open-source primitives that are ful
 
 ## Documentation
 
-Documentation is available [here.](https://alphad3m.readthedocs.io/)
+Documentation is available [here](https://alphad3m.readthedocs.io/). You can also see how AlphaD3M works in [this video](https://www.youtube.com/watch?v=9qJvOUOh2zM).
 
 
 ## Citing
