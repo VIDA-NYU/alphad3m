@@ -27,9 +27,10 @@ pip install -r requirements.txt
 python automlbenchmark/runbenchmark.py AlphaD3M  openml/t/3945  -f 0 -u user_config/ -i openml_datasets/
 ```
 
-5. We ran all the systems (AutoWEKA, TPOT, H2O, AutoGluon, Auto-Sklearn, and AlphaD3M) using Singularity containers in 
-SLURM batch jobs in the [NYU Greene Cluster](https://sites.google.com/nyu.edu/nyu-hpc/hpc-systems/greene). To run the 
-experiments in this cluster, run `./run_all_automlbenchmark.sh` otherwise run `./run_all_automlbenchmark_no_sbatch.sh`. 
+5. We ran these versions of the AutoML systems: AutoWEKA (2.6.3), TPOT (0.12.0), H2O (3.42.0.2), AutoGluon (0.8.2), 
+Auto-Sklearn (0.14.1),  and AlphaD3M (0.24.0) using Singularity containers in SLURM batch jobs in the 
+[NYU Greene Cluster](https://sites.google.com/nyu.edu/nyu-hpc/hpc-systems/greene). To run the  experiments in this 
+cluster, run `./run_all_automlbenchmark.sh` otherwise run `./run_all_automlbenchmark_no_sbatch.sh`. 
 All the results will be stored in the `./results/results.csv` file.
 
 
