@@ -47,3 +47,8 @@ Bibtex entry:
 ```
 
 You can also find [here](https://alphad3m.readthedocs.io/en/latest/how-works.html) our other papers related to the AlphaD3M library. 
+
+
+## Acknowledgment
+
+The development of AlphaD3M was supported by the DARPA D3M Program. Any opinions, findings and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of DARPA.
